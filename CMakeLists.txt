@@ -413,6 +413,13 @@ if(BUILD_TESTING)
 
         wg_add_test(test_cstp tests/unit/test_cstp.c wg_cstp)
 
+        # Sprint 3 — TUN device
+        add_library(wg_tun STATIC src/network/tun.c)
+        target_include_directories(wg_tun PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(wg_tun PUBLIC _GNU_SOURCE)
+
+        wg_add_test(test_tun tests/unit/test_tun.c wg_tun)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
