@@ -420,6 +420,12 @@ if(BUILD_TESTING)
 
         wg_add_test(test_tun tests/unit/test_tun.c wg_tun)
 
+        # Sprint 3 — DPD state machine
+        add_library(wg_dpd STATIC src/network/dpd.c)
+        target_include_directories(wg_dpd PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+        wg_add_test(test_dpd tests/unit/test_dpd.c wg_dpd)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
