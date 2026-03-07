@@ -313,6 +313,16 @@ if(GNUTLS_FOUND)
     message(STATUS "wg_crypto_gnutls (GnuTLS backend) configured")
 endif()
 
+# --- PAM authentication backend ---
+find_library(PAM_LIBRARY pam)
+if(PAM_LIBRARY)
+    add_library(wg_pam STATIC src/auth/pam.c)
+    target_link_libraries(wg_pam PRIVATE ${PAM_LIBRARY})
+    target_compile_definitions(wg_pam PRIVATE _GNU_SOURCE)
+    target_include_directories(wg_pam PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    message(STATUS "wg_pam (PAM authentication backend) configured")
+endif()
+
 # ============================================================================
 # Unit tests
 # ============================================================================
@@ -366,6 +376,11 @@ if(BUILD_TESTING)
 
         # Sprint 2 session tests
         wg_add_test(test_session tests/unit/test_session.c wg_session)
+
+        # Sprint 2 PAM authentication tests
+        if(TARGET wg_pam)
+            wg_add_test(test_auth_pam tests/unit/test_auth_pam.c wg_pam)
+        endif()
 
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
