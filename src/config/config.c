@@ -1,4 +1,5 @@
 #include "config/config.h"
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,9 +92,10 @@ static void parse_network(toml_table_t *tbl, wg_config_network_t *net)
 
     toml_array_t *dns_arr = toml_array_in(tbl, "dns");
     if (dns_arr != nullptr) {
-        int n = toml_array_nelem(dns_arr);
+        int nelem = toml_array_nelem(dns_arr);
+        size_t n = nelem > 0 ? (size_t)nelem : 0;
         if (n > WG_CONFIG_MAX_DNS) { n = WG_CONFIG_MAX_DNS; }
-        for (int i = 0; i < n; i++) {
+        for (size_t i = 0; i < n; i++) {
             d = toml_string_at(dns_arr, i);
             if (d.ok) {
                 safe_copy(net->dns[i], d.u.s, sizeof(net->dns[i]));
@@ -150,14 +152,14 @@ int wg_config_load(const char *path, wg_config_t *cfg)
 
     FILE *fp = fopen(path, "r");
     if (fp == nullptr) {
-        return -1;
+        return -errno;
     }
 
     char errbuf[256];
     toml_table_t *root = toml_parse_file(fp, errbuf, sizeof(errbuf));
     fclose(fp);
     if (root == nullptr) {
-        return -1;
+        return -EINVAL;
     }
 
     toml_table_t *tbl;
@@ -182,7 +184,7 @@ int wg_config_load(const char *path, wg_config_t *cfg)
 {
     (void)path;
     wg_config_set_defaults(cfg);
-    return -1;
+    return -ENOTSUP;
 }
 
 #endif

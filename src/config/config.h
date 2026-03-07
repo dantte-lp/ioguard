@@ -2,10 +2,11 @@
 #define WOLFGUARD_CONFIG_CONFIG_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#define WG_CONFIG_MAX_DNS 8
-#define WG_CONFIG_MAX_STR 256
+constexpr size_t WG_CONFIG_MAX_DNS = 8;
+constexpr size_t WG_CONFIG_MAX_STR = 256;
 
 typedef struct {
     char listen_address[WG_CONFIG_MAX_STR];

@@ -1,5 +1,6 @@
 #include "ipc/messages.h"
 #include "wg_ipc.pb-c.h"
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -27,7 +28,7 @@ ssize_t wg_ipc_pack_auth_request(const wg_ipc_auth_request_t *req,
 
     size_t packed_size = wg_ipc__auth_request__get_packed_size(&pb);
     if (packed_size > buf_size) {
-        return -1;
+        return -ENOBUFS;
     }
     return (ssize_t)wg_ipc__auth_request__pack(&pb, buf);
 }
@@ -37,7 +38,7 @@ int wg_ipc_unpack_auth_request(const uint8_t *data, size_t len,
 {
     WgIpc__AuthRequest *pb = wg_ipc__auth_request__unpack(nullptr, len, data);
     if (pb == nullptr) {
-        return -1;
+        return -EINVAL;
     }
     out->username = pb->username ? strdup(pb->username) : nullptr;
     out->group = pb->group ? strdup(pb->group) : nullptr;
@@ -84,7 +85,7 @@ ssize_t wg_ipc_pack_auth_response(const wg_ipc_auth_response_t *resp,
 
     size_t packed_size = wg_ipc__auth_response__get_packed_size(&pb);
     if (packed_size > buf_size) {
-        return -1;
+        return -ENOBUFS;
     }
     return (ssize_t)wg_ipc__auth_response__pack(&pb, buf);
 }
@@ -94,7 +95,7 @@ int wg_ipc_unpack_auth_response(const uint8_t *data, size_t len,
 {
     WgIpc__AuthResponse *pb = wg_ipc__auth_response__unpack(nullptr, len, data);
     if (pb == nullptr) {
-        return -1;
+        return -EINVAL;
     }
     out->success = pb->success;
     out->error_msg = pb->error_msg ? strdup(pb->error_msg) : nullptr;
@@ -139,7 +140,7 @@ ssize_t wg_ipc_pack_worker_status(const wg_ipc_worker_status_t *status,
 
     size_t packed_size = wg_ipc__worker_status__get_packed_size(&pb);
     if (packed_size > buf_size) {
-        return -1;
+        return -ENOBUFS;
     }
     return (ssize_t)wg_ipc__worker_status__pack(&pb, buf);
 }
@@ -149,7 +150,7 @@ int wg_ipc_unpack_worker_status(const uint8_t *data, size_t len,
 {
     WgIpc__WorkerStatus *pb = wg_ipc__worker_status__unpack(nullptr, len, data);
     if (pb == nullptr) {
-        return -1;
+        return -EINVAL;
     }
     out->active_connections = pb->active_connections;
     out->bytes_rx = pb->bytes_rx;

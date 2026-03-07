@@ -61,24 +61,37 @@ deploy/podman/      # Container configurations
 
 ## Code Conventions
 
-- **Naming**: `snake_case` functions/variables, `UPPER_CASE` macros/enums
-- **Prefix**: `wg_` public API, `tls_` TLS layer, `nvm_` network visibility
-- **Typedef suffix**: `_t` for types (e.g., `session_cookie_t`)
-- **Include guards**: `WOLFGUARD_MODULE_FILE_H`
+**Full reference: `.claude/skills/coding-standards/SKILL.md`** — MUST be followed for all code.
+
+- **Naming**: `wg_module_verb_noun()` functions, `wg_module_name_t` types, `WG_MODULE_VALUE` enums/macros
+- **Prefix**: `wg_` public API, `tls_` TLS layer
+- **Typedef suffix**: `_t` for all types
+- **Include guards**: `WOLFGUARD_MODULE_FILE_H` (NOT `OCSERV_*`)
 - **Pointer style**: `int *ptr` (right-aligned, Linux kernel style)
 - **Column limit**: 100 characters
 - **Braces**: Linux kernel style (`BreakBeforeBraces: Linux`)
-- **C23 features**: `[[nodiscard]]`, `nullptr`, `constexpr`, `typeof`, `_Atomic`, `_Static_assert`
+- **Includes order**: `_GNU_SOURCE` → matching header → C stdlib → POSIX → third-party
 - **No C++ dependencies**: Pure C ecosystem only
+- **Errors**: return negative errno (`-ENOMEM`, `-EINVAL`), use `goto cleanup` for multi-resource
+- **Allocation**: always `sizeof(*ptr)`, never `sizeof(type)`
+- **Comments**: Doxygen `@param`/`@return` in headers only; inline comments explain WHY, not WHAT
+- **Tests**: Unity framework, `test_module_action_expected()`, typed assertions, cleanup resources
+
+### C23 (mandatory)
+
+| Use everywhere | Use when appropriate | Avoid |
+|----------------|---------------------|-------|
+| `nullptr`, `[[nodiscard]]`, `constexpr`, `bool` keyword, `_Static_assert` | `typeof`, `[[maybe_unused]]`, `_Atomic`, `<stdckdint.h>`, digit separators, `unreachable()` | `auto` inference, `_BitInt`, `#embed` |
 
 ## Security Requirements (MANDATORY)
 
-- Crypto comparisons: constant-time only (`wolfSSL_ConstantCompare`)
-- Secrets: zero after use (`ForceZero()` / `explicit_bzero()`)
+- Crypto comparisons: constant-time only (`ConstantCompare` from wolfCrypt)
+- Secrets: zero after use (`explicit_bzero()`)
 - Error returns: `[[nodiscard]]` on all public API functions
 - Hardening: `-fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE -pie`
 - Linker: `-Wl,-z,relro -Wl,-z,now`
-- BANNED functions: `strcpy`, `sprintf`, `gets`, `strcat`, `atoi`, `system()`
+- Overflow checks: `<stdckdint.h>` for size/length arithmetic
+- BANNED functions: `strcpy`, `sprintf`, `gets`, `strcat`, `atoi`, `system()`, `memcmp` on secrets
 - Use bounded alternatives: `snprintf`, `strnlen`, `memcpy` with size checks
 
 ## Library Stack
@@ -179,8 +192,9 @@ Use context7 to fetch up-to-date documentation:
 ## Skills Reference
 
 See `.claude/skills/` for detailed guidance on:
-- `wolfssl-api/` — TLS/DTLS API patterns, FIPS constraints, callbacks
-- `security-coding/` — constant-time, zeroing, input validation, seccomp
-- `ocprotocol/` — OpenConnect protocol, Cisco compatibility, cookies
+- **`coding-standards/`** — File structure, naming, comments, errors, memory, tests (MANDATORY)
 - `c23-standards/` — C23 features, conventions, compiler compatibility
+- `security-coding/` — constant-time, zeroing, input validation, seccomp
+- `wolfssl-api/` — TLS/DTLS API patterns, FIPS constraints, callbacks
+- `ocprotocol/` — OpenConnect protocol, Cisco compatibility, cookies
 - `wolfsentry-idps/` — IDPS firewall, rate limiting, connection tracking, nftables
