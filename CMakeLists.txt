@@ -407,6 +407,12 @@ if(BUILD_TESTING)
             wg_add_test(test_secmod tests/unit/test_secmod.c wg_secmod)
         endif()
 
+        # Sprint 3 — CSTP framing
+        add_library(wg_cstp STATIC src/network/cstp.c)
+        target_include_directories(wg_cstp PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+        wg_add_test(test_cstp tests/unit/test_cstp.c wg_cstp)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
