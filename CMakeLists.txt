@@ -426,6 +426,14 @@ if(BUILD_TESTING)
 
         wg_add_test(test_dpd tests/unit/test_dpd.c wg_dpd)
 
+        # Sprint 3 — Worker process context
+        add_library(wg_worker STATIC src/core/worker.c)
+        target_include_directories(wg_worker PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(wg_worker PUBLIC _GNU_SOURCE)
+        target_link_libraries(wg_worker PUBLIC wg_cstp wg_dpd)
+
+        wg_add_test(test_worker tests/unit/test_worker.c wg_worker wg_cstp wg_dpd)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
