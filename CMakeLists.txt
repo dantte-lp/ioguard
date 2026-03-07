@@ -256,6 +256,9 @@ target_link_libraries(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} wg_memory)
 target_link_directories(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARY_DIRS})
 target_include_directories(wg_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS} ${PROTO_GEN_DIR})
 
+add_library(wg_xml_auth STATIC src/network/xml_auth.c)
+target_include_directories(wg_xml_auth PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
 add_library(wg_http STATIC src/network/http.c)
 target_include_directories(wg_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/include)
 target_link_libraries(wg_http PUBLIC llhttp)
@@ -373,6 +376,7 @@ if(BUILD_TESTING)
 
         # Sprint 2 network tests
         wg_add_test(test_http tests/unit/test_http.c wg_http)
+        wg_add_test(test_xml_auth tests/unit/test_xml_auth.c wg_xml_auth)
 
         # Sprint 2 session tests
         wg_add_test(test_session tests/unit/test_session.c wg_session)
