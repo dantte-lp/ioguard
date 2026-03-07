@@ -168,6 +168,28 @@ Use context7 to fetch up-to-date documentation:
 - stumpless logging: `/goatshriek/stumpless`
 - CMake build: `/websites/cmake_cmake_help`
 
+## RFC References
+
+Local copies in `docs/rfc/` — see `docs/rfc/README.md` for full index.
+
+**Core (must-read for TLS/DTLS implementation):**
+- RFC 8446 — TLS 1.3
+- RFC 9147 — DTLS 1.3
+- RFC 6347 — DTLS 1.2
+
+**Security best practices:**
+- RFC 9325 / RFC 7525 — BCP 195: Secure Use of TLS and DTLS
+- RFC 7457 — Known Attacks on TLS and DTLS
+- RFC 9151 — CNSA Suite Profile for TLS/DTLS
+
+**Key extensions:**
+- RFC 7366 — Encrypt-then-MAC
+- RFC 7905 — ChaCha20-Poly1305 Cipher Suites
+- RFC 8449 — Record Size Limit Extension
+- RFC 8879 — TLS Certificate Compression
+- RFC 9146 — Connection Identifier for DTLS 1.2
+- RFC 9848/9849 — Deprecating obsolete key exchanges and cipher suites
+
 ## Architecture Decisions (DO NOT CHANGE)
 
 - Keep protobuf-c for IPC (do not replace)
@@ -198,3 +220,4 @@ See `.claude/skills/` for detailed guidance on:
 - `wolfssl-api/` — TLS/DTLS API patterns, FIPS constraints, callbacks
 - `ocprotocol/` — OpenConnect protocol, Cisco compatibility, cookies
 - `wolfsentry-idps/` — IDPS firewall, rate limiting, connection tracking, nftables
+- `rfc-reference/` — TLS/DTLS RFC index, key sections, security policies (41 RFCs in `docs/rfc/`)
