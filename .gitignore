@@ -70,3 +70,6 @@ latex/
 *.tmp
 .DS_Store
 .deployment-credentials
+
+# Archived documentation
+docs/tmp/
