@@ -256,6 +256,12 @@ target_link_libraries(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} wg_memory)
 target_link_directories(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARY_DIRS})
 target_include_directories(wg_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS} ${PROTO_GEN_DIR})
 
+add_library(wg_http STATIC src/network/http.c)
+target_include_directories(wg_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/include)
+target_link_libraries(wg_http PUBLIC llhttp)
+target_link_directories(wg_http PUBLIC /usr/local/lib64)
+target_compile_definitions(wg_http PUBLIC _GNU_SOURCE)
+
 add_library(wg_core STATIC src/core/process.c)
 target_include_directories(wg_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
@@ -344,6 +350,9 @@ if(BUILD_TESTING)
         if(TARGET wg_crypto_gnutls)
             wg_add_test(test_tls_gnutls tests/unit/test_tls_gnutls.c wg_crypto_gnutls)
         endif()
+
+        # Sprint 2 network tests
+        wg_add_test(test_http tests/unit/test_http.c wg_http)
 
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
