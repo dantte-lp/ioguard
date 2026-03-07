@@ -992,7 +992,7 @@ int priority_apply_wolfssl_config(void *wolf_ctx,
     // Apply TLS 1.3 cipher suites
     if (wolfssl_cfg->has_ciphersuites && wolfssl_cfg->ciphersuites[0] != '\0') {
         #ifdef WOLFSSL_TLS13
-        int ret = wolfSSL_CTX_set_ciphersuites(ctx, wolfssl_cfg->ciphersuites);
+        int ret = wolfSSL_CTX_set_cipher_list(ctx, wolfssl_cfg->ciphersuites);
         if (ret != SSL_SUCCESS) {
             set_last_error(PRIORITY_E_MAPPER_FAILED, 0, nullptr,
                           "Failed to set wolfSSL TLS 1.3 cipher suites");
@@ -1100,7 +1100,7 @@ int tls_validate_priority_string(const char *priority,
     if (ret != PRIORITY_E_SUCCESS) {
         if (error_msg != nullptr && error_msg_len > 0) {
             priority_error_info_t err_info;
-            priority_get_last_error(&err_info);
+            (void)priority_get_last_error(&err_info);
             snprintf(error_msg, error_msg_len, "%s", err_info.error_message);
         }
         return ret;
@@ -1112,7 +1112,7 @@ int tls_validate_priority_string(const char *priority,
     if (ret != PRIORITY_E_SUCCESS) {
         if (error_msg != nullptr && error_msg_len > 0) {
             priority_error_info_t err_info;
-            priority_get_last_error(&err_info);
+            (void)priority_get_last_error(&err_info);
             snprintf(error_msg, error_msg_len, "%s", err_info.error_message);
         }
         return ret;
@@ -1124,7 +1124,7 @@ int tls_validate_priority_string(const char *priority,
     if (ret != PRIORITY_E_SUCCESS) {
         if (error_msg != nullptr && error_msg_len > 0) {
             priority_error_info_t err_info;
-            priority_get_last_error(&err_info);
+            (void)priority_get_last_error(&err_info);
             snprintf(error_msg, error_msg_len, "%s", err_info.error_message);
         }
         return ret;

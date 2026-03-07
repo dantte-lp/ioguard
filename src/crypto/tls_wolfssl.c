@@ -550,10 +550,11 @@ static int wolfssl_session_new_cb(WOLFSSL *ssl, WOLFSSL_SESSION *session) {
     }
 
     // Extract serialized session data
+    // wolfSSL_i2d_SSL_SESSION returns length and writes to *pp (advancing it)
     unsigned char session_data[TLS_MAX_SESSION_DATA_SIZE];
-    unsigned int session_data_len = (unsigned int)sizeof(session_data);
-    int ret = wolfSSL_i2d_SSL_SESSION(session, session_data, &session_data_len);
-    if (ret != SSL_SUCCESS || session_data_len == 0 || session_data_len > TLS_MAX_SESSION_DATA_SIZE) {
+    unsigned char *session_data_ptr = session_data;
+    int session_data_len = wolfSSL_i2d_SSL_SESSION(session, &session_data_ptr);
+    if (session_data_len <= 0 || (size_t)session_data_len > TLS_MAX_SESSION_DATA_SIZE) {
         return SSL_FATAL_ERROR;
     }
 
@@ -561,8 +562,8 @@ static int wolfssl_session_new_cb(WOLFSSL *ssl, WOLFSSL_SESSION *session) {
     tls_session_cache_entry_t entry = {0};
     memcpy(entry.session_id, session_id, session_id_len);
     entry.session_id_size = session_id_len;
-    memcpy(entry.session_data, session_data, session_data_len);
-    entry.session_data_size = session_data_len;
+    memcpy(entry.session_data, session_data, (size_t)session_data_len);
+    entry.session_data_size = (size_t)session_data_len;
 
     // Calculate expiration time
     time_t now = time(nullptr);

@@ -104,23 +104,26 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 
-# --- TLS backend detection (kept for Sprint 2, not linked to targets yet) ---
-if(USE_WOLFSSL)
-    pkg_check_modules(WOLFSSL wolfssl)
-    if(WOLFSSL_FOUND)
-        set(TLS_BACKEND "wolfssl")
-        message(STATUS "TLS backend: wolfSSL (available, not yet linked)")
-    else()
-        message(STATUS "wolfSSL not found (will be needed in Sprint 2)")
-    endif()
+# --- TLS backend detection ---
+# Detect both backends; USE_WOLFSSL selects the primary one
+pkg_check_modules(WOLFSSL wolfssl)
+if(WOLFSSL_FOUND)
+    message(STATUS "TLS backend: wolfSSL (found)")
 else()
-    pkg_check_modules(GNUTLS gnutls>=3.8.0)
-    if(GNUTLS_FOUND)
-        set(TLS_BACKEND "gnutls")
-        message(STATUS "TLS backend: GnuTLS (available, not yet linked)")
-    else()
-        message(STATUS "GnuTLS not found (will be needed in Sprint 2)")
-    endif()
+    message(STATUS "wolfSSL not found")
+endif()
+
+pkg_check_modules(GNUTLS gnutls>=3.8.0)
+if(GNUTLS_FOUND)
+    message(STATUS "TLS backend: GnuTLS (found)")
+else()
+    message(STATUS "GnuTLS not found")
+endif()
+
+if(USE_WOLFSSL AND WOLFSSL_FOUND)
+    set(TLS_BACKEND "wolfssl")
+elseif(GNUTLS_FOUND)
+    set(TLS_BACKEND "gnutls")
 endif()
 
 # --- Core dependencies ---
@@ -256,6 +259,44 @@ target_include_directories(wg_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_IN
 add_library(wg_core STATIC src/core/process.c)
 target_include_directories(wg_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
+# --- Crypto / TLS libraries ---
+# wolfSSL backend
+if(WOLFSSL_FOUND)
+    add_library(wg_crypto STATIC
+        src/crypto/tls_wolfssl.c
+        src/crypto/tls_abstract.c
+        src/crypto/priority_parser.c
+        src/crypto/session_cache.c
+    )
+    target_compile_definitions(wg_crypto PUBLIC _GNU_SOURCE USE_WOLFSSL)
+    target_include_directories(wg_crypto PUBLIC
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/crypto
+        ${WOLFSSL_INCLUDE_DIRS}
+    )
+    target_link_libraries(wg_crypto PUBLIC ${WOLFSSL_LIBRARIES} pthread)
+    target_link_directories(wg_crypto PUBLIC ${WOLFSSL_LIBRARY_DIRS})
+    message(STATUS "wg_crypto (wolfSSL backend) configured")
+endif()
+
+# GnuTLS backend
+if(GNUTLS_FOUND)
+    add_library(wg_crypto_gnutls STATIC
+        src/crypto/tls_gnutls.c
+        src/crypto/tls_abstract.c
+        src/crypto/session_cache.c
+    )
+    target_compile_definitions(wg_crypto_gnutls PUBLIC _GNU_SOURCE USE_GNUTLS)
+    target_include_directories(wg_crypto_gnutls PUBLIC
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/crypto
+        ${GNUTLS_INCLUDE_DIRS}
+    )
+    target_link_libraries(wg_crypto_gnutls PUBLIC ${GNUTLS_LIBRARIES} pthread)
+    target_link_directories(wg_crypto_gnutls PUBLIC ${GNUTLS_LIBRARY_DIRS})
+    message(STATUS "wg_crypto_gnutls (GnuTLS backend) configured")
+endif()
+
 # ============================================================================
 # Unit tests
 # ============================================================================
@@ -293,6 +334,15 @@ if(BUILD_TESTING)
         wg_add_test(test_process tests/unit/test_process.c wg_core)
         if(EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_ipc_roundtrip.c)
             wg_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c wg_ipc wg_io)
+        endif()
+
+        # Sprint 2 crypto tests
+        if(TARGET wg_crypto)
+            wg_add_test(test_tls_wolfssl tests/unit/test_tls_wolfssl.c wg_crypto)
+            wg_add_test(test_priority_parser tests/unit/test_priority_parser.c wg_crypto)
+        endif()
+        if(TARGET wg_crypto_gnutls)
+            wg_add_test(test_tls_gnutls tests/unit/test_tls_gnutls.c wg_crypto_gnutls)
         endif()
 
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
@@ -424,7 +474,7 @@ message(STATUS "  libseccomp:      ${LIBSECCOMP_FOUND}")
 message(STATUS "  PAM:             ${PAM_FOUND}")
 message(STATUS "  Kerberos:        ${KRB5_FOUND}")
 message(STATUS "")
-message(STATUS "TLS (Sprint 2):")
+message(STATUS "TLS / Crypto:")
 message(STATUS "  wolfSSL:         ${WOLFSSL_FOUND}")
 message(STATUS "  GnuTLS:          ${GNUTLS_FOUND}")
 message(STATUS "")

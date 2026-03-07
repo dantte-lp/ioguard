@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCSERV_TLS_ABSTRACT_H
-#define OCSERV_TLS_ABSTRACT_H
+#ifndef WOLFGUARD_TLS_ABSTRACT_H
+#define WOLFGUARD_TLS_ABSTRACT_H
 
 /**
  * TLS Abstraction Layer for wolfguard
@@ -50,10 +50,7 @@
 #error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
-// Use C23 nullptr instead of NULL
-#ifndef nullptr
-#define nullptr ((void*)0)
-#endif
+// C23 provides nullptr as a keyword — no macro needed
 
 /* ============================================================================
  * Constants and Configuration
@@ -763,4 +760,4 @@ static inline void tls_context_cleanup(tls_context_t **ctx_ptr) {
     }
 }
 
-#endif // OCSERV_TLS_ABSTRACT_H
+#endif // WOLFGUARD_TLS_ABSTRACT_H

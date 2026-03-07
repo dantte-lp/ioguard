@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCSERV_TLS_WOLFSSL_H
-#define OCSERV_TLS_WOLFSSL_H
+#ifndef WOLFGUARD_TLS_WOLFSSL_H
+#define WOLFGUARD_TLS_WOLFSSL_H
 
 /**
  * wolfSSL Backend Implementation for TLS Abstraction Layer
@@ -229,4 +229,4 @@ void tls_wolfssl_deinit(void);
  * are defined as static in the implementation file and not exposed in this header.
  */
 
-#endif // OCSERV_TLS_WOLFSSL_H
+#endif // WOLFGUARD_TLS_WOLFSSL_H

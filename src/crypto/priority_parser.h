@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCSERV_PRIORITY_PARSER_H
-#define OCSERV_PRIORITY_PARSER_H
+#ifndef WOLFGUARD_PRIORITY_PARSER_H
+#define WOLFGUARD_PRIORITY_PARSER_H
 
 /**
  * GnuTLS Priority String Parser for wolfguard
@@ -536,4 +536,4 @@ void wolfssl_config_init(wolfssl_config_t *wolfssl_cfg);
                                           char *buffer,
                                           size_t buffer_len);
 
-#endif // OCSERV_PRIORITY_PARSER_H
+#endif // WOLFGUARD_PRIORITY_PARSER_H

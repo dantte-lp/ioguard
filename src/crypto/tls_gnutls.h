@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OCSERV_TLS_GNUTLS_H
-#define OCSERV_TLS_GNUTLS_H
+#ifndef WOLFGUARD_TLS_GNUTLS_H
+#define WOLFGUARD_TLS_GNUTLS_H
 
 /**
  * GnuTLS Backend Implementation for TLS Abstraction Layer
@@ -119,4 +119,4 @@ ssize_t tls_gnutls_push_wrapper(gnutls_transport_ptr_t ptr, const void *data, si
 ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr, void *data, size_t len);
 int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms);
 
-#endif /* OCSERV_TLS_GNUTLS_H */
+#endif /* WOLFGUARD_TLS_GNUTLS_H */

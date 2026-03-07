@@ -9,7 +9,7 @@
  * Each test validates a specific aspect of the API.
  */
 
-#include "../../src/crypto/tls_gnutls.h"
+#include "crypto/tls_gnutls.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

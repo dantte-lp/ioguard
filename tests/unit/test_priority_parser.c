@@ -140,7 +140,7 @@ static int tests_failed = 0;
 /**
  * Helper: Print token list for debugging
  */
-static inline void print_token_list(const token_list_t * const tokens)
+[[maybe_unused]] static inline void print_token_list(const token_list_t * const tokens)
 {
     printf("\n    Token list (%zu tokens):\n", tokens->count);
     for (size_t i = 0; i < tokens->count; i++) {
@@ -293,7 +293,7 @@ TEST(parse_normal_keyword_sets_defaults)
     token_list_t tokens = {0};
     priority_config_t config = {0};
 
-    priority_tokenize("NORMAL", &tokens);
+    (void)priority_tokenize("NORMAL", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -306,7 +306,7 @@ TEST(parse_server_precedence_modifier)
     token_list_t tokens = {0};
     priority_config_t config = {0};
 
-    priority_tokenize("NORMAL:%SERVER_PRECEDENCE", &tokens);
+    (void)priority_tokenize("NORMAL:%SERVER_PRECEDENCE", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -318,7 +318,7 @@ TEST(parse_compat_modifier)
     token_list_t tokens = {0};
     priority_config_t config = {0};
 
-    priority_tokenize("NORMAL:%COMPAT", &tokens);
+    (void)priority_tokenize("NORMAL:%COMPAT", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -331,7 +331,7 @@ TEST(parse_version_addition_tls13)
     priority_config_t config = {0};
     priority_config_init(&config);
 
-    priority_tokenize("NORMAL:+VERS-TLS1.3", &tokens);
+    (void)priority_tokenize("NORMAL:+VERS-TLS1.3", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -344,7 +344,7 @@ TEST(parse_version_removal_tls10)
     priority_config_t config = {0};
     priority_config_init(&config);
 
-    priority_tokenize("NORMAL:-VERS-TLS1.0", &tokens);
+    (void)priority_tokenize("NORMAL:-VERS-TLS1.0", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -357,7 +357,7 @@ TEST(parse_version_removal_ssl3)
     priority_config_t config = {0};
     priority_config_init(&config);
 
-    priority_tokenize("NORMAL:-VERS-SSL3.0", &tokens);
+    (void)priority_tokenize("NORMAL:-VERS-SSL3.0", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -370,7 +370,7 @@ TEST(parse_multiple_modifiers)
     priority_config_t config = {0};
     priority_config_init(&config);
 
-    priority_tokenize("NORMAL:%SERVER_PRECEDENCE:%COMPAT:%FORCE_SESSION_HASH", &tokens);
+    (void)priority_tokenize("NORMAL:%SERVER_PRECEDENCE:%COMPAT:%FORCE_SESSION_HASH", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -386,7 +386,7 @@ TEST(parse_real_world_ocserv_string)
     priority_config_t config = {0};
     priority_config_init(&config);
 
-    priority_tokenize(ocserv_default, &tokens);
+    (void)priority_tokenize(ocserv_default, &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -403,7 +403,7 @@ TEST(parse_performance_keyword)
     token_list_t tokens = {0};
     priority_config_t config = {0};
 
-    priority_tokenize("PERFORMANCE", &tokens);
+    (void)priority_tokenize("PERFORMANCE", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -416,7 +416,7 @@ TEST(parse_secure256_keyword)
     token_list_t tokens = {0};
     priority_config_t config = {0};
 
-    priority_tokenize("SECURE256", &tokens);
+    (void)priority_tokenize("SECURE256", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -430,7 +430,7 @@ TEST(parse_pfs_keyword)
     token_list_t tokens = {0};
     priority_config_t config = {0};
 
-    priority_tokenize("PFS", &tokens);
+    (void)priority_tokenize("PFS", &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -452,8 +452,8 @@ TEST(map_normal_to_wolfssl_generates_cipher_list)
     priority_config_init(&config);
     wolfssl_config_init(&wolfssl_cfg);
 
-    priority_tokenize("NORMAL", &tokens);
-    priority_parse(&tokens, &config);
+    (void)priority_tokenize("NORMAL", &tokens);
+    (void)priority_parse(&tokens, &config);
     const int result = priority_map_to_wolfssl(&config, &wolfssl_cfg);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -470,8 +470,8 @@ TEST(map_server_precedence_sets_options)
     priority_config_init(&config);
     wolfssl_config_init(&wolfssl_cfg);
 
-    priority_tokenize("NORMAL:%SERVER_PRECEDENCE", &tokens);
-    priority_parse(&tokens, &config);
+    (void)priority_tokenize("NORMAL:%SERVER_PRECEDENCE", &tokens);
+    (void)priority_parse(&tokens, &config);
     const int result = priority_map_to_wolfssl(&config, &wolfssl_cfg);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -488,8 +488,8 @@ TEST(map_version_range_sets_min_max)
     priority_config_init(&config);
     wolfssl_config_init(&wolfssl_cfg);
 
-    priority_tokenize("NORMAL:+VERS-TLS1.3:-VERS-TLS1.0", &tokens);
-    priority_parse(&tokens, &config);
+    (void)priority_tokenize("NORMAL:+VERS-TLS1.3:-VERS-TLS1.0", &tokens);
+    (void)priority_parse(&tokens, &config);
     const int result = priority_map_to_wolfssl(&config, &wolfssl_cfg);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -506,8 +506,8 @@ TEST(map_tls13_only_generates_ciphersuites)
     wolfssl_config_init(&wolfssl_cfg);
 
     const char *tls13_only = "SECURE256:+VERS-TLS1.3:-VERS-TLS1.2:-VERS-TLS1.1:-VERS-TLS1.0";
-    priority_tokenize(tls13_only, &tokens);
-    priority_parse(&tokens, &config);
+    (void)priority_tokenize(tls13_only, &tokens);
+    (void)priority_parse(&tokens, &config);
     const int result = priority_map_to_wolfssl(&config, &wolfssl_cfg);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
