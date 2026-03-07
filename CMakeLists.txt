@@ -373,6 +373,9 @@ if(BUILD_TESTING)
         if(EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_ipc_roundtrip.c)
             wg_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c wg_ipc wg_io)
         endif()
+        if(TARGET wg_secmod AND EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_auth_flow.c)
+            wg_add_test(test_auth_flow tests/integration/test_auth_flow.c wg_secmod wg_ipc wg_session wg_pam wg_config wg_memory)
+        endif()
 
         # Sprint 2 crypto tests
         if(TARGET wg_crypto)
