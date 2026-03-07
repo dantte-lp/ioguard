@@ -390,8 +390,12 @@ if(BUILD_TESTING)
         wg_add_test(test_http tests/unit/test_http.c wg_http)
         wg_add_test(test_xml_auth tests/unit/test_xml_auth.c wg_xml_auth)
 
-        # Sprint 2 session tests
+        # Sprint 2 session tests (needs wolfSSL for wolfCrypt RNG)
         wg_add_test(test_session tests/unit/test_session.c wg_session)
+        if(WOLFSSL_FOUND)
+            target_link_libraries(test_session PRIVATE ${WOLFSSL_LIBRARIES})
+            target_link_directories(test_session PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+        endif()
 
         # Sprint 2 PAM authentication tests
         if(TARGET wg_pam)
