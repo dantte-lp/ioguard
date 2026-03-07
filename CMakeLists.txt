@@ -265,6 +265,16 @@ target_compile_definitions(wg_http PUBLIC _GNU_SOURCE)
 add_library(wg_core STATIC src/core/process.c)
 target_include_directories(wg_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
+add_library(wg_session STATIC src/core/session.c)
+target_include_directories(wg_session PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(wg_session PUBLIC _GNU_SOURCE)
+if(WOLFSSL_FOUND)
+    target_compile_definitions(wg_session PRIVATE USE_WOLFSSL)
+    target_include_directories(wg_session PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+    target_link_libraries(wg_session PRIVATE ${WOLFSSL_LIBRARIES})
+    target_link_directories(wg_session PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+endif()
+
 # --- Crypto / TLS libraries ---
 # wolfSSL backend
 if(WOLFSSL_FOUND)
@@ -353,6 +363,9 @@ if(BUILD_TESTING)
 
         # Sprint 2 network tests
         wg_add_test(test_http tests/unit/test_http.c wg_http)
+
+        # Sprint 2 session tests
+        wg_add_test(test_session tests/unit/test_session.c wg_session)
 
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
