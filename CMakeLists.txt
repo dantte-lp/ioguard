@@ -326,6 +326,15 @@ if(PAM_LIBRARY)
     message(STATUS "wg_pam (PAM authentication backend) configured")
 endif()
 
+# --- sec-mod authentication process ---
+if(TARGET wg_pam)
+    add_library(wg_secmod STATIC src/core/secmod.c)
+    target_include_directories(wg_secmod PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    target_compile_definitions(wg_secmod PRIVATE _GNU_SOURCE)
+    target_link_libraries(wg_secmod PUBLIC wg_ipc wg_session wg_pam wg_config)
+    message(STATUS "wg_secmod (sec-mod authentication process) configured")
+endif()
+
 # ============================================================================
 # Unit tests
 # ============================================================================
@@ -384,6 +393,11 @@ if(BUILD_TESTING)
         # Sprint 2 PAM authentication tests
         if(TARGET wg_pam)
             wg_add_test(test_auth_pam tests/unit/test_auth_pam.c wg_pam)
+        endif()
+
+        # Sprint 2 sec-mod authentication process tests
+        if(TARGET wg_secmod)
+            wg_add_test(test_secmod tests/unit/test_secmod.c wg_secmod)
         endif()
 
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
