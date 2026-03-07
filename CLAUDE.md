@@ -114,7 +114,7 @@ deploy/podman/      # Container configurations
 ### Logging & Monitoring
 | Library       | Version | Role                    | Context7 ID        |
 |---------------|---------|-------------------------|---------------------|
-| stumpless     | latest  | Structured logging (RFC 5424) | -              |
+| stumpless     | latest  | Structured logging (RFC 5424) | /goatshriek/stumpless |
 | (custom)      | -       | Prometheus metrics (text exposition) | -         |
 
 ### Authentication
@@ -152,6 +152,7 @@ Use context7 to fetch up-to-date documentation:
 - c-ares DNS: `/c-ares/c-ares`
 - protobuf-c IPC: `/protobuf-c/protobuf-c`
 - tomlc99 TOML config: `/cktan/tomlc99`
+- stumpless logging: `/goatshriek/stumpless`
 - CMake build: `/websites/cmake_cmake_help`
 
 ## Architecture Decisions (DO NOT CHANGE)

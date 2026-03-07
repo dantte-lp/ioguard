@@ -185,7 +185,7 @@ pkg_check_modules(CARES libcares)
 # --- Memory allocator ---
 find_path(MIMALLOC_INCLUDE_DIR mimalloc.h
     PATHS /usr/local/include /usr/include
-    PATH_SUFFIXES mimalloc-3.1 mimalloc-3.0 mimalloc)
+    PATH_SUFFIXES mimalloc-3.2 mimalloc-3.1 mimalloc-3.0 mimalloc)
 find_library(MIMALLOC_LIBRARY
     NAMES mimalloc-secure mimalloc
     PATHS /usr/local/lib /usr/local/lib64 /usr/lib /usr/lib64)
