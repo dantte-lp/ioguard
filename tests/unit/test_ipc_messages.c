@@ -16,6 +16,8 @@ void test_pack_unpack_auth_request(void)
         .username = "testuser",
         .group = "vpn-users",
         .source_ip = "10.0.0.1",
+        .password = "s3cret!Pass",
+        .otp = "123456",
     };
 
     uint8_t buf[WG_IPC_MAX_MSG_SIZE];
@@ -28,17 +30,24 @@ void test_pack_unpack_auth_request(void)
     TEST_ASSERT_EQUAL_STRING("testuser", decoded.username);
     TEST_ASSERT_EQUAL_STRING("vpn-users", decoded.group);
     TEST_ASSERT_EQUAL_STRING("10.0.0.1", decoded.source_ip);
+    TEST_ASSERT_EQUAL_STRING("s3cret!Pass", decoded.password);
+    TEST_ASSERT_EQUAL_STRING("123456", decoded.otp);
 
     wg_ipc_free_auth_request(&decoded);
+    TEST_ASSERT_NULL(decoded.password);
 }
 
 void test_pack_unpack_auth_response(void)
 {
+    const char *test_routes[] = {"10.0.0.0/8", "172.16.0.0/12"};
     wg_ipc_auth_response_t resp = {
         .success = true,
         .assigned_ip = "10.0.1.100",
         .dns_server = "10.0.0.53",
         .session_ttl = 3600,
+        .default_domain = "vpn.example.com",
+        .routes = test_routes,
+        .route_count = 2,
     };
 
     uint8_t buf[WG_IPC_MAX_MSG_SIZE];
@@ -51,6 +60,10 @@ void test_pack_unpack_auth_response(void)
     TEST_ASSERT_TRUE(decoded.success);
     TEST_ASSERT_EQUAL_STRING("10.0.1.100", decoded.assigned_ip);
     TEST_ASSERT_EQUAL_UINT32(3600, decoded.session_ttl);
+    TEST_ASSERT_EQUAL_STRING("vpn.example.com", decoded.default_domain);
+    TEST_ASSERT_EQUAL_UINT32(2, decoded.route_count);
+    TEST_ASSERT_EQUAL_STRING("10.0.0.0/8", decoded.routes[0]);
+    TEST_ASSERT_EQUAL_STRING("172.16.0.0/12", decoded.routes[1]);
 
     wg_ipc_free_auth_response(&decoded);
 }
@@ -76,6 +89,28 @@ void test_pack_unpack_worker_status(void)
     TEST_ASSERT_EQUAL_HEX64(2000000, decoded.bytes_tx);
 }
 
+void test_pack_unpack_session_validate(void)
+{
+    uint8_t test_cookie[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE};
+    wg_ipc_session_validate_t req = {
+        .cookie = test_cookie,
+        .cookie_len = sizeof(test_cookie),
+    };
+
+    uint8_t buf[WG_IPC_MAX_MSG_SIZE];
+    ssize_t packed = wg_ipc_pack_session_validate(&req, buf, sizeof(buf));
+    TEST_ASSERT_GREATER_THAN(0, packed);
+
+    wg_ipc_session_validate_t decoded;
+    int ret = wg_ipc_unpack_session_validate(buf, packed, &decoded);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    TEST_ASSERT_EQUAL_size_t(sizeof(test_cookie), decoded.cookie_len);
+    TEST_ASSERT_EQUAL_MEMORY(test_cookie, decoded.cookie, sizeof(test_cookie));
+
+    wg_ipc_free_session_validate(&decoded);
+    TEST_ASSERT_NULL(decoded.cookie);
+}
+
 void test_unpack_truncated_data_fails(void)
 {
     uint8_t garbage[] = {0xFF, 0x00};
@@ -90,6 +125,7 @@ int main(void)
     RUN_TEST(test_pack_unpack_auth_request);
     RUN_TEST(test_pack_unpack_auth_response);
     RUN_TEST(test_pack_unpack_worker_status);
+    RUN_TEST(test_pack_unpack_session_validate);
     RUN_TEST(test_unpack_truncated_data_fails);
     return UNITY_END();
 }

@@ -10,6 +10,7 @@ enum MsgType {
     MSG_TYPE_WORKER_STATUS = 5;
     MSG_TYPE_CONFIG_RELOAD = 6;
     MSG_TYPE_SHUTDOWN = 7;
+    MSG_TYPE_SESSION_VALIDATE = 8;
 }
 
 message IpcHeader {
@@ -23,6 +24,8 @@ message AuthRequest {
     string group = 3;
     bytes cookie = 4;
     string source_ip = 5;
+    string password = 6;
+    string otp = 7;
 }
 
 message AuthResponse {
@@ -33,6 +36,13 @@ message AuthResponse {
     uint32 session_ttl = 5;
     string assigned_ip = 6;
     string dns_server = 7;
+    string default_domain = 8;
+    repeated string routes = 9;
+}
+
+message SessionValidate {
+    IpcHeader header = 1;
+    bytes cookie = 2;
 }
 
 message WorkerStatus {
