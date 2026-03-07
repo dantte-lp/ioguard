@@ -434,6 +434,9 @@ if(BUILD_TESTING)
 
         wg_add_test(test_worker tests/unit/test_worker.c wg_worker wg_cstp wg_dpd)
 
+        # Sprint 3 — Data path integration test
+        wg_add_test(test_data_path tests/integration/test_data_path.c wg_cstp wg_dpd wg_worker wg_io)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
