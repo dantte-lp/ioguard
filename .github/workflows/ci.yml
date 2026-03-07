@@ -1,0 +1,146 @@
+name: wolfguard CI
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ═══════════════════════════════════════════════════════
+  # Clang: primary dev compiler — sanitizers + analysis
+  # ═══════════════════════════════════════════════════════
+
+  clang-debug:
+    name: Clang Debug + Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld mold \
+            libwolfssl-dev libuv1-dev liburing-dev \
+            libpam0g-dev libseccomp-dev liblz4-dev \
+            libnl-3-dev libcjson-dev libradcli-dev \
+            liboath-dev libldap-dev libmnl-dev libnftnl-dev \
+            libcares-dev libkrb5-dev cmake ninja-build
+      - name: Configure
+        run: cmake --preset clang-debug
+      - name: Build
+        run: cmake --build --preset clang-debug
+      - name: Test
+        run: ctest --preset clang-debug
+
+  clang-asan:
+    name: Clang ASan + UBSan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld mold \
+            libwolfssl-dev libuv1-dev liburing-dev \
+            libpam0g-dev libseccomp-dev liblz4-dev \
+            libnl-3-dev cmake ninja-build
+      - name: Configure
+        run: cmake --preset clang-asan
+      - name: Build
+        run: cmake --build --preset clang-asan
+      - name: Test
+        run: ctest --preset clang-asan
+
+  clang-tidy:
+    name: clang-tidy Analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang clang-tidy \
+            libwolfssl-dev libuv1-dev liburing-dev \
+            libpam0g-dev libseccomp-dev liblz4-dev \
+            libnl-3-dev cmake ninja-build
+      - name: Configure
+        run: cmake --preset clang-debug
+      - name: Run clang-tidy
+        run: cmake --build --preset clang-debug --target lint
+
+  format-check:
+    name: clang-format Check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: Check formatting
+        run: |
+          find src tests -name "*.c" -o -name "*.h" | \
+            xargs clang-format --dry-run --Werror
+
+  cppcheck:
+    name: cppcheck Analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck clang \
+            libwolfssl-dev libuv1-dev liburing-dev \
+            libpam0g-dev libseccomp-dev liblz4-dev \
+            libnl-3-dev cmake ninja-build
+      - name: Configure
+        run: cmake --preset clang-debug
+      - name: Run cppcheck
+        run: cmake --build --preset clang-debug --target cppcheck
+
+  # ═══════════════════════════════════════════════════════
+  # GCC: validation compiler — -fanalyzer + unique warnings
+  # ═══════════════════════════════════════════════════════
+
+  gcc-debug:
+    name: GCC Debug + -fanalyzer
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc \
+            libwolfssl-dev libuv1-dev liburing-dev \
+            libpam0g-dev libseccomp-dev liblz4-dev \
+            libnl-3-dev cmake ninja-build
+      - name: Configure
+        run: cmake --preset gcc-debug
+      - name: Build and capture analyzer output
+        run: cmake --build --preset gcc-debug 2>&1 | tee gcc-analysis.log
+      - name: Check for analyzer warnings
+        run: |
+          if grep -qE '\[-Wanalyzer' gcc-analysis.log; then
+            echo "GCC -fanalyzer found issues"
+            grep -E '\[-Wanalyzer' gcc-analysis.log
+            exit 1
+          fi
+      - name: Test
+        run: ctest --preset gcc-debug
+
+  gcc-release:
+    name: GCC Release (LTO)
+    runs-on: ubuntu-24.04
+    needs: [clang-debug, gcc-debug, clang-tidy, format-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc \
+            libwolfssl-dev libuv1-dev liburing-dev \
+            libpam0g-dev libseccomp-dev liblz4-dev \
+            libnl-3-dev cmake ninja-build
+      - name: Configure
+        run: cmake --preset gcc-release
+      - name: Build
+        run: cmake --build --preset gcc-release

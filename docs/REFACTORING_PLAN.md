@@ -1,3 +1,22 @@
+> **DEPRECATED**: This document reflects the original refactoring plan from October 2025.
+> The project has been replanned from scratch in March 2026 with a new architecture.
+>
+> **Current architecture document**: `docs/plans/2026-03-07-wolfguard-architecture-design.md`
+>
+> Key changes from this plan:
+> - io_uring replaces libuv for ALL I/O (Linux only, no BSD)
+> - Clean implementation (not migrating ocserv code)
+> - 8 sprints (~16 weeks) instead of 16-20 sprints
+> - stumpless logging instead of zlog
+> - Custom Prometheus metrics instead of libprom
+> - SOCK_SEQPACKET + protobuf-c for IPC
+> - pidfd_spawn for process management (kernel 6.7+, glibc 2.39+)
+> - TOML + JSON configuration
+>
+> This document is kept for historical reference only.
+
+---
+
 # wolfguard: Comprehensive Refactoring Plan
 
 **Document Version**: 1.0

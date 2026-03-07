@@ -1,9 +1,11 @@
 # clang-format configuration for wolfguard
-# Based on Linux kernel style with C23 enhancements
+# Linux kernel style with C23 enhancements and security hardening
+# Dual-compiler: Clang 22+ / GCC 15+
 
 ---
 BasedOnStyle: LLVM
 Language: Cpp
+Standard: Latest
 
 # Indentation
 IndentWidth: 4
@@ -74,6 +76,27 @@ PenaltyBreakString: 100
 PenaltyExcessCharacter: 1000
 PenaltyReturnTypeOnItsOwnLine: 60
 
+# Security: force braces on all control flow (prevents goto-fail bugs)
+InsertBraces: true
+
 # Misc
 MaxEmptyLinesToKeep: 2
 KeepEmptyLinesAtTheStartOfBlocks: false
+
+# C23 attributes
+AttributeMacros: ['__attribute__', '[[nodiscard]]', '[[maybe_unused]]', '[[deprecated]]']
+
+# Include ordering
+IncludeCategories:
+  - Regex: '^<wolfssl/'
+    Priority: 1
+  - Regex: '^<uv\.h>'
+    Priority: 2
+  - Regex: '^<liburing\.h>'
+    Priority: 2
+  - Regex: '^<yyjson\.h>'
+    Priority: 3
+  - Regex: '^<.*>'
+    Priority: 4
+  - Regex: '^"'
+    Priority: 5

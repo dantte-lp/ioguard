@@ -1,0 +1,100 @@
+#include <unity/unity.h>
+#include "config/config.h"
+
+/* Use absolute path — tests run inside container at /workspace */
+static const char *TEST_CONFIG = "/workspace/tests/fixtures/wolfguard.toml";
+
+void setUp(void) {}
+void tearDown(void) {}
+
+void test_config_load_valid_file(void)
+{
+    wg_config_t cfg;
+    int ret = wg_config_load(TEST_CONFIG, &cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    wg_config_free(&cfg);
+}
+
+void test_config_load_nonexistent_file(void)
+{
+    wg_config_t cfg;
+    int ret = wg_config_load("/nonexistent.toml", &cfg);
+    TEST_ASSERT_NOT_EQUAL(0, ret);
+}
+
+void test_config_server_values(void)
+{
+    wg_config_t cfg;
+    int ret = wg_config_load(TEST_CONFIG, &cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+
+    TEST_ASSERT_EQUAL_STRING("0.0.0.0", cfg.server.listen_address);
+    TEST_ASSERT_EQUAL_UINT16(443, cfg.server.listen_port);
+    TEST_ASSERT_EQUAL_UINT16(443, cfg.server.dtls_port);
+    TEST_ASSERT_EQUAL_UINT32(1024, cfg.server.max_clients);
+    TEST_ASSERT_EQUAL_UINT32(4, cfg.server.worker_count);
+
+    wg_config_free(&cfg);
+}
+
+void test_config_auth_values(void)
+{
+    wg_config_t cfg;
+    int ret = wg_config_load(TEST_CONFIG, &cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+
+    TEST_ASSERT_EQUAL_STRING("pam", cfg.auth.method);
+    TEST_ASSERT_EQUAL_UINT32(300, cfg.auth.cookie_timeout);
+
+    wg_config_free(&cfg);
+}
+
+void test_config_network_values(void)
+{
+    wg_config_t cfg;
+    int ret = wg_config_load(TEST_CONFIG, &cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+
+    TEST_ASSERT_EQUAL_STRING("10.10.0.0/16", cfg.network.ipv4_pool);
+    TEST_ASSERT_EQUAL_UINT32(1400, cfg.network.mtu);
+    TEST_ASSERT_EQUAL_STRING("corp.example.com", cfg.network.default_domain);
+
+    wg_config_free(&cfg);
+}
+
+void test_config_tls_values(void)
+{
+    wg_config_t cfg;
+    int ret = wg_config_load(TEST_CONFIG, &cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+
+    TEST_ASSERT_EQUAL_STRING("/etc/wolfguard/server.pem", cfg.tls.cert_file);
+    TEST_ASSERT_EQUAL_STRING("/etc/wolfguard/server.key", cfg.tls.key_file);
+
+    wg_config_free(&cfg);
+}
+
+void test_config_defaults_when_missing(void)
+{
+    wg_config_t cfg;
+    wg_config_set_defaults(&cfg);
+
+    TEST_ASSERT_EQUAL_UINT16(443, cfg.server.listen_port);
+    TEST_ASSERT_EQUAL_UINT32(0, cfg.server.worker_count);
+    TEST_ASSERT_EQUAL_UINT32(1400, cfg.network.mtu);
+
+    wg_config_free(&cfg);
+}
+
+int main(void)
+{
+    UNITY_BEGIN();
+    RUN_TEST(test_config_load_valid_file);
+    RUN_TEST(test_config_load_nonexistent_file);
+    RUN_TEST(test_config_server_values);
+    RUN_TEST(test_config_auth_values);
+    RUN_TEST(test_config_network_values);
+    RUN_TEST(test_config_tls_values);
+    RUN_TEST(test_config_defaults_when_missing);
+    return UNITY_END();
+}

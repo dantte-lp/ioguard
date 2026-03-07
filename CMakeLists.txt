@@ -1,10 +1,11 @@
 # CMakeLists.txt for wolfguard
-# Modern C23 VPN server with TLS abstraction layer
-cmake_minimum_required(VERSION 3.20)
+# Modern C23 VPN server with io_uring event loop
+# Dual-compiler: Clang 22+ (dev) / GCC 15+ (release)
+cmake_minimum_required(VERSION 3.25)
 
 project(wolfguard
     VERSION 2.0.0
-    DESCRIPTION "Modern C23 VPN server with TLS abstraction layer"
+    DESCRIPTION "Modern C23 VPN server with io_uring event loop"
     LANGUAGES C
 )
 
@@ -13,117 +14,252 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# Export compile_commands.json for clangd/clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Build options
 option(USE_WOLFSSL "Use wolfSSL backend instead of GnuTLS" ON)
 option(BUILD_TESTING "Build unit tests" ON)
-option(BUILD_POC "Build proof-of-concept server/client" ON)
 option(ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
 option(ENABLE_COVERAGE "Enable code coverage" OFF)
 option(BUILD_DOCUMENTATION "Build API documentation with Doxygen" ON)
+option(BUILD_FUZZ "Build fuzzing targets (Clang only)" OFF)
 
 # Build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 endif()
 
-# Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -Werror")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong")
+# ============================================================================
+# Compiler-Specific Configuration (dual-compiler strategy)
+# ============================================================================
+
+# Common security hardening flags
+add_compile_options(
+    -Wall -Wextra -Wpedantic -Werror
+    -fstack-protector-strong
+    -fstack-clash-protection
+    -fPIE
+)
+
+# Compiler-specific flags
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    message(STATUS "Compiler: Clang ${CMAKE_C_COMPILER_VERSION} (primary dev compiler)")
+    add_compile_options(
+        -Wno-padded
+        -Wno-declaration-after-statement
+        -Wno-unsafe-buffer-usage
+        -Wno-pre-c23-compat
+        -fcolor-diagnostics
+    )
+    # CFI for release builds
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_compile_options(-fsanitize=cfi -fvisibility=hidden)
+        add_link_options(-fsanitize=cfi)
+    endif()
+
+elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    message(STATUS "Compiler: GCC ${CMAKE_C_COMPILER_VERSION} (validation compiler)")
+    add_compile_options(
+        -Wduplicated-branches
+        -Wduplicated-cond
+        -Wlogical-op
+        -Wformat-overflow=2
+        -Wnull-dereference
+        -Wjump-misses-init
+        -fdiagnostics-color=always
+    )
+    # -fanalyzer for debug builds (powerful static analysis, C-only)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_options(-fanalyzer)
+    endif()
+endif()
+
+# Build type flags
 set(CMAKE_C_FLAGS_DEBUG "-g -O0 -DDEBUG")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -mtune=native -DNDEBUG -D_FORTIFY_SOURCE=2")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -D_FORTIFY_SOURCE=3")
 
 # Linker flags for security hardening
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now")
+add_link_options(
+    -Wl,-z,relro
+    -Wl,-z,now
+    -pie
+)
 
-# Sanitizers
+# Sanitizers (prefer CMake presets, but keep option for backwards compat)
 if(ENABLE_SANITIZERS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address,undefined -fno-omit-frame-pointer")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
 endif()
 
 # Code coverage
 if(ENABLE_COVERAGE)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage")
+    add_compile_options(-fprofile-arcs -ftest-coverage)
+    add_link_options(-lgcov --coverage)
 endif()
 
-# Find required packages
+# ============================================================================
+# Dependencies
+# ============================================================================
+
 find_package(PkgConfig REQUIRED)
 
-# TLS backend selection
+# --- TLS backend detection (kept for Sprint 2, not linked to targets yet) ---
 if(USE_WOLFSSL)
-    pkg_check_modules(WOLFSSL REQUIRED wolfssl)
-    set(TLS_BACKEND "wolfssl")
-    set(TLS_DEFINITIONS USE_WOLFSSL)
-    set(TLS_INCLUDE_DIRS ${WOLFSSL_INCLUDE_DIRS})
-    set(TLS_LIBRARIES ${WOLFSSL_LIBRARIES})
-    set(TLS_BACKEND_SOURCE src/crypto/tls_wolfssl.c)
-    message(STATUS "Using wolfSSL backend")
+    pkg_check_modules(WOLFSSL wolfssl)
+    if(WOLFSSL_FOUND)
+        set(TLS_BACKEND "wolfssl")
+        message(STATUS "TLS backend: wolfSSL (available, not yet linked)")
+    else()
+        message(STATUS "wolfSSL not found (will be needed in Sprint 2)")
+    endif()
 else()
-    pkg_check_modules(GNUTLS REQUIRED gnutls>=3.8.0)
-    set(TLS_BACKEND "gnutls")
-    set(TLS_DEFINITIONS USE_GNUTLS)
-    set(TLS_INCLUDE_DIRS ${GNUTLS_INCLUDE_DIRS})
-    set(TLS_LIBRARIES ${GNUTLS_LIBRARIES})
-    set(TLS_BACKEND_SOURCE src/crypto/tls_gnutls.c)
-    message(STATUS "Using GnuTLS backend")
+    pkg_check_modules(GNUTLS gnutls>=3.8.0)
+    if(GNUTLS_FOUND)
+        set(TLS_BACKEND "gnutls")
+        message(STATUS "TLS backend: GnuTLS (available, not yet linked)")
+    else()
+        message(STATUS "GnuTLS not found (will be needed in Sprint 2)")
+    endif()
 endif()
 
-# Find other dependencies
-pkg_check_modules(JSON_C REQUIRED json-c)
+# --- Core dependencies ---
 pkg_check_modules(PAM REQUIRED pam)
 pkg_check_modules(LIBSECCOMP REQUIRED libseccomp)
 pkg_check_modules(LZ4 REQUIRED liblz4)
 pkg_check_modules(LIBNL3 REQUIRED libnl-3.0)
-pkg_check_modules(KRB5 REQUIRED krb5)
 
-# Include directories
-include_directories(
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/crypto
-    ${TLS_INCLUDE_DIRS}
-    ${JSON_C_INCLUDE_DIRS}
-    ${PAM_INCLUDE_DIRS}
-    ${LIBSECCOMP_INCLUDE_DIRS}
-    ${LZ4_INCLUDE_DIRS}
-    ${LIBNL3_INCLUDE_DIRS}
-    ${KRB5_INCLUDE_DIRS}
-)
+# --- Network & I/O ---
+pkg_check_modules(LIBUV libuv>=1.44.0)
+pkg_check_modules(LIBURING REQUIRED liburing>=2.7)
 
-# TLS abstraction library
-add_library(tls_abstract STATIC
-    src/crypto/tls_abstract.c
-    ${TLS_BACKEND_SOURCE}
-)
-
-target_compile_definitions(tls_abstract PRIVATE ${TLS_DEFINITIONS})
-target_link_libraries(tls_abstract PRIVATE ${TLS_LIBRARIES})
-
-# Install library and headers
-install(TARGETS tls_abstract
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-)
-
-install(FILES src/crypto/tls_abstract.h
-    DESTINATION include/wolfguard
-)
-
-# Proof of Concept binaries
-if(BUILD_POC)
-    add_executable(poc-server tests/poc/tls_poc_server.c)
-    target_link_libraries(poc-server PRIVATE tls_abstract ${TLS_LIBRARIES})
-    target_compile_definitions(poc-server PRIVATE ${TLS_DEFINITIONS})
-
-    add_executable(poc-client tests/poc/tls_poc_client.c)
-    target_link_libraries(poc-client PRIVATE tls_abstract ${TLS_LIBRARIES})
-    target_compile_definitions(poc-client PRIVATE ${TLS_DEFINITIONS})
-
-    message(STATUS "Building PoC server and client")
+# --- Data & Configuration ---
+# tomlc99
+find_path(TOML_INCLUDE_DIR toml.h PATHS /usr/local/include /usr/include)
+find_library(TOML_LIBRARY toml PATHS /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64)
+if(TOML_INCLUDE_DIR AND TOML_LIBRARY)
+    set(TOML_FOUND TRUE)
+    message(STATUS "Found tomlc99: ${TOML_LIBRARY}")
+else()
+    message(STATUS "tomlc99 not found")
 endif()
 
+# yyjson: prefer find, fallback to pkg-config
+find_path(YYJSON_INCLUDE_DIR yyjson.h)
+find_library(YYJSON_LIBRARY yyjson)
+if(YYJSON_INCLUDE_DIR AND YYJSON_LIBRARY)
+    set(YYJSON_FOUND TRUE)
+    message(STATUS "Found yyjson: ${YYJSON_LIBRARY}")
+else()
+    message(STATUS "yyjson not found - will use cJSON only")
+endif()
+
+# cJSON (fallback / simple config)
+pkg_check_modules(CJSON libcjson)
+if(NOT CJSON_FOUND)
+    find_path(CJSON_INCLUDE_DIRS cJSON.h PATHS /usr/local/include /usr/include)
+    find_library(CJSON_LIBRARIES cjson PATHS /usr/local/lib /usr/lib)
+endif()
+
+# --- IPC serialization ---
+pkg_check_modules(PROTOBUF_C REQUIRED libprotobuf-c>=1.5.0)
+
+# protoc-c code generation
+find_program(PROTOC_C protoc-c REQUIRED)
+set(PROTO_GEN_DIR ${CMAKE_BINARY_DIR}/generated)
+file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
+
+# --- Authentication ---
+pkg_check_modules(RADCLI radcli)
+pkg_check_modules(LIBOATH liboath)
+pkg_check_modules(LDAP ldap)
+pkg_check_modules(KRB5 krb5)
+
+# --- Networking & Firewall ---
+pkg_check_modules(LIBMNL libmnl)
+pkg_check_modules(LIBNFTNL libnftnl)
+
+# --- Async DNS ---
+pkg_check_modules(CARES libcares)
+
+# --- Memory allocator ---
+find_path(MIMALLOC_INCLUDE_DIR mimalloc.h
+    PATHS /usr/local/include /usr/include
+    PATH_SUFFIXES mimalloc-3.1 mimalloc-3.0 mimalloc)
+find_library(MIMALLOC_LIBRARY
+    NAMES mimalloc-secure mimalloc
+    PATHS /usr/local/lib /usr/local/lib64 /usr/lib /usr/lib64)
+if(MIMALLOC_INCLUDE_DIR AND MIMALLOC_LIBRARY)
+    set(MIMALLOC_FOUND TRUE)
+    message(STATUS "Found mimalloc: ${MIMALLOC_LIBRARY}")
+endif()
+
+# ============================================================================
+# Include directories (minimal base; library-specific on targets)
+# ============================================================================
+
+include_directories(
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+# ============================================================================
+# wolfguard core libraries
+# ============================================================================
+
+add_library(wg_io STATIC src/io/uring.c)
+target_link_libraries(wg_io PUBLIC ${LIBURING_LIBRARIES})
+target_link_directories(wg_io PUBLIC ${LIBURING_LIBRARY_DIRS})
+target_include_directories(wg_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
+target_compile_definitions(wg_io PUBLIC _GNU_SOURCE)
+
+add_library(wg_memory STATIC src/utils/memory.c)
+target_include_directories(wg_memory PUBLIC ${CMAKE_SOURCE_DIR}/src)
+if(MIMALLOC_FOUND)
+    target_link_libraries(wg_memory PUBLIC ${MIMALLOC_LIBRARY})
+    target_include_directories(wg_memory PUBLIC ${MIMALLOC_INCLUDE_DIR})
+    target_compile_definitions(wg_memory PUBLIC USE_MIMALLOC)
+endif()
+
+add_library(wg_config STATIC src/config/config.c)
+target_include_directories(wg_config PUBLIC ${CMAKE_SOURCE_DIR}/src)
+if(TOML_FOUND)
+    target_link_libraries(wg_config PUBLIC ${TOML_LIBRARY})
+    target_include_directories(wg_config PUBLIC ${TOML_INCLUDE_DIR})
+    target_compile_definitions(wg_config PUBLIC USE_TOML)
+endif()
+
+# Generate protobuf-c sources
+set(PROTO_SRC ${CMAKE_SOURCE_DIR}/src/ipc/proto/wg_ipc.proto)
+if(EXISTS ${PROTO_SRC})
+    add_custom_command(
+        OUTPUT ${PROTO_GEN_DIR}/wg_ipc.pb-c.h ${PROTO_GEN_DIR}/wg_ipc.pb-c.c
+        COMMAND ${PROTOC_C} --c_out=${PROTO_GEN_DIR}
+                --proto_path=${CMAKE_SOURCE_DIR}/src/ipc/proto
+                ${PROTO_SRC}
+        DEPENDS ${PROTO_SRC}
+        COMMENT "Generating protobuf-c sources from wg_ipc.proto"
+    )
+    add_custom_target(proto_gen DEPENDS ${PROTO_GEN_DIR}/wg_ipc.pb-c.h)
+    set(PROTO_GEN_SOURCES ${PROTO_GEN_DIR}/wg_ipc.pb-c.c)
+else()
+    set(PROTO_GEN_SOURCES "")
+endif()
+
+add_library(wg_ipc STATIC src/ipc/transport.c src/ipc/messages.c ${PROTO_GEN_SOURCES})
+if(TARGET proto_gen)
+    add_dependencies(wg_ipc proto_gen)
+endif()
+target_link_libraries(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} wg_memory)
+target_link_directories(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARY_DIRS})
+target_include_directories(wg_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS} ${PROTO_GEN_DIR})
+
+add_library(wg_core STATIC src/core/process.c)
+target_include_directories(wg_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+# ============================================================================
 # Unit tests
+# ============================================================================
+
 if(BUILD_TESTING)
     enable_testing()
 
@@ -142,35 +278,59 @@ if(BUILD_TESTING)
         add_library(unity STATIC ${UNITY_SRC_DIR}/unity.c)
         target_include_directories(unity PUBLIC ${UNITY_INCLUDE_DIR} ${UNITY_INCLUDE_DIR}/unity)
 
-        # Unit tests for TLS backends
-        if(USE_WOLFSSL)
-            add_executable(test_tls_wolfssl tests/unit/test_tls_wolfssl.c)
-            target_include_directories(test_tls_wolfssl PRIVATE ${TLS_INCLUDE_DIRS})
-            target_link_libraries(test_tls_wolfssl PRIVATE tls_abstract unity ${TLS_LIBRARIES})
-            target_compile_definitions(test_tls_wolfssl PRIVATE ${TLS_DEFINITIONS})
-            add_test(NAME test_tls_wolfssl COMMAND test_tls_wolfssl)
-        else()
-            add_executable(test_tls_gnutls tests/unit/test_tls_gnutls.c)
-            target_include_directories(test_tls_gnutls PRIVATE ${TLS_INCLUDE_DIRS})
-            target_link_libraries(test_tls_gnutls PRIVATE tls_abstract unity ${TLS_LIBRARIES})
-            target_compile_definitions(test_tls_gnutls PRIVATE ${TLS_DEFINITIONS})
-            add_test(NAME test_tls_gnutls COMMAND test_tls_gnutls)
+        macro(wg_add_test TEST_NAME TEST_SRC)
+            add_executable(${TEST_NAME} ${TEST_SRC})
+            target_link_libraries(${TEST_NAME} PRIVATE unity ${ARGN})
+            add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+        endmacro()
+
+        # Sprint 1 tests
+        wg_add_test(test_memory tests/unit/test_memory.c wg_memory)
+        wg_add_test(test_io_uring tests/unit/test_io_uring.c wg_io)
+        wg_add_test(test_ipc_transport tests/unit/test_ipc_transport.c wg_ipc)
+        wg_add_test(test_ipc_messages tests/unit/test_ipc_messages.c wg_ipc)
+        wg_add_test(test_config_toml tests/unit/test_config_toml.c wg_config)
+        wg_add_test(test_process tests/unit/test_process.c wg_core)
+        if(EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_ipc_roundtrip.c)
+            wg_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c wg_ipc wg_io)
         endif()
 
-        message(STATUS "Building unit tests with Unity framework")
+        message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
     endif()
 endif()
 
+# ============================================================================
+# Fuzzing targets (Clang + LibFuzzer only)
+# ============================================================================
+
+if(BUILD_FUZZ)
+    if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
+        message(FATAL_ERROR "Fuzzing requires Clang (LibFuzzer)")
+    endif()
+
+    file(GLOB FUZZ_SOURCES tests/fuzz/fuzz_*.c)
+    foreach(FUZZ_SRC ${FUZZ_SOURCES})
+        get_filename_component(FUZZ_NAME ${FUZZ_SRC} NAME_WE)
+        add_executable(${FUZZ_NAME} ${FUZZ_SRC})
+        target_compile_options(${FUZZ_NAME} PRIVATE -fsanitize=fuzzer,address)
+        target_link_options(${FUZZ_NAME} PRIVATE -fsanitize=fuzzer,address)
+    endforeach()
+
+    message(STATUS "Building fuzzing targets (LibFuzzer)")
+endif()
+
+# ============================================================================
 # Doxygen documentation
+# ============================================================================
+
 if(BUILD_DOCUMENTATION)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
         set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
         set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-        # Check if Doxyfile.in exists, otherwise use default Doxyfile
         if(EXISTS ${DOXYGEN_IN})
             configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
         elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile)
@@ -190,42 +350,87 @@ if(BUILD_DOCUMENTATION)
     endif()
 endif()
 
-# Code formatting target
+# ============================================================================
+# Code quality targets
+# ============================================================================
+
+# clang-format
 add_custom_target(format
-    COMMAND find ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests -name "*.c" -o -name "*.h" | xargs clang-format -i
+    COMMAND find ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests
+        -name "*.c" -o -name "*.h" | xargs clang-format -i
     COMMENT "Formatting code with clang-format"
     VERBATIM
 )
 
-# Static analysis target
-add_custom_target(lint
-    COMMAND clang-tidy ${CMAKE_SOURCE_DIR}/src/crypto/*.c -p ${CMAKE_BINARY_DIR} -- -I${CMAKE_SOURCE_DIR}/src/crypto ${TLS_INCLUDE_DIRS}
-    COMMENT "Running static analysis with clang-tidy"
+# clang-format check (CI: fails if code is not formatted)
+add_custom_target(format-check
+    COMMAND find ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests
+        -name "*.c" -o -name "*.h" | xargs clang-format --dry-run --Werror
+    COMMENT "Checking code formatting with clang-format"
     VERBATIM
 )
 
-# Cppcheck target
+# clang-tidy (uses compile_commands.json)
+add_custom_target(lint
+    COMMAND run-clang-tidy -p ${CMAKE_BINARY_DIR}
+        -header-filter='src/.*'
+        ${CMAKE_SOURCE_DIR}/src/
+    COMMENT "Running clang-tidy static analysis"
+    VERBATIM
+)
+
+# cppcheck
 add_custom_target(cppcheck
-    COMMAND cppcheck --enable=all --inconclusive --std=c11 --suppress=missingIncludeSystem
-        -I${CMAKE_SOURCE_DIR}/src/crypto ${CMAKE_SOURCE_DIR}/src
+    COMMAND cppcheck
+        --enable=all
+        --inconclusive
+        --std=c23
+        --suppress=missingIncludeSystem
+        --project=${CMAKE_BINARY_DIR}/compile_commands.json
+        --error-exitcode=1
     COMMENT "Running cppcheck static analysis"
     VERBATIM
 )
 
-# Print configuration summary
+# ============================================================================
+# Configuration Summary
+# ============================================================================
+
 message(STATUS "")
 message(STATUS "wolfguard Configuration Summary")
 message(STATUS "===================================")
 message(STATUS "Version:           ${PROJECT_VERSION}")
 message(STATUS "Build type:        ${CMAKE_BUILD_TYPE}")
-message(STATUS "TLS backend:       ${TLS_BACKEND}")
-message(STATUS "C compiler:        ${CMAKE_C_COMPILER}")
-message(STATUS "C flags:           ${CMAKE_C_FLAGS}")
+message(STATUS "C compiler:        ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "C standard:        C${CMAKE_C_STANDARD}")
 message(STATUS "Install prefix:    ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "")
+message(STATUS "Dependencies:")
+message(STATUS "  liburing:        ${LIBURING_FOUND}")
+message(STATUS "  libuv:           ${LIBUV_FOUND}")
+message(STATUS "  tomlc99:         ${TOML_FOUND}")
+message(STATUS "  protobuf-c:      ${PROTOBUF_C_FOUND}")
+message(STATUS "  yyjson:          ${YYJSON_FOUND}")
+message(STATUS "  cJSON:           ${CJSON_FOUND}")
+message(STATUS "  mimalloc:        ${MIMALLOC_FOUND}")
+message(STATUS "  c-ares:          ${CARES_FOUND}")
+message(STATUS "  radcli:          ${RADCLI_FOUND}")
+message(STATUS "  liboath:         ${LIBOATH_FOUND}")
+message(STATUS "  libldap:         ${LDAP_FOUND}")
+message(STATUS "  libmnl:          ${LIBMNL_FOUND}")
+message(STATUS "  libnftnl:        ${LIBNFTNL_FOUND}")
+message(STATUS "  LZ4:             ${LZ4_FOUND}")
+message(STATUS "  libseccomp:      ${LIBSECCOMP_FOUND}")
+message(STATUS "  PAM:             ${PAM_FOUND}")
+message(STATUS "  Kerberos:        ${KRB5_FOUND}")
+message(STATUS "")
+message(STATUS "TLS (Sprint 2):")
+message(STATUS "  wolfSSL:         ${WOLFSSL_FOUND}")
+message(STATUS "  GnuTLS:          ${GNUTLS_FOUND}")
 message(STATUS "")
 message(STATUS "Build options:")
 message(STATUS "  Build tests:     ${BUILD_TESTING}")
-message(STATUS "  Build PoC:       ${BUILD_POC}")
+message(STATUS "  Build fuzz:      ${BUILD_FUZZ}")
 message(STATUS "  Sanitizers:      ${ENABLE_SANITIZERS}")
 message(STATUS "  Coverage:        ${ENABLE_COVERAGE}")
 message(STATUS "  Documentation:   ${BUILD_DOCUMENTATION}")

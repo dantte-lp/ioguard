@@ -1,3 +1,9 @@
+> **DEPRECATED**: This prompt was written for the original refactoring approach (October 2025).
+> The project has been replanned from scratch in March 2026 with a clean implementation.
+> See `docs/plans/2026-03-07-wolfguard-architecture-design.md` for current architecture.
+
+---
+
 # TODO Prompt: Modernize WolfGuard Repository
 
 You are an experienced C systems architect and technical writer tasked with turning the current WolfGuard repository into a coherent, production-ready codebase. Follow the steps below meticulously, documenting outcomes and open questions as you go.

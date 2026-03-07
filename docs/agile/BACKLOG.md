@@ -1,8 +1,8 @@
 # Product Backlog - wolfguard
 
 **Project**: wolfguard v2.0.0
-**Product Owner**: TBD
-**Last Updated**: 2025-10-29
+**Team**: 1 developer + Claude AI
+**Last Updated**: 2026-03-07
 
 ---
 
@@ -12,649 +12,272 @@
 
 - **P0 (Critical)**: Must have for release, blocks other work
 - **P1 (High)**: Should have for release, important features
-- **P2 (Medium)**: Nice to have for release, can be deferred
-- **P3 (Low)**: Future consideration, not for v2.0.0
+- **P2 (Medium)**: Nice to have, can be deferred if needed
 
 ### Story Point Scale (Fibonacci)
 
-- **1 point**: Few hours of work, well-understood
+- **1 point**: Few hours, well-understood
 - **2 points**: Half day to 1 day
 - **3 points**: 1-2 days
 - **5 points**: 2-4 days
 - **8 points**: 1 week
 - **13 points**: 2 weeks (should be split)
-- **21+ points**: Too large, must be split into smaller stories
+
+### Definition of Ready
+
+Before a story enters a sprint:
+- [ ] Story is clearly defined with acceptance criteria
+- [ ] Story points assigned
+- [ ] Dependencies identified
+- [ ] Technical approach understood
+
+### Definition of Done
+
+For a story to be marked complete:
+- [ ] All acceptance criteria met
+- [ ] Code reviewed (Claude + self-review)
+- [ ] Unit tests written and passing (>= 80% coverage)
+- [ ] Integration tests passing (if applicable)
+- [ ] Sanitizers clean (ASan+UBSan, MSan)
+- [ ] clang-format and clang-tidy pass
+- [ ] Merged to main branch
 
 ---
 
-## Epic 1: Project Foundation (Sprint 0-1)
+## Epic 1: Foundation (S1)
+
+**Sprint**: S1 (Weeks 1-2)
+**Focus**: io_uring, process model, IPC, config, memory
+**Story Points**: 19
+
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-100 | io_uring event loop wrapper | 5 | P0 |
+| US-101 | Process model with pidfd_spawn | 5 | P0 |
+| US-102 | IPC over SOCK_SEQPACKET + protobuf-c | 3 | P0 |
+| US-103 | TOML configuration parser and validation | 3 | P0 |
+| US-104 | mimalloc integration and memory wrappers | 3 | P0 |
 
 ### User Stories
 
-#### US-001: As a developer, I need a working development environment
-**Priority**: P0 (Critical)
-**Story Points**: 5
-**Status**: IN PROGRESS
-**Sprint**: Sprint 0
+**US-100**: As a developer, I want an io_uring event loop wrapper so that all network, TUN, and timer I/O uses a single async subsystem.
 
-**Description**:
-Set up complete development infrastructure including repository, containers, CI/CD, and documentation structure.
+**US-101**: As a developer, I want a process manager using pidfd_spawn and IORING_OP_WAITID so that child processes are spawned and monitored without signal races.
 
-**Acceptance Criteria**:
-- [ ] GitHub repository created with proper permissions
-- [x] Directory structure matches architecture design
-- [x] Podman containers build successfully
-- [ ] CI/CD pipeline runs basic build
-- [x] Documentation templates in place
-- [ ] All team members can build and run project
+**US-102**: As a developer, I want IPC message serialization over SOCK_SEQPACKET so that processes exchange structured messages with automatic framing.
 
-**Dependencies**: None
+**US-103**: As a VPN administrator, I want TOML-based configuration so that the server is configured with a human-readable, well-structured file.
 
-**Notes**: Foundation for all future work
+**US-104**: As a developer, I want mimalloc as the global allocator so that memory allocation is fast, secure (MI_SECURE), and per-worker isolated.
 
 ---
 
-#### US-002: As a project manager, I need a realistic project plan
-**Priority**: P0 (Critical)
-**Story Points**: 8
-**Status**: IN PROGRESS
-**Sprint**: Sprint 0
+## Epic 2: TLS & Authentication (S2)
 
-**Description**:
-Create comprehensive project plan based on critical analysis, addressing unrealistic expectations and defining clear milestones.
+**Sprint**: S2 (Weeks 3-4)
+**Focus**: wolfSSL, PAM, sec-mod, sessions, HTTP
+**Story Points**: 19
 
-**Acceptance Criteria**:
-- [x] Critical analysis document reviewed
-- [x] Realistic timeline documented (50-70 weeks)
-- [x] Risk register created with mitigations
-- [x] Release policy defined
-- [x] Success metrics established
-- [ ] Stakeholder approval obtained
-
-**Dependencies**: None
-
-**Notes**: Must address overly optimistic original timeline
-
----
-
-#### US-003: As a team, we need to understand current ocserv architecture
-**Priority**: P0 (Critical)
-**Story Points**: 13
-**Status**: DONE
-**Sprint**: Sprint 0
-
-**Description**:
-Analyze upstream ocserv codebase to understand architecture, GnuTLS usage, and potential migration challenges.
-
-**Acceptance Criteria**:
-- [x] All GnuTLS API calls identified and documented (94 unique functions, 457 occurrences)
-- [x] Certificate handling flows mapped
-- [x] DTLS implementation understood
-- [x] Multi-process architecture documented
-- [x] IPC patterns analyzed
-- [x] Potential migration issues identified
-
-**Dependencies**: US-001 (need dev environment)
-
-**Completed**: 2025-10-29
-**Deliverables**:
-- docs/architecture/GNUTLS_API_AUDIT.md (comprehensive audit)
-- Upstream analysis complete
-- Migration complexity assessed
-
-**Notes**: Critical for accurate effort estimation - COMPLETED
-
----
-
-#### US-004: As a team, we need performance baselines before starting
-**Priority**: P0 (Critical)
-**Story Points**: 8
-**Status**: PLANNED
-**Sprint**: Sprint 1
-
-**Description**:
-Establish performance baselines for current GnuTLS-based ocserv to validate migration benefits.
-
-**Acceptance Criteria**:
-- [ ] Benchmarking framework implemented
-- [ ] TLS handshake rate measured
-- [ ] DTLS handshake rate measured
-- [ ] Throughput (Gbps) measured
-- [ ] CPU usage profiled
-- [ ] Memory usage documented
-- [ ] Bottlenecks identified
-
-**Dependencies**: US-001, US-003
-
-**Notes**: Essential for GO/NO-GO decision
-
----
-
-#### US-005: As a stakeholder, I need proof that migration is worthwhile
-**Priority**: P0 (Critical)
-**Story Points**: 13
-**Status**: PLANNED
-**Sprint**: Sprint 1
-
-**Description**:
-Develop Proof of Concept demonstrating wolfSSL performance improvements over GnuTLS baseline.
-
-**Acceptance Criteria**:
-- [ ] Minimal TLS connection PoC implemented
-- [ ] wolfSSL handshake benchmarked
-- [ ] Performance comparison report created
-- [ ] ≥10% improvement demonstrated (or PoC fails)
-- [ ] Security review of PoC approach completed
-- [ ] GO/NO-GO decision made
-
-**Dependencies**: US-004 (need baseline)
-
-**Notes**: **PROJECT GATE**: If PoC fails, project stops
-
----
-
-## Epic 2: TLS Abstraction and Infrastructure (Sprint 2-3)
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-105 | wolfSSL TLS 1.3 integration with callback I/O | 5 | P0 |
+| US-106 | PAM authentication backend | 3 | P0 |
+| US-107 | sec-mod authentication process | 5 | P0 |
+| US-108 | Session cookie management | 3 | P0 |
+| US-109 | HTTP parsing with llhttp | 3 | P0 |
 
 ### User Stories
 
-#### US-006: As a developer, I need a TLS abstraction layer
-**Priority**: P0 (Critical)
-**Story Points**: 13
-**Status**: PLANNED
-**Sprint**: Sprint 2
+**US-105**: As a VPN user, I want TLS 1.3 connections via wolfSSL so that my VPN tunnel is secured with modern cryptography.
 
-**Description**:
-Create TLS library abstraction enabling dual-build with both GnuTLS and wolfSSL backends.
+**US-106**: As a VPN administrator, I want PAM authentication so that users authenticate against system accounts or PAM-compatible backends.
 
-**Acceptance Criteria**:
-- [ ] Abstract TLS interface defined
-- [ ] GnuTLS backend implemented (wraps existing)
-- [ ] wolfSSL backend implemented (basic)
-- [ ] Dual-build system functional
-- [ ] Unit tests pass with both backends
-- [ ] Performance overhead <5%
+**US-107**: As a developer, I want a dedicated sec-mod process so that authentication is isolated from worker processes and sessions survive worker crashes.
 
-**Dependencies**: US-005 (PoC approved)
+**US-108**: As a VPN user, I want session cookies so that I can reconnect to any worker without re-authenticating after a transient failure.
 
-**Notes**: Foundation for safe migration
+**US-109**: As a developer, I want llhttp-based HTTP parsing so that CSTP HTTP negotiation (POST /auth, CONNECT /CSTPID) is handled safely.
 
 ---
 
-#### US-007: As a developer, I need comprehensive testing infrastructure
-**Priority**: P0 (Critical)
-**Story Points**: 8
-**Status**: PLANNED
-**Sprint**: Sprint 3
+## Epic 3: VPN Core (S3)
 
-**Description**:
-Establish testing framework for unit, integration, security, and compatibility testing.
+**Sprint**: S3 (Weeks 5-6)
+**Focus**: CSTP, TUN, worker, DPD
+**Story Points**: 18
 
-**Acceptance Criteria**:
-- [ ] Unit test framework (Check) integrated
-- [ ] Integration test harness created
-- [ ] Performance test automation working
-- [ ] Client compatibility test suite defined
-- [ ] CI/CD runs all tests automatically
-- [ ] Code coverage reporting enabled
-
-**Dependencies**: US-006
-
-**Notes**: Critical for quality assurance
-
----
-
-## Epic 3: Core TLS Migration (Sprint 4-7)
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-110 | CSTP protocol framing | 5 | P0 |
+| US-111 | TUN device I/O via io_uring | 5 | P0 |
+| US-112 | Worker process with connection multiplexing | 5 | P0 |
+| US-113 | Dead Peer Detection state machine | 3 | P0 |
 
 ### User Stories
 
-#### US-008: As a user, I want TLS connections to use wolfSSL
-**Priority**: P0 (Critical)
-**Story Points**: 21 (SPLIT INTO SUB-STORIES)
-**Status**: PLANNED
-**Sprint**: Sprint 4-7
+**US-110**: As a VPN user, I want CSTP protocol support so that I can establish a VPN tunnel compatible with Cisco Secure Client.
 
-**Description**:
-Migrate all TLS connection handling from GnuTLS to wolfSSL native API.
+**US-111**: As a developer, I want TUN device I/O driven by io_uring so that packets flow between the tunnel interface and the network without blocking.
 
-**Sub-Stories**:
-- US-008a: wolfSSL wrapper layer implementation (8 SP)
-- US-008b: worker-vpn.c TLS migration (8 SP)
-- US-008c: Certificate authentication migration (5 SP)
+**US-112**: As a developer, I want worker processes that multiplex many client connections via io_uring so that the server scales to thousands of concurrent sessions per core.
 
-**Acceptance Criteria**:
-- [ ] All TLS code uses wolfSSL (via abstraction)
-- [ ] OpenConnect clients can connect
-- [ ] All authentication methods work
-- [ ] Session resumption functional
-- [ ] TLS 1.3 enabled and tested
-- [ ] No functional regressions
-
-**Dependencies**: US-006, US-007
-
-**Notes**: Core migration work
+**US-113**: As a VPN user, I want Dead Peer Detection so that stale connections are detected and cleaned up automatically.
 
 ---
 
-#### US-009: As a user, I want DTLS 1.3 support
-**Priority**: P0 (Critical)
-**Story Points**: 13
-**Status**: PLANNED
-**Sprint**: Sprint 6-7
+## Epic 4: DTLS & Compression (S4)
 
-**Description**:
-Migrate DTLS to wolfSSL, enabling DTLS 1.3 support (major new feature).
+**Sprint**: S4 (Weeks 7-8)
+**Focus**: DTLS 1.2, channel switch, codecs
+**Story Points**: 16
 
-**Acceptance Criteria**:
-- [ ] DTLS 1.2 migrated and functional
-- [ ] DTLS 1.3 implemented and tested
-- [ ] Cookie handling for DoS protection
-- [ ] Connection ID (CID) support
-- [ ] Tested under packet loss conditions
-- [ ] Performance acceptable under network issues
-
-**Dependencies**: US-008
-
-**Notes**: Key differentiator vs GnuTLS
-
----
-
-## Epic 4: Testing and Validation (Sprint 8-11)
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-114 | DTLS 1.2 with master secret bootstrap | 5 | P0 |
+| US-115 | CSTP/DTLS channel switching | 3 | P0 |
+| US-116 | LZ4 compression codec | 3 | P1 |
+| US-117 | LZS compression for Cisco compatibility | 5 | P1 |
 
 ### User Stories
 
-#### US-010: As a security engineer, I need external security audit
-**Priority**: P0 (Critical)
-**Story Points**: 21
-**Status**: PLANNED
-**Sprint**: Sprint 9-10
+**US-114**: As a VPN user, I want DTLS 1.2 support so that my data path uses lower-overhead UDP when available, with Cisco Secure Client compatibility via X-DTLS-Master-Secret bootstrap.
 
-**Description**:
-Conduct external security audit of wolfSSL migration by qualified security firm.
+**US-115**: As a VPN user, I want automatic channel switching so that data falls back from DTLS to CSTP when UDP is blocked, and recovers when UDP becomes available.
 
-**Acceptance Criteria**:
-- [ ] Security audit vendor contracted
-- [ ] Audit scope defined
-- [ ] Full code review completed
-- [ ] Penetration testing performed
-- [ ] Fuzzing campaign executed (72+ hours)
-- [ ] Audit report received
-- [ ] Zero critical vulnerabilities
-- [ ] <3 high-severity issues (all mitigated)
+**US-116**: As a developer, I want LZ4 compression so that VPN throughput improves on compressible traffic.
 
-**Dependencies**: US-008, US-009 (migration complete)
-
-**Notes**: MANDATORY, budgeted at $50k-100k
+**US-117**: As a Cisco client user, I want LZS compression so that my Cisco Secure Client can negotiate a compatible compression algorithm.
 
 ---
 
-#### US-011: As a Cisco user, I need my Cisco Secure Client to work
-**Priority**: P0 (Critical)
-**Story Points**: 13
-**Status**: PLANNED
-**Sprint**: Sprint 10-11
+## Epic 5: Security (S5)
 
-**Description**:
-Validate 100% compatibility with Cisco Secure Client 5.x and newer.
+**Sprint**: S5 (Weeks 9-10)
+**Focus**: wolfSentry, sandbox, firewall, fuzzing
+**Story Points**: 18
 
-**Acceptance Criteria**:
-- [ ] Cisco Secure Client 5.0-5.5 tested
-- [ ] All authentication methods work
-- [ ] TLS and DTLS modes functional
-- [ ] Windows, macOS, Linux clients tested
-- [ ] Split tunneling works
-- [ ] Always-on VPN works
-- [ ] 100% compatibility achieved
-
-**Dependencies**: US-008, US-009
-
-**Notes**: **RELEASE BLOCKER** if fails
-
----
-
-#### US-012: As a developer, I need all platforms tested
-**Priority**: P1 (High)
-**Story Points**: 8
-**Status**: PLANNED
-**Sprint**: Sprint 11
-
-**Description**:
-Test wolfguard on all supported platforms to ensure portability.
-
-**Acceptance Criteria**:
-- [ ] Ubuntu 22.04, 24.04 tested
-- [ ] Fedora 39, 40 tested
-- [ ] RHEL 9.x tested
-- [ ] Debian 12 tested
-- [ ] FreeBSD 13.x, 14.x tested
-- [ ] OpenBSD 7.x tested
-- [ ] All tests pass on all platforms
-
-**Dependencies**: US-008, US-009
-
-**Notes**: Platform support matrix
-
----
-
-## Epic 5: Optimization and Quality (Sprint 12-14)
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-118 | wolfSentry IDPS integration | 5 | P0 |
+| US-119 | seccomp BPF and Landlock sandboxing | 5 | P0 |
+| US-120 | Per-user nftables firewall chains | 5 | P1 |
+| US-121 | Fuzz targets for all parsers | 3 | P1 |
 
 ### User Stories
 
-#### US-013: As a performance engineer, I need optimized code
-**Priority**: P1 (High)
-**Story Points**: 8
-**Status**: PLANNED
-**Sprint**: Sprint 12
+**US-118**: As a VPN administrator, I want wolfSentry IDPS so that malicious connections are detected and rejected at the TLS ClientHello stage.
 
-**Description**:
-Profile and optimize wolfSSL integration to meet performance targets.
+**US-119**: As a security engineer, I want seccomp BPF and Landlock sandboxing on worker processes so that a compromised worker cannot access unauthorized syscalls or filesystem paths.
 
-**Acceptance Criteria**:
-- [ ] Hot paths profiled (perf, flamegraphs)
-- [ ] Critical paths optimized
-- [ ] Benchmarks run and validated
-- [ ] ≥5% handshake improvement achieved
-- [ ] ≥5% throughput improvement OR ≥10% CPU reduction
-- [ ] No memory usage increase
+**US-120**: As a VPN administrator, I want per-user nftables firewall chains so that each VPN user has isolated network access rules that are created on connect and destroyed on disconnect.
 
-**Dependencies**: US-008, US-009
-
-**Notes**: Performance targets from realistic estimates
+**US-121**: As a developer, I want LibFuzzer targets for CSTP, HTTP, TOML, protobuf, and TLS ClientHello parsers so that parsing bugs are discovered automatically.
 
 ---
 
-#### US-014: As a developer, I need all bugs fixed
-**Priority**: P0 (Critical)
-**Story Points**: 13
-**Status**: PLANNED
-**Sprint**: Sprint 13-14
+## Epic 6: Auth Expansion (S6)
 
-**Description**:
-Address all issues found during testing phases.
+**Sprint**: S6 (Weeks 11-12)
+**Focus**: RADIUS, LDAP, TOTP, certs, plugins
+**Story Points**: 17
 
-**Acceptance Criteria**:
-- [ ] All critical bugs fixed
-- [ ] All high-severity bugs fixed or mitigated
-- [ ] Medium/low bugs fixed or deferred
-- [ ] Regression testing passed
-- [ ] Code review complete
-- [ ] No known release blockers
-
-**Dependencies**: US-010, US-011, US-012 (testing complete)
-
-**Notes**: Bug fixing and stabilization
-
----
-
-## Epic 6: Documentation and Release (Sprint 15-17)
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-122 | RADIUS authentication via radcli | 3 | P1 |
+| US-123 | Direct LDAP/AD authentication | 5 | P1 |
+| US-124 | TOTP/HOTP two-factor authentication | 3 | P1 |
+| US-125 | Certificate authentication with template filtering | 3 | P1 |
+| US-126 | dlopen-based auth plugin API | 3 | P1 |
 
 ### User Stories
 
-#### US-015: As an administrator, I need complete documentation
-**Priority**: P0 (Critical)
-**Story Points**: 13
-**Status**: PLANNED
-**Sprint**: Sprint 15-16
+**US-122**: As a VPN administrator, I want RADIUS authentication so that users authenticate against enterprise RADIUS infrastructure.
 
-**Description**:
-Create comprehensive documentation for installation, configuration, and migration.
+**US-123**: As a VPN administrator, I want direct LDAP/AD authentication so that users authenticate against Active Directory without requiring sssd.
 
-**Acceptance Criteria**:
-- [ ] Installation guide (all platforms)
-- [ ] Migration guide (v1.x → v2.0)
-- [ ] Configuration reference
-- [ ] Troubleshooting guide
-- [ ] Security best practices
-- [ ] Developer documentation
-- [ ] All documentation reviewed
+**US-124**: As a VPN user, I want TOTP/HOTP two-factor authentication so that my VPN login requires a time-based or counter-based one-time password.
 
-**Dependencies**: US-014 (stable code)
+**US-125**: As a VPN administrator, I want certificate-based authentication with template filtering so that only certificates matching specific CN/SAN patterns are accepted.
 
-**Notes**: User-facing and developer documentation
+**US-126**: As a developer, I want a dlopen-based auth plugin API so that third-party authentication modules can be loaded at runtime.
 
 ---
 
-#### US-016: As a user, I want to test beta/RC releases
-**Priority**: P1 (High)
-**Story Points**: 8
-**Status**: PLANNED
-**Sprint**: Sprint 17
+## Epic 7: Management (S7)
 
-**Description**:
-Release beta and RC versions for public testing.
+**Sprint**: S7 (Weeks 13-14)
+**Focus**: CLI, REST API, metrics, logging
+**Story Points**: 18
 
-**Acceptance Criteria**:
-- [ ] v2.0.0-beta.1 released
-- [ ] Public testing feedback collected
-- [ ] Issues addressed
-- [ ] v2.0.0-rc.1 released
-- [ ] 1-week soak period with no critical issues
-- [ ] Ready for stable release
-
-**Dependencies**: US-015
-
-**Notes**: Public testing and validation
-
----
-
-#### US-017: As a user, I want a stable v2.0.0 release
-**Priority**: P0 (Critical)
-**Story Points**: 5
-**Status**: PLANNED
-**Sprint**: Sprint 17
-
-**Description**:
-Release wolfguard v2.0.0 stable with all packages and announcements.
-
-**Acceptance Criteria**:
-- [ ] v2.0.0 tag created
-- [ ] All packages built (RPM, DEB, source, Docker)
-- [ ] Release notes published
-- [ ] Website updated
-- [ ] Announcements sent (mailing list, social media)
-- [ ] Distribution maintainers notified
-
-**Dependencies**: US-016 (RC approved)
-
-**Notes**: MAJOR MILESTONE
-
----
-
-## Epic 7: Additional Library Migrations (Parallel Work)
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-127 | wgctl Juniper-style CLI | 5 | P1 |
+| US-128 | REST API over TLS | 5 | P1 |
+| US-129 | Prometheus metrics endpoint | 3 | P1 |
+| US-130 | Structured logging via stumpless | 5 | P0 |
 
 ### User Stories
 
-#### US-018: As a developer, I want modern event loop (libuv)
-**Priority**: P1 (High)
-**Story Points**: 13
-**Status**: PLANNED
-**Sprint**: TBD (can be parallel)
+**US-127**: As a VPN administrator, I want a Juniper-style CLI (wgctl) so that I can manage the server interactively with operational and configuration modes.
 
-**Description**:
-Migrate from libev to libuv for better cross-platform support.
+**US-128**: As a VPN administrator, I want a REST API over TLS so that I can automate server management and integrate with orchestration tools.
 
-**Acceptance Criteria**:
-- [ ] Event loop abstraction created
-- [ ] main.c migrated to libuv
-- [ ] worker.c migrated to libuv
-- [ ] All timers and I/O watchers ported
-- [ ] Integration tests pass
-- [ ] Performance validated
+**US-129**: As a monitoring engineer, I want a Prometheus /metrics endpoint so that I can collect connection counts, throughput, error rates, and latency metrics.
 
-**Dependencies**: US-006 (abstraction pattern)
-
-**Notes**: Can be done in parallel with TLS migration
+**US-130**: As a VPN administrator, I want structured RFC 5424 logging via stumpless so that logs are machine-parseable and compatible with centralized log aggregation.
 
 ---
 
-#### US-019: As a developer, I want modern HTTP parser (llhttp)
-**Priority**: P1 (High)
-**Story Points**: 5
-**Status**: PLANNED
-**Sprint**: TBD
+## Epic 8: PKI & Integration (S8)
 
-**Description**:
-Replace http-parser with llhttp for better performance and security.
+**Sprint**: S8 (Weeks 15-16)
+**Focus**: mini CA, split tunnel, E2E, docs
+**Story Points**: 18
 
-**Acceptance Criteria**:
-- [ ] llhttp integrated in worker-http.c
-- [ ] All HTTP parsing functional
-- [ ] HTTP protocol compliance tested
-- [ ] Security tested (fuzzing)
-- [ ] Performance improvement verified
+| ID | Story | Points | Priority |
+|----|-------|--------|----------|
+| US-131 | wgctl pki mini CA with wolfCrypt | 5 | P1 |
+| US-132 | Split tunnel and split DNS | 3 | P1 |
+| US-133 | End-to-end tests with openconnect | 5 | P0 |
+| US-134 | Documentation and deployment guide | 3 | P1 |
+| US-135 | Performance benchmarks | 2 | P2 |
 
-**Dependencies**: None (independent)
+### User Stories
 
-**Notes**: Low risk, high value
+**US-131**: As a VPN administrator, I want a built-in mini CA (wgctl pki) so that I can generate CA certificates, server certificates, client certificates, and CRLs without external tools.
 
----
+**US-132**: As a VPN administrator, I want split tunnel and split DNS support so that only designated traffic routes through the VPN while other traffic goes direct.
 
-#### US-020: As a developer, I want lightweight JSON library (cJSON)
-**Priority**: P2 (Medium)
-**Story Points**: 3
-**Status**: PLANNED
-**Sprint**: TBD
+**US-133**: As a developer, I want end-to-end tests with the openconnect client so that the full VPN session lifecycle is validated automatically in CI.
 
-**Description**:
-Replace jansson with cJSON for simpler, lighter JSON handling.
+**US-134**: As a VPN administrator, I want installation, configuration, and deployment documentation so that I can deploy wolfguard in production.
 
-**Acceptance Criteria**:
-- [ ] cJSON integrated
-- [ ] Configuration parsing works
-- [ ] OIDC JSON handling works
-- [ ] All tests pass
-
-**Dependencies**: None (independent)
-
-**Notes**: Nice to have, not critical
+**US-135**: As a developer, I want published performance benchmarks (handshake/s, Gbps, p99 latency) so that wolfguard performance is quantified and tracked.
 
 ---
 
-#### US-021: As a developer, I want high-performance allocator (mimalloc)
-**Priority**: P2 (Medium)
-**Story Points**: 5
-**Status**: PLANNED
-**Sprint**: TBD
+## Backlog Summary
 
-**Description**:
-Replace libtalloc with mimalloc for better performance and security.
-
-**Acceptance Criteria**:
-- [ ] Memory abstraction layer created
-- [ ] All allocations go through abstraction
-- [ ] mimalloc integrated
-- [ ] Memory leak testing clean
-- [ ] Performance improvement measured
-
-**Dependencies**: None (independent)
-
-**Notes**: Performance optimization
-
----
-
-#### US-022: As a developer, I want simple CLI library (linenoise)
-**Priority**: P3 (Low)
-**Story Points**: 2
-**Status**: PLANNED
-**Sprint**: TBD
-
-**Description**:
-Replace libreadline with linenoise in occtl for simpler dependency.
-
-**Acceptance Criteria**:
-- [ ] linenoise integrated in occtl
-- [ ] Interactive CLI works
-- [ ] History functional
-- [ ] Tab completion works (if needed)
-
-**Dependencies**: None (independent)
-
-**Notes**: Minor improvement, low priority
-
----
-
-## Deferred / Not Planned
-
-### ❌ DO NOT IMPLEMENT
-
-#### ~~US-023~~: ~~As a developer, I want Cap'n Proto for IPC~~
-**Priority**: ❌ REJECTED
-**Story Points**: N/A
-**Status**: REJECTED
-
-**Rationale**: IPC is not a performance bottleneck. Migration adds risk without proven benefit. Keep protobuf-c.
-
-**Decision**: FINAL - Not open for reconsideration in v2.0
-
----
-
-## Backlog Grooming
-
-### Grooming Schedule
-
-- **Weekly Backlog Review**: Every Monday, 1 hour
-- **Major Grooming Session**: Every 4 weeks (between epics)
-
-### Grooming Activities
-
-- **Refinement**: Break down large stories (>13 SP)
-- **Estimation**: Re-estimate stories as understanding improves
-- **Prioritization**: Adjust priorities based on learnings
-- **Dependencies**: Update dependency graph
-- **Acceptance Criteria**: Clarify and expand as needed
-
----
-
-## Backlog Health Metrics
-
-### Current State
-
-- **Total Stories**: 23 (22 approved, 1 rejected)
-- **Total Estimated SP**: ~250 SP
-- **P0 (Critical)**: 13 stories
-- **P1 (High)**: 6 stories
-- **P2 (Medium)**: 3 stories
-- **P3 (Low)**: 1 story
+| Epic | Sprint | Stories | Story Points |
+|------|--------|---------|-------------|
+| 1. Foundation | S1 | 5 | 19 |
+| 2. TLS & Authentication | S2 | 5 | 19 |
+| 3. VPN Core | S3 | 4 | 18 |
+| 4. DTLS & Compression | S4 | 4 | 16 |
+| 5. Security | S5 | 4 | 18 |
+| 6. Auth Expansion | S6 | 5 | 17 |
+| 7. Management | S7 | 4 | 18 |
+| 8. PKI & Integration | S8 | 5 | 18 |
+| **Total** | | **36** | **143** |
 
 ### Velocity Projection
 
-Assuming team velocity of ~15 SP/sprint (2 developers, 2 weeks):
-- **Estimated Sprints**: ~17 sprints
-- **Estimated Duration**: ~34 calendar weeks
-
-With contingency (30%): **~45-50 weeks** (aligns with realistic estimate)
+Assuming velocity of ~18 SP/sprint (1 developer + Claude AI, 2-week sprints):
+- **Estimated Sprints**: 8
+- **Estimated Duration**: ~16 calendar weeks
 
 ---
 
-## Definition of Ready (DoR)
-
-Before a story enters a sprint, it must meet:
-
-- [ ] Story is clearly defined and understood
-- [ ] Acceptance criteria are specific and testable
-- [ ] Story is estimated (story points assigned)
-- [ ] Dependencies are identified and documented
-- [ ] Priority is assigned
-- [ ] Technical approach is understood
-- [ ] No blocking dependencies
-
----
-
-## Definition of Done (DoD)
-
-For a story to be marked complete, it must meet:
-
-- [ ] All acceptance criteria met
-- [ ] Code written and reviewed
-- [ ] Unit tests written and passing (≥80% coverage)
-- [ ] Integration tests passing (if applicable)
-- [ ] Documentation updated
-- [ ] No critical bugs introduced
-- [ ] Peer reviewed and approved
-- [ ] Merged to main branch
-- [ ] Deployed to test environment and validated
-
----
-
-**Document Version**: 1.0
-**Last Updated**: 2025-10-29
-**Next Review**: 2025-11-05 (weekly grooming)
+**Document Version**: 2.0
+**Last Updated**: 2026-03-07
+**Next Review**: After S1 sprint planning

@@ -1,0 +1,420 @@
+FROM oraclelinux:10
+
+LABEL maintainer="wolfguard development team"
+LABEL description="Development environment for wolfguard with wolfSSL and modern C libraries"
+
+# Build arguments for tool versions
+ARG CMAKE_VERSION=4.2.3
+ARG DOXYGEN_VERSION=1.16.1
+ARG UNITY_VERSION=2.6.1
+ARG CMOCK_VERSION=2.6.0
+ARG CEEDLING_VERSION=1.0.1
+ARG WOLFSSL_VERSION=5.8.2
+ARG WOLFSENTRY_VERSION=1.6.2
+ARG LIBURING_VERSION=2.14
+ARG YYJSON_VERSION=0.12.0
+ARG LLHTTP_VERSION=9.3.1
+ARG CARES_VERSION=1.34.6
+ARG MIMALLOC_VERSION=3.2.8
+ARG CJSON_VERSION=1.7.19
+ARG LIBNFTNL_VERSION=1.3.1
+ARG PROTOBUF_C_VERSION=1.5.2
+ARG STUMPLESS_VERSION=2.2.0
+
+# Enable CodeReady Builder repo (for -devel packages not in baseos/appstream)
+RUN dnf install -y oraclelinux-developer-release-el10 && \
+    dnf config-manager --set-enabled ol10_codeready_builder && \
+    dnf clean all
+
+# Install base development tools
+RUN dnf install -y \
+    gcc \
+    gcc-c++ \
+    clang \
+    lld \
+    make \
+    autoconf \
+    automake \
+    libtool \
+    pkgconfig \
+    git \
+    vim \
+    gdb \
+    valgrind \
+    strace \
+    wget \
+    curl \
+    tar \
+    xz \
+    bzip2 \
+    patch \
+    flex \
+    bison \
+    && dnf clean all
+
+# Install system dependencies from OL10 repos (baseos + codeready_builder)
+RUN dnf install -y \
+    pam-devel \
+    libseccomp-devel \
+    readline-devel \
+    lz4-devel \
+    libnl3-devel \
+    krb5-devel \
+    gnutls-devel \
+    nettle-devel \
+    gmp-devel \
+    libtasn1-devel \
+    p11-kit-devel \
+    openssl-devel \
+    openldap-devel \
+    gettext-devel \
+    libmnl-devel \
+    protobuf-devel \
+    protobuf-compiler \
+    && dnf clean all
+
+# Install code quality and documentation tools
+RUN dnf install -y \
+    clang-tools-extra \
+    graphviz \
+    python3 \
+    python3-pip \
+    ruby \
+    ruby-devel \
+    rubygems \
+    && dnf clean all
+
+# Install ninja from PyPI (not in OL10 repos)
+RUN pip3 install ninja
+
+# Install Ruby gems for Ceedling
+RUN gem install --no-document \
+    rake \
+    thor \
+    constructor \
+    deep_merge
+
+# Build and install CMake from source
+RUN cd /tmp && \
+    wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
+    tar xzf cmake-${CMAKE_VERSION}.tar.gz && \
+    cd cmake-${CMAKE_VERSION} && \
+    ./bootstrap --prefix=/usr/local --parallel=$(nproc) && \
+    make -j$(nproc) && \
+    make install && \
+    cd /tmp && rm -rf cmake-*
+
+# Build and install cppcheck from source
+RUN cd /tmp && \
+    git clone --depth 1 --branch 2.18.3 https://github.com/danmar/cppcheck.git && \
+    cd cppcheck && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    cd /tmp && rm -rf cppcheck
+
+# Build and install Doxygen from source
+RUN cd /tmp && \
+    wget https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION//./_}.tar.gz && \
+    tar xzf Release_${DOXYGEN_VERSION//./_}.tar.gz && \
+    cd doxygen-Release_${DOXYGEN_VERSION//./_} && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    cd /tmp && rm -rf doxygen-* Release_*
+
+# Install Unity testing framework
+RUN cd /tmp && \
+    wget https://github.com/ThrowTheSwitch/Unity/archive/refs/tags/v${UNITY_VERSION}.tar.gz && \
+    tar xzf v${UNITY_VERSION}.tar.gz && \
+    cd Unity-${UNITY_VERSION} && \
+    mkdir -p /usr/local/include/unity && \
+    mkdir -p /usr/local/src/unity && \
+    cp src/unity.h src/unity_internals.h /usr/local/include/unity/ && \
+    cp src/unity.c /usr/local/src/unity/ && \
+    cp -r extras /usr/local/src/unity/ && \
+    cd /tmp && rm -rf Unity-* v${UNITY_VERSION}.tar.gz
+
+# Install CMock
+RUN cd /tmp && \
+    wget https://github.com/ThrowTheSwitch/CMock/archive/refs/tags/v${CMOCK_VERSION}.tar.gz && \
+    tar xzf v${CMOCK_VERSION}.tar.gz && \
+    cd CMock-${CMOCK_VERSION} && \
+    mkdir -p /usr/local/lib/cmock /usr/local/src/cmock && \
+    cp -r lib/* /usr/local/lib/cmock/ && \
+    cp -r src/* /usr/local/src/cmock/ && \
+    cd /tmp && rm -rf CMock-* v${CMOCK_VERSION}.tar.gz
+
+# Install Ceedling
+RUN gem install --no-document ceedling -v ${CEEDLING_VERSION}
+
+# ═══════════════════════════════════════════════════════
+# Core Crypto & Security
+# ═══════════════════════════════════════════════════════
+
+# Build and install wolfSSL from source (GPLv3)
+# NOTE: --disable-sp-asm due to GCC 14 register syntax incompatibility
+RUN cd /tmp && \
+    wget https://github.com/wolfSSL/wolfssl/archive/refs/tags/v${WOLFSSL_VERSION}-stable.tar.gz && \
+    tar xzf v${WOLFSSL_VERSION}-stable.tar.gz && \
+    cd wolfssl-${WOLFSSL_VERSION}-stable && \
+    ./autogen.sh && \
+    ./configure \
+        --enable-tls13 \
+        --enable-dtls \
+        --enable-dtls13 \
+        --enable-session-ticket \
+        --enable-alpn \
+        --enable-sni \
+        --enable-secure-renegotiation \
+        --enable-extended-master \
+        --enable-ocsp \
+        --enable-crl \
+        --enable-aesni \
+        --enable-intelasm \
+        --disable-oldtls \
+        --enable-harden \
+        --enable-sp \
+        --disable-sp-asm \
+        --enable-opensslextra \
+        --enable-opensslall \
+        --enable-curve25519 \
+        --enable-ed25519 \
+        --enable-sha3 \
+        --enable-shake256 \
+        --enable-postauth \
+        --enable-hrrcookie \
+        --enable-quic \
+        --prefix=/usr/local \
+        CFLAGS="-std=gnu11 -O2 -g -fstack-protector-strong" \
+        LDFLAGS="-Wl,-z,relro -Wl,-z,now" && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf wolfssl-*
+
+# Build and install wolfSentry from source (GPLv2)
+# NOTE: -Wno-error=inline for GCC 14 compatibility with v1.6.2
+RUN cd /tmp && \
+    wget https://github.com/wolfSSL/wolfsentry/archive/refs/tags/v${WOLFSENTRY_VERSION}.tar.gz && \
+    tar xzf v${WOLFSENTRY_VERSION}.tar.gz && \
+    cd wolfsentry-${WOLFSENTRY_VERSION} && \
+    make -j$(nproc) \
+        EXTRA_CFLAGS="-O2 -g -fstack-protector-strong -Wno-error=inline" \
+        PREFIX=/usr/local && \
+    make install PREFIX=/usr/local && \
+    ldconfig && \
+    cd /tmp && rm -rf wolfsentry-*
+
+# ═══════════════════════════════════════════════════════
+# Network & I/O
+# ═══════════════════════════════════════════════════════
+
+# Build and install liburing from source
+RUN cd /tmp && \
+    wget https://github.com/axboe/liburing/archive/refs/tags/liburing-${LIBURING_VERSION}.tar.gz && \
+    tar xzf liburing-${LIBURING_VERSION}.tar.gz && \
+    cd liburing-liburing-${LIBURING_VERSION} && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf liburing-*
+
+# Build and install llhttp from source
+RUN cd /tmp && \
+    wget https://github.com/nodejs/llhttp/archive/refs/tags/release/v${LLHTTP_VERSION}.tar.gz && \
+    tar xzf v${LLHTTP_VERSION}.tar.gz && \
+    cd llhttp-release-v${LLHTTP_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_SHARED_LIBS=ON && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf llhttp-*
+
+# Build and install c-ares from source
+RUN cd /tmp && \
+    wget https://github.com/c-ares/c-ares/releases/download/v${CARES_VERSION}/c-ares-${CARES_VERSION}.tar.gz && \
+    tar xzf c-ares-${CARES_VERSION}.tar.gz && \
+    cd c-ares-${CARES_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf c-ares-*
+
+# Build and install libnftnl from source (OL10 has 1.2.8, missing array overrun fix)
+# Requires libmnl-devel from OL10 repos
+RUN cd /tmp && \
+    wget https://www.netfilter.org/projects/libnftnl/files/libnftnl-${LIBNFTNL_VERSION}.tar.xz && \
+    tar xJf libnftnl-${LIBNFTNL_VERSION}.tar.xz && \
+    cd libnftnl-${LIBNFTNL_VERSION} && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf libnftnl-*
+
+# ═══════════════════════════════════════════════════════
+# Data & Configuration
+# ═══════════════════════════════════════════════════════
+
+# Build and install yyjson from source
+RUN cd /tmp && \
+    wget https://github.com/ibireme/yyjson/archive/refs/tags/${YYJSON_VERSION}.tar.gz && \
+    tar xzf ${YYJSON_VERSION}.tar.gz && \
+    cd yyjson-${YYJSON_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf yyjson-*
+
+# Build and install cJSON from source
+RUN cd /tmp && \
+    git clone --depth 1 --branch v${CJSON_VERSION} https://github.com/DaveGamble/cJSON.git && \
+    cd cJSON && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DENABLE_CJSON_TEST=OFF && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf cJSON
+
+# Build and install protobuf-c from source
+RUN cd /tmp && \
+    wget https://github.com/protobuf-c/protobuf-c/releases/download/v${PROTOBUF_C_VERSION}/protobuf-c-${PROTOBUF_C_VERSION}.tar.gz && \
+    tar xzf protobuf-c-${PROTOBUF_C_VERSION}.tar.gz && \
+    cd protobuf-c-${PROTOBUF_C_VERSION} && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf protobuf-c-*
+
+# Build and install tomlc99 from source
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/cktan/tomlc99.git && \
+    cd tomlc99 && \
+    make && \
+    make install PREFIX=/usr/local && \
+    ldconfig && \
+    cd /tmp && rm -rf tomlc99
+
+# ═══════════════════════════════════════════════════════
+# System & Memory
+# ═══════════════════════════════════════════════════════
+
+# Build and install mimalloc from source
+RUN cd /tmp && \
+    git clone --depth 1 --branch v${MIMALLOC_VERSION} https://github.com/microsoft/mimalloc.git && \
+    cd mimalloc && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DMI_BUILD_TESTS=OFF \
+        -DMI_SECURE=ON && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf mimalloc
+
+# ═══════════════════════════════════════════════════════
+# Authentication
+# ═══════════════════════════════════════════════════════
+
+# Build and install radcli from source
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/radcli/radcli.git && \
+    cd radcli && \
+    touch config.rpath && \
+    autoreconf -fi && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf radcli
+
+# Build and install liboath (oath-toolkit) from source
+RUN cd /tmp && \
+    wget https://download.savannah.nongnu.org/releases/oath-toolkit/oath-toolkit-2.6.12.tar.gz && \
+    tar xzf oath-toolkit-2.6.12.tar.gz && \
+    cd oath-toolkit-2.6.12 && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf oath-toolkit-*
+
+# ═══════════════════════════════════════════════════════
+# Logging
+# ═══════════════════════════════════════════════════════
+
+# Build and install stumpless from source (RFC 5424 structured logging)
+RUN cd /tmp && \
+    wget https://github.com/goatshriek/stumpless/archive/refs/tags/v${STUMPLESS_VERSION}.tar.gz && \
+    tar xzf v${STUMPLESS_VERSION}.tar.gz && \
+    cd stumpless-${STUMPLESS_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_TESTING=OFF && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf stumpless-*
+
+# ═══════════════════════════════════════════════════════
+# Misc
+# ═══════════════════════════════════════════════════════
+
+# Install linenoise (header-only)
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/antirez/linenoise.git && \
+    cp linenoise/linenoise.h /usr/local/include/ && \
+    cp linenoise/linenoise.c /usr/local/src/ && \
+    rm -rf /tmp/linenoise
+
+# Install mold linker for fast debug builds
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/rui314/mold.git && \
+    cd mold && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    cd /tmp && rm -rf mold
+
+# Create workspace directory
+RUN mkdir -p /workspace
+
+# Update ldconfig cache
+RUN ldconfig
+
+WORKDIR /workspace
+
+CMD ["/bin/bash"]

@@ -1,0 +1,44 @@
+syntax = "proto3";
+package wg_ipc;
+
+enum MsgType {
+    MSG_TYPE_UNKNOWN = 0;
+    MSG_TYPE_AUTH_REQUEST = 1;
+    MSG_TYPE_AUTH_RESPONSE = 2;
+    MSG_TYPE_SESSION_OPEN = 3;
+    MSG_TYPE_SESSION_CLOSE = 4;
+    MSG_TYPE_WORKER_STATUS = 5;
+    MSG_TYPE_CONFIG_RELOAD = 6;
+    MSG_TYPE_SHUTDOWN = 7;
+}
+
+message IpcHeader {
+    MsgType type = 1;
+    uint32 seq = 2;
+}
+
+message AuthRequest {
+    IpcHeader header = 1;
+    string username = 2;
+    string group = 3;
+    bytes cookie = 4;
+    string source_ip = 5;
+}
+
+message AuthResponse {
+    IpcHeader header = 1;
+    bool success = 2;
+    string error_msg = 3;
+    bytes session_cookie = 4;
+    uint32 session_ttl = 5;
+    string assigned_ip = 6;
+    string dns_server = 7;
+}
+
+message WorkerStatus {
+    IpcHeader header = 1;
+    uint32 active_connections = 2;
+    uint64 bytes_rx = 3;
+    uint64 bytes_tx = 4;
+    uint32 pid = 5;
+}

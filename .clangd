@@ -1,0 +1,27 @@
+CompileFlags:
+  Add:
+    - -std=c23
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+  CompilationDatabase: build/clang-debug
+
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - cert-*
+      - clang-analyzer-security.*
+      - performance-*
+    Remove:
+      - bugprone-easily-swappable-parameters
+
+InlayHints:
+  Enabled: true
+  DeducedTypes: true
+  ParameterNames: true
+
+Hover:
+  ShowAKA: true

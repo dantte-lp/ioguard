@@ -1,345 +1,282 @@
-# Sprint Planning and Retrospectives - wolfguard
+# Sprint Planning - wolfguard
 
 **Project**: wolfguard v2.0.0
+**Team**: 1 developer + Claude AI
 **Sprint Duration**: 2 weeks
-**Team Size**: 2 developers
-**Sprint Start Day**: Monday
-**Sprint Review Day**: Friday (Week 2)
-**Sprint Retrospective**: Friday (Week 2, after review)
+**Total Sprints**: 8 (~16 weeks)
+**Last Updated**: 2026-03-07
 
 ---
 
-## Sprint 0: Project Initialization
+## Sprint Ceremonies
 
-**Duration**: 2025-10-29 to 2025-11-12 (2 weeks)
-**Status**: IN PROGRESS
-**Sprint Goal**: Establish project infrastructure, development environment, and begin critical analysis
+### Daily Async Standup (Claude)
+- Developer posts progress, blockers, and next steps asynchronously
+- Claude reviews and provides feedback, suggestions, and unblocking guidance
+- Format: What I did / What I plan to do / Blockers
 
-### Sprint Planning (2025-10-29)
+### Weekly Review
+- End of each week: review completed work against sprint goals
+- Demo working code (build, tests passing, functionality verified)
+- Adjust remaining sprint scope if needed
 
-#### Team Capacity
-- Developer 1: 10 days (80 hours)
-- Developer 2: 10 days (80 hours)
-- **Total**: 160 hours
+### Retrospective
+- End of each sprint (Friday, Week 2)
+- What went well / What could be improved / Action items
+- Update velocity tracking and adjust future sprint capacity
 
-#### Sprint Backlog
+---
 
-| ID | Task | Assignee | Estimate | Priority |
-|----|------|----------|----------|----------|
-| S0-1 | Create GitHub repository | Dev1 | 1h | P0 |
-| S0-2 | Set up project structure | Dev1 | 2h | P0 |
-| S0-3 | Create Podman dev environment | Dev1 | 8h | P0 |
-| S0-4 | Document release policy | Dev1 | 4h | P1 |
-| S0-5 | Create documentation templates | Dev1 | 4h | P1 |
-| S0-6 | Analyze upstream ocserv codebase | Dev2 | 40h | P0 |
-| S0-7 | Map all GnuTLS API usage | Dev2 | 20h | P0 |
-| S0-8 | Set up CI/CD pipeline (basic) | Dev1 | 16h | P1 |
-| S0-9 | Create benchmarking framework | Dev2 | 16h | P1 |
-| S0-10 | Establish GnuTLS baseline metrics | Dev2 | 16h | P1 |
-| S0-11 | Write comprehensive refactoring plan | Dev1 | 16h | P0 |
-| S0-12 | Set up Agile framework documents | Dev1 | 8h | P1 |
+## Phase 0 -- Exploration (Completed)
 
-**Total Estimated**: 151 hours (within capacity)
+### Sprint 0: Project Initialization (2025-10-29 to 2025-11-12)
+**Status**: COMPLETED
 
-#### Sprint Goals (Definition of Done)
+Established project infrastructure, development environment, and agile framework.
 
-- [x] GitHub repository created and team has access
-- [x] Project structure complete with all directories
-- [x] Podman containers built and tested
-- [x] Release policy documented
-- [x] Documentation templates created
-- [ ] CI/CD pipeline operational (basic build)
-- [ ] Upstream codebase analyzed, GnuTLS usage mapped
-- [ ] Benchmarking framework functional
-- [ ] Baseline performance metrics collected
+**Completed**:
+- [x] Repository created with project structure
+- [x] Podman development containers built and tested
+- [x] Release policy and documentation templates created
+- [x] Agile framework documents established
 - [x] Comprehensive refactoring plan written
-- [x] Agile framework established
 
-### Daily Standups
+### Sprint 1: Critical Analysis and PoC (2025-11-13 to 2025-11-27)
+**Status**: COMPLETED
 
-#### 2025-10-29 (Day 1)
-- **Dev1**: Started repository setup, project structure
-- **Dev2**: Not yet started (waiting for infrastructure)
-- **Blockers**: None
+Analyzed upstream ocserv codebase. GnuTLS API audit identified 94 unique functions (457 occurrences). Developed wolfSSL proof-of-concept. GO decision made.
 
-#### 2025-10-30 (Day 2)
-- **Dev1**: TBD
-- **Dev2**: TBD
-- **Blockers**: TBD
+**Completed**:
+- [x] GnuTLS API audit complete
+- [x] Upstream ocserv architecture documented
+- [x] wolfSSL TLS proof-of-concept developed
+- [x] Performance baseline established
+- [x] GO/NO-GO decision: GO
 
-#### 2025-10-31 (Day 3)
-- **Dev1**: TBD
-- **Dev2**: TBD
-- **Blockers**: TBD
+### Sprint 2: Architecture and Design (2025-11-28 to 2025-12-12)
+**Status**: COMPLETED
 
-(Continue daily standups...)
+Designed new architecture (three-process model, io_uring-only I/O, wolfSSL native API). Produced architecture design document.
 
-### Sprint Review (2025-11-12)
-
-**Attendees**: Dev1, Dev2, Product Owner, Stakeholders
-
-#### Completed Items
-- [TBD after sprint]
-
-#### Incomplete Items
-- [TBD after sprint]
-
-#### Demonstration
-- [TBD after sprint]
-
-#### Metrics
-- **Planned Story Points**: TBD
-- **Completed Story Points**: TBD
-- **Velocity**: TBD
-- **Sprint Burndown**: [Chart TBD]
-
-### Sprint Retrospective (2025-11-12)
-
-#### What Went Well
-- [TBD after sprint]
-
-#### What Could Be Improved
-- [TBD after sprint]
-
-#### Action Items for Next Sprint
-- [TBD after sprint]
-
-#### Team Mood
-- Dev1: [TBD]
-- Dev2: [TBD]
+**Completed**:
+- [x] Three-process model designed (Main, sec-mod, Workers)
+- [x] io_uring-only I/O subsystem designed
+- [x] Technology stack finalized
+- [x] Architecture design document approved
 
 ---
 
-## Sprint 1: Critical Analysis and Proof of Concept
+## Sprint Roadmap
 
-**Duration**: 2025-11-13 to 2025-11-27 (2 weeks)
-**Status**: PLANNED
-**Sprint Goal**: Complete critical analysis, develop PoC, make GO/NO-GO decision
-
-### Sprint Planning (2025-11-13)
-
-#### Team Capacity
-- Developer 1: 10 days (80 hours)
-- Developer 2: 10 days (80 hours)
-- **Total**: 160 hours
-
-#### Sprint Backlog
-
-| ID | Task | Assignee | Estimate | Priority |
-|----|------|----------|----------|----------|
-| S1-1 | Complete GnuTLS API audit | Dev2 | 16h | P0 |
-| S1-2 | Document certificate handling flows | Dev2 | 8h | P0 |
-| S1-3 | Analyze multi-process IPC patterns | Dev1 | 8h | P1 |
-| S1-4 | Profile current ocserv under load | Dev2 | 16h | P0 |
-| S1-5 | Identify actual bottlenecks | Dev2 | 8h | P0 |
-| S1-6 | Develop minimal TLS PoC (wolfSSL) | Dev1 | 32h | P0 |
-| S1-7 | Benchmark PoC vs GnuTLS | Dev2 | 16h | P0 |
-| S1-8 | Security review of PoC | Both | 16h | P0 |
-| S1-9 | Security audit vendor selection | PM | 8h | P0 |
-| S1-10 | Create risk register | Dev1 | 8h | P0 |
-| S1-11 | Document rollback procedures | Dev1 | 8h | P1 |
-| S1-12 | Prepare GO/NO-GO decision doc | Dev1 | 16h | P0 |
-
-**Total Estimated**: 160 hours (at capacity)
-
-#### Sprint Goals (Definition of Done)
-
-- [ ] GnuTLS API audit complete
-- [ ] Baseline performance report finalized
-- [ ] PoC demonstrates ≥10% improvement (or fails)
-- [ ] Security audit vendor selected and contracted
-- [ ] Risk register complete with mitigations
-- [ ] GO/NO-GO decision made by stakeholders
-
-#### Critical Milestone
-
-**END OF SPRINT**: GO/NO-GO Decision Gate
-- If PoC succeeds: Continue to Sprint 2
-- If PoC fails: Halt project, consider alternatives
+| Sprint | Focus | Weeks |
+|--------|-------|-------|
+| S1 | Foundation: io_uring wrapper, process model, IPC (SOCK_SEQPACKET + protobuf-c), TOML config, mimalloc | 1-2 |
+| S2 | TLS & Auth: wolfSSL integration (TLS 1.3, callback I/O), PAM auth, sec-mod process, session cookies, llhttp | 3-4 |
+| S3 | VPN Tunnel: CSTP protocol (framing, packets), TUN I/O via io_uring, worker process, DPD state machine | 5-6 |
+| S4 | DTLS & Compression: DTLS 1.2 (Cisco, master secret bootstrap), channel switching, LZ4/LZS | 7-8 |
+| S5 | Security Hardening: wolfSentry IDPS, seccomp BPF, Landlock, nftables per-user chains, fuzz targets | 9-10 |
+| S6 | Auth Expansion: RADIUS (radcli), LDAP (libldap), TOTP (liboath), cert auth, plugin API (dlopen) | 11-12 |
+| S7 | Management: wgctl CLI (Juniper-style), REST API (llhttp+io_uring), Prometheus metrics, stumpless logging | 13-14 |
+| S8 | PKI & Polish: wgctl pki mini CA (wolfCrypt), split tunnel/DNS, E2E tests, docs, benchmarks | 15-16 |
 
 ---
 
-## Sprint 2: TLS Abstraction Layer
+## S1 -- Foundation (Weeks 1-2)
 
-**Duration**: 2025-11-28 to 2025-12-12 (2 weeks)
-**Status**: PLANNED (Conditional on Sprint 1 GO decision)
-**Sprint Goal**: Implement TLS abstraction layer enabling dual-build capability
+**Sprint Goal**: Build the core infrastructure -- io_uring event loop, process spawning, IPC, configuration, and memory allocation.
 
-### Sprint Planning (TBD)
+### Deliverables
 
-[To be filled during sprint planning meeting]
+- `src/io/` -- io_uring wrapper (accept, read, write, timeout, buffer rings)
+- `src/core/main.c` -- Main process, pidfd_spawn workers, signalfd
+- `src/ipc/` -- SOCK_SEQPACKET + protobuf-c message definitions
+- `src/config/` -- TOML parser (tomlc99), config structures, validation
+- `src/utils/memory.c` -- mimalloc setup, arena allocator for IPC
+- Unit tests for all modules
+- CI: CMake presets, sanitizers (ASan+UBSan, MSan), clang-format/tidy
 
----
+### Definition of Done
 
-## Sprint 3: Dual-Build System and Testing
-
-**Duration**: 2025-12-13 to 2026-01-02 (includes holiday break)
-**Status**: PLANNED
-**Sprint Goal**: Complete dual-build system, establish testing infrastructure
-
-[Details TBD]
-
----
-
-## Sprint 4-5: Core TLS Migration (Part 1)
-
-**Duration**: 4 weeks
-**Status**: PLANNED
-**Sprint Goal**: Migrate basic TLS connection handling
-
-[Details TBD]
+- [ ] io_uring event loop handles accept, recv, send, timeout
+- [ ] Main process spawns and monitors child processes via pidfd_spawn
+- [ ] IPC messages serialize/deserialize correctly over SOCK_SEQPACKET
+- [ ] TOML configuration loads and validates
+- [ ] mimalloc integrated, all allocations routed through wg_ wrappers
+- [ ] All unit tests pass under ASan+UBSan and MSan
 
 ---
 
-## Sprint 6-7: Core TLS Migration (Part 2)
+## S2 -- TLS & Auth (Weeks 3-4)
 
-**Duration**: 4 weeks
-**Status**: PLANNED
-**Sprint Goal**: Migrate certificate authentication and DTLS
+**Sprint Goal**: Integrate wolfSSL for TLS 1.3, implement PAM authentication via sec-mod, and establish session cookie management.
 
-[Details TBD]
+### Deliverables
 
----
+- `src/crypto/tls_wolfssl.c` -- wolfSSL context, callback I/O, cipher config
+- `src/auth/pam.c` -- PAM authentication via sec-mod
+- `src/core/secmod.c` -- sec-mod process, auth request/response IPC
+- `src/core/session.c` -- Session cookie create/validate (constant-time)
+- `src/network/http.c` -- llhttp integration, CSTP HTTP negotiation
+- Integration test: full TLS handshake + PAM auth flow
 
-## Sprint 8-11: Testing and Validation
+### Definition of Done
 
-**Duration**: 8 weeks
-**Status**: PLANNED
-**Sprint Goal**: Comprehensive testing, security audit, client compatibility
-
-[Details TBD]
-
----
-
-## Sprint 12-14: Optimization and Bug Fixing
-
-**Duration**: 6 weeks
-**Status**: PLANNED
-**Sprint Goal**: Performance optimization, bug fixing, final security review
-
-[Details TBD]
+- [ ] wolfSSL TLS 1.3 handshake completes with callback I/O over io_uring
+- [ ] sec-mod process handles PAM auth requests via IPC
+- [ ] Session cookies generated, validated, and zeroed after use
+- [ ] HTTP POST /auth and CONNECT /CSTPID parsed correctly via llhttp
+- [ ] Integration test demonstrates end-to-end auth flow
 
 ---
 
-## Sprint 15-17: Documentation and Release
+## S3 -- VPN Tunnel (Weeks 5-6)
 
-**Duration**: 6 weeks
-**Status**: PLANNED
-**Sprint Goal**: Complete documentation, beta/RC releases, stable release
+**Sprint Goal**: Implement the CSTP VPN tunnel with TUN device I/O, worker process multiplexing, and Dead Peer Detection.
 
-[Details TBD]
+### Deliverables
+
+- `src/network/cstp.c` -- CSTP framing, packet encode/decode
+- `src/network/tun.c` -- TUN device allocation, io_uring read/write
+- `src/core/worker.c` -- Worker process, connection multiplexing
+- `src/network/dpd.c` -- Dead Peer Detection state machine
+- Integration test: tunnel up, ping through
+
+### Definition of Done
+
+- [ ] CSTP framing encodes/decodes data, DPD, and control packets
+- [ ] TUN device allocated and I/O driven by io_uring
+- [ ] Worker process multiplexes multiple client connections
+- [ ] DPD state machine detects dead peers (30s interval, 3 missed = dead)
+- [ ] Integration test: network -> TLS -> TUN round-trip operational
 
 ---
 
-## Sprint Metrics and Velocity
+## S4 -- DTLS & Compression (Weeks 7-8)
 
-### Velocity Tracking
+**Sprint Goal**: Add DTLS 1.2 for Cisco client compatibility, implement channel switching, and integrate compression codecs.
 
-| Sprint | Planned SP | Completed SP | Velocity | Trend |
+### Deliverables
+
+- `src/network/dtls.c` -- DTLS 1.2 with X-DTLS-Master-Secret bootstrap
+- `src/network/channel.c` -- CSTP/DTLS channel switching logic
+- `src/network/compress.c` -- Compression abstraction (LZ4, LZS)
+- `src/network/compress_lzs.c` -- LZS implementation (Cisco compatibility)
+- Integration test: DTLS session establishment, channel fallback
+
+### Definition of Done
+
+- [ ] DTLS 1.2 session established via master secret bootstrap
+- [ ] Channel switching: DTLS primary, CSTP fallback, DPD-triggered transition
+- [ ] LZ4 and LZS codecs compress/decompress correctly
+- [ ] Compression negotiated via X-CSTP-Accept-Encoding headers
+- [ ] Integration test: DTLS active, falls back to CSTP on DPD failure
+
+---
+
+## S5 -- Security Hardening (Weeks 9-10)
+
+**Sprint Goal**: Harden the server with IDPS, kernel sandboxing, per-user firewall rules, and fuzz testing targets.
+
+### Deliverables
+
+- `src/security/wolfsentry.c` -- wolfSentry init, connection checking, JSON config
+- `src/security/sandbox.c` -- seccomp BPF filter, Landlock filesystem rules
+- `src/security/firewall.c` -- nftables per-user chains (libmnl + libnftnl)
+- wolfSSL AcceptFilter integration
+- Fuzz targets: CSTP parser, HTTP parser, TOML parser, protobuf, TLS ClientHello
+
+### Definition of Done
+
+- [ ] wolfSentry checks connections on TLS ClientHello (reject -> close)
+- [ ] seccomp BPF restricts worker syscalls to allowlist
+- [ ] Landlock restricts worker filesystem access
+- [ ] nftables per-user chains created/destroyed on session lifecycle
+- [ ] All fuzz targets build and run 100K+ iterations clean under ASan
+
+---
+
+## S6 -- Auth Expansion (Weeks 11-12)
+
+**Sprint Goal**: Expand authentication backends and implement the plugin API for third-party auth modules.
+
+### Deliverables
+
+- `src/auth/radius.c` -- RADIUS authentication via radcli
+- `src/auth/ldap.c` -- Direct LDAP/AD authentication via libldap
+- `src/auth/totp.c` -- TOTP/HOTP via liboath
+- `src/auth/cert.c` -- Certificate authentication with template filtering
+- `src/auth/plugin.c` -- dlopen-based plugin API
+
+### Definition of Done
+
+- [ ] RADIUS auth completes against test server
+- [ ] LDAP auth binds and authenticates against test directory
+- [ ] TOTP validates time-based codes correctly
+- [ ] Certificate auth extracts CN/SAN and applies template filters
+- [ ] Plugin API loads, initializes, and authenticates via dlopen module
+
+---
+
+## S7 -- Management (Weeks 13-14)
+
+**Sprint Goal**: Build the management layer -- CLI tool, REST API, Prometheus metrics, and structured logging.
+
+### Deliverables
+
+- `src/occtl/wgctl.c` -- Juniper-style CLI (operational + config mode)
+- `src/occtl/cli_parser.c` -- Command parser with linenoise
+- `src/network/rest.c` -- REST API (llhttp + io_uring + wolfSSL)
+- `src/metrics/prometheus.c` -- Custom Prometheus text exposition
+- `src/log/stumpless.c` -- Structured logging (RFC 5424)
+
+### Definition of Done
+
+- [ ] wgctl connects to running server, shows sessions, disconnects users
+- [ ] CLI supports operational mode (show, disconnect) and config mode
+- [ ] REST API serves JSON responses over TLS
+- [ ] Prometheus /metrics endpoint exposes connection, throughput, and error counters
+- [ ] Structured logs emitted in RFC 5424 format via stumpless
+
+---
+
+## S8 -- PKI & Polish (Weeks 15-16)
+
+**Sprint Goal**: Complete the mini CA, split tunneling, end-to-end tests, documentation, and performance benchmarks.
+
+### Deliverables
+
+- `src/occtl/pki.c` -- Mini CA (wolfCrypt: keygen, CSR, sign, CRL)
+- `src/network/split.c` -- Split tunnel routes, split DNS
+- E2E tests with openconnect client
+- Documentation: installation, configuration, deployment
+- Performance benchmarks: handshake rate, throughput, latency
+
+### Definition of Done
+
+- [ ] wgctl pki generates CA, server certs, client certs, and CRLs
+- [ ] Split tunnel routes and DNS pushed to clients via CSTP headers
+- [ ] E2E test: full VPN session lifecycle with openconnect client
+- [ ] Documentation covers installation, configuration, and deployment
+- [ ] Benchmarks published: handshake/s, Gbps throughput, p99 latency
+
+---
+
+## Velocity Tracking
+
+| Sprint | Planned SP | Completed SP | Velocity | Notes |
 |--------|-----------|--------------|----------|-------|
-| Sprint 0 | TBD | TBD | - | - |
-| Sprint 1 | TBD | TBD | - | - |
-| Sprint 2 | TBD | TBD | - | - |
-
-(To be updated after each sprint)
-
-### Burndown Charts
-
-[Sprint burndown charts will be added here after each sprint]
-
-### Cumulative Flow Diagram
-
-[CFD will be maintained to track work in progress]
+| Phase 0 (S0-S2) | -- | -- | -- | Exploration complete |
+| S1 | TBD | -- | -- | -- |
+| S2 | TBD | -- | -- | -- |
+| S3 | TBD | -- | -- | -- |
+| S4 | TBD | -- | -- | -- |
+| S5 | TBD | -- | -- | -- |
+| S6 | TBD | -- | -- | -- |
+| S7 | TBD | -- | -- | -- |
+| S8 | TBD | -- | -- | -- |
 
 ---
 
-## Sprint Templates
-
-### Sprint Planning Template
-
-```markdown
-## Sprint X: [Sprint Name]
-
-**Duration**: YYYY-MM-DD to YYYY-MM-DD
-**Status**: [PLANNED|IN PROGRESS|COMPLETED]
-**Sprint Goal**: [One-line description of sprint goal]
-
-### Sprint Planning (YYYY-MM-DD)
-
-#### Team Capacity
-- Developer 1: X days (Y hours)
-- Developer 2: X days (Y hours)
-- **Total**: Z hours
-
-#### Sprint Backlog
-
-| ID | Task | Assignee | Estimate | Priority |
-|----|------|----------|----------|----------|
-| SX-Y | Task description | DevN | Xh | P0-P3 |
-
-#### Sprint Goals (Definition of Done)
-- [ ] Goal 1
-- [ ] Goal 2
-
-### Daily Standups
-[Record daily progress]
-
-### Sprint Review (YYYY-MM-DD)
-[Review completed work with stakeholders]
-
-### Sprint Retrospective (YYYY-MM-DD)
-#### What Went Well
-- Item 1
-
-#### What Could Be Improved
-- Item 1
-
-#### Action Items
-- Action 1
-```
-
----
-
-## Retrospective Insights
-
-### Common Themes (To be updated)
-
-**Positive**:
-- [TBD after multiple sprints]
-
-**Areas for Improvement**:
-- [TBD after multiple sprints]
-
-### Action Items Log
-
-| Sprint | Action Item | Owner | Status | Completed |
-|--------|------------|-------|--------|-----------|
-| S0 | [TBD] | [TBD] | [TBD] | [TBD] |
-
----
-
-## Sprint Health Indicators
-
-### Red Flags to Watch
-
-- **Velocity drops >20%** from moving average
-- **Sprint goals not met** for 2 consecutive sprints
-- **Blockers unresolved** for >3 days
-- **Team morale declining** (from retrospectives)
-- **Scope creep** exceeding 10% of sprint capacity
-- **Critical bugs** increasing sprint-over-sprint
-
-### Interventions
-
-If red flags appear:
-1. Emergency retrospective (mid-sprint if needed)
-2. Scope adjustment
-3. Resource reallocation
-4. Process refinement
-5. External help (if blockers persist)
-
----
-
-**Document Version**: 1.0
-**Last Updated**: 2025-10-29
-**Next Review**: After each sprint retrospective
+**Document Version**: 2.0
+**Last Updated**: 2026-03-07
+**Next Review**: After S1 sprint planning

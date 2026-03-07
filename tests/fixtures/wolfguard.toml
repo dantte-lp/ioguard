@@ -1,0 +1,28 @@
+[server]
+listen-address = "0.0.0.0"
+listen-port = 443
+dtls-port = 443
+max-clients = 1024
+worker-count = 4
+
+[auth]
+method = "pam"
+cookie-timeout = 300
+cookie-rekey = 14400
+
+[network]
+ipv4-pool = "10.10.0.0/16"
+dns = ["10.0.0.53", "10.0.0.54"]
+default-domain = "corp.example.com"
+mtu = 1400
+
+[tls]
+cert-file = "/etc/wolfguard/server.pem"
+key-file = "/etc/wolfguard/server.key"
+min-version = "1.2"
+ciphers = "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256"
+
+[security]
+seccomp = true
+landlock = true
+wolfsentry-config = "/etc/wolfguard/wolfsentry.json"

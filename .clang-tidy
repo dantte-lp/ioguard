@@ -1,15 +1,19 @@
 # clang-tidy configuration for wolfguard
-# Comprehensive static analysis for C23 code
+# Security-critical static analysis for C23 VPN server code
+# Dual-compiler strategy: clang-tidy (primary) + GCC -fanalyzer (validation)
 
 ---
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
+  clang-analyzer-security.*,
+  clang-analyzer-unix.*,
+  clang-analyzer-deadcode.*,
+  clang-analyzer-core.*,
   bugprone-*,
   cert-*,
   concurrency-*,
   misc-*,
-  modernize-*,
   performance-*,
   portability-*,
   readability-*,
@@ -20,15 +24,32 @@ Checks: >
   -readability-function-cognitive-complexity,
   -readability-identifier-length,
   -readability-magic-numbers,
-  -cert-err33-c
+  -misc-no-recursion
 
-WarningsAsErrors: ''
+# Security-critical checks treated as errors
+WarningsAsErrors: >
+  clang-analyzer-security.*,
+  clang-analyzer-core.NullDereference,
+  clang-analyzer-core.UndefinedBinaryOperatorResult,
+  clang-analyzer-unix.Malloc,
+  clang-analyzer-unix.MallocSizeof,
+  bugprone-use-after-move,
+  bugprone-double-free,
+  bugprone-sizeof-expression,
+  bugprone-string-constructor,
+  bugprone-suspicious-memory-comparison,
+  bugprone-signal-handler,
+  cert-err34-c,
+  cert-msc30-c,
+  cert-msc50-cpp,
+  concurrency-mt-unsafe
 
-HeaderFilterRegex: '.*'
+HeaderFilterRegex: 'src/.*'
 
 FormatStyle: file
 
 CheckOptions:
+  # Naming conventions (snake_case for C)
   - key: readability-identifier-naming.FunctionCase
     value: lower_case
   - key: readability-identifier-naming.VariableCase
@@ -43,15 +64,39 @@ CheckOptions:
     value: lower_case
   - key: readability-identifier-naming.TypedefSuffix
     value: _t
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+
+  # Braces required on ALL statements (security: prevent goto-fail bugs)
   - key: readability-braces-around-statements.ShortStatementLines
     value: '0'
+
+  # Function size limits
   - key: readability-function-size.LineThreshold
     value: '200'
   - key: readability-function-size.StatementThreshold
     value: '100'
+  - key: readability-function-size.ParameterThreshold
+    value: '8'
+  - key: readability-function-size.NestingThreshold
+    value: '6'
+
+  # Security: check return values of critical functions
+  - key: cert-err33-c.CheckedFunctions
+    value: '::aligned_alloc;::calloc;::malloc;::realloc;::fopen;::fclose;::fread;::fwrite;::snprintf;::close;::open;::read;::write;::socket;::bind;::listen;::accept;::connect;::send;::recv;::setsockopt'
+
+  # Allow wolfSSL internal identifiers
+  - key: bugprone-reserved-identifier.AllowedIdentifiers
+    value: '__wolfssl_.*;__WOLFSSL_.*'
+
+  # Thread safety for VPN worker model
+  - key: concurrency-mt-unsafe.FunctionSet
+    value: posix
+
+  # Struct packing awareness
   - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
     value: '1'
-  - key: cert-err33-c.CheckedFunctions
-    value: '::aligned_alloc;::calloc;::malloc;::realloc;::fopen'
-  - key: bugprone-reserved-identifier.AllowedIdentifiers
-    value: '__wolfssl_.*'
+
+  # Suspicious sizeof patterns (critical for network parsing)
+  - key: bugprone-sizeof-expression.WarnOnSizeOfPointer
+    value: '1'
