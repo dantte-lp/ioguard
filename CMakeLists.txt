@@ -437,6 +437,12 @@ if(BUILD_TESTING)
         # Sprint 3 — Data path integration test
         wg_add_test(test_data_path tests/integration/test_data_path.c wg_cstp wg_dpd wg_worker wg_io)
 
+        # Sprint 4 — Compression abstraction
+        add_library(wg_compress STATIC src/network/compress.c)
+        target_include_directories(wg_compress PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+        wg_add_test(test_compress tests/unit/test_compress.c wg_compress)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")

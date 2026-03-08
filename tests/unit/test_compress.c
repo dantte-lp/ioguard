@@ -1,0 +1,112 @@
+#include <unity/unity.h>
+#include "network/compress.h"
+#include <errno.h>
+#include <string.h>
+
+void setUp(void) {}
+void tearDown(void) {}
+
+void test_compress_init_none(void)
+{
+	wg_compress_ctx_t ctx;
+	int ret = wg_compress_init(&ctx, WG_COMPRESS_NONE);
+	TEST_ASSERT_EQUAL_INT(0, ret);
+	TEST_ASSERT_EQUAL_UINT8(WG_COMPRESS_NONE, ctx.type);
+	wg_compress_destroy(&ctx);
+}
+
+void test_compress_init_null(void)
+{
+	TEST_ASSERT_EQUAL_INT(-EINVAL, wg_compress_init(nullptr, WG_COMPRESS_NONE));
+}
+
+void test_compress_none_passthrough(void)
+{
+	wg_compress_ctx_t ctx;
+	(void)wg_compress_init(&ctx, WG_COMPRESS_NONE);
+
+	const uint8_t data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+	uint8_t out[64];
+
+	int ret = wg_compress(&ctx, data, sizeof(data), out, sizeof(out));
+	TEST_ASSERT_EQUAL_INT(4, ret);
+	TEST_ASSERT_EQUAL_MEMORY(data, out, sizeof(data));
+
+	wg_compress_destroy(&ctx);
+}
+
+void test_decompress_none_passthrough(void)
+{
+	wg_compress_ctx_t ctx;
+	(void)wg_compress_init(&ctx, WG_COMPRESS_NONE);
+
+	const uint8_t data[] = { 0xCA, 0xFE };
+	uint8_t out[64];
+
+	int ret = wg_decompress(&ctx, data, sizeof(data), out, sizeof(out));
+	TEST_ASSERT_EQUAL_INT(2, ret);
+	TEST_ASSERT_EQUAL_MEMORY(data, out, sizeof(data));
+
+	wg_compress_destroy(&ctx);
+}
+
+void test_compress_output_too_small(void)
+{
+	wg_compress_ctx_t ctx;
+	(void)wg_compress_init(&ctx, WG_COMPRESS_NONE);
+
+	const uint8_t data[] = { 0x01, 0x02, 0x03, 0x04 };
+	uint8_t out[2];
+
+	int ret = wg_compress(&ctx, data, sizeof(data), out, sizeof(out));
+	TEST_ASSERT_EQUAL_INT(-ENOSPC, ret);
+
+	wg_compress_destroy(&ctx);
+}
+
+void test_compress_input_too_large(void)
+{
+	wg_compress_ctx_t ctx;
+	(void)wg_compress_init(&ctx, WG_COMPRESS_NONE);
+
+	uint8_t out[64];
+	int ret = wg_compress(&ctx, out, WG_COMPRESS_MAX_INPUT + 1, out, sizeof(out));
+	TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
+
+	wg_compress_destroy(&ctx);
+}
+
+void test_compress_type_name(void)
+{
+	TEST_ASSERT_EQUAL_STRING("none", wg_compress_type_name(WG_COMPRESS_NONE));
+	TEST_ASSERT_EQUAL_STRING("lz4", wg_compress_type_name(WG_COMPRESS_LZ4));
+	TEST_ASSERT_EQUAL_STRING("lzs", wg_compress_type_name(WG_COMPRESS_LZS));
+}
+
+void test_compress_negotiate(void)
+{
+	TEST_ASSERT_EQUAL_UINT8(WG_COMPRESS_LZS, wg_compress_negotiate("lzs,deflate"));
+	TEST_ASSERT_EQUAL_UINT8(WG_COMPRESS_LZ4, wg_compress_negotiate("lz4"));
+	TEST_ASSERT_EQUAL_UINT8(WG_COMPRESS_NONE, wg_compress_negotiate("deflate"));
+	TEST_ASSERT_EQUAL_UINT8(WG_COMPRESS_NONE, wg_compress_negotiate(nullptr));
+}
+
+void test_compress_destroy_null(void)
+{
+	wg_compress_destroy(nullptr);
+}
+
+int main(void)
+{
+	UNITY_BEGIN();
+	RUN_TEST(test_compress_init_none);
+	RUN_TEST(test_compress_init_null);
+	RUN_TEST(test_compress_none_passthrough);
+	RUN_TEST(test_decompress_none_passthrough);
+	RUN_TEST(test_compress_output_too_small);
+	RUN_TEST(test_compress_input_too_large);
+	RUN_TEST(test_compress_type_name);
+	RUN_TEST(test_compress_negotiate);
+	RUN_TEST(test_compress_destroy_null);
+	return UNITY_END();
+}
