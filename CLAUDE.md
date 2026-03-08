@@ -97,12 +97,28 @@ deploy/podman/      # Container configurations
 - BANNED functions: `strcpy`, `sprintf`, `gets`, `strcat`, `atoi`, `system()`, `memcmp` on secrets
 - Use bounded alternatives: `snprintf`, `strnlen`, `memcpy` with size checks
 
+## io_uring Critical Rules (MANDATORY)
+
+- **CQE errors**: `cqe->res < 0` is `-errno` (NOT global errno). Handle EVERY CQE.
+- **Send serialization**: ONE active send per TCP connection. Per-connection send queue, next send only after CQE. Kernel may reorder concurrent sends.
+- **fd close ordering**: cancel pending ops → wait ALL CQE (incl `-ECANCELED`) → close fd → cleanup. NEVER close fd with in-flight ops (kernel UB).
+- **SQE batching**: NEVER `io_uring_submit()` per-SQE. Batch 16-64 minimum.
+- **CQE batching**: use `io_uring_for_each_cqe` + `io_uring_cq_advance`, not single wait per CQE.
+- **Multishot CQE_F_MORE**: ALWAYS check. Absence = operation terminated, must re-arm.
+- **Memory domains**: control plane (mimalloc per-worker heap) vs data plane (fixed-size RX/TX buffer pools).
+- **WANT_READ/WANT_WRITE**: NOT errors. Normal for non-blocking TLS — arm recv/send, resume later.
+- **Async logging**: NEVER block event loop on log writes. Buffer entries, batch flush via `IORING_OP_WRITEV`.
+- **Anti-patterns**: no blocking in CQE handler, no mixed sync/async on same fd, no unbounded queues, no per-connection threads.
+- **io_uring + seccomp**: io_uring ops bypass seccomp BPF (shared memory ring). Use `IORING_REGISTER_RESTRICTIONS` to allowlist opcodes.
+- **c-ares integration**: `ares_set_socket_functions()` for io_uring-based DNS, `ares_timeout()` → `IORING_OP_TIMEOUT`.
+- **protobuf-c IPC**: length-prefix framing over `SOCK_SEQPACKET`, check `len > 0` (no `has_` for bytes fields in proto3).
+
 ## Library Stack
 
 ### Core Crypto & Security
 | Library       | Version | Role                    | Context7 ID        |
 |---------------|---------|-------------------------|---------------------|
-| wolfSSL       | 5.8.2+  | TLS 1.3 / DTLS 1.2     | /wolfssl/wolfssl    |
+| wolfSSL       | 5.8.4+  | TLS 1.3 / DTLS 1.2     | /wolfssl/wolfssl    |
 | wolfSentry    | 1.6.2+  | IDPS / dynamic firewall | /wolfssl/wolfsentry |
 
 ### Network & I/O
@@ -229,9 +245,10 @@ Local copies in `docs/rfc/` — see `docs/rfc/README.md` for full index.
 
 See `.claude/skills/` for detailed guidance on:
 - **`coding-standards/`** — File structure, naming, comments, errors, memory, tests (MANDATORY)
+- **`io-uring-patterns/`** — SQE/CQE patterns, provided buffers, multishot, error handling, send serialization, fd lifecycle, backpressure, memory domains, anti-patterns (MANDATORY for src/io/, src/network/)
 - `c23-standards/` — C23 features, conventions, compiler compatibility
-- `security-coding/` — constant-time, zeroing, input validation, seccomp
-- `wolfssl-api/` — TLS/DTLS API patterns, FIPS constraints, callbacks
+- `security-coding/` — constant-time, zeroing, input validation, seccomp, io_uring ring hardening
+- `wolfssl-api/` — TLS/DTLS API patterns, FIPS constraints, buffer-based I/O with io_uring
 - `ocprotocol/` — OpenConnect protocol, Cisco compatibility, cookies
 - `wolfsentry-idps/` — IDPS firewall, rate limiting, connection tracking, nftables
 - `rfc-reference/` — TLS/DTLS RFC index, key sections, security policies (41 RFCs in `docs/rfc/`)

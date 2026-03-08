@@ -129,6 +129,35 @@ static int rw_setup_seccomp(void) {
 }
 ```
 
+## io_uring Ring Hardening (CRITICAL)
+
+**WARNING:** io_uring operations bypass seccomp BPF filters — they use shared memory
+ring, not direct syscalls. A compromised parser can issue ANY kernel operation through
+the ring fd. MUST use `IORING_REGISTER_RESTRICTIONS` to allowlist opcodes.
+
+```c
+// After ring creation + buffer registration, BEFORE accepting connections:
+struct io_uring_restriction restrictions[] = {
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_RECV },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_SEND },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_ACCEPT },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_READ },     // TUN
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_WRITE },    // TUN
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_TIMEOUT },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_LINK_TIMEOUT },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_CANCEL },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_CLOSE },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_MSG_RING },
+    { .opcode = IORING_RESTRICTION_SQE_OP, .sqe_op = IORING_OP_NOP },
+};
+io_uring_register_restrictions(&ring, restrictions, ARRAY_SIZE(restrictions));
+io_uring_enable_rings(&ring);
+```
+
+**sysctl hardening:** `io_uring_disabled=1` restricts ring creation to `CAP_SYS_ADMIN`
+or `io_uring_group`. Document this in deployment guide.
+```
+
 ## Memory Allocator Security
 
 mimalloc with MI_SECURE=ON provides:
