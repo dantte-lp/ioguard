@@ -410,6 +410,53 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && rm -rf mold
 
+# ═══════════════════════════════════════════════════════
+# Storage (Sprint 5)
+# ═══════════════════════════════════════════════════════
+
+ARG LIBMDBX_VERSION=0.14.1
+
+# SQLite from system packages
+RUN dnf install -y sqlite-devel && dnf clean all
+
+# Build libmdbx from source (stable branch)
+RUN cd /tmp && \
+    git clone --depth 50 --branch stable https://gitflic.ru/project/erthink/libmdbx.git && \
+    cd libmdbx && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DMDBX_BUILD_TOOLS=OFF \
+        -DMDBX_BUILD_CXX=OFF && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf libmdbx
+
+# ═══════════════════════════════════════════════════════
+# Static Analysis Tools
+# ═══════════════════════════════════════════════════════
+
+# Install CodeChecker (Ericsson/codechecker v6.27.3)
+# Wraps clang-tidy + cppcheck + clang-sa with result management
+RUN pip3 install codechecker && \
+    ln -sf /usr/local/bin/CodeChecker /usr/local/bin/codechecker 2>/dev/null || true && \
+    CodeChecker version
+
+# Install PVS-Studio (free for open-source, b4all license)
+RUN cd /tmp && \
+    curl -fsSL -o pvs-studio.tgz \
+        https://files.pvs-studio.ru/pvs-studio-7.41.103683.741-x86_64.tgz && \
+    tar xzf pvs-studio.tgz && \
+    cd pvs-studio-* && \
+    cp -a bin/* /usr/local/bin/ && \
+    cp -a etc/* /usr/local/etc/ 2>/dev/null || true && \
+    mkdir -p /usr/local/share/pvs-studio && \
+    cp -a share/* /usr/local/share/ 2>/dev/null || true && \
+    cd /tmp && rm -rf pvs-studio* && \
+    pvs-studio --version
+
 # Create workspace directory
 RUN mkdir -p /workspace
 

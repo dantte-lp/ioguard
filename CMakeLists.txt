@@ -600,6 +600,58 @@ add_custom_target(cppcheck
     VERBATIM
 )
 
+# Detect CPU count for parallel analysis
+cmake_host_system_information(RESULT NPROC QUERY NUMBER_OF_LOGICAL_CORES)
+
+# CodeChecker (clang-sa + clang-tidy with result management)
+add_custom_target(codechecker
+    COMMAND CodeChecker analyze ${CMAKE_BINARY_DIR}/compile_commands.json
+        --analyzers clangsa clang-tidy
+        --output ${CMAKE_BINARY_DIR}/codechecker-results
+        -j ${NPROC}
+    COMMAND ${CMAKE_COMMAND} -E echo "=== CodeChecker Results ==="
+    COMMAND CodeChecker parse ${CMAKE_BINARY_DIR}/codechecker-results
+        --print-steps || true
+    COMMENT "Running CodeChecker analysis (clang-sa + clang-tidy)"
+)
+
+# PVS-Studio static analysis
+add_custom_target(pvs-studio
+    COMMAND pvs-studio-analyzer analyze
+        -f ${CMAKE_BINARY_DIR}/compile_commands.json
+        -o ${CMAKE_BINARY_DIR}/pvs-results.log
+        -j ${NPROC}
+        -e ${CMAKE_SOURCE_DIR}/tests/
+    COMMAND plog-converter
+        -a "GA:1,2;64:1,2;OP:1,2"
+        -t tasklist
+        ${CMAKE_BINARY_DIR}/pvs-results.log
+    COMMENT "Running PVS-Studio static analysis"
+    VERBATIM
+)
+
+# PVS-Studio with SARIF output (for CI integration)
+add_custom_target(pvs-studio-sarif
+    COMMAND pvs-studio-analyzer analyze
+        -f ${CMAKE_BINARY_DIR}/compile_commands.json
+        -o ${CMAKE_BINARY_DIR}/pvs-results.log
+        -j ${NPROC}
+        -e ${CMAKE_SOURCE_DIR}/tests/
+    COMMAND plog-converter
+        -a "GA:1,2;64:1,2;OP:1,2"
+        -t sarif
+        -o ${CMAKE_BINARY_DIR}/pvs-results.sarif
+        ${CMAKE_BINARY_DIR}/pvs-results.log
+    COMMENT "Running PVS-Studio (SARIF output for CI)"
+    VERBATIM
+)
+
+# Run all static analyzers
+add_custom_target(analyze
+    DEPENDS codechecker pvs-studio
+    COMMENT "Running all static analyzers"
+)
+
 # ============================================================================
 # Configuration Summary
 # ============================================================================
