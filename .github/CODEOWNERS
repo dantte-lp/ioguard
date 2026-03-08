@@ -1,0 +1,17 @@
+# Default owner
+* @dantte-lp
+
+# Protocol implementation
+src/network/ @dantte-lp
+src/crypto/ @dantte-lp
+
+# Security-sensitive code
+src/security/ @dantte-lp
+src/auth/ @dantte-lp
+
+# Build system
+CMakeLists.txt @dantte-lp
+deploy/ @dantte-lp
+
+# Documentation
+docs/ @dantte-lp

@@ -1,0 +1,39 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.{c,h}]
+indent_style = tab
+indent_size = 8
+
+[*.{yml,yaml,json,toml}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+
+[*.proto]
+indent_style = space
+indent_size = 2
+
+[CMakeLists.txt]
+indent_style = space
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+
+[Containerfile]
+indent_style = space
+indent_size = 4
+
+[Dockerfile*]
+indent_style = space
+indent_size = 4
