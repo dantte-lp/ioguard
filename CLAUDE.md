@@ -5,7 +5,7 @@
 - **Language**: C23 (ISO/IEC 9899:2024), `-std=c23`, `CMAKE_C_EXTENSIONS OFF`
 - **Project**: VPN server (ocserv refactoring), wolfSSL native API
 - **License**: GPLv3 (wolfSSL dependency requires GPLv3)
-- **Status**: v2.0.0-alpha, Sprint 2 complete (TLS & Auth)
+- **Status**: Pre-release (Sprint 4 complete, no tags yet). First release: 0.1.0
 - **Platform**: Linux only (kernel 6.7+, glibc 2.39+)
 
 ## Build Commands
