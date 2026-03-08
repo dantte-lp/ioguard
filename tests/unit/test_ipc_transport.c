@@ -1,10 +1,14 @@
-#include <unity/unity.h>
 #include <string.h>
 #include <unistd.h>
+#include <unity/unity.h>
 #include "ipc/transport.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_rw_ipc_create_socketpair(void)
 {

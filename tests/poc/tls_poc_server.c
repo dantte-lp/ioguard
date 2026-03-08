@@ -13,19 +13,19 @@
  *          and compare GnuTLS vs wolfSSL performance.
  */
 
-#define _POSIX_C_SOURCE 200112L  // For nanosleep()
+#define _POSIX_C_SOURCE 200112L // For nanosleep()
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <signal.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <poll.h>
 #include <time.h>
+#include <unistd.h>
 
 // TLS abstraction layer
 #include "../../src/crypto/tls_abstract.h"
@@ -50,13 +50,15 @@ static stats_t g_stats = {0};
 static volatile bool g_running = true;
 
 /* Signal handler */
-static void signal_handler(int signum) {
+static void signal_handler(int signum)
+{
     (void)signum;
     g_running = false;
 }
 
 /* Print usage */
-static void print_usage(const char *prog) {
+static void print_usage(const char *prog)
+{
     fprintf(stderr, "Usage: %s [OPTIONS]\n", prog);
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "  -b, --backend {gnutls|wolfssl}  TLS backend (required)\n");
@@ -68,7 +70,8 @@ static void print_usage(const char *prog) {
 }
 
 /* Print statistics */
-static void print_stats(void) {
+static void print_stats(void)
+{
     time_t now = time(nullptr);
     time_t elapsed = now - g_stats.start_time;
 
@@ -82,14 +85,16 @@ static void print_stats(void) {
 
     if (elapsed > 0) {
         printf("Connections/sec: %.2f\n", (double)g_stats.connections_accepted / elapsed);
-        printf("Throughput RX: %.2f MB/s\n", (double)g_stats.bytes_received / elapsed / 1024 / 1024);
+        printf("Throughput RX: %.2f MB/s\n",
+               (double)g_stats.bytes_received / elapsed / 1024 / 1024);
         printf("Throughput TX: %.2f MB/s\n", (double)g_stats.bytes_sent / elapsed / 1024 / 1024);
     }
     printf("==================\n\n");
 }
 
 /* Create and bind listening socket */
-static int create_listen_socket(int port) {
+static int create_listen_socket(int port)
+{
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket");
@@ -128,8 +133,9 @@ static int create_listen_socket(int port) {
 }
 
 /* Handle client connection */
-static void handle_client(tls_context_t *ctx, int client_fd,
-                          struct sockaddr_in *client_addr, bool verbose) {
+static void handle_client(tls_context_t *ctx, int client_fd, struct sockaddr_in *client_addr,
+                          bool verbose)
+{
     int ret;
     char buffer[BUFFER_SIZE];
 
@@ -141,11 +147,11 @@ static void handle_client(tls_context_t *ctx, int client_fd,
     }
 
     // Create TLS session with cleanup attribute (C23 RAII-like pattern)
-    __attribute__((cleanup(tls_session_cleanup)))
-    tls_session_t *session = tls_session_new(ctx);
+    __attribute__((cleanup(tls_session_cleanup))) tls_session_t *session = tls_session_new(ctx);
 
     if (session == nullptr) {
-        fprintf(stderr, "[%s:%d] Failed to create TLS session\n", client_ip, ntohs(client_addr->sin_port));
+        fprintf(stderr, "[%s:%d] Failed to create TLS session\n", client_ip,
+                ntohs(client_addr->sin_port));
         close(client_fd);
         return;
     }
@@ -153,8 +159,8 @@ static void handle_client(tls_context_t *ctx, int client_fd,
     // Associate socket with session
     ret = tls_session_set_fd(session, client_fd);
     if (ret != TLS_E_SUCCESS) {
-        fprintf(stderr, "[%s:%d] Failed to set FD: %s\n",
-                client_ip, ntohs(client_addr->sin_port), tls_strerror(ret));
+        fprintf(stderr, "[%s:%d] Failed to set FD: %s\n", client_ip, ntohs(client_addr->sin_port),
+                tls_strerror(ret));
         close(client_fd);
         return;
     }
@@ -169,8 +175,8 @@ static void handle_client(tls_context_t *ctx, int client_fd,
             // Non-blocking I/O - retry
             continue;
         }
-        fprintf(stderr, "[%s:%d] Handshake failed: %s\n",
-                client_ip, ntohs(client_addr->sin_port), tls_strerror(ret));
+        fprintf(stderr, "[%s:%d] Handshake failed: %s\n", client_ip, ntohs(client_addr->sin_port),
+                tls_strerror(ret));
         close(client_fd);
         return;
     }
@@ -181,9 +187,8 @@ static void handle_client(tls_context_t *ctx, int client_fd,
     tls_connection_info_t info;
     if (tls_get_connection_info(session, &info) == TLS_E_SUCCESS) {
         if (verbose) {
-            printf("[%s:%d] Handshake complete: %s, resumed=%s\n",
-                   client_ip, ntohs(client_addr->sin_port),
-                   info.cipher_name,
+            printf("[%s:%d] Handshake complete: %s, resumed=%s\n", client_ip,
+                   ntohs(client_addr->sin_port), info.cipher_name,
                    info.session_resumed ? "yes" : "no");
         }
     }
@@ -197,7 +202,7 @@ static void handle_client(tls_context_t *ctx, int client_fd,
 
         if (received == TLS_E_AGAIN || received == TLS_E_INTERRUPTED) {
             // Non-blocking I/O - retry with 10ms delay
-            struct timespec ts = { .tv_sec = 0, .tv_nsec = 10000000 }; // 10ms
+            struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000000}; // 10ms
             nanosleep(&ts, NULL);
             continue;
         }
@@ -205,12 +210,12 @@ static void handle_client(tls_context_t *ctx, int client_fd,
         if (received <= 0) {
             if (received == 0) {
                 if (verbose) {
-                    printf("[%s:%d] Connection closed by peer\n",
-                           client_ip, ntohs(client_addr->sin_port));
+                    printf("[%s:%d] Connection closed by peer\n", client_ip,
+                           ntohs(client_addr->sin_port));
                 }
             } else {
-                fprintf(stderr, "[%s:%d] Receive error: %s\n",
-                        client_ip, ntohs(client_addr->sin_port), tls_strerror(received));
+                fprintf(stderr, "[%s:%d] Receive error: %s\n", client_ip,
+                        ntohs(client_addr->sin_port), tls_strerror(received));
             }
             break;
         }
@@ -218,16 +223,16 @@ static void handle_client(tls_context_t *ctx, int client_fd,
         g_stats.bytes_received += received;
 
         if (verbose) {
-            printf("[%s:%d] Received %zd bytes\n",
-                   client_ip, ntohs(client_addr->sin_port), received);
+            printf("[%s:%d] Received %zd bytes\n", client_ip, ntohs(client_addr->sin_port),
+                   received);
         }
 
         // Echo back
         ssize_t sent = tls_send(session, buffer, received);
 
         if (sent < 0) {
-            fprintf(stderr, "[%s:%d] Send error: %s\n",
-                    client_ip, ntohs(client_addr->sin_port), tls_strerror(sent));
+            fprintf(stderr, "[%s:%d] Send error: %s\n", client_ip, ntohs(client_addr->sin_port),
+                    tls_strerror(sent));
             break;
         }
 
@@ -244,7 +249,8 @@ static void handle_client(tls_context_t *ctx, int client_fd,
 }
 
 /* Main function */
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     tls_backend_t backend = TLS_BACKEND_NONE;
     int port = DEFAULT_PORT;
     const char *cert_file = nullptr;

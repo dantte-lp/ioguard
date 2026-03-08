@@ -20,8 +20,7 @@ typedef struct {
 
 [[nodiscard]] int rw_pam_init(rw_pam_config_t *cfg, const char *service);
 
-[[nodiscard]] rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
-                                                    const char *username,
-                                                    const char *password);
+[[nodiscard]] rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg, const char *username,
+                                                   const char *password);
 
 #endif /* RINGWALL_AUTH_PAM_H */

@@ -1,17 +1,21 @@
-#include <unity/unity.h>
-#include "io/uring.h"
 #include <errno.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 #include <signal.h>
 #include <sys/signalfd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
+#include <unity/unity.h>
+#include "io/uring.h"
 
 /* Track whether io_uring syscalls are available in this environment */
 static bool io_uring_available = false;
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_rw_io_init_creates_context(void)
 {

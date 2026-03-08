@@ -14,21 +14,21 @@
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-	/* toml_parse requires a mutable NUL-terminated string */
-	char *buf = malloc(size + 1);
-	if (buf == nullptr) {
-		return 0;
-	}
+    /* toml_parse requires a mutable NUL-terminated string */
+    char *buf = malloc(size + 1);
+    if (buf == nullptr) {
+        return 0;
+    }
 
-	memcpy(buf, data, size);
-	buf[size] = '\0';
+    memcpy(buf, data, size);
+    buf[size] = '\0';
 
-	char errbuf[256];
-	toml_table_t *tbl = toml_parse(buf, errbuf, sizeof(errbuf));
-	if (tbl != nullptr) {
-		toml_free(tbl);
-	}
+    char errbuf[256];
+    toml_table_t *tbl = toml_parse(buf, errbuf, sizeof(errbuf));
+    if (tbl != nullptr) {
+        toml_free(tbl);
+    }
 
-	free(buf);
-	return 0;
+    free(buf);
+    return 0;
 }

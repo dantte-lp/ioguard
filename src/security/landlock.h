@@ -14,8 +14,8 @@
 
 /** Landlock profile selecting which filesystem paths to allow. */
 typedef enum : uint8_t {
-	RW_LANDLOCK_WORKER,  /**< Read-only: mdbx file, /dev/net/tun */
-	RW_LANDLOCK_AUTHMOD, /**< Read-write: mdbx + sqlite, read /dev/urandom */
+    RW_LANDLOCK_WORKER,  /**< Read-only: mdbx file, /dev/net/tun */
+    RW_LANDLOCK_AUTHMOD, /**< Read-write: mdbx + sqlite, read /dev/urandom */
 } rw_landlock_profile_t;
 
 /**
@@ -36,8 +36,7 @@ typedef enum : uint8_t {
  * After this call, filesystem access outside the allowed paths is denied
  * with EACCES.  This is irreversible for the calling process.
  */
-[[nodiscard]] int rw_landlock_apply(rw_landlock_profile_t profile,
-				    const char *mdbx_path,
-				    const char *sqlite_path);
+[[nodiscard]] int rw_landlock_apply(rw_landlock_profile_t profile, const char *mdbx_path,
+                                    const char *sqlite_path);
 
 #endif /* RINGWALL_SECURITY_LANDLOCK_H */

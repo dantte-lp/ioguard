@@ -1,11 +1,15 @@
-#include <unity/unity.h>
 #include <string.h>
+#include <unity/unity.h>
 #include "ipc/messages.h"
 
 #define RW_IPC_MAX_MSG_SIZE 4096
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_pack_unpack_auth_request(void)
 {

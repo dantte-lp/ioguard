@@ -27,16 +27,16 @@ constexpr uint32_t RW_TUN_MAX_MTU = 65535;
 
 /** TUN device configuration. */
 typedef struct {
-	char dev_name[RW_TUN_NAME_MAX];
-	uint32_t mtu;
-	bool set_nonblock;
+    char dev_name[RW_TUN_NAME_MAX];
+    uint32_t mtu;
+    bool set_nonblock;
 } rw_tun_config_t;
 
 /** Allocated TUN device state. */
 typedef struct {
-	int fd;
-	char dev_name[RW_TUN_NAME_MAX];
-	uint32_t mtu;
+    int fd;
+    char dev_name[RW_TUN_NAME_MAX];
+    uint32_t mtu;
 } rw_tun_t;
 
 /**

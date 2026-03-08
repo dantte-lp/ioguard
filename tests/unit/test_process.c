@@ -1,12 +1,16 @@
 #define _GNU_SOURCE
-#include <unity/unity.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <signal.h>
+#include <unity/unity.h>
 #include "core/process.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_rw_process_spawn_and_wait(void)
 {

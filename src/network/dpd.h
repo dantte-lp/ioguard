@@ -22,30 +22,30 @@ constexpr uint32_t RW_DPD_DEFAULT_MAX_RETRIES = 3;
 
 /** DPD probe state. */
 typedef enum : uint8_t {
-	RW_DPD_IDLE,
-	RW_DPD_PENDING,
-	RW_DPD_DEAD,
+    RW_DPD_IDLE,
+    RW_DPD_PENDING,
+    RW_DPD_DEAD,
 } rw_dpd_state_t;
 
 /** VPN channel state (CSTP vs DTLS). */
 typedef enum : uint8_t {
-	RW_CHANNEL_CSTP_ONLY,
-	RW_CHANNEL_DTLS_PRIMARY,
-	RW_CHANNEL_DTLS_FALLBACK,
+    RW_CHANNEL_CSTP_ONLY,
+    RW_CHANNEL_DTLS_PRIMARY,
+    RW_CHANNEL_DTLS_FALLBACK,
 } rw_channel_state_t;
 
 /** DPD context — pure state machine, no I/O. */
 typedef struct {
-	rw_dpd_state_t state;
-	rw_channel_state_t channel;
-	uint32_t interval_s;
-	uint32_t max_retries;
-	uint32_t retry_count;
-	uint16_t sequence;
-	time_t last_send;
-	time_t last_recv;
-	bool need_send_response;
-	bool need_send_request;
+    rw_dpd_state_t state;
+    rw_channel_state_t channel;
+    uint32_t interval_s;
+    uint32_t max_retries;
+    uint32_t retry_count;
+    uint16_t sequence;
+    time_t last_send;
+    time_t last_recv;
+    bool need_send_response;
+    bool need_send_request;
 } rw_dpd_ctx_t;
 
 /**

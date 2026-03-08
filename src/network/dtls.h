@@ -17,14 +17,14 @@ constexpr uint32_t RW_DTLS_DEFAULT_TIMEOUT_S = 5;
 constexpr uint32_t RW_DTLS_DEFAULT_REKEY_S = 3600;
 
 typedef struct {
-	uint32_t mtu;
-	uint32_t timeout_init_s;
-	uint32_t rekey_interval_s;
-	const char *cert_file;
-	const char *key_file;
-	const char *ca_file;
-	const char *cipher_list;
-	bool enable_cookies;
+    uint32_t mtu;
+    uint32_t timeout_init_s;
+    uint32_t rekey_interval_s;
+    const char *cert_file;
+    const char *key_file;
+    const char *ca_file;
+    const char *cipher_list;
+    bool enable_cookies;
 } rw_dtls_config_t;
 
 typedef struct rw_dtls_ctx rw_dtls_ctx_t;

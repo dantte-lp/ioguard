@@ -21,30 +21,30 @@ constexpr uint32_t RW_WORKER_DEFAULT_QUEUE_DEPTH = 256;
 constexpr uint32_t RW_WORKER_DEFAULT_TUN_MTU = 1406;
 
 typedef enum : uint8_t {
-	RW_WORKER_NEW,
-	RW_WORKER_READY,
-	RW_WORKER_RUNNING,
-	RW_WORKER_STOPPING,
-	RW_WORKER_STOPPED,
+    RW_WORKER_NEW,
+    RW_WORKER_READY,
+    RW_WORKER_RUNNING,
+    RW_WORKER_STOPPING,
+    RW_WORKER_STOPPED,
 } rw_worker_state_t;
 
 typedef struct {
-	uint32_t max_connections;
-	uint32_t queue_depth;
-	uint32_t dpd_interval_s;
-	uint32_t dpd_max_retries;
-	uint32_t tun_mtu;
+    uint32_t max_connections;
+    uint32_t queue_depth;
+    uint32_t dpd_interval_s;
+    uint32_t dpd_max_retries;
+    uint32_t tun_mtu;
 } rw_worker_config_t;
 
 typedef struct {
-	uint64_t conn_id;
-	int tls_fd;
-	int tun_fd;
-	rw_dpd_ctx_t dpd;
-	rw_compress_ctx_t compress;
-	bool active;
-	uint8_t recv_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
-	size_t recv_len;
+    uint64_t conn_id;
+    int tls_fd;
+    int tun_fd;
+    rw_dpd_ctx_t dpd;
+    rw_compress_ctx_t compress;
+    bool active;
+    uint8_t recv_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    size_t recv_len;
 } rw_connection_t;
 
 typedef struct rw_worker rw_worker_t;

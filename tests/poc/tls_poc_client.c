@@ -14,15 +14,15 @@
 
 #define _POSIX_C_SOURCE 200112L
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <time.h>
+#include <unistd.h>
 
 // TLS abstraction layer
 #include "../../src/crypto/tls_abstract.h"
@@ -33,13 +33,13 @@
 
 /* Test sizes */
 static const size_t test_sizes[] = {
-    1,           // 1 byte
-    64,          // 64 bytes
-    256,         // 256 bytes
-    1024,        // 1 KB
-    4096,        // 4 KB
-    16384,       // 16 KB
-    65536,      // 64 KB
+    1,     // 1 byte
+    64,    // 64 bytes
+    256,   // 256 bytes
+    1024,  // 1 KB
+    4096,  // 4 KB
+    16384, // 16 KB
+    65536, // 64 KB
 };
 
 #define NUM_TEST_SIZES (sizeof(test_sizes) / sizeof(test_sizes[0]))
@@ -54,20 +54,23 @@ typedef struct {
 } test_result_t;
 
 /* Print usage */
-static void print_usage(const char *prog) {
+static void print_usage(const char *prog)
+{
     fprintf(stderr, "Usage: %s [OPTIONS]\n", prog);
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "  -b, --backend {gnutls|wolfssl}  TLS backend (required)\n");
     fprintf(stderr, "  -H, --host HOST                 Server host (default: %s)\n", DEFAULT_HOST);
     fprintf(stderr, "  -p, --port PORT                 Server port (default: %d)\n", DEFAULT_PORT);
-    fprintf(stderr, "  -n, --iterations N              Number of iterations per test (default: 100)\n");
+    fprintf(stderr,
+            "  -n, --iterations N              Number of iterations per test (default: 100)\n");
     fprintf(stderr, "  -s, --size SIZE                 Test single size instead of all sizes\n");
     fprintf(stderr, "  -v, --verbose                   Verbose logging\n");
     fprintf(stderr, "  -h, --help                      Show this help\n");
 }
 
 /* Connect to server */
-static int connect_to_server(const char *host, int port, bool verbose) {
+static int connect_to_server(const char *host, int port, bool verbose)
+{
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket");
@@ -102,15 +105,17 @@ static int connect_to_server(const char *host, int port, bool verbose) {
 }
 
 /* Get current time in seconds */
-static double get_time_seconds(void) {
+static double get_time_seconds(void)
+{
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (double)ts.tv_sec + (double)ts.tv_nsec / 1e9;
 }
 
 /* Run test for specific size */
-static int run_test(tls_session_t *session, size_t size, uint64_t iterations,
-                    test_result_t *result, bool verbose) {
+static int run_test(tls_session_t *session, size_t size, uint64_t iterations, test_result_t *result,
+                    bool verbose)
+{
     uint8_t *send_buffer = malloc(size);
     uint8_t *recv_buffer = malloc(size);
 
@@ -152,8 +157,8 @@ static int run_test(tls_session_t *session, size_t size, uint64_t iterations,
         // Receive echo
         size_t total_received = 0;
         while (total_received < size) {
-            ssize_t received = tls_recv(session, recv_buffer + total_received,
-                                        size - total_received);
+            ssize_t received =
+                tls_recv(session, recv_buffer + total_received, size - total_received);
 
             if (received <= 0) {
                 fprintf(stderr, "Receive error: %s\n", tls_strerror(received));
@@ -201,7 +206,8 @@ static int run_test(tls_session_t *session, size_t size, uint64_t iterations,
 }
 
 /* Print test result */
-static void print_result(const test_result_t *result) {
+static void print_result(const test_result_t *result)
+{
     printf("Size: %8zu bytes | ", result->size);
     printf("Iterations: %6lu | ", result->iterations);
     printf("Elapsed: %8.3f s | ", result->elapsed_seconds);
@@ -210,8 +216,9 @@ static void print_result(const test_result_t *result) {
 }
 
 /* Print results in JSON format */
-static void print_results_json(const test_result_t *results, size_t count,
-                                const char *backend_name, double handshake_time_ms) {
+static void print_results_json(const test_result_t *results, size_t count, const char *backend_name,
+                               double handshake_time_ms)
+{
     printf("\n{\n");
     printf("  \"backend\": \"%s\",\n", backend_name);
     printf("  \"handshake_time_ms\": %.3f,\n", handshake_time_ms);
@@ -232,7 +239,8 @@ static void print_results_json(const test_result_t *results, size_t count,
 }
 
 /* Main function */
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     tls_backend_t backend = TLS_BACKEND_NONE;
     const char *host = DEFAULT_HOST;
     int port = DEFAULT_PORT;
@@ -349,8 +357,7 @@ int main(int argc, char **argv) {
     }
 
     // Create TLS session with cleanup attribute
-    __attribute__((cleanup(tls_session_cleanup)))
-    tls_session_t *session = tls_session_new(ctx);
+    __attribute__((cleanup(tls_session_cleanup))) tls_session_t *session = tls_session_new(ctx);
 
     if (session == nullptr) {
         fprintf(stderr, "Failed to create TLS session\n");
@@ -392,10 +399,8 @@ int main(int argc, char **argv) {
     tls_connection_info_t info;
     if (tls_get_connection_info(session, &info) == TLS_E_SUCCESS) {
         if (verbose) {
-            printf("Handshake complete (%.3f ms): %s, resumed=%s\n",
-                   handshake_time_ms,
-                   info.cipher_name,
-                   info.session_resumed ? "yes" : "no");
+            printf("Handshake complete (%.3f ms): %s, resumed=%s\n", handshake_time_ms,
+                   info.cipher_name, info.session_resumed ? "yes" : "no");
         }
     }
 
@@ -435,8 +440,7 @@ int main(int argc, char **argv) {
 
     if (json_output && num_results > 0) {
         print_results_json(results, num_results,
-                          backend == TLS_BACKEND_GNUTLS ? "gnutls" : "wolfssl",
-                          handshake_time_ms);
+                           backend == TLS_BACKEND_GNUTLS ? "gnutls" : "wolfssl", handshake_time_ms);
     }
 
     // Graceful shutdown

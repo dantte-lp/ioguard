@@ -39,16 +39,16 @@
  * - Inline functions for helpers
  */
 
-#include "priority_parser.h"
-#include "tls_abstract.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+#include "priority_parser.h"
+#include "tls_abstract.h"
 
 // C23 standard check (accept C2x/C20 from GCC 14 as it provides C23 features)
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 /* ============================================================================
@@ -61,76 +61,74 @@ static int tests_passed = 0;
 static int tests_failed = 0;
 
 /* Test macros with descriptive output */
-#define TEST(name) \
-    static void test_##name(void); \
-    static void run_test_##name(void) { \
-        printf("  Running test: %s...", #name); \
-        fflush(stdout); \
-        tests_run++; \
-        test_##name(); \
-        tests_passed++; \
-        printf(" PASSED\n"); \
-    } \
+#define TEST(name)                                                                                 \
+    static void test_##name(void);                                                                 \
+    static void run_test_##name(void)                                                              \
+    {                                                                                              \
+        printf("  Running test: %s...", #name);                                                    \
+        fflush(stdout);                                                                            \
+        tests_run++;                                                                               \
+        test_##name();                                                                             \
+        tests_passed++;                                                                            \
+        printf(" PASSED\n");                                                                       \
+    }                                                                                              \
     static void test_##name(void)
 
 #define RUN_TEST(name) run_test_##name()
 
-#define ASSERT(condition) \
-    do { \
-        if (!(condition)) { \
-            printf("\n    FAILED: %s:%d: Assertion failed: %s\n", \
-                   __FILE__, __LINE__, #condition); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT(condition)                                                                          \
+    do {                                                                                           \
+        if (!(condition)) {                                                                        \
+            printf("\n    FAILED: %s:%d: Assertion failed: %s\n", __FILE__, __LINE__, #condition); \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_EQ(a, b) \
-    do { \
-        if ((a) != (b)) { \
-            printf("\n    FAILED: %s:%d: Expected %d, got %d\n", \
-                   __FILE__, __LINE__, (int)(b), (int)(a)); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_EQ(a, b)                                                                            \
+    do {                                                                                           \
+        if ((a) != (b)) {                                                                          \
+            printf("\n    FAILED: %s:%d: Expected %d, got %d\n", __FILE__, __LINE__, (int)(b),     \
+                   (int)(a));                                                                      \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_STR_EQ(a, b) \
-    do { \
-        if (strcmp((a), (b)) != 0) { \
-            printf("\n    FAILED: %s:%d: Expected \"%s\", got \"%s\"\n", \
-                   __FILE__, __LINE__, (b), (a)); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_STR_EQ(a, b)                                                                        \
+    do {                                                                                           \
+        if (strcmp((a), (b)) != 0) {                                                               \
+            printf("\n    FAILED: %s:%d: Expected \"%s\", got \"%s\"\n", __FILE__, __LINE__, (b),  \
+                   (a));                                                                           \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_NOT_NULL(ptr) \
-    do { \
-        if ((ptr) == nullptr) { \
-            printf("\n    FAILED: %s:%d: Expected non-NULL pointer\n", \
-                   __FILE__, __LINE__); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_NOT_NULL(ptr)                                                                       \
+    do {                                                                                           \
+        if ((ptr) == nullptr) {                                                                    \
+            printf("\n    FAILED: %s:%d: Expected non-NULL pointer\n", __FILE__, __LINE__);        \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_NULL(ptr) \
-    do { \
-        if ((ptr) != nullptr) { \
-            printf("\n    FAILED: %s:%d: Expected NULL pointer\n", \
-                   __FILE__, __LINE__); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_NULL(ptr)                                                                           \
+    do {                                                                                           \
+        if ((ptr) != nullptr) {                                                                    \
+            printf("\n    FAILED: %s:%d: Expected NULL pointer\n", __FILE__, __LINE__);            \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_TRUE(condition) ASSERT(condition)
+#define ASSERT_TRUE(condition)  ASSERT(condition)
 #define ASSERT_FALSE(condition) ASSERT(!(condition))
 
 /* ============================================================================
@@ -140,17 +138,13 @@ static int tests_failed = 0;
 /**
  * Helper: Print token list for debugging
  */
-[[maybe_unused]] static inline void print_token_list(const token_list_t * const tokens)
+[[maybe_unused]] static inline void print_token_list(const token_list_t *const tokens)
 {
     printf("\n    Token list (%zu tokens):\n", tokens->count);
     for (size_t i = 0; i < tokens->count; i++) {
         const token_t *tok = &tokens->tokens[i];
-        printf("      [%zu] Type: %s, Start: \"%.*s\", Add: %d, Neg: %d\n",
-               i,
-               priority_token_type_name(tok->type),
-               (int)tok->length,
-               tok->start,
-               tok->is_addition,
+        printf("      [%zu] Type: %s, Start: \"%.*s\", Add: %d, Neg: %d\n", i,
+               priority_token_type_name(tok->type), (int)tok->length, tok->start, tok->is_addition,
                tok->is_negation);
     }
 }
@@ -158,9 +152,8 @@ static int tests_failed = 0;
 /**
  * Helper: Compare token with expected values
  */
-static inline bool token_matches(const token_t * const tok,
-                                  const token_type_t expected_type,
-                                  const char * const expected_value)
+static inline bool token_matches(const token_t *const tok, const token_type_t expected_type,
+                                 const char *const expected_value)
 {
     if (tok->type != expected_type) {
         return false;

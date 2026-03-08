@@ -9,43 +9,44 @@
  * Each test validates a specific aspect of the API.
  */
 
-#include "crypto/tls_gnutls.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <unistd.h>
+#include "crypto/tls_gnutls.h"
 
 /* Test counter */
 static int tests_passed = 0;
 static int tests_failed = 0;
 
 /* Test macros */
-#define TEST_START(name) \
-    printf("Running test: %s...", name); \
+#define TEST_START(name)                                                                           \
+    printf("Running test: %s...", name);                                                           \
     fflush(stdout);
 
-#define TEST_END() \
-    printf(" PASSED\n"); \
+#define TEST_END()                                                                                 \
+    printf(" PASSED\n");                                                                           \
     tests_passed++;
 
-#define TEST_FAIL(msg) \
-    do { \
-        printf(" FAILED: %s\n", msg); \
-        tests_failed++; \
-        return; \
-    } while(0)
+#define TEST_FAIL(msg)                                                                             \
+    do {                                                                                           \
+        printf(" FAILED: %s\n", msg);                                                              \
+        tests_failed++;                                                                            \
+        return;                                                                                    \
+    } while (0)
 
-#define ASSERT(cond, msg) \
-    if (!(cond)) { \
-        TEST_FAIL(msg); \
+#define ASSERT(cond, msg)                                                                          \
+    if (!(cond)) {                                                                                 \
+        TEST_FAIL(msg);                                                                            \
     }
 
 /* ============================================================================
  * Test: Global Initialization
  * ============================================================================ */
 
-void test_global_init(void) {
+void test_global_init(void)
+{
     TEST_START("global_init");
 
     int ret = tls_global_init(TLS_BACKEND_GNUTLS);
@@ -69,7 +70,8 @@ void test_global_init(void) {
  * Test: Context Creation and Destruction
  * ============================================================================ */
 
-void test_context_lifecycle(void) {
+void test_context_lifecycle(void)
+{
     TEST_START("context_lifecycle");
 
     // Test server context (TLS)
@@ -99,7 +101,8 @@ void test_context_lifecycle(void) {
  * Test: Context Configuration
  * ============================================================================ */
 
-void test_context_configuration(void) {
+void test_context_configuration(void)
+{
     TEST_START("context_configuration");
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -128,7 +131,8 @@ void test_context_configuration(void) {
  * Test: Session Creation and Destruction
  * ============================================================================ */
 
-void test_session_lifecycle(void) {
+void test_session_lifecycle(void)
+{
     TEST_START("session_lifecycle");
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -143,7 +147,7 @@ void test_session_lifecycle(void) {
     tls_session_set_ptr(session, &user_data);
     void *ptr = tls_session_get_ptr(session);
     ASSERT(ptr == &user_data, "User pointer mismatch");
-    ASSERT(*(int*)ptr == 42, "User data mismatch");
+    ASSERT(*(int *)ptr == 42, "User data mismatch");
 
     // Free session
     tls_session_free(session);
@@ -159,7 +163,8 @@ void test_session_lifecycle(void) {
  * Test: Error Handling
  * ============================================================================ */
 
-void test_error_handling(void) {
+void test_error_handling(void)
+{
     TEST_START("error_handling");
 
     // Test error strings
@@ -185,7 +190,8 @@ void test_error_handling(void) {
  * Test: Utility Functions
  * ============================================================================ */
 
-void test_utility_functions(void) {
+void test_utility_functions(void)
+{
     TEST_START("utility_functions");
 
     // Test memory allocation
@@ -238,7 +244,8 @@ void test_utility_functions(void) {
  * Test: Session Information
  * ============================================================================ */
 
-void test_session_info(void) {
+void test_session_info(void)
+{
     TEST_START("session_info");
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -268,7 +275,8 @@ void test_session_info(void) {
  * Test: C23 Cleanup Attributes
  * ============================================================================ */
 
-void test_cleanup_attributes(void) {
+void test_cleanup_attributes(void)
+{
     TEST_START("cleanup_attributes");
 
     // Test context cleanup
@@ -301,7 +309,8 @@ void test_cleanup_attributes(void) {
  * Test: Invalid Parameters
  * ============================================================================ */
 
-void test_invalid_parameters(void) {
+void test_invalid_parameters(void)
+{
     TEST_START("invalid_parameters");
 
     // Test session operations with nullptr
@@ -339,7 +348,8 @@ void test_invalid_parameters(void) {
  * Test: Backend Selection
  * ============================================================================ */
 
-void test_backend_selection(void) {
+void test_backend_selection(void)
+{
     TEST_START("backend_selection");
 
     // Test invalid backend
@@ -360,7 +370,8 @@ void test_backend_selection(void) {
  * Main Test Runner
  * ============================================================================ */
 
-int main(void) {
+int main(void)
+{
     printf("\n");
     printf("=================================================================\n");
     printf("GnuTLS Backend Unit Tests\n");

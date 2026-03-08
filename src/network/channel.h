@@ -16,12 +16,12 @@
 constexpr uint32_t RW_CHANNEL_DEFAULT_MAX_FAILS = 3;
 
 typedef struct {
-	rw_channel_state_t state;
-	bool cstp_active;
-	bool dtls_active;
-	uint32_t dtls_fail_count;
-	uint32_t dtls_max_fails;
-	rw_compress_type_t compress_type;
+    rw_channel_state_t state;
+    bool cstp_active;
+    bool dtls_active;
+    uint32_t dtls_fail_count;
+    uint32_t dtls_max_fails;
+    rw_compress_type_t compress_type;
 } rw_channel_ctx_t;
 
 /** Initialize channel context (starts CSTP_ONLY). */

@@ -9,21 +9,21 @@
 #ifndef RINGWALL_SECURITY_WOLFSENTRY_H
 #define RINGWALL_SECURITY_WOLFSENTRY_H
 
-#include <wolfsentry/wolfsentry.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <netinet/in.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <wolfsentry/wolfsentry.h>
 
 /** Opaque wrapper around a wolfSentry context. */
 typedef struct {
-	struct wolfsentry_context *ws_ctx;
+    struct wolfsentry_context *ws_ctx;
 } rw_wolfsentry_ctx_t;
 
 /** Result of a connection check. */
 typedef enum : uint8_t {
-	RW_WS_ACCEPT = 0,
-	RW_WS_REJECT = 1,
-	RW_WS_ERROR  = 2,
+    RW_WS_ACCEPT = 0,
+    RW_WS_REJECT = 1,
+    RW_WS_ERROR = 2,
 } rw_ws_result_t;
 
 /**
@@ -46,8 +46,8 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param json_len Length of @p json in bytes.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_wolfsentry_load_json(rw_wolfsentry_ctx_t *ctx,
-					  const char *json, size_t json_len);
+[[nodiscard]] int rw_wolfsentry_load_json(rw_wolfsentry_ctx_t *ctx, const char *json,
+                                          size_t json_len);
 
 /**
  * @brief Check whether a connection should be accepted or rejected.
@@ -60,14 +60,11 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param protocol    IP protocol number (e.g. IPPROTO_TCP).
  * @return RW_WS_ACCEPT, RW_WS_REJECT, or RW_WS_ERROR.
  */
-[[nodiscard]] rw_ws_result_t rw_wolfsentry_check_connection(
-	rw_wolfsentry_ctx_t *ctx,
-	int af,
-	const void *remote_addr,
-	uint16_t remote_port,
-	const void *local_addr,
-	uint16_t local_port,
-	int protocol);
+[[nodiscard]] rw_ws_result_t rw_wolfsentry_check_connection(rw_wolfsentry_ctx_t *ctx, int af,
+                                                            const void *remote_addr,
+                                                            uint16_t remote_port,
+                                                            const void *local_addr,
+                                                            uint16_t local_port, int protocol);
 
 /**
  * @brief Ban an IP address by inserting a penalty-boxed route.
@@ -76,8 +73,7 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param addr Pointer to binary address (4 or 16 bytes).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx,
-				       int af, const void *addr);
+[[nodiscard]] int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr);
 
 /**
  * @brief Remove a ban for an IP address.
@@ -86,7 +82,6 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param addr Pointer to binary address (4 or 16 bytes).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_wolfsentry_unban_ip(rw_wolfsentry_ctx_t *ctx,
-					 int af, const void *addr);
+[[nodiscard]] int rw_wolfsentry_unban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr);
 
 #endif /* RINGWALL_SECURITY_WOLFSENTRY_H */

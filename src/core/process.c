@@ -10,23 +10,22 @@
 
 /* Check glibc version for pidfd_spawn */
 #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 39))
-#define HAVE_PIDFD_SPAWN 1
+#    define HAVE_PIDFD_SPAWN 1
 #else
-#define HAVE_PIDFD_SPAWN 0
+#    define HAVE_PIDFD_SPAWN 0
 #endif
 
 #ifndef __NR_pidfd_open
-#define __NR_pidfd_open 434
+#    define __NR_pidfd_open 434
 #endif
 
 #ifndef __NR_pidfd_send_signal
-#define __NR_pidfd_send_signal 424
+#    define __NR_pidfd_send_signal 424
 #endif
 
 extern char **environ;
 
-int rw_process_spawn(rw_process_t *proc, const char *path,
-                      const char *const argv[])
+int rw_process_spawn(rw_process_t *proc, const char *path, const char *const argv[])
 {
     memset(proc, 0, sizeof(*proc));
     proc->pidfd = -1;
@@ -49,8 +48,7 @@ int rw_process_spawn(rw_process_t *proc, const char *path,
     int ret;
 
 #if HAVE_PIDFD_SPAWN
-    ret = pidfd_spawn(&proc->pidfd, path, &fa, &attr,
-                      (char *const *)argv, environ);
+    ret = pidfd_spawn(&proc->pidfd, path, &fa, &attr, (char *const *)argv, environ);
     if (ret != 0) {
         ret = -errno;
         goto cleanup;
@@ -59,8 +57,7 @@ int rw_process_spawn(rw_process_t *proc, const char *path,
 #else
     /* Fallback: posix_spawn + pidfd_open */
     pid_t pid;
-    ret = posix_spawn(&pid, path, &fa, &attr,
-                      (char *const *)argv, environ);
+    ret = posix_spawn(&pid, path, &fa, &attr, (char *const *)argv, environ);
     if (ret != 0) {
         ret = -ret; /* posix_spawn returns errno directly */
         goto cleanup;

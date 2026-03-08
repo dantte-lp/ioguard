@@ -18,12 +18,12 @@
  */
 
 #include "tls_gnutls.h"
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
 /* ============================================================================
  * Forward Declarations
@@ -45,7 +45,8 @@ static bool g_initialized = false;
  * Library Initialization
  * ============================================================================ */
 
-int tls_gnutls_init(void) {
+int tls_gnutls_init(void)
+{
     if (g_initialized) {
         return TLS_E_SUCCESS;
     }
@@ -75,7 +76,8 @@ int tls_gnutls_init(void) {
     return TLS_E_SUCCESS;
 }
 
-void tls_gnutls_deinit(void) {
+void tls_gnutls_deinit(void)
+{
     if (g_initialized) {
         gnutls_global_deinit();
         g_initialized = false;
@@ -87,107 +89,111 @@ void tls_gnutls_deinit(void) {
  * Error Handling
  * ============================================================================ */
 
-[[nodiscard]] int tls_gnutls_map_error(int gnutls_err) {
+[[nodiscard]] int tls_gnutls_map_error(int gnutls_err)
+{
     if (gnutls_err >= 0) {
         return TLS_E_SUCCESS;
     }
 
     switch (gnutls_err) {
-        case GNUTLS_E_AGAIN:
-            return TLS_E_AGAIN;
-        case GNUTLS_E_INTERRUPTED:
-            return TLS_E_INTERRUPTED;
-        case GNUTLS_E_MEMORY_ERROR:
-            return TLS_E_MEMORY_ERROR;
-        case GNUTLS_E_INVALID_REQUEST:
-            return TLS_E_INVALID_REQUEST;
-        case GNUTLS_E_FATAL_ALERT_RECEIVED:
-            return TLS_E_FATAL_ALERT_RECEIVED;
-        case GNUTLS_E_WARNING_ALERT_RECEIVED:
-            return TLS_E_WARNING_ALERT_RECEIVED;
-        case GNUTLS_E_UNEXPECTED_PACKET:
-        case GNUTLS_E_UNEXPECTED_HANDSHAKE_PACKET:
-            return TLS_E_UNEXPECTED_MESSAGE;
-        case GNUTLS_E_DECRYPTION_FAILED:
-            return TLS_E_DECRYPTION_FAILED;
-        case GNUTLS_E_CERTIFICATE_ERROR:
-        case GNUTLS_E_CERTIFICATE_KEY_MISMATCH:
-        case GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE:
-            return TLS_E_CERTIFICATE_ERROR;
-        case GNUTLS_E_CERTIFICATE_REQUIRED:
-            return TLS_E_CERTIFICATE_REQUIRED;
-        case GNUTLS_E_PREMATURE_TERMINATION:
-            return TLS_E_PREMATURE_TERMINATION;
-        case GNUTLS_E_REHANDSHAKE:
-            return TLS_E_REHANDSHAKE;
-        case GNUTLS_E_PUSH_ERROR:
-            return TLS_E_PUSH_ERROR;
-        case GNUTLS_E_PULL_ERROR:
-            return TLS_E_PULL_ERROR;
-        default:
-            return TLS_E_BACKEND_ERROR;
+    case GNUTLS_E_AGAIN:
+        return TLS_E_AGAIN;
+    case GNUTLS_E_INTERRUPTED:
+        return TLS_E_INTERRUPTED;
+    case GNUTLS_E_MEMORY_ERROR:
+        return TLS_E_MEMORY_ERROR;
+    case GNUTLS_E_INVALID_REQUEST:
+        return TLS_E_INVALID_REQUEST;
+    case GNUTLS_E_FATAL_ALERT_RECEIVED:
+        return TLS_E_FATAL_ALERT_RECEIVED;
+    case GNUTLS_E_WARNING_ALERT_RECEIVED:
+        return TLS_E_WARNING_ALERT_RECEIVED;
+    case GNUTLS_E_UNEXPECTED_PACKET:
+    case GNUTLS_E_UNEXPECTED_HANDSHAKE_PACKET:
+        return TLS_E_UNEXPECTED_MESSAGE;
+    case GNUTLS_E_DECRYPTION_FAILED:
+        return TLS_E_DECRYPTION_FAILED;
+    case GNUTLS_E_CERTIFICATE_ERROR:
+    case GNUTLS_E_CERTIFICATE_KEY_MISMATCH:
+    case GNUTLS_E_UNSUPPORTED_CERTIFICATE_TYPE:
+        return TLS_E_CERTIFICATE_ERROR;
+    case GNUTLS_E_CERTIFICATE_REQUIRED:
+        return TLS_E_CERTIFICATE_REQUIRED;
+    case GNUTLS_E_PREMATURE_TERMINATION:
+        return TLS_E_PREMATURE_TERMINATION;
+    case GNUTLS_E_REHANDSHAKE:
+        return TLS_E_REHANDSHAKE;
+    case GNUTLS_E_PUSH_ERROR:
+        return TLS_E_PUSH_ERROR;
+    case GNUTLS_E_PULL_ERROR:
+        return TLS_E_PULL_ERROR;
+    default:
+        return TLS_E_BACKEND_ERROR;
     }
 }
 
-[[nodiscard]] const char* tls_strerror(int error_code) {
+[[nodiscard]] const char *tls_strerror(int error_code)
+{
     switch (error_code) {
-        case TLS_E_SUCCESS:
-            return "Success";
-        case TLS_E_AGAIN:
-            return "Resource temporarily unavailable";
-        case TLS_E_INTERRUPTED:
-            return "Interrupted system call";
-        case TLS_E_MEMORY_ERROR:
-            return "Memory allocation failed";
-        case TLS_E_INVALID_REQUEST:
-            return "Invalid request";
-        case TLS_E_INVALID_PARAMETER:
-            return "Invalid parameter";
-        case TLS_E_FATAL_ALERT_RECEIVED:
-            return "Fatal alert received";
-        case TLS_E_WARNING_ALERT_RECEIVED:
-            return "Warning alert received";
-        case TLS_E_UNEXPECTED_MESSAGE:
-            return "Unexpected message";
-        case TLS_E_DECRYPTION_FAILED:
-            return "Decryption failed";
-        case TLS_E_CERTIFICATE_ERROR:
-            return "Certificate error";
-        case TLS_E_CERTIFICATE_REQUIRED:
-            return "Certificate required";
-        case TLS_E_HANDSHAKE_FAILED:
-            return "Handshake failed";
-        case TLS_E_SESSION_NOT_FOUND:
-            return "Session not found";
-        case TLS_E_PREMATURE_TERMINATION:
-            return "Premature termination";
-        case TLS_E_REHANDSHAKE:
-            return "Rehandshake requested";
-        case TLS_E_PUSH_ERROR:
-            return "Push error";
-        case TLS_E_PULL_ERROR:
-            return "Pull error";
-        case TLS_E_BACKEND_ERROR:
-            return "Backend-specific error";
-        default:
-            return "Unknown error";
+    case TLS_E_SUCCESS:
+        return "Success";
+    case TLS_E_AGAIN:
+        return "Resource temporarily unavailable";
+    case TLS_E_INTERRUPTED:
+        return "Interrupted system call";
+    case TLS_E_MEMORY_ERROR:
+        return "Memory allocation failed";
+    case TLS_E_INVALID_REQUEST:
+        return "Invalid request";
+    case TLS_E_INVALID_PARAMETER:
+        return "Invalid parameter";
+    case TLS_E_FATAL_ALERT_RECEIVED:
+        return "Fatal alert received";
+    case TLS_E_WARNING_ALERT_RECEIVED:
+        return "Warning alert received";
+    case TLS_E_UNEXPECTED_MESSAGE:
+        return "Unexpected message";
+    case TLS_E_DECRYPTION_FAILED:
+        return "Decryption failed";
+    case TLS_E_CERTIFICATE_ERROR:
+        return "Certificate error";
+    case TLS_E_CERTIFICATE_REQUIRED:
+        return "Certificate required";
+    case TLS_E_HANDSHAKE_FAILED:
+        return "Handshake failed";
+    case TLS_E_SESSION_NOT_FOUND:
+        return "Session not found";
+    case TLS_E_PREMATURE_TERMINATION:
+        return "Premature termination";
+    case TLS_E_REHANDSHAKE:
+        return "Rehandshake requested";
+    case TLS_E_PUSH_ERROR:
+        return "Push error";
+    case TLS_E_PULL_ERROR:
+        return "Pull error";
+    case TLS_E_BACKEND_ERROR:
+        return "Backend-specific error";
+    default:
+        return "Unknown error";
     }
 }
 
-[[nodiscard]] bool tls_error_is_fatal(int error_code) {
+[[nodiscard]] bool tls_error_is_fatal(int error_code)
+{
     switch (error_code) {
-        case TLS_E_SUCCESS:
-        case TLS_E_AGAIN:
-        case TLS_E_INTERRUPTED:
-        case TLS_E_WARNING_ALERT_RECEIVED:
-        case TLS_E_REHANDSHAKE:
-            return false;
-        default:
-            return true;
+    case TLS_E_SUCCESS:
+    case TLS_E_AGAIN:
+    case TLS_E_INTERRUPTED:
+    case TLS_E_WARNING_ALERT_RECEIVED:
+    case TLS_E_REHANDSHAKE:
+        return false;
+    default:
+        return true;
     }
 }
 
-[[nodiscard]] int tls_get_last_error(void) {
+[[nodiscard]] int tls_get_last_error(void)
+{
     // GnuTLS doesn't have a global error state like wolfSSL
     // Backend-specific errors should be captured at call sites
     return 0;
@@ -197,12 +203,13 @@ void tls_gnutls_deinit(void) {
  * Context Management
  * ============================================================================ */
 
-[[nodiscard]] tls_context_t* tls_context_new(bool is_server, bool is_dtls) {
+[[nodiscard]] tls_context_t *tls_context_new(bool is_server, bool is_dtls)
+{
     if (!g_initialized) {
         return nullptr;
     }
 
-    tls_context_t *ctx = (tls_context_t*)calloc(1, sizeof(tls_context_t));
+    tls_context_t *ctx = (tls_context_t *)calloc(1, sizeof(tls_context_t));
     if (ctx == nullptr) {
         return nullptr;
     }
@@ -223,7 +230,8 @@ void tls_gnutls_deinit(void) {
     return ctx;
 }
 
-void tls_context_free(tls_context_t *ctx) {
+void tls_context_free(tls_context_t *ctx)
+{
     if (ctx == nullptr) {
         return;
     }
@@ -247,8 +255,8 @@ void tls_context_free(tls_context_t *ctx) {
     free(ctx);
 }
 
-[[nodiscard]] int tls_context_set_cert_file(tls_context_t *ctx,
-                                             const char *cert_file) {
+[[nodiscard]] int tls_context_set_cert_file(tls_context_t *ctx, const char *cert_file)
+{
     if (ctx == nullptr || cert_file == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -262,13 +270,11 @@ void tls_context_free(tls_context_t *ctx) {
 
     // If key file is already set, load both now
     if (ctx->key_file_path != nullptr) {
-        int ret = gnutls_certificate_set_x509_key_file(ctx->x509_cred,
-                                                         ctx->cert_file_path,
-                                                         ctx->key_file_path,
-                                                         GNUTLS_X509_FMT_PEM);
+        int ret = gnutls_certificate_set_x509_key_file(ctx->x509_cred, ctx->cert_file_path,
+                                                       ctx->key_file_path, GNUTLS_X509_FMT_PEM);
         if (ret != GNUTLS_E_SUCCESS) {
-            fprintf(stderr, "Failed to load certificate from %s: %s\n",
-                    ctx->cert_file_path, gnutls_strerror(ret));
+            fprintf(stderr, "Failed to load certificate from %s: %s\n", ctx->cert_file_path,
+                    gnutls_strerror(ret));
             return tls_gnutls_map_error(ret);
         }
     }
@@ -276,8 +282,8 @@ void tls_context_free(tls_context_t *ctx) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_context_set_key_file(tls_context_t *ctx,
-                                            const char *key_file) {
+[[nodiscard]] int tls_context_set_key_file(tls_context_t *ctx, const char *key_file)
+{
     if (ctx == nullptr || key_file == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -291,13 +297,11 @@ void tls_context_free(tls_context_t *ctx) {
 
     // If cert file is already set, load both now
     if (ctx->cert_file_path != nullptr) {
-        int ret = gnutls_certificate_set_x509_key_file(ctx->x509_cred,
-                                                         ctx->cert_file_path,
-                                                         ctx->key_file_path,
-                                                         GNUTLS_X509_FMT_PEM);
+        int ret = gnutls_certificate_set_x509_key_file(ctx->x509_cred, ctx->cert_file_path,
+                                                       ctx->key_file_path, GNUTLS_X509_FMT_PEM);
         if (ret != GNUTLS_E_SUCCESS) {
-            fprintf(stderr, "Failed to load key from %s: %s\n",
-                    ctx->key_file_path, gnutls_strerror(ret));
+            fprintf(stderr, "Failed to load key from %s: %s\n", ctx->key_file_path,
+                    gnutls_strerror(ret));
             return tls_gnutls_map_error(ret);
         }
     }
@@ -305,18 +309,15 @@ void tls_context_free(tls_context_t *ctx) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_context_set_ca_file(tls_context_t *ctx,
-                                           const char *ca_file) {
+[[nodiscard]] int tls_context_set_ca_file(tls_context_t *ctx, const char *ca_file)
+{
     if (ctx == nullptr || ca_file == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
 
-    int ret = gnutls_certificate_set_x509_trust_file(ctx->x509_cred,
-                                                       ca_file,
-                                                       GNUTLS_X509_FMT_PEM);
+    int ret = gnutls_certificate_set_x509_trust_file(ctx->x509_cred, ca_file, GNUTLS_X509_FMT_PEM);
     if (ret < 0) {
-        fprintf(stderr, "Failed to load CA from %s: %s\n",
-                ca_file, gnutls_strerror(ret));
+        fprintf(stderr, "Failed to load CA from %s: %s\n", ca_file, gnutls_strerror(ret));
         return tls_gnutls_map_error(ret);
     }
 
@@ -324,8 +325,8 @@ void tls_context_free(tls_context_t *ctx) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_context_set_priority(tls_context_t *ctx,
-                                            const char *priority) {
+[[nodiscard]] int tls_context_set_priority(tls_context_t *ctx, const char *priority)
+{
     if (ctx == nullptr || priority == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -333,8 +334,7 @@ void tls_context_free(tls_context_t *ctx) {
     const char *err_pos = nullptr;
     int ret = gnutls_priority_init(&ctx->priority_cache, priority, &err_pos);
     if (ret != GNUTLS_E_SUCCESS) {
-        fprintf(stderr, "Failed to set priority string '%s': %s",
-                priority, gnutls_strerror(ret));
+        fprintf(stderr, "Failed to set priority string '%s': %s", priority, gnutls_strerror(ret));
         if (err_pos != nullptr) {
             fprintf(stderr, " at position: %s\n", err_pos);
         } else {
@@ -346,8 +346,8 @@ void tls_context_free(tls_context_t *ctx) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_context_set_dh_params_file(tls_context_t *ctx,
-                                                   const char *dh_file) {
+[[nodiscard]] int tls_context_set_dh_params_file(tls_context_t *ctx, const char *dh_file)
+{
     if (ctx == nullptr || dh_file == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -356,8 +356,7 @@ void tls_context_free(tls_context_t *ctx) {
     gnutls_datum_t dh_params_data;
     int ret = gnutls_load_file(dh_file, &dh_params_data);
     if (ret != GNUTLS_E_SUCCESS) {
-        fprintf(stderr, "Failed to load DH params from %s: %s\n",
-                dh_file, gnutls_strerror(ret));
+        fprintf(stderr, "Failed to load DH params from %s: %s\n", dh_file, gnutls_strerror(ret));
         return tls_gnutls_map_error(ret);
     }
 
@@ -369,9 +368,7 @@ void tls_context_free(tls_context_t *ctx) {
     }
 
     // Import DH params
-    ret = gnutls_dh_params_import_pkcs3(ctx->dh_params,
-                                         &dh_params_data,
-                                         GNUTLS_X509_FMT_PEM);
+    ret = gnutls_dh_params_import_pkcs3(ctx->dh_params, &dh_params_data, GNUTLS_X509_FMT_PEM);
     gnutls_free(dh_params_data.data);
 
     if (ret != GNUTLS_E_SUCCESS) {
@@ -387,10 +384,9 @@ void tls_context_free(tls_context_t *ctx) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_context_set_verify(tls_context_t *ctx,
-                                          bool verify,
-                                          tls_cert_verify_func_t callback,
-                                          void *userdata) {
+[[nodiscard]] int tls_context_set_verify(tls_context_t *ctx, bool verify,
+                                         tls_cert_verify_func_t callback, void *userdata)
+{
     if (ctx == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -403,8 +399,9 @@ void tls_context_free(tls_context_t *ctx) {
 }
 
 [[nodiscard]] int tls_context_set_psk_server_callback(tls_context_t *ctx,
-                                                        tls_psk_server_func_t callback,
-                                                        void *userdata) {
+                                                      tls_psk_server_func_t callback,
+                                                      void *userdata)
+{
     if (ctx == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -430,7 +427,8 @@ void tls_context_free(tls_context_t *ctx) {
  * @param data Serialized session data
  * @return GNUTLS_E_SUCCESS (0) on success, negative error code on failure
  */
-static int gnutls_db_store_cb(void *ptr, gnutls_datum_t key, gnutls_datum_t data) {
+static int gnutls_db_store_cb(void *ptr, gnutls_datum_t key, gnutls_datum_t data)
+{
     if (ptr == nullptr || key.data == nullptr || key.size == 0) {
         return GNUTLS_E_DB_ERROR;
     }
@@ -476,7 +474,8 @@ static int gnutls_db_store_cb(void *ptr, gnutls_datum_t key, gnutls_datum_t data
  * Note: GnuTLS will call gnutls_free() on the returned data, so we must allocate
  *       it using gnutls_malloc().
  */
-static gnutls_datum_t gnutls_db_retrieve_cb(void *ptr, gnutls_datum_t key) {
+static gnutls_datum_t gnutls_db_retrieve_cb(void *ptr, gnutls_datum_t key)
+{
     gnutls_datum_t result = {.data = nullptr, .size = 0};
 
     if (ptr == nullptr || key.data == nullptr || key.size == 0) {
@@ -527,7 +526,8 @@ static gnutls_datum_t gnutls_db_retrieve_cb(void *ptr, gnutls_datum_t key) {
  * @param key Session key (session ID) to remove
  * @return GNUTLS_E_SUCCESS (0) on success, negative error code on failure
  */
-static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key) {
+static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key)
+{
     if (ptr == nullptr || key.data == nullptr || key.size == 0) {
         return GNUTLS_E_DB_ERROR;
     }
@@ -546,11 +546,10 @@ static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key) {
  * Session Cache Configuration
  * ============================================================================ */
 
-[[nodiscard]] int tls_context_set_session_cache(tls_context_t *ctx,
-                                                  tls_db_store_func_t store_func,
-                                                  tls_db_retrieve_func_t retrieve_func,
-                                                  tls_db_remove_func_t remove_func,
-                                                  void *userdata) {
+[[nodiscard]] int tls_context_set_session_cache(tls_context_t *ctx, tls_db_store_func_t store_func,
+                                                tls_db_retrieve_func_t retrieve_func,
+                                                tls_db_remove_func_t remove_func, void *userdata)
+{
     if (ctx == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -566,8 +565,8 @@ static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_context_set_session_timeout(tls_context_t *ctx,
-                                                    unsigned int timeout_secs) {
+[[nodiscard]] int tls_context_set_session_timeout(tls_context_t *ctx, unsigned int timeout_secs)
+{
     if (ctx == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -581,12 +580,13 @@ static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key) {
  * Session Management
  * ============================================================================ */
 
-[[nodiscard]] tls_session_t* tls_session_new(tls_context_t *ctx) {
+[[nodiscard]] tls_session_t *tls_session_new(tls_context_t *ctx)
+{
     if (ctx == nullptr) {
         return nullptr;
     }
 
-    tls_session_t *session = (tls_session_t*)calloc(1, sizeof(tls_session_t));
+    tls_session_t *session = (tls_session_t *)calloc(1, sizeof(tls_session_t));
     if (session == nullptr) {
         return nullptr;
     }
@@ -613,9 +613,7 @@ static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key) {
     }
 
     // Set certificate credentials
-    ret = gnutls_credentials_set(session->session,
-                                  GNUTLS_CRD_CERTIFICATE,
-                                  ctx->x509_cred);
+    ret = gnutls_credentials_set(session->session, GNUTLS_CRD_CERTIFICATE, ctx->x509_cred);
     if (ret != GNUTLS_E_SUCCESS) {
         fprintf(stderr, "gnutls_credentials_set failed: %s\n", gnutls_strerror(ret));
         gnutls_deinit(session->session);
@@ -637,8 +635,7 @@ static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key) {
         const char *default_priority = "NORMAL:%SERVER_PRECEDENCE";
         ret = gnutls_priority_set_direct(session->session, default_priority, nullptr);
         if (ret != GNUTLS_E_SUCCESS) {
-            fprintf(stderr, "gnutls_priority_set_direct failed: %s\n",
-                    gnutls_strerror(ret));
+            fprintf(stderr, "gnutls_priority_set_direct failed: %s\n", gnutls_strerror(ret));
             gnutls_deinit(session->session);
             free(session);
             return nullptr;
@@ -672,7 +669,8 @@ static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key) {
     return session;
 }
 
-void tls_session_free(tls_session_t *session) {
+void tls_session_free(tls_session_t *session)
+{
     if (session == nullptr) {
         return;
     }
@@ -686,7 +684,8 @@ void tls_session_free(tls_session_t *session) {
     free(session);
 }
 
-[[nodiscard]] int tls_session_set_fd(tls_session_t *session, int fd) {
+[[nodiscard]] int tls_session_set_fd(tls_session_t *session, int fd)
+{
     if (session == nullptr || fd < 0) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -696,10 +695,9 @@ void tls_session_free(tls_session_t *session) {
 }
 
 /* Custom I/O callback wrappers */
-ssize_t tls_gnutls_push_wrapper(gnutls_transport_ptr_t ptr,
-                                  const void *data,
-                                  size_t len) {
-    tls_session_t *session = (tls_session_t*)ptr;
+ssize_t tls_gnutls_push_wrapper(gnutls_transport_ptr_t ptr, const void *data, size_t len)
+{
+    tls_session_t *session = (tls_session_t *)ptr;
     if (session->push_func == nullptr) {
         errno = EINVAL;
         return -1;
@@ -718,10 +716,9 @@ ssize_t tls_gnutls_push_wrapper(gnutls_transport_ptr_t ptr,
     return ret;
 }
 
-ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr,
-                                  void *data,
-                                  size_t len) {
-    tls_session_t *session = (tls_session_t*)ptr;
+ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr, void *data, size_t len)
+{
+    tls_session_t *session = (tls_session_t *)ptr;
     if (session->pull_func == nullptr) {
         errno = EINVAL;
         return -1;
@@ -740,8 +737,9 @@ ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr,
     return ret;
 }
 
-int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms) {
-    tls_session_t *session = (tls_session_t*)ptr;
+int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms)
+{
+    tls_session_t *session = (tls_session_t *)ptr;
     if (session->pull_timeout_func == nullptr) {
         return 0; // Assume ready
     }
@@ -749,11 +747,11 @@ int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms)
     return session->pull_timeout_func(session->io_userdata, ms);
 }
 
-[[nodiscard]] int tls_session_set_io_functions(tls_session_t *session,
-                                                 tls_push_func_t push_func,
-                                                 tls_pull_func_t pull_func,
-                                                 tls_pull_timeout_func_t pull_timeout_func,
-                                                 void *userdata) {
+[[nodiscard]] int tls_session_set_io_functions(tls_session_t *session, tls_push_func_t push_func,
+                                               tls_pull_func_t pull_func,
+                                               tls_pull_timeout_func_t pull_timeout_func,
+                                               void *userdata)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -770,27 +768,29 @@ int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms)
 
     if (pull_timeout_func != nullptr) {
         gnutls_transport_set_pull_timeout_function(session->session,
-                                                     tls_gnutls_pull_timeout_wrapper);
+                                                   tls_gnutls_pull_timeout_wrapper);
     }
 
     return TLS_E_SUCCESS;
 }
 
-void tls_session_set_ptr(tls_session_t *session, void *ptr) {
+void tls_session_set_ptr(tls_session_t *session, void *ptr)
+{
     if (session != nullptr) {
         session->user_ptr = ptr;
     }
 }
 
-[[nodiscard]] void* tls_session_get_ptr(tls_session_t *session) {
+[[nodiscard]] void *tls_session_get_ptr(tls_session_t *session)
+{
     if (session == nullptr) {
         return nullptr;
     }
     return session->user_ptr;
 }
 
-[[nodiscard]] int tls_session_set_timeout(tls_session_t *session,
-                                           unsigned int timeout_ms) {
+[[nodiscard]] int tls_session_set_timeout(tls_session_t *session, unsigned int timeout_ms)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -803,7 +803,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
  * DTLS-Specific Functions
  * ============================================================================ */
 
-[[nodiscard]] int tls_dtls_set_mtu(tls_session_t *session, unsigned int mtu) {
+[[nodiscard]] int tls_dtls_set_mtu(tls_session_t *session, unsigned int mtu)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -812,7 +813,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_dtls_get_mtu(tls_session_t *session) {
+[[nodiscard]] int tls_dtls_get_mtu(tls_session_t *session)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -820,16 +822,14 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return gnutls_dtls_get_mtu(session->session);
 }
 
-[[nodiscard]] int tls_dtls_set_timeouts(tls_session_t *session,
-                                          unsigned int retrans_timeout_ms,
-                                          unsigned int total_timeout_ms) {
+[[nodiscard]] int tls_dtls_set_timeouts(tls_session_t *session, unsigned int retrans_timeout_ms,
+                                        unsigned int total_timeout_ms)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
 
-    gnutls_dtls_set_timeouts(session->session,
-                              retrans_timeout_ms,
-                              total_timeout_ms);
+    gnutls_dtls_set_timeouts(session->session, retrans_timeout_ms, total_timeout_ms);
     return TLS_E_SUCCESS;
 }
 
@@ -837,7 +837,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
  * Handshake Operations
  * ============================================================================ */
 
-[[nodiscard]] int tls_handshake(tls_session_t *session) {
+[[nodiscard]] int tls_handshake(tls_session_t *session)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -859,7 +860,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return tls_gnutls_map_error(ret);
 }
 
-[[nodiscard]] int tls_rehandshake(tls_session_t *session) {
+[[nodiscard]] int tls_rehandshake(tls_session_t *session)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -872,9 +874,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
  * Data I/O Operations
  * ============================================================================ */
 
-[[nodiscard]] ssize_t tls_send(tls_session_t *session,
-                                 const void *data,
-                                 size_t len) {
+[[nodiscard]] ssize_t tls_send(tls_session_t *session, const void *data, size_t len)
+{
     if (session == nullptr || data == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -888,9 +889,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return tls_gnutls_map_error(ret);
 }
 
-[[nodiscard]] ssize_t tls_recv(tls_session_t *session,
-                                 void *data,
-                                 size_t len) {
+[[nodiscard]] ssize_t tls_recv(tls_session_t *session, void *data, size_t len)
+{
     if (session == nullptr || data == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -904,7 +904,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return tls_gnutls_map_error(ret);
 }
 
-[[nodiscard]] size_t tls_pending(tls_session_t *session) {
+[[nodiscard]] size_t tls_pending(tls_session_t *session)
+{
     if (session == nullptr) {
         return 0;
     }
@@ -912,7 +913,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return gnutls_record_check_pending(session->session);
 }
 
-[[nodiscard]] int tls_cork(tls_session_t *session) {
+[[nodiscard]] int tls_cork(tls_session_t *session)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -921,7 +923,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] int tls_uncork(tls_session_t *session) {
+[[nodiscard]] int tls_uncork(tls_session_t *session)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -934,7 +937,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
  * Connection Termination
  * ============================================================================ */
 
-[[nodiscard]] int tls_bye(tls_session_t *session) {
+[[nodiscard]] int tls_bye(tls_session_t *session)
+{
     if (session == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -943,7 +947,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr) {
     return tls_gnutls_map_error(ret);
 }
 
-void tls_alert_send(tls_session_t *session, tls_alert_t alert) {
+void tls_alert_send(tls_session_t *session, tls_alert_t alert)
+{
     if (session == nullptr) {
         return;
     }
@@ -955,8 +960,8 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert) {
  * Session Information
  * ============================================================================ */
 
-[[nodiscard]] int tls_get_connection_info(tls_session_t *session,
-                                            tls_connection_info_t *info) {
+[[nodiscard]] int tls_get_connection_info(tls_session_t *session, tls_connection_info_t *info)
+{
     if (session == nullptr || info == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
@@ -966,37 +971,34 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert) {
     // Get TLS version
     gnutls_protocol_t proto = gnutls_protocol_get_version(session->session);
     switch (proto) {
-        case GNUTLS_TLS1_2:
-            info->version = TLS_VERSION_TLS12;
-            break;
-        case GNUTLS_TLS1_3:
-            info->version = TLS_VERSION_TLS13;
-            break;
-        case GNUTLS_DTLS1_2:
-            info->version = TLS_VERSION_DTLS12;
-            break;
-        default:
-            info->version = TLS_VERSION_UNKNOWN;
-            break;
+    case GNUTLS_TLS1_2:
+        info->version = TLS_VERSION_TLS12;
+        break;
+    case GNUTLS_TLS1_3:
+        info->version = TLS_VERSION_TLS13;
+        break;
+    case GNUTLS_DTLS1_2:
+        info->version = TLS_VERSION_DTLS12;
+        break;
+    default:
+        info->version = TLS_VERSION_UNKNOWN;
+        break;
     }
 
     // Get cipher info
-    const char *cipher_name = gnutls_cipher_get_name(
-        gnutls_cipher_get(session->session));
+    const char *cipher_name = gnutls_cipher_get_name(gnutls_cipher_get(session->session));
     if (cipher_name != nullptr) {
         snprintf(info->cipher_name, sizeof(info->cipher_name), "%s", cipher_name);
     }
 
     // Get MAC info
-    const char *mac_name = gnutls_mac_get_name(
-        gnutls_mac_get(session->session));
+    const char *mac_name = gnutls_mac_get_name(gnutls_mac_get(session->session));
     if (mac_name != nullptr) {
         snprintf(info->mac_name, sizeof(info->mac_name), "%s", mac_name);
     }
 
     // Get cipher bits
-    info->cipher_bits = 8 * gnutls_cipher_get_key_size(
-        gnutls_cipher_get(session->session));
+    info->cipher_bits = 8 * gnutls_cipher_get_key_size(gnutls_cipher_get(session->session));
 
     // Check if session resumed
     info->session_resumed = gnutls_session_is_resumed(session->session) != 0;
@@ -1007,7 +1009,8 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert) {
     return TLS_E_SUCCESS;
 }
 
-[[nodiscard]] char* tls_get_session_desc(tls_session_t *session) {
+[[nodiscard]] char *tls_get_session_desc(tls_session_t *session)
+{
     if (session == nullptr) {
         return nullptr;
     }
@@ -1016,7 +1019,8 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert) {
     return desc; // Caller must free with gnutls_free() or tls_free()
 }
 
-[[nodiscard]] const tls_certificate_t* tls_get_peer_certificate(tls_session_t *session) {
+[[nodiscard]] const tls_certificate_t *tls_get_peer_certificate(tls_session_t *session)
+{
     if (session == nullptr) {
         return nullptr;
     }
@@ -1030,42 +1034,43 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert) {
  * Utility Functions
  * ============================================================================ */
 
-[[nodiscard]] void* tls_malloc(size_t size) {
+[[nodiscard]] void *tls_malloc(size_t size)
+{
     return gnutls_malloc(size);
 }
 
-void tls_free(void *ptr) {
+void tls_free(void *ptr)
+{
     gnutls_free(ptr);
 }
 
-[[nodiscard]] int tls_hash_fast(int algo,
-                                  const void *data,
-                                  size_t data_len,
-                                  uint8_t *output) {
+[[nodiscard]] int tls_hash_fast(int algo, const void *data, size_t data_len, uint8_t *output)
+{
     if (data == nullptr || output == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }
 
     gnutls_digest_algorithm_t gnutls_algo;
     switch (algo) {
-        case 0:
-            gnutls_algo = GNUTLS_DIG_SHA256;
-            break;
-        case 1:
-            gnutls_algo = GNUTLS_DIG_SHA384;
-            break;
-        case 2:
-            gnutls_algo = GNUTLS_DIG_SHA512;
-            break;
-        default:
-            return TLS_E_INVALID_PARAMETER;
+    case 0:
+        gnutls_algo = GNUTLS_DIG_SHA256;
+        break;
+    case 1:
+        gnutls_algo = GNUTLS_DIG_SHA384;
+        break;
+    case 2:
+        gnutls_algo = GNUTLS_DIG_SHA512;
+        break;
+    default:
+        return TLS_E_INVALID_PARAMETER;
     }
 
     int ret = gnutls_hash_fast(gnutls_algo, data, data_len, output);
     return tls_gnutls_map_error(ret);
 }
 
-[[nodiscard]] int tls_random(void *data, size_t len) {
+[[nodiscard]] int tls_random(void *data, size_t len)
+{
     if (data == nullptr) {
         return TLS_E_INVALID_PARAMETER;
     }

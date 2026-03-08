@@ -23,16 +23,16 @@
  * for the TLS abstraction layer.
  */
 
-#include "tls_abstract.h"
-#include "tls_wolfssl.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+#include "tls_abstract.h"
+#include "tls_wolfssl.h"
 
 // C23 standard check (accept C2x/C20 from GCC 14 as it provides C23 features)
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 /* Test counter */
@@ -41,80 +41,79 @@ static int tests_passed = 0;
 static int tests_failed = 0;
 
 /* Test macros */
-#define TEST(name) \
-    static void test_##name(void); \
-    static void run_test_##name(void) { \
-        printf("  Running test: %s...", #name); \
-        fflush(stdout); \
-        tests_run++; \
-        test_##name(); \
-        tests_passed++; \
-        printf(" PASSED\n"); \
-    } \
+#define TEST(name)                                                                                 \
+    static void test_##name(void);                                                                 \
+    static void run_test_##name(void)                                                              \
+    {                                                                                              \
+        printf("  Running test: %s...", #name);                                                    \
+        fflush(stdout);                                                                            \
+        tests_run++;                                                                               \
+        test_##name();                                                                             \
+        tests_passed++;                                                                            \
+        printf(" PASSED\n");                                                                       \
+    }                                                                                              \
     static void test_##name(void)
 
 #define RUN_TEST(name) run_test_##name()
 
-#define ASSERT(condition) \
-    do { \
-        if (!(condition)) { \
-            printf("\n    FAILED: %s:%d: Assertion failed: %s\n", \
-                   __FILE__, __LINE__, #condition); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT(condition)                                                                          \
+    do {                                                                                           \
+        if (!(condition)) {                                                                        \
+            printf("\n    FAILED: %s:%d: Assertion failed: %s\n", __FILE__, __LINE__, #condition); \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_EQ(a, b) \
-    do { \
-        if ((a) != (b)) { \
-            printf("\n    FAILED: %s:%d: Expected %d, got %d\n", \
-                   __FILE__, __LINE__, (int)(b), (int)(a)); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_EQ(a, b)                                                                            \
+    do {                                                                                           \
+        if ((a) != (b)) {                                                                          \
+            printf("\n    FAILED: %s:%d: Expected %d, got %d\n", __FILE__, __LINE__, (int)(b),     \
+                   (int)(a));                                                                      \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_NOT_NULL(ptr) \
-    do { \
-        if ((ptr) == nullptr) { \
-            printf("\n    FAILED: %s:%d: Expected non-NULL pointer\n", \
-                   __FILE__, __LINE__); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_NOT_NULL(ptr)                                                                       \
+    do {                                                                                           \
+        if ((ptr) == nullptr) {                                                                    \
+            printf("\n    FAILED: %s:%d: Expected non-NULL pointer\n", __FILE__, __LINE__);        \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_NULL(ptr) \
-    do { \
-        if ((ptr) != nullptr) { \
-            printf("\n    FAILED: %s:%d: Expected NULL pointer\n", \
-                   __FILE__, __LINE__); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_NULL(ptr)                                                                           \
+    do {                                                                                           \
+        if ((ptr) != nullptr) {                                                                    \
+            printf("\n    FAILED: %s:%d: Expected NULL pointer\n", __FILE__, __LINE__);            \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_STR_EQ(a, b) \
-    do { \
-        if (strcmp((a), (b)) != 0) { \
-            printf("\n    FAILED: %s:%d: Expected '%s', got '%s'\n", \
-                   __FILE__, __LINE__, (b), (a)); \
-            tests_failed++; \
-            tests_passed--; \
-            return; \
-        } \
+#define ASSERT_STR_EQ(a, b)                                                                        \
+    do {                                                                                           \
+        if (strcmp((a), (b)) != 0) {                                                               \
+            printf("\n    FAILED: %s:%d: Expected '%s', got '%s'\n", __FILE__, __LINE__, (b),      \
+                   (a));                                                                           \
+            tests_failed++;                                                                        \
+            tests_passed--;                                                                        \
+            return;                                                                                \
+        }                                                                                          \
     } while (0)
 
 /* ============================================================================
  * Test Cases
  * ============================================================================ */
 
-TEST(library_initialization) {
+TEST(library_initialization)
+{
     int ret = tls_wolfssl_init();
     ASSERT_EQ(ret, TLS_E_SUCCESS);
 
@@ -125,7 +124,8 @@ TEST(library_initialization) {
     tls_wolfssl_deinit();
 }
 
-TEST(library_double_init) {
+TEST(library_double_init)
+{
     int ret1 = tls_wolfssl_init();
     ASSERT_EQ(ret1, TLS_E_SUCCESS);
 
@@ -136,7 +136,8 @@ TEST(library_double_init) {
     tls_wolfssl_deinit();
 }
 
-TEST(context_creation_server) {
+TEST(context_creation_server)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -148,7 +149,8 @@ TEST(context_creation_server) {
     tls_wolfssl_deinit();
 }
 
-TEST(context_creation_client) {
+TEST(context_creation_client)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(false, false);
@@ -160,7 +162,8 @@ TEST(context_creation_client) {
     tls_wolfssl_deinit();
 }
 
-TEST(context_creation_dtls_server) {
+TEST(context_creation_dtls_server)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, true);
@@ -172,7 +175,8 @@ TEST(context_creation_dtls_server) {
     tls_wolfssl_deinit();
 }
 
-TEST(context_creation_dtls_client) {
+TEST(context_creation_dtls_client)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(false, true);
@@ -184,7 +188,8 @@ TEST(context_creation_dtls_client) {
     tls_wolfssl_deinit();
 }
 
-TEST(session_creation) {
+TEST(session_creation)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -200,13 +205,14 @@ TEST(session_creation) {
     tls_wolfssl_deinit();
 }
 
-TEST(session_set_get_ptr) {
+TEST(session_set_get_ptr)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, false);
     tls_session_t *session = tls_session_new(ctx);
 
-    void *test_ptr = (void*)0x12345678;
+    void *test_ptr = (void *)0x12345678;
     tls_session_set_ptr(session, test_ptr);
 
     void *retrieved = tls_session_get_ptr(session);
@@ -217,28 +223,32 @@ TEST(session_set_get_ptr) {
     tls_wolfssl_deinit();
 }
 
-TEST(priority_translation_normal) {
+TEST(priority_translation_normal)
+{
     char output[512];
     int ret = tls_wolfssl_translate_priority("NORMAL", output, sizeof(output));
     ASSERT_EQ(ret, TLS_E_SUCCESS);
     ASSERT(strlen(output) > 0);
 }
 
-TEST(priority_translation_secure256) {
+TEST(priority_translation_secure256)
+{
     char output[512];
     int ret = tls_wolfssl_translate_priority("SECURE256", output, sizeof(output));
     ASSERT_EQ(ret, TLS_E_SUCCESS);
     ASSERT(strstr(output, "AES256") != nullptr);
 }
 
-TEST(priority_translation_performance) {
+TEST(priority_translation_performance)
+{
     char output[512];
     int ret = tls_wolfssl_translate_priority("PERFORMANCE", output, sizeof(output));
     ASSERT_EQ(ret, TLS_E_SUCCESS);
     ASSERT(strstr(output, "CHACHA20") != nullptr || strstr(output, "AES128") != nullptr);
 }
 
-TEST(context_set_priority) {
+TEST(context_set_priority)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -254,7 +264,8 @@ TEST(context_set_priority) {
     tls_wolfssl_deinit();
 }
 
-TEST(context_set_verify) {
+TEST(context_set_verify)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -272,7 +283,8 @@ TEST(context_set_verify) {
     tls_wolfssl_deinit();
 }
 
-TEST(context_set_session_timeout) {
+TEST(context_set_session_timeout)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, false);
@@ -286,7 +298,8 @@ TEST(context_set_session_timeout) {
     tls_wolfssl_deinit();
 }
 
-TEST(dtls_set_get_mtu) {
+TEST(dtls_set_get_mtu)
+{
     (void)tls_wolfssl_init();
 
     tls_context_t *ctx = tls_context_new(true, true);
@@ -303,7 +316,8 @@ TEST(dtls_set_get_mtu) {
     tls_wolfssl_deinit();
 }
 
-TEST(error_mapping) {
+TEST(error_mapping)
+{
     // Test that error mapping returns valid abstraction errors
     int ret;
 
@@ -320,7 +334,8 @@ TEST(error_mapping) {
     ASSERT_EQ(ret, TLS_E_INVALID_PARAMETER);
 }
 
-TEST(error_strings) {
+TEST(error_strings)
+{
     const char *str;
 
     str = tls_strerror(TLS_E_SUCCESS);
@@ -336,14 +351,16 @@ TEST(error_strings) {
     ASSERT(strstr(str, "emory") != nullptr);
 }
 
-TEST(error_is_fatal) {
+TEST(error_is_fatal)
+{
     ASSERT(tls_error_is_fatal(TLS_E_AGAIN) == false);
     ASSERT(tls_error_is_fatal(TLS_E_INTERRUPTED) == false);
     ASSERT(tls_error_is_fatal(TLS_E_MEMORY_ERROR) == true);
     ASSERT(tls_error_is_fatal(TLS_E_HANDSHAKE_FAILED) == true);
 }
 
-TEST(hash_fast_sha256) {
+TEST(hash_fast_sha256)
+{
     (void)tls_wolfssl_init();
 
     const char *data = "Hello, World!";
@@ -365,7 +382,8 @@ TEST(hash_fast_sha256) {
     tls_wolfssl_deinit();
 }
 
-TEST(random_generation) {
+TEST(random_generation)
+{
     (void)tls_wolfssl_init();
 
     uint8_t buf1[32];
@@ -383,7 +401,8 @@ TEST(random_generation) {
     tls_wolfssl_deinit();
 }
 
-TEST(memory_allocation) {
+TEST(memory_allocation)
+{
     void *ptr = tls_malloc(1024);
     ASSERT_NOT_NULL(ptr);
 
@@ -392,7 +411,8 @@ TEST(memory_allocation) {
     tls_free(ptr);
 }
 
-TEST(null_parameter_checks) {
+TEST(null_parameter_checks)
+{
     // Test that functions properly handle nullptr parameters
     int ret;
 
@@ -413,7 +433,8 @@ TEST(null_parameter_checks) {
  * Main Test Runner
  * ============================================================================ */
 
-int main(void) {
+int main(void)
+{
     printf("===============================================\n");
     printf("wolfSSL Backend Unit Tests\n");
     printf("===============================================\n\n");

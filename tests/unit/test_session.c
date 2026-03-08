@@ -1,7 +1,7 @@
-#include <unity/unity.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <unity/unity.h>
 #include "core/session.h"
 
 static rw_session_store_t *store;
@@ -69,8 +69,7 @@ void test_session_validate_success(void)
 
     rw_session_t *validated = nullptr;
 
-    ret = rw_session_validate(store, cookie, RW_SESSION_COOKIE_SIZE,
-                               &validated);
+    ret = rw_session_validate(store, cookie, RW_SESSION_COOKIE_SIZE, &validated);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_NOT_NULL(validated);
     TEST_ASSERT_EQUAL_PTR(created, validated);

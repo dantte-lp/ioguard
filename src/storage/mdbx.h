@@ -25,23 +25,23 @@ constexpr size_t RW_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024;
 
 /** VPN session record stored in libmdbx. */
 typedef struct {
-	uint8_t  session_id[RW_SESSION_ID_LEN];
-	uint8_t  cookie_hmac[32];
-	uint8_t  dtls_master_secret[48];
-	uint32_t assigned_ipv4;
-	time_t   created_at;
-	time_t   expires_at;
-	char     username[256];
-	char     groupname[256];
-	uint32_t source_ip;
-	uint16_t source_port;
-	bool     deny_roaming;
+    uint8_t session_id[RW_SESSION_ID_LEN];
+    uint8_t cookie_hmac[32];
+    uint8_t dtls_master_secret[48];
+    uint32_t assigned_ipv4;
+    time_t created_at;
+    time_t expires_at;
+    char username[256];
+    char groupname[256];
+    uint32_t source_ip;
+    uint16_t source_port;
+    bool deny_roaming;
 } rw_session_record_t;
 
 /** Opaque context owning an MDBX environment and session table handle. */
 typedef struct {
-	MDBX_env *env;
-	MDBX_dbi  dbi_sessions;
+    MDBX_env *env;
+    MDBX_dbi dbi_sessions;
 } rw_mdbx_ctx_t;
 
 /**
@@ -64,8 +64,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param session Session record to store (session_id is the key).
  * @return 0 on success, -EEXIST if key exists, other negative errno on error.
  */
-[[nodiscard]] int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx,
-                                         const rw_session_record_t *session);
+[[nodiscard]] int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx, const rw_session_record_t *session);
 
 /**
  * @brief Look up a session by its 32-byte ID.
@@ -96,8 +95,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
 [[nodiscard]] int rw_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count);
 
 /** Per-session callback for rw_mdbx_session_iterate(). Return non-zero to stop. */
-typedef int (*rw_mdbx_session_iter_fn)(const rw_session_record_t *session,
-                                       void *userdata);
+typedef int (*rw_mdbx_session_iter_fn)(const rw_session_record_t *session, void *userdata);
 
 /**
  * @brief Iterate over every session record, calling fn for each.
@@ -107,8 +105,7 @@ typedef int (*rw_mdbx_session_iter_fn)(const rw_session_record_t *session,
  * @return 0 on success (all records visited), negative errno on error,
  *         or the non-zero value returned by fn if iteration was stopped.
  */
-[[nodiscard]] int rw_mdbx_session_iterate(rw_mdbx_ctx_t *ctx,
-                                          rw_mdbx_session_iter_fn fn,
+[[nodiscard]] int rw_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, rw_mdbx_session_iter_fn fn,
                                           void *userdata);
 
 #endif /* RINGWALL_STORAGE_MDBX_H */

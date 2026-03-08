@@ -4,7 +4,7 @@
 #include <string.h>
 
 #ifdef USE_MIMALLOC
-#include <mimalloc.h>
+#    include <mimalloc.h>
 #endif
 
 int rw_mem_init(void)

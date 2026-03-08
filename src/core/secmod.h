@@ -2,8 +2,8 @@
 #define RINGWALL_CORE_SECMOD_H
 
 #include "auth/pam.h"
-#include "core/session.h"
 #include "config/config.h"
+#include "core/session.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -32,8 +32,7 @@ typedef struct {
  * @param config  Server configuration (must outlive ctx).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd,
-                                  const rw_config_t *config);
+[[nodiscard]] int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config);
 
 /**
  * @brief Run the sec-mod event loop (blocking).
@@ -68,7 +67,6 @@ void rw_secmod_destroy(rw_secmod_ctx_t *ctx);
  * @param len   Length of data.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_secmod_handle_message(rw_secmod_ctx_t *ctx,
-                                            const uint8_t *data, size_t len);
+[[nodiscard]] int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t len);
 
 #endif /* RINGWALL_CORE_SECMOD_H */

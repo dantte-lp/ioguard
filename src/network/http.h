@@ -9,10 +9,10 @@
 #ifndef RINGWALL_NETWORK_HTTP_H
 #define RINGWALL_NETWORK_HTTP_H
 
+#include <llhttp.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <llhttp.h>
 
 constexpr uint32_t RW_HTTP_MAX_HEADERS = 32;
 constexpr size_t RW_HTTP_MAX_URL = 512;
@@ -21,33 +21,33 @@ constexpr size_t RW_HTTP_MAX_HEADER_VALUE = 1024;
 constexpr size_t RW_HTTP_MAX_BODY = 8192;
 
 typedef struct {
-	char name[RW_HTTP_MAX_HEADER_NAME];
-	char value[RW_HTTP_MAX_HEADER_VALUE];
+    char name[RW_HTTP_MAX_HEADER_NAME];
+    char value[RW_HTTP_MAX_HEADER_VALUE];
 } rw_http_header_t;
 
 typedef struct {
-	uint8_t method;          /* llhttp_method_t */
-	char url[RW_HTTP_MAX_URL];
-	size_t url_len;
-	rw_http_header_t headers[RW_HTTP_MAX_HEADERS];
-	uint32_t header_count;
-	char body[RW_HTTP_MAX_BODY];
-	size_t body_len;
-	bool headers_complete;
-	bool message_complete;
-	bool is_upgrade;
-	/* internal parsing state */
-	char _cur_header_field[RW_HTTP_MAX_HEADER_NAME];
-	size_t _cur_field_len;
-	char _cur_header_value[RW_HTTP_MAX_HEADER_VALUE];
-	size_t _cur_value_len;
-	bool _parsing_value;
+    uint8_t method; /* llhttp_method_t */
+    char url[RW_HTTP_MAX_URL];
+    size_t url_len;
+    rw_http_header_t headers[RW_HTTP_MAX_HEADERS];
+    uint32_t header_count;
+    char body[RW_HTTP_MAX_BODY];
+    size_t body_len;
+    bool headers_complete;
+    bool message_complete;
+    bool is_upgrade;
+    /* internal parsing state */
+    char _cur_header_field[RW_HTTP_MAX_HEADER_NAME];
+    size_t _cur_field_len;
+    char _cur_header_value[RW_HTTP_MAX_HEADER_VALUE];
+    size_t _cur_value_len;
+    bool _parsing_value;
 } rw_http_request_t;
 
 typedef struct {
-	llhttp_t parser;
-	llhttp_settings_t settings;
-	rw_http_request_t request;
+    llhttp_t parser;
+    llhttp_settings_t settings;
+    rw_http_request_t request;
 } rw_http_parser_t;
 
 /**
@@ -91,10 +91,8 @@ const char *rw_http_get_header(const rw_http_request_t *req, const char *name);
  * @param body_len Length of body.
  * @return Number of bytes written on success, negative errno on failure.
  */
-[[nodiscard]] int rw_http_format_response(char *buf, size_t buf_size,
-                                          int status_code,
-                                          const rw_http_header_t *headers,
-                                          uint32_t header_count,
+[[nodiscard]] int rw_http_format_response(char *buf, size_t buf_size, int status_code,
+                                          const rw_http_header_t *headers, uint32_t header_count,
                                           const char *body, size_t body_len);
 
 #endif /* RINGWALL_NETWORK_HTTP_H */

@@ -15,34 +15,34 @@
 #include <stdint.h>
 
 typedef struct {
-	char     username[256];
-	char     password_hash[256];    /* Argon2id encoded */
-	char     groups[1024];          /* JSON array */
-	bool     enabled;
-	uint32_t failed_attempts;
-	char     locked_until[32];      /* ISO 8601 or empty */
-	bool     totp_enabled;
+    char username[256];
+    char password_hash[256]; /* Argon2id encoded */
+    char groups[1024];       /* JSON array */
+    bool enabled;
+    uint32_t failed_attempts;
+    char locked_until[32]; /* ISO 8601 or empty */
+    bool totp_enabled;
 } rw_user_record_t;
 
 typedef struct {
-	char     event_type[32];
-	char     username[256];
-	char     source_ip[46];         /* INET6_ADDRSTRLEN */
-	uint16_t source_port;
-	char     auth_method[16];
-	char     result[16];
-	char     details[1024];         /* JSON */
-	char     session_id[65];        /* hex */
+    char event_type[32];
+    char username[256];
+    char source_ip[46]; /* INET6_ADDRSTRLEN */
+    uint16_t source_port;
+    char auth_method[16];
+    char result[16];
+    char details[1024];  /* JSON */
+    char session_id[65]; /* hex */
 } rw_audit_entry_t;
 
 typedef struct {
-	sqlite3      *db;
-	sqlite3_stmt *stmt_user_lookup;
-	sqlite3_stmt *stmt_user_create;
-	sqlite3_stmt *stmt_audit_insert;
-	sqlite3_stmt *stmt_audit_query;
-	sqlite3_stmt *stmt_ban_check;
-	sqlite3_stmt *stmt_ban_add;
+    sqlite3 *db;
+    sqlite3_stmt *stmt_user_lookup;
+    sqlite3_stmt *stmt_user_create;
+    sqlite3_stmt *stmt_audit_insert;
+    sqlite3_stmt *stmt_audit_query;
+    sqlite3_stmt *stmt_ban_check;
+    sqlite3_stmt *stmt_ban_add;
 } rw_sqlite_ctx_t;
 
 /**
@@ -65,8 +65,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param user User record to insert.
  * @return 0 on success, -EEXIST if username exists, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx,
-                                        const rw_user_record_t *user);
+[[nodiscard]] int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx, const rw_user_record_t *user);
 
 /**
  * @brief Look up a user by username.
@@ -75,8 +74,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param out      Output record.
  * @return 0 on success, -ENOENT if not found, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx,
-                                        const char *username,
+[[nodiscard]] int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx, const char *username,
                                         rw_user_record_t *out);
 
 /**
@@ -85,8 +83,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param entry Audit entry to insert.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_audit_insert(rw_sqlite_ctx_t *ctx,
-                                         const rw_audit_entry_t *entry);
+[[nodiscard]] int rw_sqlite_audit_insert(rw_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry);
 
 /**
  * @brief Query audit log entries by username (most recent first).
@@ -97,10 +94,8 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param count       Number of entries actually returned.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_audit_query_by_username(rw_sqlite_ctx_t *ctx,
-                                                    const char *username,
-                                                    rw_audit_entry_t *out,
-                                                    size_t max_entries,
+[[nodiscard]] int rw_sqlite_audit_query_by_username(rw_sqlite_ctx_t *ctx, const char *username,
+                                                    rw_audit_entry_t *out, size_t max_entries,
                                                     size_t *count);
 
 /**
@@ -110,8 +105,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param is_banned Output flag: true if banned and ban has not expired.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_ban_check(rw_sqlite_ctx_t *ctx, const char *ip,
-                                      bool *is_banned);
+[[nodiscard]] int rw_sqlite_ban_check(rw_sqlite_ctx_t *ctx, const char *ip, bool *is_banned);
 
 /**
  * @brief Add an IP address to the ban list.
@@ -121,7 +115,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param duration_minutes Ban duration in minutes.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip,
-                                    const char *reason, int duration_minutes);
+[[nodiscard]] int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason,
+                                    int duration_minutes);
 
 #endif /* RINGWALL_STORAGE_SQLITE_H */

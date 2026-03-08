@@ -2,12 +2,16 @@
 #include "config/config.h"
 
 #ifndef TEST_FIXTURES_DIR
-#define TEST_FIXTURES_DIR "."
+#    define TEST_FIXTURES_DIR "."
 #endif
 static const char *TEST_CONFIG = TEST_FIXTURES_DIR "/ringwall.toml";
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_config_load_valid_file(void)
 {

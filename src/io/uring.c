@@ -1,8 +1,8 @@
 #include "io/uring.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
 
 /* Internal callback: sets int pointer to 1 */
 static void nop_complete_cb(int res, void *user_data)
@@ -77,7 +77,8 @@ int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
 
     /* Process all available CQEs */
     unsigned head;
-    io_uring_for_each_cqe(&ctx->ring, head, cqe) {
+    io_uring_for_each_cqe(&ctx->ring, head, cqe)
+    {
         rw_io_completion_t *comp = io_uring_cqe_get_data(cqe);
         if (comp != nullptr) {
             comp->cb(cqe->res, comp->user_data);

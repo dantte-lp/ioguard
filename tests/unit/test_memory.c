@@ -1,9 +1,13 @@
-#include <unity/unity.h>
 #include <string.h>
+#include <unity/unity.h>
 #include "utils/memory.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_rw_mem_init_returns_zero(void)
 {

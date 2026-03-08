@@ -11,7 +11,7 @@
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-	rw_cstp_packet_t pkt = {0};
-	(void)rw_cstp_decode(data, size, &pkt);
-	return 0;
+    rw_cstp_packet_t pkt = {0};
+    (void)rw_cstp_decode(data, size, &pkt);
+    return 0;
 }

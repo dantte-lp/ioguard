@@ -40,12 +40,12 @@
  * - C23 compiler support
  */
 
-#include "tls_abstract.h"
-#include <gnutls/gnutls.h>
-#include <gnutls/x509.h>
-#include <gnutls/dtls.h>
 #include <gnutls/abstract.h>
 #include <gnutls/crypto.h>
+#include <gnutls/dtls.h>
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
+#include "tls_abstract.h"
 
 /* Backend initialization (called by tls_global_init) */
 [[nodiscard]] int tls_gnutls_init(void);

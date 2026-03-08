@@ -35,10 +35,10 @@ typedef struct {
     const char *otp;
 } rw_ipc_auth_request_t;
 
-[[nodiscard]] ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req,
-                                                uint8_t *buf, size_t buf_size);
+[[nodiscard]] ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req, uint8_t *buf,
+                                               size_t buf_size);
 [[nodiscard]] int rw_ipc_unpack_auth_request(const uint8_t *data, size_t len,
-                                              rw_ipc_auth_request_t *out);
+                                             rw_ipc_auth_request_t *out);
 void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req);
 
 typedef struct {
@@ -54,10 +54,10 @@ typedef struct {
     uint32_t route_count;
 } rw_ipc_auth_response_t;
 
-[[nodiscard]] ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp,
-                                                  uint8_t *buf, size_t buf_size);
+[[nodiscard]] ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp, uint8_t *buf,
+                                                size_t buf_size);
 [[nodiscard]] int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len,
-                                                rw_ipc_auth_response_t *out);
+                                              rw_ipc_auth_response_t *out);
 void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp);
 
 typedef struct {
@@ -66,9 +66,9 @@ typedef struct {
 } rw_ipc_session_validate_t;
 
 [[nodiscard]] ssize_t rw_ipc_pack_session_validate(const rw_ipc_session_validate_t *req,
-                                                    uint8_t *buf, size_t buf_size);
+                                                   uint8_t *buf, size_t buf_size);
 [[nodiscard]] int rw_ipc_unpack_session_validate(const uint8_t *data, size_t len,
-                                                  rw_ipc_session_validate_t *out);
+                                                 rw_ipc_session_validate_t *out);
 void rw_ipc_free_session_validate(rw_ipc_session_validate_t *req);
 
 typedef struct {
@@ -78,9 +78,9 @@ typedef struct {
     uint32_t pid;
 } rw_ipc_worker_status_t;
 
-[[nodiscard]] ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status,
-                                                  uint8_t *buf, size_t buf_size);
+[[nodiscard]] ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status, uint8_t *buf,
+                                                size_t buf_size);
 [[nodiscard]] int rw_ipc_unpack_worker_status(const uint8_t *data, size_t len,
-                                                rw_ipc_worker_status_t *out);
+                                              rw_ipc_worker_status_t *out);
 
 #endif /* RINGWALL_IPC_MESSAGES_H */

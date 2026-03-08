@@ -1,16 +1,20 @@
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#    define _GNU_SOURCE
 #endif
-#include <unity/unity.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include <stdbool.h>
 #include <string.h>
-#include "ipc/transport.h"
+#include <sys/wait.h>
+#include <unistd.h>
+#include <unity/unity.h>
 #include "ipc/messages.h"
+#include "ipc/transport.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_ipc_roundtrip_auth(void)
 {
@@ -27,10 +31,14 @@ void test_ipc_roundtrip_auth(void)
 
         uint8_t buf[RW_IPC_MAX_MSG_SIZE];
         ssize_t n = rw_ipc_recv(ch.child_fd, buf, sizeof(buf));
-        if (n <= 0) { _exit(1); }
+        if (n <= 0) {
+            _exit(1);
+        }
 
         rw_ipc_auth_request_t req;
-        if (rw_ipc_unpack_auth_request(buf, (size_t)n, &req) != 0) { _exit(2); }
+        if (rw_ipc_unpack_auth_request(buf, (size_t)n, &req) != 0) {
+            _exit(2);
+        }
 
         rw_ipc_auth_response_t resp = {
             .success = true,
@@ -41,9 +49,13 @@ void test_ipc_roundtrip_auth(void)
 
         uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];
         ssize_t packed = rw_ipc_pack_auth_response(&resp, resp_buf, sizeof(resp_buf));
-        if (packed <= 0) { _exit(3); }
+        if (packed <= 0) {
+            _exit(3);
+        }
 
-        if (rw_ipc_send(ch.child_fd, resp_buf, (size_t)packed) != 0) { _exit(4); }
+        if (rw_ipc_send(ch.child_fd, resp_buf, (size_t)packed) != 0) {
+            _exit(4);
+        }
         rw_ipc_free_auth_request(&req);
         close(ch.child_fd);
         _exit(0);

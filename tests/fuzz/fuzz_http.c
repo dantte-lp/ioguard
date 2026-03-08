@@ -12,13 +12,13 @@
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-	rw_http_parser_t parser;
+    rw_http_parser_t parser;
 
-	int rc = rw_http_parser_init(&parser);
-	if (rc != 0) {
-		return 0;
-	}
+    int rc = rw_http_parser_init(&parser);
+    if (rc != 0) {
+        return 0;
+    }
 
-	(void)rw_http_parse(&parser, (const char *)data, size);
-	return 0;
+    (void)rw_http_parse(&parser, (const char *)data, size);
+    return 0;
 }

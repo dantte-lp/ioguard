@@ -1,11 +1,11 @@
 #include "config/config.h"
 #include <errno.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef USE_TOML
-#include <toml.h>
+#    include <toml.h>
 #endif
 
 static void safe_copy(char *dst, const char *src, size_t dst_size)
@@ -25,8 +25,7 @@ static void safe_copy(char *dst, const char *src, size_t dst_size)
 void rw_config_set_defaults(rw_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
-    safe_copy(cfg->server.listen_address, "0.0.0.0",
-              sizeof(cfg->server.listen_address));
+    safe_copy(cfg->server.listen_address, "0.0.0.0", sizeof(cfg->server.listen_address));
     cfg->server.listen_port = 443;
     cfg->server.dtls_port = 443;
     cfg->server.max_clients = 256;
@@ -51,13 +50,21 @@ static void parse_server(toml_table_t *tbl, rw_config_server_t *srv)
         free(d.u.s);
     }
     d = toml_int_in(tbl, "listen-port");
-    if (d.ok) { srv->listen_port = (uint16_t)d.u.i; }
+    if (d.ok) {
+        srv->listen_port = (uint16_t)d.u.i;
+    }
     d = toml_int_in(tbl, "dtls-port");
-    if (d.ok) { srv->dtls_port = (uint16_t)d.u.i; }
+    if (d.ok) {
+        srv->dtls_port = (uint16_t)d.u.i;
+    }
     d = toml_int_in(tbl, "max-clients");
-    if (d.ok) { srv->max_clients = (uint32_t)d.u.i; }
+    if (d.ok) {
+        srv->max_clients = (uint32_t)d.u.i;
+    }
     d = toml_int_in(tbl, "worker-count");
-    if (d.ok) { srv->worker_count = (uint32_t)d.u.i; }
+    if (d.ok) {
+        srv->worker_count = (uint32_t)d.u.i;
+    }
 }
 
 static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
@@ -69,9 +76,13 @@ static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
         free(d.u.s);
     }
     d = toml_int_in(tbl, "cookie-timeout");
-    if (d.ok) { auth->cookie_timeout = (uint32_t)d.u.i; }
+    if (d.ok) {
+        auth->cookie_timeout = (uint32_t)d.u.i;
+    }
     d = toml_int_in(tbl, "cookie-rekey");
-    if (d.ok) { auth->cookie_rekey = (uint32_t)d.u.i; }
+    if (d.ok) {
+        auth->cookie_rekey = (uint32_t)d.u.i;
+    }
 }
 
 static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
@@ -88,13 +99,17 @@ static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
         free(d.u.s);
     }
     d = toml_int_in(tbl, "mtu");
-    if (d.ok) { net->mtu = (uint32_t)d.u.i; }
+    if (d.ok) {
+        net->mtu = (uint32_t)d.u.i;
+    }
 
     toml_array_t *dns_arr = toml_array_in(tbl, "dns");
     if (dns_arr != nullptr) {
         int nelem = toml_array_nelem(dns_arr);
         size_t n = nelem > 0 ? (size_t)nelem : 0;
-        if (n > RW_CONFIG_MAX_DNS) { n = RW_CONFIG_MAX_DNS; }
+        if (n > RW_CONFIG_MAX_DNS) {
+            n = RW_CONFIG_MAX_DNS;
+        }
         for (size_t i = 0; i < n; i++) {
             d = toml_string_at(dns_arr, i);
             if (d.ok) {
@@ -135,13 +150,16 @@ static void parse_security(toml_table_t *tbl, rw_config_security_t *sec)
 {
     toml_datum_t d;
     d = toml_bool_in(tbl, "seccomp");
-    if (d.ok) { sec->seccomp = d.u.b; }
+    if (d.ok) {
+        sec->seccomp = d.u.b;
+    }
     d = toml_bool_in(tbl, "landlock");
-    if (d.ok) { sec->landlock = d.u.b; }
+    if (d.ok) {
+        sec->landlock = d.u.b;
+    }
     d = toml_string_in(tbl, "wolfsentry-config");
     if (d.ok) {
-        safe_copy(sec->wolfsentry_config, d.u.s,
-                  sizeof(sec->wolfsentry_config));
+        safe_copy(sec->wolfsentry_config, d.u.s, sizeof(sec->wolfsentry_config));
         free(d.u.s);
     }
 }
@@ -164,15 +182,25 @@ int rw_config_load(const char *path, rw_config_t *cfg)
 
     toml_table_t *tbl;
     tbl = toml_table_in(root, "server");
-    if (tbl) { parse_server(tbl, &cfg->server); }
+    if (tbl) {
+        parse_server(tbl, &cfg->server);
+    }
     tbl = toml_table_in(root, "auth");
-    if (tbl) { parse_auth(tbl, &cfg->auth); }
+    if (tbl) {
+        parse_auth(tbl, &cfg->auth);
+    }
     tbl = toml_table_in(root, "network");
-    if (tbl) { parse_network(tbl, &cfg->network); }
+    if (tbl) {
+        parse_network(tbl, &cfg->network);
+    }
     tbl = toml_table_in(root, "tls");
-    if (tbl) { parse_tls(tbl, &cfg->tls); }
+    if (tbl) {
+        parse_tls(tbl, &cfg->tls);
+    }
     tbl = toml_table_in(root, "security");
-    if (tbl) { parse_security(tbl, &cfg->security); }
+    if (tbl) {
+        parse_security(tbl, &cfg->security);
+    }
 
     toml_free(root);
     return 0;

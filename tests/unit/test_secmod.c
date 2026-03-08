@@ -1,13 +1,13 @@
-#include <unity/unity.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <unity/unity.h>
 
+#include "config/config.h"
 #include "core/secmod.h"
+#include "core/session.h"
 #include "ipc/messages.h"
 #include "ipc/transport.h"
-#include "config/config.h"
-#include "core/session.h"
 
 /* Shared test fixtures */
 static rw_ipc_channel_t ch;

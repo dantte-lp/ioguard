@@ -10,11 +10,9 @@ typedef struct {
     int pidfd;
 } rw_process_t;
 
-[[nodiscard]] int rw_process_spawn(rw_process_t *proc, const char *path,
-                                    const char *const argv[]);
+[[nodiscard]] int rw_process_spawn(rw_process_t *proc, const char *path, const char *const argv[]);
 
-[[nodiscard]] int rw_process_wait(rw_process_t *proc, int *exit_status,
-                                   uint32_t timeout_ms);
+[[nodiscard]] int rw_process_wait(rw_process_t *proc, int *exit_status, uint32_t timeout_ms);
 
 [[nodiscard]] int rw_process_signal(rw_process_t *proc, int sig);
 

@@ -3,9 +3,9 @@
 #include "ipc/transport.h"
 
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
 #include <poll.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* ------------------------------------------------------------------ */
 /* Internal helpers                                                    */
@@ -14,8 +14,7 @@
 /**
  * Build and send an auth response over IPC.
  */
-static int secmod_send_auth_response(int fd,
-                                      const rw_ipc_auth_response_t *resp)
+static int secmod_send_auth_response(int fd, const rw_ipc_auth_response_t *resp)
 {
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
     ssize_t packed = rw_ipc_pack_auth_response(resp, buf, sizeof(buf));
@@ -29,30 +28,24 @@ static int secmod_send_auth_response(int fd,
 /**
  * Handle an authentication request (username + password).
  */
-static int secmod_handle_auth(rw_secmod_ctx_t *ctx,
-                               rw_ipc_auth_request_t *req)
+static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
 {
     rw_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
-    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg,
-                                                    req->username,
-                                                    req->password);
+    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
     if (result == RW_AUTH_SUCCESS) {
         rw_session_t *session = nullptr;
-        int ret = rw_session_create(ctx->sessions, req->username,
-                                     req->group,
-                                     ctx->config->auth.cookie_timeout,
-                                     &session);
+        int ret = rw_session_create(ctx->sessions, req->username, req->group,
+                                    ctx->config->auth.cookie_timeout, &session);
         if (ret == 0 && session != nullptr) {
             resp.success = true;
             resp.session_cookie = session->cookie;
             resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
             resp.session_ttl = session->ttl_seconds;
             resp.assigned_ip = session->assigned_ip;
-            resp.dns_server = (ctx->config->network.dns_count > 0)
-                                  ? ctx->config->network.dns[0]
-                                  : nullptr;
+            resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
+                                                                   : nullptr;
             resp.default_domain = ctx->config->network.default_domain;
         } else {
             resp.success = false;
@@ -69,15 +62,13 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx,
 /**
  * Handle a session validation request (cookie lookup).
  */
-static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx,
-                                           rw_ipc_session_validate_t *req)
+static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_validate_t *req)
 {
     rw_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
     rw_session_t *session = nullptr;
-    int ret = rw_session_validate(ctx->sessions, req->cookie,
-                                   req->cookie_len, &session);
+    int ret = rw_session_validate(ctx->sessions, req->cookie, req->cookie_len, &session);
 
     if (ret == 0 && session != nullptr) {
         resp.success = true;
@@ -85,9 +76,8 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx,
         resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
         resp.session_ttl = session->ttl_seconds;
         resp.assigned_ip = session->assigned_ip;
-        resp.dns_server = (ctx->config->network.dns_count > 0)
-                              ? ctx->config->network.dns[0]
-                              : nullptr;
+        resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
+                                                               : nullptr;
         resp.default_domain = ctx->config->network.default_domain;
     } else {
         resp.success = false;
@@ -101,8 +91,7 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx,
 /* Public API                                                          */
 /* ------------------------------------------------------------------ */
 
-int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd,
-                    const rw_config_t *config)
+int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
 {
     if (ctx == nullptr || config == nullptr) {
         return -EINVAL;
@@ -114,9 +103,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd,
     ctx->running = false;
 
     /* Initialise PAM with the configured auth method (service name) */
-    const char *service = (config->auth.method[0] != '\0')
-                              ? config->auth.method
-                              : nullptr;
+    const char *service = (config->auth.method[0] != '\0') ? config->auth.method : nullptr;
     int ret = rw_pam_init(&ctx->pam_cfg, service);
 
     if (ret != 0) {
@@ -137,8 +124,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd,
     return 0;
 }
 
-int rw_secmod_handle_message(rw_secmod_ctx_t *ctx,
-                              const uint8_t *data, size_t len)
+int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t len)
 {
     if (ctx == nullptr || data == nullptr || len == 0) {
         return -EINVAL;
@@ -154,8 +140,7 @@ int rw_secmod_handle_message(rw_secmod_ctx_t *ctx,
 
     int ret = rw_ipc_unpack_auth_request(data, len, &auth_req);
 
-    if (ret == 0 && auth_req.password != nullptr
-        && auth_req.username != nullptr) {
+    if (ret == 0 && auth_req.password != nullptr && auth_req.username != nullptr) {
         ret = secmod_handle_auth(ctx, &auth_req);
         rw_ipc_free_auth_request(&auth_req);
         return ret;

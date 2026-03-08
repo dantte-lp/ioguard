@@ -2,16 +2,16 @@
 
 #include <errno.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <security/pam_appl.h>
 
 /**
  * PAM conversation callback. Only handles PAM_PROMPT_ECHO_OFF (password).
  */
-static int pam_conversation(int num_msg, const struct pam_message **msg,
-                            struct pam_response **resp, void *appdata_ptr)
+static int pam_conversation(int num_msg, const struct pam_message **msg, struct pam_response **resp,
+                            void *appdata_ptr)
 {
     if (num_msg <= 0 || msg == nullptr || resp == nullptr) {
         return PAM_CONV_ERR;
@@ -65,8 +65,7 @@ int rw_pam_init(rw_pam_config_t *cfg, const char *service)
     return 0;
 }
 
-rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
-                                     const char *username,
+rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg, const char *username,
                                      const char *password)
 {
     if (cfg == nullptr || username == nullptr || password == nullptr) {

@@ -18,13 +18,13 @@ typedef void (*rw_io_cb)(int res, void *user_data);
 /* Internal: completion entry tracking */
 typedef struct {
     rw_io_cb cb;
-    void    *user_data;
+    void *user_data;
 } rw_io_completion_t;
 
 struct rw_io_ctx {
     struct io_uring ring;
-    bool            running;
-    uint32_t        queue_depth;
+    bool running;
+    uint32_t queue_depth;
 };
 
 /* Create io_uring context. Returns nullptr on failure.
@@ -57,19 +57,17 @@ void rw_io_stop(rw_io_ctx_t *ctx);
 [[nodiscard]] int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired);
 
 /* Submit a recv operation on a socket */
-[[nodiscard]] int rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf,
-                                  size_t len, int *completed);
+[[nodiscard]] int rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed);
 
 /* Submit a send operation on a socket */
-[[nodiscard]] int rw_io_prep_send(rw_io_ctx_t *ctx, int fd, const void *buf,
-                                  size_t len, int *completed);
+[[nodiscard]] int rw_io_prep_send(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                  int *completed);
 
 /* Submit a read operation on a file descriptor (TUN, signalfd, etc.) */
-[[nodiscard]] int rw_io_prep_read(rw_io_ctx_t *ctx, int fd, void *buf,
-                                  size_t len, int *completed);
+[[nodiscard]] int rw_io_prep_read(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed);
 
 /* Submit a write operation on a file descriptor */
-[[nodiscard]] int rw_io_prep_write(rw_io_ctx_t *ctx, int fd, const void *buf,
-                                   size_t len, int *completed);
+[[nodiscard]] int rw_io_prep_write(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                   int *completed);
 
 #endif /* RINGWALL_IO_URING_H */

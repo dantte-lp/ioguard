@@ -9,8 +9,8 @@
 #ifndef RINGWALL_SECURITY_FIREWALL_H
 #define RINGWALL_SECURITY_FIREWALL_H
 
-#include <stdint.h>
 #include <netinet/in.h>
+#include <stdint.h>
 
 constexpr size_t RW_FW_CHAIN_NAME_MAX = 64;
 constexpr char RW_FW_TABLE_NAME[] = "ringwall";
@@ -19,11 +19,11 @@ constexpr char RW_FW_TABLE_NAME[] = "ringwall";
 constexpr size_t RW_FW_BATCH_BUF_SIZE = 16384;
 
 typedef struct {
-	char     chain_name[RW_FW_CHAIN_NAME_MAX];
-	int      af;                    /**< AF_INET or AF_INET6 */
-	uint32_t assigned_ipv4;         /**< network byte order */
-	struct in6_addr assigned_ipv6;
-	char     username[256];
+    char chain_name[RW_FW_CHAIN_NAME_MAX];
+    int af;                 /**< AF_INET or AF_INET6 */
+    uint32_t assigned_ipv4; /**< network byte order */
+    struct in6_addr assigned_ipv6;
+    char username[256];
 } rw_fw_session_t;
 
 /**
@@ -35,8 +35,7 @@ typedef struct {
  *
  * Format: "rw_<username>_<iphex>" truncated to RW_FW_CHAIN_NAME_MAX-1.
  */
-[[nodiscard]] int rw_fw_chain_name(const rw_fw_session_t *session,
-				   char *out, size_t out_size);
+[[nodiscard]] int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size);
 
 /**
  * @brief Build a netlink batch to create the per-user chain and rule.
@@ -45,9 +44,8 @@ typedef struct {
  * @param batch_len Receives the length of the batch in bytes.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_fw_build_create_batch(const rw_fw_session_t *session,
-					   void **batch_buf,
-					   size_t *batch_len);
+[[nodiscard]] int rw_fw_build_create_batch(const rw_fw_session_t *session, void **batch_buf,
+                                           size_t *batch_len);
 
 /**
  * @brief Build a netlink batch to destroy the per-user chain.
@@ -56,9 +54,8 @@ typedef struct {
  * @param batch_len Receives the length of the batch in bytes.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_fw_build_destroy_batch(const rw_fw_session_t *session,
-					    void **batch_buf,
-					    size_t *batch_len);
+[[nodiscard]] int rw_fw_build_destroy_batch(const rw_fw_session_t *session, void **batch_buf,
+                                            size_t *batch_len);
 
 /**
  * @brief Create a per-user nftables chain and accept rule.
