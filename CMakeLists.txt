@@ -475,6 +475,13 @@ if(BUILD_TESTING)
 
         wg_add_test(test_dtls tests/unit/test_dtls.c wg_dtls)
 
+        # Sprint 4 — DTLS keying material
+        add_library(wg_dtls_keying STATIC src/network/dtls_keying.c)
+        target_include_directories(wg_dtls_keying PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(wg_dtls_keying PUBLIC _GNU_SOURCE)
+
+        wg_add_test(test_dtls_keying tests/unit/test_dtls_keying.c wg_dtls_keying)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
