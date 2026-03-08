@@ -61,6 +61,10 @@ void wg_worker_destroy(wg_worker_t *w)
 {
 	if (!w)
 		return;
+	for (uint32_t i = 0; i < w->config.max_connections; i++) {
+		if (w->conns[i].active)
+			wg_compress_destroy(&w->conns[i].compress);
+	}
 	explicit_bzero(w->conns, w->config.max_connections * sizeof(*w->conns));
 	free(w->conns);
 	explicit_bzero(w, sizeof(*w));
@@ -89,6 +93,7 @@ int64_t wg_worker_add_connection(wg_worker_t *w, int tls_fd, int tun_fd)
 			c->recv_len = 0;
 			wg_dpd_init(&c->dpd, w->config.dpd_interval_s,
 			            w->config.dpd_max_retries);
+			(void)wg_compress_init(&c->compress, WG_COMPRESS_NONE);
 			w->conn_count++;
 			return (int64_t)c->conn_id;
 		}
@@ -101,6 +106,7 @@ int wg_worker_remove_connection(wg_worker_t *w, uint64_t conn_id)
 {
 	for (uint32_t i = 0; i < w->config.max_connections; i++) {
 		if (w->conns[i].active && w->conns[i].conn_id == conn_id) {
+			wg_compress_destroy(&w->conns[i].compress);
 			explicit_bzero(&w->conns[i], sizeof(w->conns[i]));
 			w->conn_count--;
 			return 0;

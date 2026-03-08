@@ -430,7 +430,7 @@ if(BUILD_TESTING)
         add_library(wg_worker STATIC src/core/worker.c)
         target_include_directories(wg_worker PUBLIC ${CMAKE_SOURCE_DIR}/src)
         target_compile_definitions(wg_worker PUBLIC _GNU_SOURCE)
-        target_link_libraries(wg_worker PUBLIC wg_cstp wg_dpd)
+        target_link_libraries(wg_worker PUBLIC wg_cstp wg_dpd wg_compress)
 
         wg_add_test(test_worker tests/unit/test_worker.c wg_worker wg_cstp wg_dpd)
 
@@ -495,6 +495,9 @@ if(BUILD_TESTING)
         target_link_libraries(wg_dtls_headers PUBLIC wg_compress)
 
         wg_add_test(test_dtls_headers tests/unit/test_dtls_headers.c wg_dtls_headers wg_compress)
+
+        # Sprint 4 — CSTP compression integration
+        wg_add_test(test_compress_cstp tests/unit/test_compress_cstp.c wg_cstp wg_compress wg_worker wg_dpd)
 
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()

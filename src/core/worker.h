@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "network/compress.h"
 #include "network/cstp.h"
 #include "network/dpd.h"
 
@@ -40,6 +41,7 @@ typedef struct {
 	int tls_fd;
 	int tun_fd;
 	wg_dpd_ctx_t dpd;
+	wg_compress_ctx_t compress;
 	bool active;
 	uint8_t recv_buf[WG_CSTP_HEADER_SIZE + WG_CSTP_MAX_PAYLOAD];
 	size_t recv_len;
