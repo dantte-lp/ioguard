@@ -594,6 +594,13 @@ if(BUILD_TESTING)
             message(WARNING "libseccomp not found — skipping security/sandbox")
         endif()
 
+        # Sprint 5 — Landlock filesystem isolation
+        add_library(rw_landlock STATIC src/security/landlock.c)
+        target_include_directories(rw_landlock PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_landlock PUBLIC _GNU_SOURCE)
+
+        rw_add_test(test_landlock tests/unit/test_landlock.c rw_landlock)
+
         # Sprint 5 — Schema migration
         if(TARGET rw_sqlite AND TARGET rw_mdbx)
             add_library(rw_migrate STATIC src/storage/migrate.c)
