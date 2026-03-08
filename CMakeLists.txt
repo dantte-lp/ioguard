@@ -489,6 +489,13 @@ if(BUILD_TESTING)
 
         wg_add_test(test_channel tests/unit/test_channel.c wg_channel wg_dpd wg_compress)
 
+        # Sprint 4 — DTLS HTTP headers
+        add_library(wg_dtls_headers STATIC src/network/dtls_headers.c)
+        target_include_directories(wg_dtls_headers PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_link_libraries(wg_dtls_headers PUBLIC wg_compress)
+
+        wg_add_test(test_dtls_headers tests/unit/test_dtls_headers.c wg_dtls_headers wg_compress)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
