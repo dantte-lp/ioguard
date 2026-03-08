@@ -83,6 +83,8 @@ Designed new architecture (three-process model, io_uring-only I/O, wolfSSL nativ
 
 ## S1 -- Foundation (Weeks 1-2)
 
+**Status**: **COMPLETED** (2026-03-07, 1 day)
+
 **Sprint Goal**: Build the core infrastructure -- io_uring event loop, process spawning, IPC, configuration, and memory allocation.
 
 ### Deliverables
@@ -108,6 +110,8 @@ Designed new architecture (three-process model, io_uring-only I/O, wolfSSL nativ
 
 ## S2 -- TLS & Auth (Weeks 3-4)
 
+**Status**: **COMPLETED** (2026-03-07, 1 day)
+
 **Sprint Goal**: Integrate wolfSSL for TLS 1.3, implement PAM authentication via sec-mod, and establish session cookie management.
 
 ### Deliverables
@@ -129,25 +133,37 @@ Designed new architecture (three-process model, io_uring-only I/O, wolfSSL nativ
 
 ---
 
-## S3 -- VPN Tunnel (Weeks 5-6)
+## S3 -- VPN Tunnel + Docs Restructuring (Weeks 5-6)
 
-**Sprint Goal**: Implement the CSTP VPN tunnel with TUN device I/O, worker process multiplexing, and Dead Peer Detection.
+**Sprint Goal**: Implement the CSTP VPN tunnel with TUN device I/O, worker process multiplexing, and Dead Peer Detection. Restructure documentation (gobfd-style README, bilingual docs, archive old docs).
+
+**Status**: **COMPLETED** (2026-03-07 to 2026-03-08, 2 days)
 
 ### Deliverables
 
-- `src/network/cstp.c` -- CSTP framing, packet encode/decode
-- `src/network/tun.c` -- TUN device allocation, io_uring read/write
-- `src/core/worker.c` -- Worker process, connection multiplexing
-- `src/network/dpd.c` -- Dead Peer Detection state machine
-- Integration test: tunnel up, ping through
+- `src/network/cstp.c` -- CSTP framing, packet encode/decode (zero-copy)
+- `src/network/tun.c` -- TUN device allocation, MTU calculation
+- `src/network/dpd.c` -- Dead Peer Detection state machine (pure, no I/O)
+- `src/core/worker.c` -- Worker process context, connection tracking (flat array)
+- `tests/integration/test_data_path.c` -- CSTP + io_uring round-trip integration
+- `README.md` -- Complete redesign (gobfd-style, centered badges, mermaid)
+- `docs/{en,ru}/` -- Bilingual documentation structure (24 files)
 
 ### Definition of Done
 
-- [ ] CSTP framing encodes/decodes data, DPD, and control packets
-- [ ] TUN device allocated and I/O driven by io_uring
-- [ ] Worker process multiplexes multiple client connections
-- [ ] DPD state machine detects dead peers (30s interval, 3 missed = dead)
-- [ ] Integration test: network -> TLS -> TUN round-trip operational
+- [x] CSTP framing encodes/decodes data, DPD, and control packets (10 tests)
+- [x] TUN device allocated with MTU calculation (7 tests)
+- [x] Worker process multiplexes multiple client connections (10 tests)
+- [x] DPD state machine detects dead peers (30s interval, 3 missed = dead) (10 tests)
+- [x] Integration test: CSTP encode → io_uring send/recv → CSTP decode (5 tests)
+- [x] Documentation restructured: README, bilingual docs, old docs archived
+
+### Sprint Results
+
+- **42 new tests** (all passing), 9 commits, 3515 LOC added
+- **New source files**: cstp.h/c, tun.h/c, dpd.h/c, worker.h/c (995 LOC)
+- **New test files**: test_cstp.c, test_tun.c, test_dpd.c, test_worker.c, test_data_path.c (865 LOC)
+- See `docs/tmp/sprints/sprint-3/SPRINT_3_COMPLETION_REPORT.md` for full report
 
 ---
 
@@ -266,17 +282,19 @@ Designed new architecture (three-process model, io_uring-only I/O, wolfSSL nativ
 | Sprint | Planned SP | Completed SP | Velocity | Notes |
 |--------|-----------|--------------|----------|-------|
 | Phase 0 (S0-S2) | -- | -- | -- | Exploration complete |
-| S1 | TBD | -- | -- | -- |
-| S2 | TBD | -- | -- | -- |
-| S3 | TBD | -- | -- | -- |
-| S4 | TBD | -- | -- | -- |
+| S1 | 20 | 20 | 20 | Foundation: io_uring, IPC, config, process (33 tests) |
+| S2 | 16 | 16 | 16 | TLS & Auth: wolfSSL, PAM, sec-mod, sessions, llhttp |
+| S3 | 16 | 16 | 16 | VPN Tunnel + Docs: CSTP, TUN, DPD, worker (42 tests) |
+| S4 | 16 | -- | -- | DTLS & Compression |
 | S5 | TBD | -- | -- | -- |
 | S6 | TBD | -- | -- | -- |
 | S7 | TBD | -- | -- | -- |
 | S8 | TBD | -- | -- | -- |
 
+**Average Velocity**: ~17 SP/sprint (S1-S3)
+
 ---
 
-**Document Version**: 2.0
-**Last Updated**: 2026-03-07
-**Next Review**: After S1 sprint planning
+**Document Version**: 3.0
+**Last Updated**: 2026-03-08
+**Next Review**: After S4 sprint planning
