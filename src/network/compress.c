@@ -1,6 +1,8 @@
 #include "network/compress.h"
+#include "network/compress_lzs.h"
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 int wg_compress_init(wg_compress_ctx_t *ctx, wg_compress_type_t type)
@@ -14,8 +16,15 @@ int wg_compress_init(wg_compress_ctx_t *ctx, wg_compress_type_t type)
 	switch (type) {
 	case WG_COMPRESS_NONE:
 		return 0;
+	case WG_COMPRESS_LZS: {
+		wg_lzs_ctx_t *lzs = calloc(1, sizeof(*lzs));
+		if (!lzs)
+			return -ENOMEM;
+		wg_lzs_init(lzs);
+		ctx->codec_ctx = lzs;
+		return 0;
+	}
 	case WG_COMPRESS_LZ4:
-	case WG_COMPRESS_LZS:
 		return -ENOTSUP;
 	}
 	return -EINVAL;
@@ -37,6 +46,9 @@ int wg_compress(wg_compress_ctx_t *ctx,
 		return (int)in_len;
 	}
 
+	if (ctx->type == WG_COMPRESS_LZS)
+		return wg_lzs_compress(ctx->codec_ctx, in, in_len, out, out_size);
+
 	return -ENOTSUP;
 }
 
@@ -54,6 +66,9 @@ int wg_decompress(wg_compress_ctx_t *ctx,
 		return (int)in_len;
 	}
 
+	if (ctx->type == WG_COMPRESS_LZS)
+		return wg_lzs_decompress(ctx->codec_ctx, in, in_len, out, out_size);
+
 	return -ENOTSUP;
 }
 
@@ -61,6 +76,9 @@ void wg_compress_destroy(wg_compress_ctx_t *ctx)
 {
 	if (!ctx)
 		return;
+	if (ctx->type == WG_COMPRESS_LZS) {
+		free(ctx->codec_ctx);
+	}
 	ctx->codec_ctx = nullptr;
 	ctx->type = WG_COMPRESS_NONE;
 }

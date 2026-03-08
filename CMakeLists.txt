@@ -443,6 +443,13 @@ if(BUILD_TESTING)
 
         wg_add_test(test_compress tests/unit/test_compress.c wg_compress)
 
+        # Sprint 4 — LZS compression
+        add_library(wg_compress_lzs STATIC src/network/compress_lzs.c)
+        target_include_directories(wg_compress_lzs PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+        target_link_libraries(wg_compress PUBLIC wg_compress_lzs)
+        wg_add_test(test_compress_lzs tests/unit/test_compress_lzs.c wg_compress_lzs)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
