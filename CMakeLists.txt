@@ -576,6 +576,24 @@ if(BUILD_TESTING)
             message(WARNING "wolfSentry not found — skipping security/wolfsentry")
         endif()
 
+        # Sprint 5 — seccomp BPF sandbox
+        find_library(SECCOMP_LIBRARY seccomp)
+        find_path(SECCOMP_INCLUDE_DIR seccomp.h)
+
+        if(SECCOMP_LIBRARY AND SECCOMP_INCLUDE_DIR)
+            add_library(rw_sandbox STATIC src/security/sandbox.c)
+            target_include_directories(rw_sandbox PUBLIC
+                ${CMAKE_SOURCE_DIR}/src ${SECCOMP_INCLUDE_DIR})
+            target_link_libraries(rw_sandbox PUBLIC ${SECCOMP_LIBRARY})
+            target_compile_definitions(rw_sandbox PUBLIC _GNU_SOURCE)
+
+            rw_add_test(test_sandbox tests/unit/test_sandbox.c rw_sandbox)
+            target_link_libraries(test_sandbox PRIVATE ${SECCOMP_LIBRARY})
+            message(STATUS "Found libseccomp: ${SECCOMP_LIBRARY}")
+        else()
+            message(WARNING "libseccomp not found — skipping security/sandbox")
+        endif()
+
         # Sprint 5 — Schema migration
         if(TARGET rw_sqlite AND TARGET rw_mdbx)
             add_library(rw_migrate STATIC src/storage/migrate.c)
