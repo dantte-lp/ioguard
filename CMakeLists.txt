@@ -482,6 +482,13 @@ if(BUILD_TESTING)
 
         wg_add_test(test_dtls_keying tests/unit/test_dtls_keying.c wg_dtls_keying)
 
+        # Sprint 4 — Channel state machine
+        add_library(wg_channel STATIC src/network/channel.c)
+        target_include_directories(wg_channel PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_link_libraries(wg_channel PUBLIC wg_dpd wg_compress)
+
+        wg_add_test(test_channel tests/unit/test_channel.c wg_channel wg_dpd wg_compress)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
