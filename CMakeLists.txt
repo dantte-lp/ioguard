@@ -462,6 +462,19 @@ if(BUILD_TESTING)
         target_link_libraries(test_compress_lz4 PRIVATE ${LZ4_LIBRARIES})
         target_link_directories(test_compress_lz4 PRIVATE ${LZ4_LIBRARY_DIRS})
 
+        # Sprint 4 — DTLS context management
+        add_library(wg_dtls STATIC src/network/dtls.c)
+        target_include_directories(wg_dtls PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(wg_dtls PUBLIC _GNU_SOURCE)
+        if(WOLFSSL_FOUND)
+            target_compile_definitions(wg_dtls PUBLIC USE_WOLFSSL)
+            target_include_directories(wg_dtls PUBLIC ${WOLFSSL_INCLUDE_DIRS})
+            target_link_libraries(wg_dtls PUBLIC ${WOLFSSL_LIBRARIES})
+            target_link_directories(wg_dtls PUBLIC ${WOLFSSL_LIBRARY_DIRS})
+        endif()
+
+        wg_add_test(test_dtls tests/unit/test_dtls.c wg_dtls)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
