@@ -499,6 +499,10 @@ if(BUILD_TESTING)
         # Sprint 4 — CSTP compression integration
         wg_add_test(test_compress_cstp tests/unit/test_compress_cstp.c wg_cstp wg_compress wg_worker wg_dpd)
 
+        # Sprint 4 — DTLS + channel + compression integration
+        wg_add_test(test_dtls_channel tests/integration/test_dtls_channel.c
+            wg_channel wg_compress wg_cstp wg_dpd wg_dtls_headers wg_dtls_keying wg_worker)
+
         message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
