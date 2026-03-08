@@ -505,6 +505,23 @@ if(BUILD_TESTING)
         rw_add_test(test_dtls_channel tests/integration/test_dtls_channel.c
             rw_channel rw_compress rw_cstp rw_dpd rw_dtls_headers rw_dtls_keying rw_worker)
 
+        # Sprint 5 — libmdbx session store
+        find_path(MDBX_INCLUDE_DIR mdbx.h PATHS /usr/local/include)
+        find_library(MDBX_LIBRARY mdbx PATHS /usr/local/lib /usr/local/lib64)
+
+        if(MDBX_INCLUDE_DIR AND MDBX_LIBRARY)
+            add_library(rw_mdbx STATIC src/storage/mdbx.c)
+            target_include_directories(rw_mdbx PUBLIC ${CMAKE_SOURCE_DIR}/src ${MDBX_INCLUDE_DIR})
+            target_link_libraries(rw_mdbx PUBLIC ${MDBX_LIBRARY})
+            target_compile_definitions(rw_mdbx PUBLIC _GNU_SOURCE)
+
+            rw_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c rw_mdbx)
+            target_link_libraries(test_storage_mdbx PRIVATE ${MDBX_LIBRARY})
+            target_include_directories(test_storage_mdbx PRIVATE ${MDBX_INCLUDE_DIR})
+        else()
+            message(WARNING "libmdbx not found — skipping storage/mdbx")
+        endif()
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
