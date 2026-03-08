@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Benchmark Results Comparison Script - wolfguard
+# Benchmark Results Comparison Script - ringwall
 #
-# Copyright (C) 2025 wolfguard Contributors
+# Copyright (C) 2025 ringwall Contributors
 #
 # Compares benchmark results between GnuTLS and wolfSSL backends
 # and generates a GO/NO-GO decision report.

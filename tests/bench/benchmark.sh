@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# TLS Backend Benchmark Script - wolfguard
+# TLS Backend Benchmark Script - ringwall
 #
-# Copyright (C) 2025 wolfguard Contributors
+# Copyright (C) 2025 ringwall Contributors
 #
 # This script benchmarks the TLS abstraction layer with different backends
 # and collects comprehensive performance metrics for comparison.

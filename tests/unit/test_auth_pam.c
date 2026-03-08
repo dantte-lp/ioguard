@@ -28,7 +28,7 @@ void test_pam_authenticate_invalid_user(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     rw_auth_result_t result = rw_pam_authenticate(&cfg,
-                                                   "wg_test_nonexistent_user_12345",
+                                                   "rw_test_nonexistent_user_12345",
                                                    "wrong");
     /* The "other" service typically denies all; expect failure or error */
     TEST_ASSERT_TRUE(result == RW_AUTH_FAILURE || result == RW_AUTH_ERROR);

@@ -1,5 +1,5 @@
-# Makefile for wolfguard
-# Copyright (C) 2025 wolfguard Contributors
+# Makefile for ringwall
+# Copyright (C) 2025 ringwall Contributors
 #
 # Build system for TLS abstraction layer with dual backend support
 
@@ -188,7 +188,7 @@ clean:
 	@rm -f poc-client-gnutls poc-client-wolfssl
 
 help:
-	@echo "wolfguard Build System"
+	@echo "ringwall Build System"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all              Build backend library (default: gnutls)"
@@ -226,8 +226,8 @@ install: all
 	@install -d $(LIBDIR)
 	@install -m 644 $(BACKEND_LIB) $(LIBDIR)/
 	@echo "  INSTALL $(INCLUDEDIR)/tls_abstract.h"
-	@install -d $(INCLUDEDIR)/wolfguard
-	@install -m 644 src/crypto/tls_abstract.h $(INCLUDEDIR)/wolfguard/
+	@install -d $(INCLUDEDIR)/ringwall
+	@install -m 644 src/crypto/tls_abstract.h $(INCLUDEDIR)/ringwall/
 
 # ============================================================================
 # Dependency Tracking

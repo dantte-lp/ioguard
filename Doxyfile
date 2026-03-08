@@ -1,4 +1,4 @@
-# Doxyfile for wolfguard
+# Doxyfile for ringwall
 # API documentation configuration
 
 #---------------------------------------------------------------------------
@@ -6,8 +6,8 @@
 #---------------------------------------------------------------------------
 
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = "wolfguard"
-PROJECT_NUMBER         = "2.0.0-alpha.1"
+PROJECT_NAME           = "ringwall"
+PROJECT_NUMBER         = ""
 PROJECT_BRIEF          = "Modern C23 VPN server with TLS abstraction layer"
 PROJECT_LOGO           =
 OUTPUT_DIRECTORY       = docs/api

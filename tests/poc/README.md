@@ -1,4 +1,4 @@
-# TLS Proof of Concept - wolfguard
+# TLS Proof of Concept - ringwall
 
 This directory contains the Proof of Concept (PoC) implementation for validating the TLS abstraction layer and comparing GnuTLS vs wolfSSL performance.
 
@@ -436,10 +436,10 @@ When modifying PoC code:
 
 ## License
 
-Copyright (C) 2025 wolfguard Contributors
+Copyright (C) 2025 ringwall Contributors
 
-This file is part of wolfguard.
+This file is part of ringwall.
 
-wolfguard is free software: you can redistribute it and/or modify it
+ringwall is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.

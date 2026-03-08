@@ -1,9 +1,9 @@
-# Ceedling project configuration for wolfguard
+# Ceedling project configuration for ringwall
 # Unity/CMock-based unit testing framework
 
 ---
 :project:
-  :name: wolfguard
+  :name: ringwall
   :build_root: build/ceedling
   :use_exceptions: FALSE
   :use_test_preprocessor: TRUE
