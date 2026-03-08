@@ -1,5 +1,6 @@
 #include "network/compress.h"
 #include "network/compress_lzs.h"
+#include "network/compress_lz4.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -25,7 +26,7 @@ int wg_compress_init(wg_compress_ctx_t *ctx, wg_compress_type_t type)
 		return 0;
 	}
 	case WG_COMPRESS_LZ4:
-		return -ENOTSUP;
+		return 0;
 	}
 	return -EINVAL;
 }
@@ -49,6 +50,9 @@ int wg_compress(wg_compress_ctx_t *ctx,
 	if (ctx->type == WG_COMPRESS_LZS)
 		return wg_lzs_compress(ctx->codec_ctx, in, in_len, out, out_size);
 
+	if (ctx->type == WG_COMPRESS_LZ4)
+		return wg_lz4_compress(in, in_len, out, out_size);
+
 	return -ENOTSUP;
 }
 
@@ -68,6 +72,9 @@ int wg_decompress(wg_compress_ctx_t *ctx,
 
 	if (ctx->type == WG_COMPRESS_LZS)
 		return wg_lzs_decompress(ctx->codec_ctx, in, in_len, out, out_size);
+
+	if (ctx->type == WG_COMPRESS_LZ4)
+		return wg_lz4_decompress(in, in_len, out, out_size);
 
 	return -ENOTSUP;
 }
