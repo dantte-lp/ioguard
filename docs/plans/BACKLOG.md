@@ -17,6 +17,25 @@ Items to investigate or implement, not yet assigned to a sprint.
   code (OTLP, InfluxDB, Splunk HEC, CloudWatch, StatsD). Custom Prometheus
   text exposition remains the correct approach (S7).
 
+## Container Updates
+
+- [x] **Containerfile library updates** (done 2026-03-08, commit `52c15c3`):
+  wolfSSL 5.8.2→5.8.4, cppcheck 2.18.3→2.20.0, mold pinned v2.40.4.
+  Added: PVS-Studio (b4all), flawfinder, ccache, lcov. Image rebuild pending.
+
+- [x] **glibc 2.40–2.43 review** (done 2026-03-08):
+  Container runs glibc 2.39 (OL10). No upgrade needed now.
+  Relevant features for future:
+  - 2.40: FORTIFY_SOURCE improvements for Clang builds
+  - 2.41: `sched_setattr()`/`sched_getattr()` — SCHED_DEADLINE for workers;
+    `abort()` async-signal-safe; `dlopen` no longer makes stack executable
+  - 2.42: `pthread_gettid_np()` (cleaner than `syscall(SYS_gettid)`);
+    stack guard pages via `MADV_GUARD_INSTALL` in `pthread_create`;
+    malloc tcache large block caching (we use mimalloc though)
+  - 2.43: C23 const-preserving macros (`strchr` et al.) — **test before
+    upgrading**, may break code expecting mutable returns
+  No io_uring changes in any release. OL10 may ship updates via `dnf`.
+
 ## Technical Debt
 
 - [ ] Fix pre-existing test failures: `test_tls_wolfssl` (3 failures),
