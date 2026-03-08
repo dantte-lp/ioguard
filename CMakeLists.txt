@@ -545,6 +545,37 @@ if(BUILD_TESTING)
             message(WARNING "SQLite3 not found — skipping storage/sqlite")
         endif()
 
+        # Sprint 5 — wolfSentry IDPS
+        find_path(WOLFSENTRY_INCLUDE_DIR wolfsentry/wolfsentry.h
+            PATHS /usr/local/include)
+        find_library(WOLFSENTRY_LIBRARY wolfsentry
+            PATHS /usr/local/lib /usr/local/lib64)
+
+        if(WOLFSENTRY_INCLUDE_DIR AND WOLFSENTRY_LIBRARY)
+            add_library(rw_wolfsentry STATIC src/security/wolfsentry.c)
+            target_include_directories(rw_wolfsentry PUBLIC
+                ${CMAKE_SOURCE_DIR}/src ${WOLFSENTRY_INCLUDE_DIR})
+            target_link_libraries(rw_wolfsentry PUBLIC ${WOLFSENTRY_LIBRARY})
+            target_compile_definitions(rw_wolfsentry PUBLIC _GNU_SOURCE)
+
+            rw_add_test(test_wolfsentry tests/unit/test_wolfsentry.c
+                rw_wolfsentry)
+            target_link_libraries(test_wolfsentry PRIVATE ${WOLFSENTRY_LIBRARY})
+            target_include_directories(test_wolfsentry PRIVATE
+                ${WOLFSENTRY_INCLUDE_DIR})
+            # wolfSentry .a built without -fPIC; disable PIE for this target
+            set_target_properties(test_wolfsentry PROPERTIES
+                POSITION_INDEPENDENT_CODE OFF)
+            target_link_options(test_wolfsentry PRIVATE -no-pie)
+            target_compile_options(test_wolfsentry PRIVATE -fno-PIE)
+            target_compile_options(rw_wolfsentry PRIVATE -fno-PIE)
+            set_target_properties(rw_wolfsentry PROPERTIES
+                POSITION_INDEPENDENT_CODE OFF)
+            message(STATUS "Found wolfSentry: ${WOLFSENTRY_LIBRARY}")
+        else()
+            message(WARNING "wolfSentry not found — skipping security/wolfsentry")
+        endif()
+
         # Sprint 5 — Schema migration
         if(TARGET rw_sqlite AND TARGET rw_mdbx)
             add_library(rw_migrate STATIC src/storage/migrate.c)
