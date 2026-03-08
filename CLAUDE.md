@@ -179,6 +179,22 @@ deploy/podman/      # Container configurations
 - Fuzzing: LibFuzzer targets in `tests/fuzz/` (Clang only)
 - Coverage target: >= 80%
 
+## Post-Sprint Quality Pipeline (MANDATORY)
+
+After completing each sprint, run the **full quality pipeline** inside the container before considering the sprint done. Single command via `scripts/quality.sh` (6 stages: build → tests → format → cppcheck → PVS-Studio → CodeChecker).
+
+```bash
+podman run --rm --security-opt seccomp=unconfined \
+  -v /opt/projects/repositories/ringwall:/workspace:Z \
+  localhost/ringwall-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
+```
+
+**Rules:**
+- Sprint code (new/modified files) MUST have **zero** PVS errors/warnings and **zero** CodeChecker HIGH/MEDIUM findings
+- Pre-existing findings in other files: track but don't block sprint
+- PVS-Studio license: loaded from `.env` file (`PVS_NAME` / `PVS_KEY`), NEVER commit credentials
+- `.env` is in `.gitignore`, `.env.example` shows required variables
+
 ## MCP Documentation (context7)
 
 Use context7 to fetch up-to-date documentation:
