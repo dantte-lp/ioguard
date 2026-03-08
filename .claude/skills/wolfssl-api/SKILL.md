@@ -1,6 +1,6 @@
 ---
 name: wolfssl-api
-description: Use when writing or modifying code that interacts with wolfSSL/wolfCrypt APIs — TLS/DTLS handshakes, certificate management, session caching, FIPS 140-3 constraints, callback-based I/O integration with libuv
+description: Use when writing or modifying code that interacts with wolfSSL/wolfCrypt APIs — TLS/DTLS handshakes, certificate management, session caching, FIPS 140-3 constraints, buffer-based I/O integration with io_uring
 ---
 
 # wolfSSL API Patterns for ringwall
@@ -54,26 +54,115 @@ static WOLFSSL_CTX *rw_create_ctx(bool is_server, bool use_dtls) {
 }
 ```
 
-## Callback-Based I/O (libuv integration)
+## Buffer-Based I/O (io_uring integration)
 
-wolfSSL MUST use custom I/O callbacks for non-blocking operation with libuv:
+wolfSSL MUST use custom I/O callbacks with intermediate cipher buffers.
+io_uring reads/writes ciphertext into connection-owned buffers; wolfSSL never
+touches the socket directly.
+
+### Architecture
+
+```
+io_uring recv → cipher_in buffer → wolfSSL_read() → plaintext out
+plaintext in → wolfSSL_write() → cipher_out buffer → io_uring send
+```
+
+### Cipher Buffers (per-connection)
 
 ```c
-// Set callbacks on context
+typedef struct {
+    uint8_t *data;
+    size_t   size;      // allocated capacity
+    size_t   head;      // read position
+    size_t   tail;      // write position
+} rw_cipher_buf_t;
+
+typedef struct {
+    rw_cipher_buf_t cipher_in;    // io_uring recv target
+    rw_cipher_buf_t cipher_out;   // io_uring send source
+} rw_tls_io_t;
+```
+
+### I/O Callbacks
+
+```c
 wolfSSL_CTX_SetIORecv(ctx, rw_tls_recv_cb);
 wolfSSL_CTX_SetIOSend(ctx, rw_tls_send_cb);
 
-// Callback signatures
+// Recv callback: reads from cipher_in buffer (NOT from socket)
 static int rw_tls_recv_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
-    rw_connection_t *conn = (rw_connection_t *)ctx;
-    // Read from libuv buffer, return WOLFSSL_CBIO_ERR_WANT_READ if no data
+    rw_tls_io_t *io = (rw_tls_io_t *)ctx;
+    size_t avail = io->cipher_in.tail - io->cipher_in.head;
+    if (avail == 0) {
+        return WOLFSSL_CBIO_ERR_WANT_READ;  // need more data from io_uring recv
+    }
+    int n = (int)(avail < (size_t)sz ? avail : (size_t)sz);
+    memcpy(buf, io->cipher_in.data + io->cipher_in.head, n);
+    io->cipher_in.head += n;
+    return n;
 }
 
+// Send callback: writes to cipher_out buffer (NOT to socket)
 static int rw_tls_send_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
-    rw_connection_t *conn = (rw_connection_t *)ctx;
-    // Write via libuv uv_write, return sz on success
+    rw_tls_io_t *io = (rw_tls_io_t *)ctx;
+    size_t space = io->cipher_out.size - io->cipher_out.tail;
+    if (space == 0) {
+        return WOLFSSL_CBIO_ERR_WANT_WRITE;  // need io_uring send to drain
+    }
+    int n = (int)(space < (size_t)sz ? space : (size_t)sz);
+    memcpy(io->cipher_out.data + io->cipher_out.tail, buf, n);
+    io->cipher_out.tail += n;
+    return n;
 }
 ```
+
+### TLS State Machine with io_uring
+
+```c
+// After io_uring recv CQE delivers ciphertext into cipher_in:
+int ret = wolfSSL_read(ssl, plaintext, sizeof(plaintext));
+int err = wolfSSL_get_error(ssl, ret);
+
+switch (err) {
+case WOLFSSL_ERROR_NONE:
+    // Got plaintext — process CSTP/DTLS packet
+    break;
+case WOLFSSL_ERROR_WANT_READ:
+    // Need more ciphertext — arm io_uring recv, resume later
+    break;
+case WOLFSSL_ERROR_WANT_WRITE:
+    // TLS needs to send (renegotiation, alerts) — arm io_uring send
+    // from cipher_out, resume later
+    break;
+default:
+    // Fatal error — close connection
+    break;
+}
+
+// After wolfSSL_write() fills cipher_out, drain via io_uring send:
+if (io->cipher_out.tail > io->cipher_out.head) {
+    // arm io_uring send with cipher_out data
+}
+```
+
+### I/O Serialization (CRITICAL)
+
+- **One wolfSSL_read() / wolfSSL_write() at a time** per SSL object
+- wolfSSL maintains internal state — concurrent calls corrupt it
+- Natural in ring-per-worker model: single thread owns the connection
+- After WANT_READ/WANT_WRITE, do NOT call wolfSSL again until I/O completes
+
+### Buffer Separation (CRITICAL)
+
+| Buffer | Owner | io_uring target? | wolfSSL target? |
+|--------|-------|-------------------|-----------------|
+| cipher_in | Connection | YES (recv) | YES (recv callback reads from it) |
+| cipher_out | Connection | YES (send) | YES (send callback writes to it) |
+| plaintext | Stack/temp | NO | YES (wolfSSL_read output) |
+| Provided buffer ring | Kernel→App | YES (recv into) | NO (copy to cipher_in first) |
+
+**Never pass provided buffer ring memory directly to wolfSSL** — kernel
+reclaims it when returned to ring. Copy to cipher_in first.
 
 ## Session Caching
 
