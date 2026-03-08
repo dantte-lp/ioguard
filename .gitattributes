@@ -1,0 +1,7 @@
+# Force GitHub linguist to classify all code as C (not C++)
+*.h linguist-language=C
+*.c linguist-language=C
+
+# Exclude vendored/generated code from language stats
+src/ipc/proto/*.pb-c.c linguist-generated=true
+src/ipc/proto/*.pb-c.h linguist-generated=true
