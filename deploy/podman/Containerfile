@@ -5,6 +5,10 @@ LABEL description="Development environment for ringwall with wolfSSL and modern 
 
 # Build arguments for tool versions
 ARG CMAKE_VERSION=4.2.3
+ARG CLANG_VERSION=22.1.0
+ARG GCC_VERSION=15.2.0
+ARG SQLITE_VERSION=3520000
+ARG SQLITE_YEAR=2026
 ARG DOXYGEN_VERSION=1.16.1
 ARG UNITY_VERSION=2.6.1
 ARG CMOCK_VERSION=2.6.0
@@ -26,12 +30,10 @@ RUN dnf install -y oraclelinux-developer-release-el10 && \
     dnf config-manager --set-enabled ol10_codeready_builder && \
     dnf clean all
 
-# Install base development tools
+# Install base development tools (system gcc/g++ needed to bootstrap GCC 15)
 RUN dnf install -y \
     gcc \
     gcc-c++ \
-    clang \
-    lld \
     make \
     autoconf \
     automake \
@@ -50,7 +52,48 @@ RUN dnf install -y \
     patch \
     flex \
     bison \
+    texinfo \
+    zlib-devel \
     && dnf clean all
+
+# ═══════════════════════════════════════════════════════
+# Compilers (from source / pre-built)
+# ═══════════════════════════════════════════════════════
+
+# Install Clang 22.1.0 from pre-built release binary
+RUN cd /tmp && \
+    curl -fsSL -o llvm.tar.xz \
+        https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
+    tar xJf llvm.tar.xz && \
+    cp -a LLVM-${CLANG_VERSION}-Linux-X64/bin/* /usr/local/bin/ && \
+    cp -a LLVM-${CLANG_VERSION}-Linux-X64/lib/* /usr/local/lib/ 2>/dev/null || true && \
+    cp -a LLVM-${CLANG_VERSION}-Linux-X64/lib64/* /usr/local/lib64/ 2>/dev/null || true && \
+    cp -a LLVM-${CLANG_VERSION}-Linux-X64/include/* /usr/local/include/ 2>/dev/null || true && \
+    cp -a LLVM-${CLANG_VERSION}-Linux-X64/share/* /usr/local/share/ 2>/dev/null || true && \
+    cd /tmp && rm -rf LLVM-* llvm.tar.xz && \
+    ldconfig && \
+    clang --version
+
+# Build GCC 15.2 from source (--disable-bootstrap for faster build)
+RUN cd /tmp && \
+    curl -fsSL -o gcc.tar.gz \
+        https://ftp.gnu.org/pub/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.gz && \
+    tar xzf gcc.tar.gz && \
+    cd gcc-${GCC_VERSION} && \
+    ./contrib/download_prerequisites && \
+    mkdir build && cd build && \
+    ../configure \
+        --prefix=/usr/local \
+        --enable-languages=c,c++ \
+        --disable-multilib \
+        --disable-bootstrap \
+        --disable-libsanitizer \
+        --with-system-zlib && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf gcc-* gcc.tar.gz && \
+    /usr/local/bin/gcc --version
 
 # Install system dependencies from OL10 repos (baseos + codeready_builder)
 RUN dnf install -y \
@@ -75,7 +118,6 @@ RUN dnf install -y \
 
 # Install code quality and documentation tools
 RUN dnf install -y \
-    clang-tools-extra \
     graphviz \
     python3 \
     python3-pip \
@@ -416,8 +458,27 @@ RUN cd /tmp && \
 
 ARG LIBMDBX_VERSION=0.14.1
 
-# SQLite from system packages
-RUN dnf install -y sqlite-devel && dnf clean all
+# Build SQLite 3.52.0 from amalgamation (OL10 has 3.46.1 — missing WAL corruption fix)
+RUN cd /tmp && \
+    curl -fsSL -o sqlite.tar.gz \
+        https://www.sqlite.org/${SQLITE_YEAR}/sqlite-autoconf-${SQLITE_VERSION}.tar.gz && \
+    tar xzf sqlite.tar.gz && \
+    cd sqlite-autoconf-${SQLITE_VERSION} && \
+    ./configure \
+        --prefix=/usr/local \
+        --enable-fts5 \
+        --enable-json1 \
+        CFLAGS="-O2 -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=1 -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 \
+                -DSQLITE_DEFAULT_MEMSTATUS=0 -DSQLITE_DEFAULT_JOURNAL_SIZE_LIMIT=67108864 \
+                -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_OMIT_DEPRECATED \
+                -DSQLITE_OMIT_SHARED_CACHE -DSQLITE_USE_ALLOCA \
+                -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 \
+                -DSQLITE_SECURE_DELETE -DSQLITE_ENABLE_COLUMN_METADATA" && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf sqlite-* && \
+    sqlite3 --version
 
 # Build libmdbx from source (stable branch)
 RUN cd /tmp && \
@@ -457,12 +518,7 @@ RUN cd /tmp && \
     cd /tmp && rm -rf pvs-studio* && \
     pvs-studio --version
 
-# Create workspace directory
-RUN mkdir -p /workspace
-
 # Update ldconfig cache
 RUN ldconfig
-
-WORKDIR /workspace
 
 CMD ["/bin/bash"]
