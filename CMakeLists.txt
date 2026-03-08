@@ -601,6 +601,28 @@ if(BUILD_TESTING)
 
         rw_add_test(test_landlock tests/unit/test_landlock.c rw_landlock)
 
+        # Sprint 5 — nftables per-user firewall
+        if(LIBMNL_FOUND AND LIBNFTNL_FOUND)
+            add_library(rw_firewall STATIC src/security/firewall.c)
+            target_include_directories(rw_firewall PUBLIC ${CMAKE_SOURCE_DIR}/src)
+            target_link_libraries(rw_firewall PUBLIC
+                ${LIBMNL_LIBRARIES} ${LIBNFTNL_LIBRARIES})
+            target_include_directories(rw_firewall PUBLIC
+                ${LIBMNL_INCLUDE_DIRS} ${LIBNFTNL_INCLUDE_DIRS})
+            target_link_directories(rw_firewall PUBLIC
+                ${LIBMNL_LIBRARY_DIRS} ${LIBNFTNL_LIBRARY_DIRS})
+            target_compile_definitions(rw_firewall PUBLIC _GNU_SOURCE)
+
+            rw_add_test(test_firewall tests/unit/test_firewall.c rw_firewall)
+            target_link_libraries(test_firewall PRIVATE
+                ${LIBMNL_LIBRARIES} ${LIBNFTNL_LIBRARIES})
+            target_link_directories(test_firewall PRIVATE
+                ${LIBMNL_LIBRARY_DIRS} ${LIBNFTNL_LIBRARY_DIRS})
+            message(STATUS "Found libmnl+libnftnl: nftables firewall enabled")
+        else()
+            message(WARNING "libmnl/libnftnl not found — skipping security/firewall")
+        endif()
+
         # Sprint 5 — Schema migration
         if(TARGET rw_sqlite AND TARGET rw_mdbx)
             add_library(rw_migrate STATIC src/storage/migrate.c)
