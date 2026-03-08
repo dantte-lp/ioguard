@@ -545,6 +545,18 @@ if(BUILD_TESTING)
             message(WARNING "SQLite3 not found — skipping storage/sqlite")
         endif()
 
+        # Sprint 5 — Schema migration
+        if(TARGET rw_sqlite AND TARGET rw_mdbx)
+            add_library(rw_migrate STATIC src/storage/migrate.c)
+            target_include_directories(rw_migrate PUBLIC ${CMAKE_SOURCE_DIR}/src)
+            target_link_libraries(rw_migrate PUBLIC rw_sqlite rw_mdbx)
+
+            rw_add_test(test_storage_migrate tests/unit/test_storage_migrate.c
+                rw_migrate rw_sqlite rw_mdbx)
+        else()
+            message(WARNING "rw_sqlite or rw_mdbx missing — skipping storage/migrate")
+        endif()
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
