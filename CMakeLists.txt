@@ -635,6 +635,12 @@ if(BUILD_TESTING)
             message(WARNING "rw_sqlite or rw_mdbx missing — skipping storage/migrate")
         endif()
 
+        # Sprint 5 — Storage integration test
+        if(TARGET rw_mdbx AND TARGET rw_sqlite AND TARGET rw_migrate)
+            rw_add_test(test_storage tests/integration/test_storage.c
+                rw_mdbx rw_sqlite rw_migrate)
+        endif()
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
