@@ -1,6 +1,6 @@
-# Quick Start: CI/CD for wolfguard
+# Quick Start: CI/CD for ringwall
 
-This guide helps you quickly understand and use the CI/CD pipelines for wolfguard.
+This guide helps you quickly understand and use the CI/CD pipelines for ringwall.
 
 ## TL;DR
 
@@ -146,13 +146,13 @@ git push origin main
 
 ```bash
 # After successful main branch push
-docker pull ghcr.io/dantte-lp/wolfguard-dev:latest
-docker pull ghcr.io/dantte-lp/wolfguard-dev:<commit-sha>
+docker pull ghcr.io/dantte-lp/ringwall-dev:latest
+docker pull ghcr.io/dantte-lp/ringwall-dev:<commit-sha>
 
 # Run development container
 docker run -it --rm \
-  -v /opt/projects/repositories/wolfguard:/workspace:Z \
-  ghcr.io/dantte-lp/wolfguard-dev:latest
+  -v /opt/projects/repositories/ringwall:/workspace:Z \
+  ghcr.io/dantte-lp/ringwall-dev:latest
 ```
 
 ## Build System Cheat Sheet
@@ -212,13 +212,13 @@ gh runner list
 **Solution**: Use the dev container
 ```bash
 # Pull the CI container
-docker pull ghcr.io/dantte-lp/wolfguard-dev:latest
+docker pull ghcr.io/dantte-lp/ringwall-dev:latest
 
 # Run tests in container
 docker run --rm \
   -v $PWD:/workspace:Z \
   -w /workspace \
-  ghcr.io/dantte-lp/wolfguard-dev:latest \
+  ghcr.io/dantte-lp/ringwall-dev:latest \
   meson test -C build --verbose
 ```
 

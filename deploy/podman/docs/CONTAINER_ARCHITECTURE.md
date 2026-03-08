@@ -1,6 +1,6 @@
 # Container Architecture
 
-This document describes the design decisions, architecture, and rationale behind the wolfguard Podman container infrastructure.
+This document describes the design decisions, architecture, and rationale behind the ringwall Podman container infrastructure.
 
 ## Table of Contents
 
@@ -88,15 +88,15 @@ We use a **multi-environment** approach instead of a single monolithic container
 ```
 registry.access.redhat.com/ubi9/ubi:latest
     │
-    ├─> wolfguard-dev:latest (500MB)
+    ├─> ringwall-dev:latest (500MB)
     │       │
-    │       └─> wolfguard-test:latest (500MB)
+    │       └─> ringwall-test:latest (500MB)
     │
     └─> registry.access.redhat.com/ubi9/ubi-minimal:latest
             │
-            └─> wolfguard-build:latest (200MB)
+            └─> ringwall-build:latest (200MB)
                     │
-                    └─> wolfguard-ci:latest (200MB)
+                    └─> ringwall-ci:latest (200MB)
 ```
 
 **Rationale**:
@@ -577,7 +577,7 @@ networks:
     external: true
 ```
 
-**When**: If wolfguard web UI is added
+**When**: If ringwall web UI is added
 **Why**: Automatic HTTPS, service discovery
 
 ## Future Enhancements

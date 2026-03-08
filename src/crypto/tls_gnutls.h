@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2025 wolfguard Contributors
+ * Copyright (C) 2025 ringwall Contributors
  *
- * This file is part of wolfguard.
+ * This file is part of ringwall.
  *
- * wolfguard is free software: you can redistribute it and/or modify it
+ * ringwall is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
  *
- * wolfguard is distributed in the hope that it will be useful, but
+ * ringwall is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef WOLFGUARD_TLS_GNUTLS_H
-#define WOLFGUARD_TLS_GNUTLS_H
+#ifndef RINGWALL_TLS_GNUTLS_H
+#define RINGWALL_TLS_GNUTLS_H
 
 /**
  * GnuTLS Backend Implementation for TLS Abstraction Layer
@@ -119,4 +119,4 @@ ssize_t tls_gnutls_push_wrapper(gnutls_transport_ptr_t ptr, const void *data, si
 ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr, void *data, size_t len);
 int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms);
 
-#endif /* WOLFGUARD_TLS_GNUTLS_H */
+#endif /* RINGWALL_TLS_GNUTLS_H */

@@ -48,7 +48,7 @@ static int pam_conversation(int num_msg, const struct pam_message **msg,
     return PAM_SUCCESS;
 }
 
-int wg_pam_init(wg_pam_config_t *cfg, const char *service)
+int rw_pam_init(rw_pam_config_t *cfg, const char *service)
 {
     if (cfg == nullptr) {
         return -EINVAL;
@@ -56,7 +56,7 @@ int wg_pam_init(wg_pam_config_t *cfg, const char *service)
 
     memset(cfg, 0, sizeof(*cfg));
 
-    const char *svc = (service != nullptr) ? service : "wolfguard";
+    const char *svc = (service != nullptr) ? service : "ringwall";
     int ret = snprintf(cfg->service, sizeof(cfg->service), "%s", svc);
     if (ret < 0 || (size_t)ret >= sizeof(cfg->service)) {
         return -ENAMETOOLONG;
@@ -65,18 +65,18 @@ int wg_pam_init(wg_pam_config_t *cfg, const char *service)
     return 0;
 }
 
-wg_auth_result_t wg_pam_authenticate(const wg_pam_config_t *cfg,
+rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
                                      const char *username,
                                      const char *password)
 {
     if (cfg == nullptr || username == nullptr || password == nullptr) {
-        return WG_AUTH_ERROR;
+        return RW_AUTH_ERROR;
     }
 
     /* Make a mutable copy of the password for the conversation function */
     char *pw_copy = strdup(password);
     if (pw_copy == nullptr) {
-        return WG_AUTH_ERROR;
+        return RW_AUTH_ERROR;
     }
 
     struct pam_conv conv = {
@@ -89,12 +89,12 @@ wg_auth_result_t wg_pam_authenticate(const wg_pam_config_t *cfg,
     if (ret != PAM_SUCCESS) {
         explicit_bzero(pw_copy, strlen(pw_copy));
         free(pw_copy);
-        return WG_AUTH_ERROR;
+        return RW_AUTH_ERROR;
     }
 
     ret = pam_authenticate(pamh, 0);
 
-    wg_auth_result_t result;
+    rw_auth_result_t result;
     if (ret == PAM_SUCCESS) {
         /* Authentication passed; check account status */
         ret = pam_acct_mgmt(pamh, 0);
@@ -103,21 +103,21 @@ wg_auth_result_t wg_pam_authenticate(const wg_pam_config_t *cfg,
     /* Map PAM return codes to our result type */
     switch (ret) {
     case PAM_SUCCESS:
-        result = WG_AUTH_SUCCESS;
+        result = RW_AUTH_SUCCESS;
         break;
     case PAM_AUTH_ERR:
     case PAM_USER_UNKNOWN:
     case PAM_MAXTRIES:
-        result = WG_AUTH_FAILURE;
+        result = RW_AUTH_FAILURE;
         break;
     case PAM_ACCT_EXPIRED:
-        result = WG_AUTH_ACCOUNT_EXPIRED;
+        result = RW_AUTH_ACCOUNT_EXPIRED;
         break;
     case PAM_NEW_AUTHTOK_REQD:
-        result = WG_AUTH_PASSWORD_EXPIRED;
+        result = RW_AUTH_PASSWORD_EXPIRED;
         break;
     default:
-        result = WG_AUTH_ERROR;
+        result = RW_AUTH_ERROR;
         break;
     }
 

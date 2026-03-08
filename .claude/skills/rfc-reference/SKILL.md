@@ -1,9 +1,9 @@
 ---
 name: rfc-reference
-description: Use when implementing TLS/DTLS features, cipher suites, extensions, or security policies. Provides RFC numbers, locations, and key sections for wolfguard protocol implementation.
+description: Use when implementing TLS/DTLS features, cipher suites, extensions, or security policies. Provides RFC numbers, locations, and key sections for ringwall protocol implementation.
 ---
 
-# RFC Reference for wolfguard
+# RFC Reference for ringwall
 
 All RFCs are available locally in `docs/rfc/rfcNNNN.txt`.
 
@@ -21,16 +21,16 @@ All RFCs are available locally in `docs/rfc/rfcNNNN.txt`.
 
 ### TLS 1.3 (RFC 8446)
 - **Key sections:** Section 4 (Handshake Protocol), Section 5 (Record Protocol), Section 7 (Cryptographic Computations)
-- **wolfguard usage:** Primary TLS protocol, wolfSSL native API
+- **ringwall usage:** Primary TLS protocol, wolfSSL native API
 - **Related:** RFC 8448 (example traces — useful for debugging)
 
 ### DTLS 1.3 (RFC 9147)
 - **Key sections:** Section 3 (DTLS overview), Section 4 (Record Layer), Section 5 (Handshake Protocol)
-- **wolfguard usage:** UDP tunnel transport, anti-replay window
+- **ringwall usage:** UDP tunnel transport, anti-replay window
 - **Related:** RFC 6347 (DTLS 1.2 — fallback support)
 
 ### QUIC (RFC 9000, RFC 9001)
-- **wolfguard usage:** Future consideration only. Not currently implemented.
+- **ringwall usage:** Future consideration only. Not currently implemented.
 
 ## Security Policy RFCs
 
@@ -42,15 +42,15 @@ All RFCs are available locally in `docs/rfc/rfcNNNN.txt`.
 
 ### Known Attacks (RFC 7457)
 - **Covered attacks:** BEAST, CRIME, Lucky13, RC4 biases, Triple Handshake, POODLE
-- **wolfguard mitigation:** Encrypt-then-MAC (RFC 7366), AEAD-only in TLS 1.3
+- **ringwall mitigation:** Encrypt-then-MAC (RFC 7366), AEAD-only in TLS 1.3
 
 ### CNSA Suite (RFC 9151)
 - **Profile:** AES-256, SHA-384, P-384, RSA-3072+
-- **wolfguard usage:** Reference for government/high-security deployments
+- **ringwall usage:** Reference for government/high-security deployments
 
 ## Extension RFCs
 
-| RFC | Extension | wolfguard Relevance |
+| RFC | Extension | ringwall Relevance |
 |-----|-----------|-------------------|
 | 7366 | Encrypt-then-MAC | Enable for TLS 1.2 connections |
 | 7905 | ChaCha20-Poly1305 | Preferred cipher for mobile/ARM clients |
@@ -70,7 +70,7 @@ All RFCs are available locally in `docs/rfc/rfcNNNN.txt`.
 
 ## Authentication RFCs
 
-| RFC | Topic | wolfguard Relevance |
+| RFC | Topic | ringwall Relevance |
 |-----|-------|-------------------|
 | 7250 | Raw Public Keys | Alternative to X.509 for IoT/constrained |
 | 8492 | Secure Password Ciphersuites | SRP-like auth over TLS |

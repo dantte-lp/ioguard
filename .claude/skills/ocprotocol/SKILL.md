@@ -3,19 +3,19 @@ name: ocprotocol
 description: Use when implementing OpenConnect protocol features — DTLS/TCP tunneling, XML configuration exchange, cookie-based authentication, Cisco Secure Client compatibility, CSTP/DTLS headers, DPD timers, split DNS, NVM telemetry
 ---
 
-# OpenConnect Protocol for wolfguard
+# OpenConnect Protocol for ringwall
 
 ## Full Documentation
-See `/opt/projects/repositories/wolfguard-docs/docs/openconnect-protocol/` for complete specs.
+See `/opt/projects/repositories/ringwall-docs/docs/openconnect-protocol/` for complete specs.
 
 ## Protocol Overview
 
-wolfguard implements OpenConnect VPN Protocol v1.2, compatible with Cisco Secure Client 5.x+.
+ringwall implements OpenConnect VPN Protocol v1.2, compatible with Cisco Secure Client 5.x+.
 
 ### Connection Flow
 
 ```
-Client                              Server (wolfguard)
+Client                              Server (ringwall)
   |                                    |
   |--- TLS Handshake (port 443) ------>|
   |<-- TLS Handshake Complete ---------|
@@ -71,7 +71,7 @@ typedef struct {
     uint8_t session_id[32];
     uint8_t master_secret[48];   // MUST be zeroed after DTLS setup
     char cipher_suite[64];
-} wg_dtls_params_t;
+} rw_dtls_params_t;
 ```
 
 ## Authentication (AggAuth Protocol)
@@ -117,14 +117,14 @@ Server can challenge with secondary password (TOTP code):
 </config-auth>
 ```
 
-### Authentication Methods (wolfguard)
+### Authentication Methods (ringwall)
 
 | Method | Library | Config |
 |--------|---------|--------|
-| Local password | built-in | `auth = plain[passwd=/etc/wolfguard/passwd]` |
+| Local password | built-in | `auth = plain[passwd=/etc/ringwall/passwd]` |
 | PAM | libpam | `auth = pam` |
-| RADIUS | radcli | `auth = radius[config=/etc/wolfguard/radius.conf]` |
-| LDAP | libldap | `auth = ldap[config=/etc/wolfguard/ldap.conf]` |
+| RADIUS | radcli | `auth = radius[config=/etc/ringwall/radius.conf]` |
+| LDAP | libldap | `auth = ldap[config=/etc/ringwall/ldap.conf]` |
 | TOTP/HOTP | liboath | Secondary password, RFC 6238/4226 |
 | Certificate | wolfSSL | `auth = certificate` |
 

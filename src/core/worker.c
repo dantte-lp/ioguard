@@ -4,26 +4,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct wg_worker {
-	wg_worker_config_t config;
-	wg_worker_state_t state;
-	wg_connection_t *conns;
+struct rw_worker {
+	rw_worker_config_t config;
+	rw_worker_state_t state;
+	rw_connection_t *conns;
 	uint32_t conn_count;
 	uint64_t next_conn_id;
 };
 
-void wg_worker_config_init(wg_worker_config_t *cfg)
+void rw_worker_config_init(rw_worker_config_t *cfg)
 {
-	*cfg = (wg_worker_config_t){
-		.max_connections = WG_WORKER_DEFAULT_MAX_CONNS,
-		.queue_depth = WG_WORKER_DEFAULT_QUEUE_DEPTH,
-		.dpd_interval_s = WG_DPD_DEFAULT_INTERVAL_S,
-		.dpd_max_retries = WG_DPD_DEFAULT_MAX_RETRIES,
-		.tun_mtu = WG_WORKER_DEFAULT_TUN_MTU,
+	*cfg = (rw_worker_config_t){
+		.max_connections = RW_WORKER_DEFAULT_MAX_CONNS,
+		.queue_depth = RW_WORKER_DEFAULT_QUEUE_DEPTH,
+		.dpd_interval_s = RW_DPD_DEFAULT_INTERVAL_S,
+		.dpd_max_retries = RW_DPD_DEFAULT_MAX_RETRIES,
+		.tun_mtu = RW_WORKER_DEFAULT_TUN_MTU,
 	};
 }
 
-int wg_worker_config_validate(const wg_worker_config_t *cfg)
+int rw_worker_config_validate(const rw_worker_config_t *cfg)
 {
 	if (cfg->max_connections == 0)
 		return -EINVAL;
@@ -34,12 +34,12 @@ int wg_worker_config_validate(const wg_worker_config_t *cfg)
 	return 0;
 }
 
-wg_worker_t *wg_worker_create(const wg_worker_config_t *cfg)
+rw_worker_t *rw_worker_create(const rw_worker_config_t *cfg)
 {
-	if (wg_worker_config_validate(cfg) != 0)
+	if (rw_worker_config_validate(cfg) != 0)
 		return nullptr;
 
-	wg_worker_t *w = calloc(1, sizeof(*w));
+	rw_worker_t *w = calloc(1, sizeof(*w));
 	if (!w)
 		return nullptr;
 
@@ -50,20 +50,20 @@ wg_worker_t *wg_worker_create(const wg_worker_config_t *cfg)
 	}
 
 	w->config = *cfg;
-	w->state = WG_WORKER_NEW;
+	w->state = RW_WORKER_NEW;
 	w->conn_count = 0;
 	w->next_conn_id = 1;
 
 	return w;
 }
 
-void wg_worker_destroy(wg_worker_t *w)
+void rw_worker_destroy(rw_worker_t *w)
 {
 	if (!w)
 		return;
 	for (uint32_t i = 0; i < w->config.max_connections; i++) {
 		if (w->conns[i].active)
-			wg_compress_destroy(&w->conns[i].compress);
+			rw_compress_destroy(&w->conns[i].compress);
 	}
 	explicit_bzero(w->conns, w->config.max_connections * sizeof(*w->conns));
 	free(w->conns);
@@ -71,12 +71,12 @@ void wg_worker_destroy(wg_worker_t *w)
 	free(w);
 }
 
-wg_worker_state_t wg_worker_state(const wg_worker_t *w)
+rw_worker_state_t rw_worker_state(const rw_worker_t *w)
 {
 	return w->state;
 }
 
-int64_t wg_worker_add_connection(wg_worker_t *w, int tls_fd, int tun_fd)
+int64_t rw_worker_add_connection(rw_worker_t *w, int tls_fd, int tun_fd)
 {
 	if (w->conn_count >= w->config.max_connections)
 		return -ENOSPC;
@@ -84,16 +84,16 @@ int64_t wg_worker_add_connection(wg_worker_t *w, int tls_fd, int tun_fd)
 	/* Find first inactive slot */
 	for (uint32_t i = 0; i < w->config.max_connections; i++) {
 		if (!w->conns[i].active) {
-			wg_connection_t *c = &w->conns[i];
+			rw_connection_t *c = &w->conns[i];
 			memset(c, 0, sizeof(*c));
 			c->conn_id = w->next_conn_id++;
 			c->tls_fd = tls_fd;
 			c->tun_fd = tun_fd;
 			c->active = true;
 			c->recv_len = 0;
-			wg_dpd_init(&c->dpd, w->config.dpd_interval_s,
+			rw_dpd_init(&c->dpd, w->config.dpd_interval_s,
 			            w->config.dpd_max_retries);
-			(void)wg_compress_init(&c->compress, WG_COMPRESS_NONE);
+			(void)rw_compress_init(&c->compress, RW_COMPRESS_NONE);
 			w->conn_count++;
 			return (int64_t)c->conn_id;
 		}
@@ -102,11 +102,11 @@ int64_t wg_worker_add_connection(wg_worker_t *w, int tls_fd, int tun_fd)
 	return -ENOSPC;
 }
 
-int wg_worker_remove_connection(wg_worker_t *w, uint64_t conn_id)
+int rw_worker_remove_connection(rw_worker_t *w, uint64_t conn_id)
 {
 	for (uint32_t i = 0; i < w->config.max_connections; i++) {
 		if (w->conns[i].active && w->conns[i].conn_id == conn_id) {
-			wg_compress_destroy(&w->conns[i].compress);
+			rw_compress_destroy(&w->conns[i].compress);
 			explicit_bzero(&w->conns[i], sizeof(w->conns[i]));
 			w->conn_count--;
 			return 0;
@@ -115,7 +115,7 @@ int wg_worker_remove_connection(wg_worker_t *w, uint64_t conn_id)
 	return -ENOENT;
 }
 
-wg_connection_t *wg_worker_find_connection(wg_worker_t *w, uint64_t conn_id)
+rw_connection_t *rw_worker_find_connection(rw_worker_t *w, uint64_t conn_id)
 {
 	for (uint32_t i = 0; i < w->config.max_connections; i++) {
 		if (w->conns[i].active && w->conns[i].conn_id == conn_id)
@@ -124,19 +124,19 @@ wg_connection_t *wg_worker_find_connection(wg_worker_t *w, uint64_t conn_id)
 	return nullptr;
 }
 
-uint32_t wg_worker_connection_count(const wg_worker_t *w)
+uint32_t rw_worker_connection_count(const rw_worker_t *w)
 {
 	return w->conn_count;
 }
 
-const char *wg_worker_state_name(wg_worker_state_t state)
+const char *rw_worker_state_name(rw_worker_state_t state)
 {
 	switch (state) {
-	case WG_WORKER_NEW:      return "NEW";
-	case WG_WORKER_READY:    return "READY";
-	case WG_WORKER_RUNNING:  return "RUNNING";
-	case WG_WORKER_STOPPING: return "STOPPING";
-	case WG_WORKER_STOPPED:  return "STOPPED";
+	case RW_WORKER_NEW:      return "NEW";
+	case RW_WORKER_READY:    return "READY";
+	case RW_WORKER_RUNNING:  return "RUNNING";
+	case RW_WORKER_STOPPING: return "STOPPING";
+	case RW_WORKER_STOPPED:  return "STOPPED";
 	}
 	return "UNKNOWN";
 }

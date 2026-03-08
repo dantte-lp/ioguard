@@ -1,15 +1,15 @@
 ---
 name: wolfsentry-idps
-description: Use when implementing firewall rules, rate limiting, connection tracking, DDoS mitigation, IP blocking, geographic filtering, or integrating wolfSentry IDPS into wolfguard. Also use for per-user/per-group firewall and nftables integration.
+description: Use when implementing firewall rules, rate limiting, connection tracking, DDoS mitigation, IP blocking, geographic filtering, or integrating wolfSentry IDPS into ringwall. Also use for per-user/per-group firewall and nftables integration.
 ---
 
-# wolfSentry IDPS Integration for wolfguard
+# wolfSentry IDPS Integration for ringwall
 
 ## Context7 Reference
 Always fetch latest docs: library ID `/wolfssl/wolfsentry`
 
 ## Full Documentation
-See `/opt/projects/repositories/wolfguard-docs/docs/wolfguard/architecture/wolfsentry-integration.md`
+See `/opt/projects/repositories/ringwall-docs/docs/ringwall/architecture/wolfsentry-integration.md`
 
 ## Overview
 
@@ -24,7 +24,7 @@ wolfSentry 1.6.3 — embedded IDPS/firewall engine from wolfSSL. Pure C, GPLv2, 
 - Transactional policy updates (atomic, no downtime)
 - Native wolfSSL TLS/DTLS integration
 
-## Architecture: wolfSentry in wolfguard
+## Architecture: wolfSentry in ringwall
 
 ```
 Client → libuv → wolfSentry → wolfSSL → Worker → TUN → Kernel
@@ -46,9 +46,9 @@ wolfSentry checks EVERY incoming connection BEFORE TLS handshake:
 static struct wolfsentry_context *ws_ctx = nullptr;
 
 [[nodiscard]]
-static int wg_wolfsentry_init(const char *config_path) {
+static int rw_wolfsentry_init(const char *config_path) {
     struct wolfsentry_eventconfig default_config = {
-        .route_private_data_size = sizeof(wg_route_data_t),
+        .route_private_data_size = sizeof(rw_route_data_t),
         .max_connection_count = 10000,
         .penalty_box_duration = 300,  // 5 minutes
     };
@@ -105,7 +105,7 @@ static void on_new_connection(uv_stream_t *server, int status) {
     }
 
     // Connection allowed — proceed with TLS handshake
-    wg_start_tls_handshake(client);
+    rw_start_tls_handshake(client);
 }
 ```
 
@@ -180,8 +180,8 @@ wolfSentry handles pre-authentication firewall. For authenticated per-user rules
 
 // Create per-user nftables chain after authentication
 [[nodiscard]]
-static int wg_create_user_chain(const char *username, uint32_t client_ip) {
-    // 1. Create named chain: wolfguard_user_<username>
+static int rw_create_user_chain(const char *username, uint32_t client_ip) {
+    // 1. Create named chain: ringwall_user_<username>
     // 2. Add rules based on user's group policy
     // 3. Jump from main chain to user chain for this IP
     // 4. Cleanup on disconnect

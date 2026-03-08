@@ -1,7 +1,7 @@
 FROM oraclelinux:10
 
-LABEL maintainer="wolfguard development team"
-LABEL description="Testing environment for wolfguard"
+LABEL maintainer="ringwall development team"
+LABEL description="Testing environment for ringwall"
 
 # Install test dependencies
 RUN dnf install -y \

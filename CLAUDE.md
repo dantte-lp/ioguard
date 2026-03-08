@@ -1,4 +1,4 @@
-# wolfguard - Project Instructions for Claude Code
+# ringwall - Project Instructions for Claude Code
 
 ## Quick Facts
 
@@ -63,10 +63,10 @@ deploy/podman/      # Container configurations
 
 **Full reference: `.claude/skills/coding-standards/SKILL.md`** — MUST be followed for all code.
 
-- **Naming**: `wg_module_verb_noun()` functions, `wg_module_name_t` types, `WG_MODULE_VALUE` enums/macros
-- **Prefix**: `wg_` public API, `tls_` TLS layer
+- **Naming**: `rw_module_verb_noun()` functions, `rw_module_name_t` types, `RW_MODULE_VALUE` enums/macros
+- **Prefix**: `rw_` public API, `tls_` TLS layer
 - **Typedef suffix**: `_t` for all types
-- **Include guards**: `WOLFGUARD_MODULE_FILE_H` (NOT `OCSERV_*`)
+- **Include guards**: `RINGWALL_MODULE_FILE_H` (NOT `OCSERV_*`)
 - **Pointer style**: `int *ptr` (right-aligned, Linux kernel style)
 - **Column limit**: 100 characters
 - **Braces**: Linux kernel style (`BreakBeforeBraces: Linux`)

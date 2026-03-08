@@ -1,24 +1,24 @@
-#ifndef WOLFGUARD_UTILS_MEMORY_H
-#define WOLFGUARD_UTILS_MEMORY_H
+#ifndef RINGWALL_UTILS_MEMORY_H
+#define RINGWALL_UTILS_MEMORY_H
 
 #include <stddef.h>
 
 /* Initialize memory allocator (mimalloc if available) */
-[[nodiscard]] int wg_mem_init(void);
+[[nodiscard]] int rw_mem_init(void);
 
 /* Allocate memory. Returns nullptr for size == 0. */
-[[nodiscard]] void *wg_mem_alloc(size_t size);
+[[nodiscard]] void *rw_mem_alloc(size_t size);
 
 /* Allocate zeroed memory */
-[[nodiscard]] void *wg_mem_calloc(size_t count, size_t size);
+[[nodiscard]] void *rw_mem_calloc(size_t count, size_t size);
 
 /* Reallocate memory */
-[[nodiscard]] void *wg_mem_realloc(void *ptr, size_t new_size);
+[[nodiscard]] void *rw_mem_realloc(void *ptr, size_t new_size);
 
 /* Free memory. Safe to call with nullptr. */
-void wg_mem_free(void *ptr);
+void rw_mem_free(void *ptr);
 
 /* Securely zero memory (not optimized away by compiler) */
-void wg_mem_secure_zero(void *ptr, size_t len);
+void rw_mem_secure_zero(void *ptr, size_t len);
 
-#endif /* WOLFGUARD_UTILS_MEMORY_H */
+#endif /* RINGWALL_UTILS_MEMORY_H */

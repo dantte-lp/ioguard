@@ -252,8 +252,8 @@ static void xb_append(struct xml_buf *xb, const char *fmt, ...)
 /* Public API                                                          */
 /* ------------------------------------------------------------------ */
 
-int wg_xml_parse_auth_request(const char *xml, size_t len,
-			      wg_xml_auth_request_t *out)
+int rw_xml_parse_auth_request(const char *xml, size_t len,
+			      rw_xml_auth_request_t *out)
 {
 	if (xml == nullptr || out == nullptr || len == 0)
 		return -EINVAL;
@@ -327,7 +327,7 @@ int wg_xml_parse_auth_request(const char *xml, size_t len,
 	return 0;
 }
 
-int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
+int rw_xml_build_auth_response(const rw_xml_auth_response_t *resp,
 			       char *buf, size_t buf_size, size_t *out_len)
 {
 	if (resp == nullptr || buf == nullptr || buf_size == 0
@@ -345,7 +345,7 @@ int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
 		   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 
 	switch (resp->type) {
-	case WG_XML_RESP_CHALLENGE:
+	case RW_XML_RESP_CHALLENGE:
 		xb_append(&xb,
 			   "<config-auth client=\"vpn\""
 			   " type=\"auth-request\">\n");
@@ -375,7 +375,7 @@ int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
 				   "<select name=\"group_list\" "
 				   "label=\"GROUP:\">\n");
 			for (uint32_t i = 0; i < resp->group_count
-			     && i < WG_XML_MAX_GROUPS; i++) {
+			     && i < RW_XML_MAX_GROUPS; i++) {
 				char esc_name[128];
 				char esc_label[256];
 				xml_escape(resp->groups[i].name,
@@ -400,7 +400,7 @@ int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
 			   "</config-auth>\n");
 		break;
 
-	case WG_XML_RESP_MFA_CHALLENGE:
+	case RW_XML_RESP_MFA_CHALLENGE:
 		xb_append(&xb,
 			   "<config-auth client=\"vpn\""
 			   " type=\"auth-request\">\n");
@@ -429,7 +429,7 @@ int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
 			   "</config-auth>\n");
 		break;
 
-	case WG_XML_RESP_SUCCESS:
+	case RW_XML_RESP_SUCCESS:
 		xb_append(&xb,
 			   "<config-auth client=\"vpn\""
 			   " type=\"complete\">\n");
@@ -451,7 +451,7 @@ int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
 			   "</config-auth>\n");
 		break;
 
-	case WG_XML_RESP_FAILURE:
+	case RW_XML_RESP_FAILURE:
 		xb_append(&xb,
 			   "<config-auth client=\"vpn\""
 			   " type=\"auth-failed\">\n");
@@ -481,7 +481,7 @@ int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
 	return 0;
 }
 
-void wg_xml_auth_request_zero(wg_xml_auth_request_t *req)
+void rw_xml_auth_request_zero(rw_xml_auth_request_t *req)
 {
 	if (req == nullptr)
 		return;

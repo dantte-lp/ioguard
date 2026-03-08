@@ -1,4 +1,4 @@
-# RFC Reference for wolfguard
+# RFC Reference for ringwall
 
 Local copies of RFCs relevant to TLS, DTLS, and VPN protocol implementation.
 

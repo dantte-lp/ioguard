@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for the wolfguard Podman container infrastructure.
+Common issues and solutions for the ringwall Podman container infrastructure.
 
 ## Table of Contents
 
@@ -32,7 +32,7 @@ make info
 podman ps -a
 
 # Check images
-podman images | grep wolfguard
+podman images | grep ringwall
 
 # Check logs
 podman logs <container-name>
@@ -192,12 +192,12 @@ podman logs <container-id>
 
 2. Run interactively:
 ```bash
-podman run -it --rm localhost/wolfguard-dev:latest /bin/bash
+podman run -it --rm localhost/ringwall-dev:latest /bin/bash
 ```
 
 3. Check command:
 ```bash
-podman inspect localhost/wolfguard-dev:latest | jq '.[0].Config.Cmd'
+podman inspect localhost/ringwall-dev:latest | jq '.[0].Config.Cmd'
 ```
 
 4. Override command:
@@ -253,18 +253,18 @@ podman inspect <container-name> | jq '.[0].Mounts'
 
 2. Verify SELinux context:
 ```bash
-ls -Zd /opt/projects/repositories/wolfguard
+ls -Zd /opt/projects/repositories/ringwall
 ```
 
 3. Fix ownership:
 ```bash
 # On host
-sudo chown -R $USER:$USER /opt/projects/repositories/wolfguard
+sudo chown -R $USER:$USER /opt/projects/repositories/ringwall
 ```
 
 4. Relabel for SELinux:
 ```bash
-chcon -R -t container_file_t /opt/projects/repositories/wolfguard
+chcon -R -t container_file_t /opt/projects/repositories/ringwall
 ```
 
 5. Check container user:
@@ -333,7 +333,7 @@ volumes:
 
 4. Relabel directory:
 ```bash
-chcon -R -t container_file_t /opt/projects/repositories/wolfguard
+chcon -R -t container_file_t /opt/projects/repositories/ringwall
 ```
 
 5. Generate policy (last resort):
@@ -370,7 +370,7 @@ sudo dnf reinstall container-selinux
 
 4. Reset file contexts:
 ```bash
-sudo restorecon -R /opt/projects/repositories/wolfguard
+sudo restorecon -R /opt/projects/repositories/ringwall
 ```
 
 ## Network Issues
@@ -444,15 +444,15 @@ podman network inspect ocserv-net
 
 **Symptom**:
 ```
-Error: volume wolfguard_dev-home not found
+Error: volume ringwall_dev-home not found
 ```
 
 **Solutions**:
 
 1. Create volumes:
 ```bash
-podman volume create wolfguard_dev-home
-podman volume create wolfguard_build-cache
+podman volume create ringwall_dev-home
+podman volume create ringwall_build-cache
 ```
 
 2. Or use compose:
@@ -487,7 +487,7 @@ sudo ./scripts/backup-volumes.sh
 
 3. Fix volume ownership:
 ```bash
-podman volume inspect wolfguard_dev-home
+podman volume inspect ringwall_dev-home
 # Check Mountpoint, then:
 sudo chown -R $USER:$USER <mountpoint>
 ```
@@ -559,7 +559,7 @@ buildah commit --rm --squash $container
 
 4. Pre-pull images:
 ```bash
-podman pull localhost/wolfguard-dev:latest
+podman pull localhost/ringwall-dev:latest
 ```
 
 ## Advanced Debugging
@@ -607,7 +607,7 @@ buildah rm $container
 
 ```bash
 # Show image layers
-podman history localhost/wolfguard-dev:latest
+podman history localhost/ringwall-dev:latest
 
 # Export image filesystem
 podman export <container-name> > filesystem.tar

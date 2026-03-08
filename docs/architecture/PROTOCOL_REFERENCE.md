@@ -2,13 +2,13 @@
 
 **Document Version**: 1.0
 **Last Updated**: 2025-10-29
-**Project**: wolfguard v2.0.0
+**Project**: ringwall v2.0.0
 
 ---
 
 ## Overview
 
-This document provides references and analysis of the OpenConnect VPN protocol specification, which wolfguard implements with 100% Cisco AnyConnect compatibility as a core requirement.
+This document provides references and analysis of the OpenConnect VPN protocol specification, which ringwall implements with 100% Cisco AnyConnect compatibility as a core requirement.
 
 ---
 
@@ -141,7 +141,7 @@ Based on reverse engineering of Cisco Secure Client 5.1.2.42:
 
 ### Compatibility Requirements
 
-For wolfguard v2.0.0:
+For ringwall v2.0.0:
 - ✅ 100% protocol message compatibility
 - ✅ XML response format matching
 - ✅ Session cookie format
@@ -269,7 +269,7 @@ The official OpenConnect client is the reference implementation for the client s
 
 ---
 
-## Implementation Guidelines for wolfguard
+## Implementation Guidelines for ringwall
 
 ### Critical Requirements
 
@@ -461,7 +461,7 @@ Server → Client: DTLS ServerHello
 
 ## Compliance Checklist
 
-For wolfguard v2.0.0 to be compliant:
+For ringwall v2.0.0 to be compliant:
 
 ### Protocol Requirements
 - [ ] OpenConnect Protocol v1.2 full compliance
@@ -488,6 +488,6 @@ For wolfguard v2.0.0 to be compliant:
 
 ---
 
-**Document Maintainer**: wolfguard protocol team
+**Document Maintainer**: ringwall protocol team
 **Review Schedule**: Monthly during implementation
 **Next Review**: 2025-11-29

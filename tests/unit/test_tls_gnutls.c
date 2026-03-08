@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2025 wolfguard Contributors
+ * Copyright (C) 2025 ringwall Contributors
  *
- * This file is part of wolfguard.
+ * This file is part of ringwall.
  *
  * Unit Tests for GnuTLS Backend
  *

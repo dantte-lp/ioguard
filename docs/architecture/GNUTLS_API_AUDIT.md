@@ -1,8 +1,8 @@
 # GnuTLS API Audit - ocserv to wolfSSL Migration
 
-**Project**: wolfguard v2.0.0-alpha.1
+**Project**: ringwall v2.0.0-alpha.1
 **Date**: 2025-10-29
-**Author**: wolfguard Architecture Team
+**Author**: ringwall Architecture Team
 **Status**: In Progress
 
 ## Executive Summary

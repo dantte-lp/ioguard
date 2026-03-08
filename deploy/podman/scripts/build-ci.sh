@@ -9,9 +9,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-IMAGE_NAME="${IMAGE_NAME:-localhost/wolfguard-ci}"
+IMAGE_NAME="${IMAGE_NAME:-localhost/ringwall-ci}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-BUILD_IMAGE="${BUILD_IMAGE:-localhost/wolfguard-build:latest}"
+BUILD_IMAGE="${BUILD_IMAGE:-localhost/ringwall-build:latest}"
 
 # Color output
 RED='\033[0;31m'
@@ -58,12 +58,12 @@ container=$(buildah from "$BUILD_IMAGE")
 
 # Configure container metadata
 buildah config \
-    --label "io.wolfguard.version=2.0.0-alpha.1" \
-    --label "io.wolfguard.environment=ci" \
+    --label "io.ringwall.version=2.0.0-alpha.1" \
+    --label "io.ringwall.environment=ci" \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
-    --label "org.opencontainers.image.title=wolfguard-ci" \
-    --label "org.opencontainers.image.description=CI/CD environment for wolfguard" \
+    --label "org.opencontainers.image.title=ringwall-ci" \
+    --label "org.opencontainers.image.description=CI/CD environment for ringwall" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \
     "$container"
@@ -83,12 +83,12 @@ buildah run "$container" -- bash -c "
 #!/bin/bash
 set -euo pipefail
 
-# CI/CD runner for wolfguard
+# CI/CD runner for ringwall
 WORKSPACE=\${WORKSPACE:-/workspace}
 CI_REPORTS=\${CI_REPORTS:-/workspace/ci-reports}
 
 echo '================================================'
-echo 'wolfguard CI/CD Runner'
+echo 'ringwall CI/CD Runner'
 echo '================================================'
 
 mkdir -p \$CI_REPORTS
@@ -244,7 +244,7 @@ log_info "  quick-validate  - Fast validation for quick feedback"
 log_info "  run-lint        - Code quality and linting checks"
 log_info ""
 log_info "To run CI pipeline:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/wolfguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_info "To run quick validation:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/wolfguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG quick-validate"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG quick-validate"

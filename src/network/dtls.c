@@ -9,8 +9,8 @@
 #include <wolfssl/ssl.h>
 #endif
 
-struct wg_dtls_ctx {
-	wg_dtls_config_t config;
+struct rw_dtls_ctx {
+	rw_dtls_config_t config;
 #ifdef USE_WOLFSSL
 	WOLFSSL_CTX *ssl_ctx;
 #else
@@ -18,12 +18,12 @@ struct wg_dtls_ctx {
 #endif
 };
 
-void wg_dtls_config_init(wg_dtls_config_t *cfg)
+void rw_dtls_config_init(rw_dtls_config_t *cfg)
 {
-	*cfg = (wg_dtls_config_t){
-		.mtu = WG_DTLS_DEFAULT_MTU,
-		.timeout_init_s = WG_DTLS_DEFAULT_TIMEOUT_S,
-		.rekey_interval_s = WG_DTLS_DEFAULT_REKEY_S,
+	*cfg = (rw_dtls_config_t){
+		.mtu = RW_DTLS_DEFAULT_MTU,
+		.timeout_init_s = RW_DTLS_DEFAULT_TIMEOUT_S,
+		.rekey_interval_s = RW_DTLS_DEFAULT_REKEY_S,
 		.cert_file = nullptr,
 		.key_file = nullptr,
 		.ca_file = nullptr,
@@ -32,7 +32,7 @@ void wg_dtls_config_init(wg_dtls_config_t *cfg)
 	};
 }
 
-int wg_dtls_config_validate(const wg_dtls_config_t *cfg)
+int rw_dtls_config_validate(const rw_dtls_config_t *cfg)
 {
 	if (!cfg)
 		return -EINVAL;
@@ -43,12 +43,12 @@ int wg_dtls_config_validate(const wg_dtls_config_t *cfg)
 	return 0;
 }
 
-wg_dtls_ctx_t *wg_dtls_create(const wg_dtls_config_t *cfg)
+rw_dtls_ctx_t *rw_dtls_create(const rw_dtls_config_t *cfg)
 {
-	if (wg_dtls_config_validate(cfg) != 0)
+	if (rw_dtls_config_validate(cfg) != 0)
 		return nullptr;
 
-	wg_dtls_ctx_t *ctx = calloc(1, sizeof(*ctx));
+	rw_dtls_ctx_t *ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
 		return nullptr;
 
@@ -63,7 +63,7 @@ wg_dtls_ctx_t *wg_dtls_create(const wg_dtls_config_t *cfg)
 
 	/* Set cipher list */
 	const char *ciphers = cfg->cipher_list ? cfg->cipher_list
-	                                       : wg_dtls_cisco_ciphers();
+	                                       : rw_dtls_cisco_ciphers();
 	wolfSSL_CTX_set_cipher_list(ctx->ssl_ctx, ciphers);
 
 	/* Load certs if provided */
@@ -90,7 +90,7 @@ wg_dtls_ctx_t *wg_dtls_create(const wg_dtls_config_t *cfg)
 	return ctx;
 }
 
-void wg_dtls_destroy(wg_dtls_ctx_t *ctx)
+void rw_dtls_destroy(rw_dtls_ctx_t *ctx)
 {
 	if (!ctx)
 		return;
@@ -102,12 +102,12 @@ void wg_dtls_destroy(wg_dtls_ctx_t *ctx)
 	free(ctx);
 }
 
-uint32_t wg_dtls_get_mtu(const wg_dtls_ctx_t *ctx)
+uint32_t rw_dtls_get_mtu(const rw_dtls_ctx_t *ctx)
 {
 	return ctx->config.mtu;
 }
 
-const char *wg_dtls_cisco_ciphers(void)
+const char *rw_dtls_cisco_ciphers(void)
 {
 	return "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:AES128-SHA";
 }

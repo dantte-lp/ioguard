@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">wolfguard</h1>
+  <h1 align="center">ringwall</h1>
   <p align="center">Modern OpenConnect VPN server — wolfSSL, io_uring, C23</p>
 </p>
 
@@ -21,7 +21,7 @@ Clean-room implementation of the OpenConnect VPN protocol, built from scratch in
 ## Quick Start
 
 ```bash
-git clone https://github.com/dantte-lp/wolfguard.git && cd wolfguard
+git clone https://github.com/dantte-lp/ringwall.git && cd ringwall
 cmake --preset clang-debug
 cmake --build --preset clang-debug
 ctest --preset clang-debug
@@ -31,7 +31,7 @@ ctest --preset clang-debug
 
 ```mermaid
 graph TB
-    subgraph "wolfguard"
+    subgraph "ringwall"
         MAIN["Main Process<br/>pidfd_spawn · signalfd"]
         SECMOD["sec-mod<br/>PAM · RADIUS · LDAP · TOTP"]
         WORKER["Worker ×N<br/>io_uring · wolfSSL"]
@@ -73,7 +73,7 @@ Full documentation is available in [`docs/`](docs/):
 | 08 | [Development](docs/en/08-development.md) | Build system, testing, sanitizers, fuzzing |
 | 09 | [Monitoring](docs/en/09-monitoring.md) | Prometheus metrics, structured logging |
 | 10 | [Client Compatibility](docs/en/10-client-compat.md) | OpenConnect, Cisco Secure Client, NetworkManager |
-| 11 | [CLI Reference](docs/en/11-cli-reference.md) | wgctl commands, REST API |
+| 11 | [CLI Reference](docs/en/11-cli-reference.md) | rwctl commands, REST API |
 
 ## RFC Compliance
 

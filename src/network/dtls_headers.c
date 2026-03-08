@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int wg_dtls_build_headers(char *buf, size_t buf_size,
+int rw_dtls_build_headers(char *buf, size_t buf_size,
                            const char *master_secret_hex,
                            const char *cipher_suite,
                            const char *accept_encoding)
@@ -25,11 +25,11 @@ int wg_dtls_build_headers(char *buf, size_t buf_size,
 
 	/* Append compression if negotiated */
 	if (accept_encoding && strlen(accept_encoding) > 0) {
-		wg_compress_type_t ct = wg_compress_negotiate(accept_encoding);
-		if (ct != WG_COMPRESS_NONE) {
+		rw_compress_type_t ct = rw_compress_negotiate(accept_encoding);
+		if (ct != RW_COMPRESS_NONE) {
 			int extra = snprintf(buf + n, buf_size - (size_t)n,
 				"X-DTLS-Accept-Encoding: %s\r\n",
-				wg_compress_type_name(ct));
+				rw_compress_type_name(ct));
 			if (extra < 0)
 				return -EIO;
 			if ((size_t)(n + extra) >= buf_size)
@@ -41,7 +41,7 @@ int wg_dtls_build_headers(char *buf, size_t buf_size,
 	return n;
 }
 
-wg_compress_type_t wg_dtls_parse_accept_encoding(const char *header)
+rw_compress_type_t rw_dtls_parse_accept_encoding(const char *header)
 {
-	return wg_compress_negotiate(header);
+	return rw_compress_negotiate(header);
 }

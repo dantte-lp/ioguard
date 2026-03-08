@@ -30,11 +30,11 @@
 Read every file in `src/crypto/` and `tests/unit/test_tls_*.c`, `tests/unit/test_priority_parser.c` to understand:
 - What functions are implemented vs stubbed
 - What needs `_GNU_SOURCE`, wolfSSL includes, etc.
-- Include guard style (old `OCSERV_*` vs new `WOLFGUARD_*`)
+- Include guard style (old `OCSERV_*` vs new `RINGWALL_*`)
 
-**Step 2: Add wg_crypto library to CMakeLists.txt**
+**Step 2: Add rw_crypto library to CMakeLists.txt**
 
-Add a new static library target `wg_crypto` with:
+Add a new static library target `rw_crypto` with:
 - wolfSSL backend: `src/crypto/tls_wolfssl.c`, `src/crypto/tls_abstract.c`, `src/crypto/priority_parser.c`, `src/crypto/session_cache.c`
 - GnuTLS backend: same but with `tls_gnutls.c` instead of `tls_wolfssl.c`
 - Find wolfSSL: `find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h)`, `find_library(WOLFSSL_LIBRARY wolfssl)`
@@ -44,14 +44,14 @@ Add a new static library target `wg_crypto` with:
 - Include dirs: `${CMAKE_SOURCE_DIR}/src/crypto` for internal headers
 
 Add test executables:
-- `test_tls_wolfssl` linking `wg_crypto` (wolfSSL variant) + unity
-- `test_priority_parser` linking `wg_crypto` + unity
+- `test_tls_wolfssl` linking `rw_crypto` (wolfSSL variant) + unity
+- `test_priority_parser` linking `rw_crypto` + unity
 - Register with CTest
 
 **Step 3: Fix any compilation issues**
 
 Common issues to expect:
-- Include guard rename: `OCSERV_*` → `WOLFGUARD_*` (update if needed for consistency, but not required for compilation)
+- Include guard rename: `OCSERV_*` → `RINGWALL_*` (update if needed for consistency, but not required for compilation)
 - Missing `_GNU_SOURCE` for some functions
 - wolfSSL header path: `/usr/local/include/wolfssl/`
 - Test framework: existing tests use custom macros, may need Unity migration
@@ -59,8 +59,8 @@ Common issues to expect:
 **Step 4: Build and run inside container**
 
 ```bash
-podman exec wolfguard-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug 2>&1"
-podman exec wolfguard-dev bash -c "cd /workspace && ctest --preset clang-debug"
+podman exec ringwall-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug 2>&1"
+podman exec ringwall-dev bash -c "cd /workspace && ctest --preset clang-debug"
 ```
 
 Expected: All existing tests pass (or identify specific failures to fix).
@@ -84,7 +84,7 @@ git commit -m "build: wire existing crypto module (wolfSSL, GnuTLS, priority par
 
 **Context:**
 
-wolfguard uses llhttp to parse HTTP requests from Cisco/OpenConnect clients. Two critical request types:
+ringwall uses llhttp to parse HTTP requests from Cisco/OpenConnect clients. Two critical request types:
 1. `POST /auth` — authentication (XML body with credentials)
 2. `CONNECT /CSCOSSLC/tunnel` — tunnel establishment (returns `HPE_PAUSED_UPGRADE`)
 
@@ -93,37 +93,37 @@ Must extract headers: `Cookie`, `X-CSTP-*`, `X-DTLS-*`, `Content-Type`, `Content
 **API design** (`src/network/http.h`):
 
 ```c
-#ifndef WOLFGUARD_NETWORK_HTTP_H
-#define WOLFGUARD_NETWORK_HTTP_H
+#ifndef RINGWALL_NETWORK_HTTP_H
+#define RINGWALL_NETWORK_HTTP_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <llhttp.h>
 
-#define WG_HTTP_MAX_HEADERS 32
-#define WG_HTTP_MAX_URL 512
-#define WG_HTTP_MAX_HEADER_NAME 128
-#define WG_HTTP_MAX_HEADER_VALUE 1024
-#define WG_HTTP_MAX_BODY 8192
+#define RW_HTTP_MAX_HEADERS 32
+#define RW_HTTP_MAX_URL 512
+#define RW_HTTP_MAX_HEADER_NAME 128
+#define RW_HTTP_MAX_HEADER_VALUE 1024
+#define RW_HTTP_MAX_BODY 8192
 
 typedef struct {
-    char name[WG_HTTP_MAX_HEADER_NAME];
-    char value[WG_HTTP_MAX_HEADER_VALUE];
-} wg_http_header_t;
+    char name[RW_HTTP_MAX_HEADER_NAME];
+    char value[RW_HTTP_MAX_HEADER_VALUE];
+} rw_http_header_t;
 
 typedef struct {
     /* Request line */
     uint8_t method;          /* llhttp_method_t: HTTP_POST, HTTP_CONNECT, etc. */
-    char url[WG_HTTP_MAX_URL];
+    char url[RW_HTTP_MAX_URL];
     size_t url_len;
 
     /* Headers */
-    wg_http_header_t headers[WG_HTTP_MAX_HEADERS];
+    rw_http_header_t headers[RW_HTTP_MAX_HEADERS];
     uint32_t header_count;
 
     /* Body */
-    char body[WG_HTTP_MAX_BODY];
+    char body[RW_HTTP_MAX_BODY];
     size_t body_len;
 
     /* State */
@@ -132,33 +132,33 @@ typedef struct {
     bool is_upgrade;         /* CONNECT method detected */
 
     /* Internal parsing state */
-    char _cur_header_field[WG_HTTP_MAX_HEADER_NAME];
+    char _cur_header_field[RW_HTTP_MAX_HEADER_NAME];
     size_t _cur_field_len;
-    char _cur_header_value[WG_HTTP_MAX_HEADER_VALUE];
+    char _cur_header_value[RW_HTTP_MAX_HEADER_VALUE];
     size_t _cur_value_len;
     bool _parsing_value;
-} wg_http_request_t;
+} rw_http_request_t;
 
 typedef struct {
     llhttp_t parser;
     llhttp_settings_t settings;
-    wg_http_request_t request;
-} wg_http_parser_t;
+    rw_http_request_t request;
+} rw_http_parser_t;
 
-[[nodiscard]] int wg_http_parser_init(wg_http_parser_t *p);
-void wg_http_parser_reset(wg_http_parser_t *p);
+[[nodiscard]] int rw_http_parser_init(rw_http_parser_t *p);
+void rw_http_parser_reset(rw_http_parser_t *p);
 
-[[nodiscard]] int wg_http_parse(wg_http_parser_t *p, const char *data, size_t len);
+[[nodiscard]] int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len);
 
-const char *wg_http_get_header(const wg_http_request_t *req, const char *name);
+const char *rw_http_get_header(const rw_http_request_t *req, const char *name);
 
-[[nodiscard]] int wg_http_format_response(char *buf, size_t buf_size,
+[[nodiscard]] int rw_http_format_response(char *buf, size_t buf_size,
                                            int status_code,
-                                           const wg_http_header_t *headers,
+                                           const rw_http_header_t *headers,
                                            uint32_t header_count,
                                            const char *body, size_t body_len);
 
-#endif /* WOLFGUARD_NETWORK_HTTP_H */
+#endif /* RINGWALL_NETWORK_HTTP_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_http.c`)
@@ -168,7 +168,7 @@ Tests (Unity framework):
 2. `test_parse_connect_tunnel` — parse `CONNECT /CSCOSSLC/tunnel HTTP/1.1`, verify `is_upgrade=true`
 3. `test_get_header` — extract `Cookie`, `X-CSTP-Hostname`, `Content-Type`
 4. `test_format_response` — build `HTTP/1.1 200 OK` with headers and body
-5. `test_max_body_limit` — body larger than `WG_HTTP_MAX_BODY` truncated
+5. `test_max_body_limit` — body larger than `RW_HTTP_MAX_BODY` truncated
 6. `test_incremental_parse` — feed data in small chunks, same result as full parse
 7. `test_invalid_request` — malformed HTTP returns error
 
@@ -183,20 +183,20 @@ llhttp callbacks:
 - `on_headers_complete`: set `headers_complete = true`, check method
 - `on_message_complete`: set `message_complete = true`
 
-`wg_http_parse()` calls `llhttp_execute()`. On `HPE_PAUSED_UPGRADE`, set `is_upgrade = true`.
+`rw_http_parse()` calls `llhttp_execute()`. On `HPE_PAUSED_UPGRADE`, set `is_upgrade = true`.
 
-`wg_http_get_header()`: linear scan of headers array, case-insensitive compare with `strncasecmp`.
+`rw_http_get_header()`: linear scan of headers array, case-insensitive compare with `strncasecmp`.
 
-`wg_http_format_response()`: `snprintf` to build status line + headers + CRLF + body.
+`rw_http_format_response()`: `snprintf` to build status line + headers + CRLF + body.
 
 **Step 3: Wire into CMake**
 
-Add `wg_http` static library, link llhttp. Add test target.
+Add `rw_http` static library, link llhttp. Add test target.
 
 **Step 4: Build and test in container**
 
 ```bash
-podman exec wolfguard-dev bash -c "cd /workspace && cmake --preset clang-debug && cmake --build --preset clang-debug --target test_http && ctest --preset clang-debug -R test_http"
+podman exec ringwall-dev bash -c "cd /workspace && cmake --preset clang-debug && cmake --build --preset clang-debug --target test_http && ctest --preset clang-debug -R test_http"
 ```
 
 **Step 5: Commit**
@@ -218,7 +218,7 @@ git commit -m "feat(network): HTTP parser wrapper around llhttp for POST /auth a
 
 **Context:**
 
-Cisco AnyConnect uses AggAuth XML protocol for authentication. No libxml2 — hand-rolled parser for the limited XML subset used by AggAuth. Reference: `/opt/projects/repositories/wolfguard-docs/docs/openconnect-protocol/protocol/authentication.md`
+Cisco AnyConnect uses AggAuth XML protocol for authentication. No libxml2 — hand-rolled parser for the limited XML subset used by AggAuth. Reference: `/opt/projects/repositories/ringwall-docs/docs/openconnect-protocol/protocol/authentication.md`
 
 **XML we must parse (client → server):**
 
@@ -247,73 +247,73 @@ Also: init request (capabilities, device-id, mac-address), MFA challenge reply (
 **API design** (`src/network/xml_auth.h`):
 
 ```c
-#ifndef WOLFGUARD_NETWORK_XML_AUTH_H
-#define WOLFGUARD_NETWORK_XML_AUTH_H
+#ifndef RINGWALL_NETWORK_XML_AUTH_H
+#define RINGWALL_NETWORK_XML_AUTH_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-#define WG_XML_MAX_STR 256
-#define WG_XML_MAX_GROUPS 16
+#define RW_XML_MAX_STR 256
+#define RW_XML_MAX_GROUPS 16
 
 /* Parsed client auth request */
 typedef struct {
-    char username[WG_XML_MAX_STR];
-    char password[WG_XML_MAX_STR];
-    char group_select[WG_XML_MAX_STR];
-    char device_id[WG_XML_MAX_STR];
-    char platform_version[WG_XML_MAX_STR];
-    char session_token[WG_XML_MAX_STR];
+    char username[RW_XML_MAX_STR];
+    char password[RW_XML_MAX_STR];
+    char group_select[RW_XML_MAX_STR];
+    char device_id[RW_XML_MAX_STR];
+    char platform_version[RW_XML_MAX_STR];
+    char session_token[RW_XML_MAX_STR];
     char otp[64];
-    char client_version[WG_XML_MAX_STR];
+    char client_version[RW_XML_MAX_STR];
     char auth_type[64];           /* "auth-request", "init", etc. */
     bool has_username;
     bool has_password;
     bool has_otp;
     bool has_session_token;
-} wg_xml_auth_request_t;
+} rw_xml_auth_request_t;
 
 /* Server response types */
 typedef enum {
-    WG_XML_RESP_CHALLENGE,        /* Send login form */
-    WG_XML_RESP_MFA_CHALLENGE,    /* Send OTP/MFA challenge */
-    WG_XML_RESP_SUCCESS,          /* Auth success + session token */
-    WG_XML_RESP_FAILURE,          /* Auth failure */
-} wg_xml_response_type_t;
+    RW_XML_RESP_CHALLENGE,        /* Send login form */
+    RW_XML_RESP_MFA_CHALLENGE,    /* Send OTP/MFA challenge */
+    RW_XML_RESP_SUCCESS,          /* Auth success + session token */
+    RW_XML_RESP_FAILURE,          /* Auth failure */
+} rw_xml_response_type_t;
 
 typedef struct {
     char name[64];
     char label[128];
-} wg_xml_group_t;
+} rw_xml_group_t;
 
 /* Parameters for building server responses */
 typedef struct {
-    wg_xml_response_type_t type;
+    rw_xml_response_type_t type;
     /* For challenge: form fields are standard (username, password, group) */
-    wg_xml_group_t groups[WG_XML_MAX_GROUPS];
+    rw_xml_group_t groups[RW_XML_MAX_GROUPS];
     uint32_t group_count;
     char banner[512];
     /* For success */
-    char session_token[WG_XML_MAX_STR];
+    char session_token[RW_XML_MAX_STR];
     /* For failure */
-    char error_message[WG_XML_MAX_STR];
+    char error_message[RW_XML_MAX_STR];
     uint32_t retry_count;
     uint32_t max_retries;
     /* For MFA */
-    char mfa_message[WG_XML_MAX_STR];
-} wg_xml_auth_response_t;
+    char mfa_message[RW_XML_MAX_STR];
+} rw_xml_auth_response_t;
 
-[[nodiscard]] int wg_xml_parse_auth_request(const char *xml, size_t len,
-                                             wg_xml_auth_request_t *out);
+[[nodiscard]] int rw_xml_parse_auth_request(const char *xml, size_t len,
+                                             rw_xml_auth_request_t *out);
 
-[[nodiscard]] int wg_xml_build_auth_response(const wg_xml_auth_response_t *resp,
+[[nodiscard]] int rw_xml_build_auth_response(const rw_xml_auth_response_t *resp,
                                               char *buf, size_t buf_size,
                                               size_t *out_len);
 
-void wg_xml_auth_request_zero(wg_xml_auth_request_t *req);
+void rw_xml_auth_request_zero(rw_xml_auth_request_t *req);
 
-#endif /* WOLFGUARD_NETWORK_XML_AUTH_H */
+#endif /* RINGWALL_NETWORK_XML_AUTH_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_xml_auth.c`)
@@ -330,7 +330,7 @@ Tests (Unity):
 9. `test_build_failure_response` — build auth failure with error message
 10. `test_build_group_select` — build challenge with group `<select>` options
 11. `test_parse_entity_decode` — `&amp;` → `&`, `&lt;` → `<`, `&quot;` → `"`
-12. `test_password_zeroed` — after `wg_xml_auth_request_zero()`, password is zeroed
+12. `test_password_zeroed` — after `rw_xml_auth_request_zero()`, password is zeroed
 13. `test_malformed_xml` — returns error for invalid XML
 
 **Step 2: Implement XML parser** (`src/network/xml_auth.c`)
@@ -345,11 +345,11 @@ Parser strategy — SAX-style, no DOM:
 
 Builder: `snprintf` chain building XML response string. Helper function `xml_escape()` for `<`, `>`, `&`, `"`.
 
-`wg_xml_auth_request_zero()`: calls `explicit_bzero()` on password and session_token fields.
+`rw_xml_auth_request_zero()`: calls `explicit_bzero()` on password and session_token fields.
 
 **Step 3: Wire into CMake, build, test**
 
-Add `wg_xml_auth` (or include in `wg_http` library). No external deps.
+Add `rw_xml_auth` (or include in `rw_http` library). No external deps.
 
 **Step 4: Commit**
 
@@ -377,19 +377,19 @@ Reference: `src/crypto/session_cache.h` (existing TLS session cache is different
 **API design** (`src/core/session.h`):
 
 ```c
-#ifndef WOLFGUARD_CORE_SESSION_H
-#define WOLFGUARD_CORE_SESSION_H
+#ifndef RINGWALL_CORE_SESSION_H
+#define RINGWALL_CORE_SESSION_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
 
-#define WG_SESSION_COOKIE_SIZE 32
-#define WG_SESSION_MAX_SESSIONS 1024
+#define RW_SESSION_COOKIE_SIZE 32
+#define RW_SESSION_MAX_SESSIONS 1024
 
 typedef struct {
-    uint8_t cookie[WG_SESSION_COOKIE_SIZE];
+    uint8_t cookie[RW_SESSION_COOKIE_SIZE];
     char username[256];
     char group[256];
     char assigned_ip[46];     /* INET6_ADDRSTRLEN */
@@ -398,31 +398,31 @@ typedef struct {
     time_t last_activity;
     uint32_t ttl_seconds;
     bool active;
-} wg_session_t;
+} rw_session_t;
 
-typedef struct wg_session_store wg_session_store_t;
+typedef struct rw_session_store rw_session_store_t;
 
-[[nodiscard]] wg_session_store_t *wg_session_store_create(uint32_t max_sessions);
-void wg_session_store_destroy(wg_session_store_t *store);
+[[nodiscard]] rw_session_store_t *rw_session_store_create(uint32_t max_sessions);
+void rw_session_store_destroy(rw_session_store_t *store);
 
-[[nodiscard]] int wg_session_create(wg_session_store_t *store,
+[[nodiscard]] int rw_session_create(rw_session_store_t *store,
                                      const char *username,
                                      const char *group,
                                      uint32_t ttl_seconds,
-                                     wg_session_t **out);
+                                     rw_session_t **out);
 
-[[nodiscard]] int wg_session_validate(wg_session_store_t *store,
+[[nodiscard]] int rw_session_validate(rw_session_store_t *store,
                                        const uint8_t *cookie, size_t cookie_len,
-                                       wg_session_t **out);
+                                       rw_session_t **out);
 
-int wg_session_delete(wg_session_store_t *store,
+int rw_session_delete(rw_session_store_t *store,
                        const uint8_t *cookie, size_t cookie_len);
 
-uint32_t wg_session_cleanup_expired(wg_session_store_t *store);
+uint32_t rw_session_cleanup_expired(rw_session_store_t *store);
 
-uint32_t wg_session_count(const wg_session_store_t *store);
+uint32_t rw_session_count(const rw_session_store_t *store);
 
-#endif /* WOLFGUARD_CORE_SESSION_H */
+#endif /* RINGWALL_CORE_SESSION_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_session.c`)
@@ -440,7 +440,7 @@ Tests (Unity):
 
 **Step 2: Implement** (`src/core/session.c`)
 
-- Session store: array of `wg_session_t` (fixed size, `WG_SESSION_MAX_SESSIONS`)
+- Session store: array of `rw_session_t` (fixed size, `RW_SESSION_MAX_SESSIONS`)
 - Cookie generation: `wc_RNG_GenerateBlock()` from wolfCrypt (`#include <wolfssl/wolfcrypt/random.h>`)
 - Cookie validation: `wolfSSL_ConstantCompare()` or implement constant-time memcmp
 - Zeroing: `explicit_bzero()` on cookie + password fields in delete
@@ -476,40 +476,40 @@ PAM auth runs in sec-mod process (blocking calls are OK — sec-mod is dedicated
 **API design** (`src/auth/pam.h`):
 
 ```c
-#ifndef WOLFGUARD_AUTH_PAM_H
-#define WOLFGUARD_AUTH_PAM_H
+#ifndef RINGWALL_AUTH_PAM_H
+#define RINGWALL_AUTH_PAM_H
 
 #include <stdbool.h>
 #include <stddef.h>
 
-#define WG_PAM_DEFAULT_SERVICE "wolfguard"
+#define RW_PAM_DEFAULT_SERVICE "ringwall"
 
 typedef enum {
-    WG_AUTH_SUCCESS = 0,
-    WG_AUTH_FAILURE = -1,
-    WG_AUTH_ERROR = -2,
-    WG_AUTH_ACCOUNT_EXPIRED = -3,
-    WG_AUTH_PASSWORD_EXPIRED = -4,
-} wg_auth_result_t;
+    RW_AUTH_SUCCESS = 0,
+    RW_AUTH_FAILURE = -1,
+    RW_AUTH_ERROR = -2,
+    RW_AUTH_ACCOUNT_EXPIRED = -3,
+    RW_AUTH_PASSWORD_EXPIRED = -4,
+} rw_auth_result_t;
 
 typedef struct {
     char service[64];          /* PAM service name */
-} wg_pam_config_t;
+} rw_pam_config_t;
 
-[[nodiscard]] int wg_pam_init(wg_pam_config_t *cfg, const char *service);
+[[nodiscard]] int rw_pam_init(rw_pam_config_t *cfg, const char *service);
 
-[[nodiscard]] wg_auth_result_t wg_pam_authenticate(const wg_pam_config_t *cfg,
+[[nodiscard]] rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
                                                      const char *username,
                                                      const char *password);
 
-#endif /* WOLFGUARD_AUTH_PAM_H */
+#endif /* RINGWALL_AUTH_PAM_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_auth_pam.c`)
 
 Note: Real PAM tests require PAM configuration. Tests should:
 1. `test_pam_init` — init with service name, verify stored
-2. `test_pam_init_default` — init with NULL uses "wolfguard"
+2. `test_pam_init_default` — init with NULL uses "ringwall"
 3. `test_pam_authenticate_invalid_user` — authenticate nonexistent user, returns FAILURE
 4. `test_pam_password_zeroing` — verify password buffer is zeroed after auth call (pass a mutable buffer, check it's zeroed after)
 
@@ -525,7 +525,7 @@ static int pam_conversation(int num_msg, const struct pam_message **msg,
                              struct pam_response **resp, void *appdata_ptr);
 
 /* Main auth function */
-wg_auth_result_t wg_pam_authenticate(const wg_pam_config_t *cfg,
+rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
                                        const char *username,
                                        const char *password)
 {
@@ -534,18 +534,18 @@ wg_auth_result_t wg_pam_authenticate(const wg_pam_config_t *cfg,
     /* 3. pam_acct_mgmt(pamh, 0) */
     /* 4. pam_end(pamh, ret) */
     /* 5. explicit_bzero on password copy */
-    /* 6. Map PAM error to wg_auth_result_t */
+    /* 6. Map PAM error to rw_auth_result_t */
 }
 ```
 
 Conversation function: allocates `pam_response`, copies password into it. Password copy zeroed after `pam_end()`.
 
 Error mapping:
-- `PAM_SUCCESS` → `WG_AUTH_SUCCESS`
-- `PAM_AUTH_ERR`, `PAM_USER_UNKNOWN`, `PAM_MAXTRIES` → `WG_AUTH_FAILURE`
-- `PAM_ACCT_EXPIRED` → `WG_AUTH_ACCOUNT_EXPIRED`
-- `PAM_NEW_AUTHTOK_REQD` → `WG_AUTH_PASSWORD_EXPIRED`
-- Everything else → `WG_AUTH_ERROR`
+- `PAM_SUCCESS` → `RW_AUTH_SUCCESS`
+- `PAM_AUTH_ERR`, `PAM_USER_UNKNOWN`, `PAM_MAXTRIES` → `RW_AUTH_FAILURE`
+- `PAM_ACCT_EXPIRED` → `RW_AUTH_ACCOUNT_EXPIRED`
+- `PAM_NEW_AUTHTOK_REQD` → `RW_AUTH_PASSWORD_EXPIRED`
+- Everything else → `RW_AUTH_ERROR`
 
 **Step 3: Wire into CMake**
 
@@ -554,7 +554,7 @@ Link `pam` library. Add `_GNU_SOURCE` for `explicit_bzero`.
 **Step 4: Build and test**
 
 ```bash
-podman exec wolfguard-dev bash -c "cd /workspace && cmake --build --preset clang-debug --target test_auth_pam && ctest --preset clang-debug -R test_auth_pam"
+podman exec ringwall-dev bash -c "cd /workspace && cmake --build --preset clang-debug --target test_auth_pam && ctest --preset clang-debug -R test_auth_pam"
 ```
 
 **Step 5: Commit**
@@ -573,7 +573,7 @@ git commit -m "feat(auth): PAM authentication backend with password zeroing"
 - Create: `src/core/secmod.c`
 - Create: `tests/unit/test_secmod.c`
 - Modify: `CMakeLists.txt`
-- Modify: `src/ipc/proto/wg_ipc.proto` — add session_open/session_close messages if needed
+- Modify: `src/ipc/proto/rw_ipc.proto` — add session_open/session_close messages if needed
 
 **Context:**
 
@@ -589,8 +589,8 @@ For Sprint 2, sec-mod runs a simple poll-based event loop (not io_uring — it d
 **API design** (`src/core/secmod.h`):
 
 ```c
-#ifndef WOLFGUARD_CORE_SECMOD_H
-#define WOLFGUARD_CORE_SECMOD_H
+#ifndef RINGWALL_CORE_SECMOD_H
+#define RINGWALL_CORE_SECMOD_H
 
 #include "auth/pam.h"
 #include "core/session.h"
@@ -598,25 +598,25 @@ For Sprint 2, sec-mod runs a simple poll-based event loop (not io_uring — it d
 
 typedef struct {
     int ipc_fd;                    /* IPC socket (SOCK_SEQPACKET) */
-    wg_pam_config_t pam_cfg;
-    wg_session_store_t *sessions;
-    const wg_config_t *config;
+    rw_pam_config_t pam_cfg;
+    rw_session_store_t *sessions;
+    const rw_config_t *config;
     bool running;
-} wg_secmod_ctx_t;
+} rw_secmod_ctx_t;
 
-[[nodiscard]] int wg_secmod_init(wg_secmod_ctx_t *ctx, int ipc_fd,
-                                  const wg_config_t *config);
+[[nodiscard]] int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd,
+                                  const rw_config_t *config);
 
-[[nodiscard]] int wg_secmod_run(wg_secmod_ctx_t *ctx);
+[[nodiscard]] int rw_secmod_run(rw_secmod_ctx_t *ctx);
 
-void wg_secmod_stop(wg_secmod_ctx_t *ctx);
+void rw_secmod_stop(rw_secmod_ctx_t *ctx);
 
-void wg_secmod_destroy(wg_secmod_ctx_t *ctx);
+void rw_secmod_destroy(rw_secmod_ctx_t *ctx);
 
 /* Entry point for child process (called after fork/pidfd_spawn) */
-[[noreturn]] void wg_secmod_main(int ipc_fd, const wg_config_t *config);
+[[noreturn]] void rw_secmod_main(int ipc_fd, const rw_config_t *config);
 
-#endif /* WOLFGUARD_CORE_SECMOD_H */
+#endif /* RINGWALL_CORE_SECMOD_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_secmod.c`)
@@ -634,27 +634,27 @@ Note: Tests create a socketpair, run secmod in a thread or use non-blocking poll
 
 Event loop:
 ```c
-int wg_secmod_run(wg_secmod_ctx_t *ctx) {
+int rw_secmod_run(rw_secmod_ctx_t *ctx) {
     ctx->running = true;
     while (ctx->running) {
         /* poll(ipc_fd, POLLIN, 1000ms) */
         /* if readable: recv IPC message */
         /* switch (msg.type):
-         *   AUTH_REQUEST with cookie → wg_session_validate()
-         *   AUTH_REQUEST without cookie → wg_pam_authenticate() → wg_session_create()
+         *   AUTH_REQUEST with cookie → rw_session_validate()
+         *   AUTH_REQUEST without cookie → rw_pam_authenticate() → rw_session_create()
          *   SHUTDOWN → ctx->running = false
          */
         /* send AUTH_RESPONSE back */
-        /* periodic: wg_session_cleanup_expired() */
+        /* periodic: rw_session_cleanup_expired() */
     }
 }
 ```
 
-Uses existing IPC transport (`wg_ipc_send`, `wg_ipc_recv`) and message pack/unpack.
+Uses existing IPC transport (`rw_ipc_send`, `rw_ipc_recv`) and message pack/unpack.
 
 **Step 3: Wire into CMake, build, test**
 
-Link: `wg_ipc`, `wg_config`, session module, PAM module.
+Link: `rw_ipc`, `rw_config`, session module, PAM module.
 
 **Step 4: Commit**
 
@@ -680,10 +680,10 @@ End-to-end test: fork sec-mod child, send auth request from parent (simulating w
 ```c
 void test_full_auth_flow(void) {
     /* 1. Create socketpair (SOCK_SEQPACKET) */
-    /* 2. Fork child → wg_secmod_main(child_fd, &config) */
+    /* 2. Fork child → rw_secmod_main(child_fd, &config) */
     /* 3. Parent: pack AUTH_REQUEST (username="root", password="x", no cookie) */
-    /* 4. Parent: wg_ipc_send(parent_fd, buf, len) */
-    /* 5. Parent: wg_ipc_recv(parent_fd, buf, sizeof(buf)) */
+    /* 4. Parent: rw_ipc_send(parent_fd, buf, len) */
+    /* 5. Parent: rw_ipc_recv(parent_fd, buf, sizeof(buf)) */
     /* 6. Parent: unpack AUTH_RESPONSE */
     /* 7. Verify: response has session_cookie (32 bytes) */
     /*    Note: PAM will likely FAIL for "root"/"x" — that's OK,
@@ -716,7 +716,7 @@ git commit -m "test: integration test for full auth flow (worker → sec-mod →
 ## Task 8: Update proto definitions for Sprint 2
 
 **Files:**
-- Modify: `src/ipc/proto/wg_ipc.proto`
+- Modify: `src/ipc/proto/rw_ipc.proto`
 - Modify: `src/ipc/messages.h`
 - Modify: `src/ipc/messages.c`
 - Modify: `tests/unit/test_ipc_messages.c`
@@ -744,7 +744,7 @@ Add VPN config fields to auth_response if missing.
 **Step 5: Commit**
 
 ```bash
-git add src/ipc/proto/wg_ipc.proto src/ipc/messages.h src/ipc/messages.c tests/unit/test_ipc_messages.c CMakeLists.txt
+git add src/ipc/proto/rw_ipc.proto src/ipc/messages.h src/ipc/messages.c tests/unit/test_ipc_messages.c CMakeLists.txt
 git commit -m "feat(ipc): extend auth messages with password, OTP, VPN config fields"
 ```
 
@@ -759,7 +759,7 @@ git commit -m "feat(ipc): extend auth messages with password, OTP, VPN config fi
 **Step 1: Run full test suite**
 
 ```bash
-podman exec wolfguard-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
+podman exec ringwall-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
 ```
 
 All tests must pass.
@@ -767,7 +767,7 @@ All tests must pass.
 **Step 2: Run with ASan+UBSan**
 
 ```bash
-podman exec wolfguard-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
+podman exec ringwall-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
 ```
 
 Zero errors.

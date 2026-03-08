@@ -32,7 +32,7 @@ static const char *status_phrase(int code)
 	}
 }
 
-int wg_http_parser_init(wg_http_parser_t *p)
+int rw_http_parser_init(rw_http_parser_t *p)
 {
 	if (p == nullptr)
 		return -EINVAL;
@@ -54,7 +54,7 @@ int wg_http_parser_init(wg_http_parser_t *p)
 	return 0;
 }
 
-void wg_http_parser_reset(wg_http_parser_t *p)
+void rw_http_parser_reset(rw_http_parser_t *p)
 {
 	if (p == nullptr)
 		return;
@@ -65,7 +65,7 @@ void wg_http_parser_reset(wg_http_parser_t *p)
 	p->parser.data = p;
 }
 
-int wg_http_parse(wg_http_parser_t *p, const char *data, size_t len)
+int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
 {
 	if (p == nullptr || data == nullptr)
 		return -EINVAL;
@@ -83,22 +83,22 @@ int wg_http_parse(wg_http_parser_t *p, const char *data, size_t len)
 	return -EPROTO;
 }
 
-const char *wg_http_get_header(const wg_http_request_t *req, const char *name)
+const char *rw_http_get_header(const rw_http_request_t *req, const char *name)
 {
 	if (req == nullptr || name == nullptr)
 		return nullptr;
 
 	for (uint32_t i = 0; i < req->header_count; i++) {
 		if (strncasecmp(req->headers[i].name, name,
-				WG_HTTP_MAX_HEADER_NAME) == 0)
+				RW_HTTP_MAX_HEADER_NAME) == 0)
 			return req->headers[i].value;
 	}
 
 	return nullptr;
 }
 
-int wg_http_format_response(char *buf, size_t buf_size, int status_code,
-                            const wg_http_header_t *headers,
+int rw_http_format_response(char *buf, size_t buf_size, int status_code,
+                            const rw_http_header_t *headers,
                             uint32_t header_count,
                             const char *body, size_t body_len)
 {
@@ -141,10 +141,10 @@ int wg_http_format_response(char *buf, size_t buf_size, int status_code,
 
 static int on_url(llhttp_t *parser, const char *at, size_t length)
 {
-	wg_http_parser_t *p = parser->data;
-	wg_http_request_t *req = &p->request;
+	rw_http_parser_t *p = parser->data;
+	rw_http_request_t *req = &p->request;
 
-	size_t avail = WG_HTTP_MAX_URL - 1 - req->url_len;
+	size_t avail = RW_HTTP_MAX_URL - 1 - req->url_len;
 	size_t copy = length < avail ? length : avail;
 
 	memcpy(req->url + req->url_len, at, copy);
@@ -156,8 +156,8 @@ static int on_url(llhttp_t *parser, const char *at, size_t length)
 
 static int on_header_field(llhttp_t *parser, const char *at, size_t length)
 {
-	wg_http_parser_t *p = parser->data;
-	wg_http_request_t *req = &p->request;
+	rw_http_parser_t *p = parser->data;
+	rw_http_request_t *req = &p->request;
 
 	/* If we were accumulating a value, we've moved to a new field */
 	if (req->_parsing_value) {
@@ -166,7 +166,7 @@ static int on_header_field(llhttp_t *parser, const char *at, size_t length)
 		req->_parsing_value = false;
 	}
 
-	size_t avail = WG_HTTP_MAX_HEADER_NAME - 1 - req->_cur_field_len;
+	size_t avail = RW_HTTP_MAX_HEADER_NAME - 1 - req->_cur_field_len;
 	size_t copy = length < avail ? length : avail;
 
 	memcpy(req->_cur_header_field + req->_cur_field_len, at, copy);
@@ -178,12 +178,12 @@ static int on_header_field(llhttp_t *parser, const char *at, size_t length)
 
 static int on_header_value(llhttp_t *parser, const char *at, size_t length)
 {
-	wg_http_parser_t *p = parser->data;
-	wg_http_request_t *req = &p->request;
+	rw_http_parser_t *p = parser->data;
+	rw_http_request_t *req = &p->request;
 
 	req->_parsing_value = true;
 
-	size_t avail = WG_HTTP_MAX_HEADER_VALUE - 1 - req->_cur_value_len;
+	size_t avail = RW_HTTP_MAX_HEADER_VALUE - 1 - req->_cur_value_len;
 	size_t copy = length < avail ? length : avail;
 
 	memcpy(req->_cur_header_value + req->_cur_value_len, at, copy);
@@ -195,16 +195,16 @@ static int on_header_value(llhttp_t *parser, const char *at, size_t length)
 
 static int on_header_value_complete(llhttp_t *parser)
 {
-	wg_http_parser_t *p = parser->data;
-	wg_http_request_t *req = &p->request;
+	rw_http_parser_t *p = parser->data;
+	rw_http_request_t *req = &p->request;
 
-	if (req->header_count >= WG_HTTP_MAX_HEADERS)
+	if (req->header_count >= RW_HTTP_MAX_HEADERS)
 		return 0;
 
 	snprintf(req->headers[req->header_count].name,
-		 WG_HTTP_MAX_HEADER_NAME, "%s", req->_cur_header_field);
+		 RW_HTTP_MAX_HEADER_NAME, "%s", req->_cur_header_field);
 	snprintf(req->headers[req->header_count].value,
-		 WG_HTTP_MAX_HEADER_VALUE, "%s", req->_cur_header_value);
+		 RW_HTTP_MAX_HEADER_VALUE, "%s", req->_cur_header_value);
 
 	req->header_count++;
 	req->_cur_field_len = 0;
@@ -216,10 +216,10 @@ static int on_header_value_complete(llhttp_t *parser)
 
 static int on_body(llhttp_t *parser, const char *at, size_t length)
 {
-	wg_http_parser_t *p = parser->data;
-	wg_http_request_t *req = &p->request;
+	rw_http_parser_t *p = parser->data;
+	rw_http_request_t *req = &p->request;
 
-	size_t avail = WG_HTTP_MAX_BODY - req->body_len;
+	size_t avail = RW_HTTP_MAX_BODY - req->body_len;
 	size_t copy = length < avail ? length : avail;
 
 	if (copy > 0) {
@@ -232,8 +232,8 @@ static int on_body(llhttp_t *parser, const char *at, size_t length)
 
 static int on_headers_complete(llhttp_t *parser)
 {
-	wg_http_parser_t *p = parser->data;
-	wg_http_request_t *req = &p->request;
+	rw_http_parser_t *p = parser->data;
+	rw_http_request_t *req = &p->request;
 
 	req->headers_complete = true;
 	req->method = llhttp_get_method(parser);
@@ -247,7 +247,7 @@ static int on_headers_complete(llhttp_t *parser)
 
 static int on_message_complete(llhttp_t *parser)
 {
-	wg_http_parser_t *p = parser->data;
+	rw_http_parser_t *p = parser->data;
 	p->request.message_complete = true;
 	return 0;
 }

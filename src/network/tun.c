@@ -9,23 +9,23 @@
 #include <unistd.h>
 #include <linux/if_tun.h>
 
-void wg_tun_config_init(wg_tun_config_t *cfg)
+void rw_tun_config_init(rw_tun_config_t *cfg)
 {
 	memset(cfg, 0, sizeof(*cfg));
-	cfg->mtu = WG_TUN_DEFAULT_MTU;
+	cfg->mtu = RW_TUN_DEFAULT_MTU;
 	cfg->set_nonblock = true;
 }
 
-int wg_tun_config_validate(const wg_tun_config_t *cfg)
+int rw_tun_config_validate(const rw_tun_config_t *cfg)
 {
-	if (cfg->mtu < WG_TUN_MIN_MTU || cfg->mtu > WG_TUN_MAX_MTU)
+	if (cfg->mtu < RW_TUN_MIN_MTU || cfg->mtu > RW_TUN_MAX_MTU)
 		return -EINVAL;
 	return 0;
 }
 
-int wg_tun_alloc(const wg_tun_config_t *cfg, wg_tun_t *tun)
+int rw_tun_alloc(const rw_tun_config_t *cfg, rw_tun_t *tun)
 {
-	int ret = wg_tun_config_validate(cfg);
+	int ret = rw_tun_config_validate(cfg);
 	if (ret < 0)
 		return ret;
 
@@ -67,14 +67,14 @@ int wg_tun_alloc(const wg_tun_config_t *cfg, wg_tun_t *tun)
 	}
 
 	tun->fd = fd;
-	strncpy(tun->dev_name, ifr.ifr_name, WG_TUN_NAME_MAX - 1);
-	tun->dev_name[WG_TUN_NAME_MAX - 1] = '\0';
+	strncpy(tun->dev_name, ifr.ifr_name, RW_TUN_NAME_MAX - 1);
+	tun->dev_name[RW_TUN_NAME_MAX - 1] = '\0';
 	tun->mtu = cfg->mtu;
 
 	return 0;
 }
 
-void wg_tun_close(wg_tun_t *tun)
+void rw_tun_close(rw_tun_t *tun)
 {
 	if (tun->fd >= 0) {
 		close(tun->fd);
@@ -82,10 +82,10 @@ void wg_tun_close(wg_tun_t *tun)
 	}
 }
 
-uint32_t wg_tun_calc_mtu(uint32_t base_mtu)
+uint32_t rw_tun_calc_mtu(uint32_t base_mtu)
 {
 	constexpr uint32_t overhead = 20 + 20 + 37 + 4; /* IP + TCP + TLS + CSTP */
-	if (base_mtu <= overhead + WG_TUN_MIN_MTU)
-		return WG_TUN_MIN_MTU;
+	if (base_mtu <= overhead + RW_TUN_MIN_MTU)
+		return RW_TUN_MIN_MTU;
 	return base_mtu - overhead;
 }

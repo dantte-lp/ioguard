@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-int wg_ipc_create_pair(wg_ipc_channel_t *ch)
+int rw_ipc_create_pair(rw_ipc_channel_t *ch)
 {
     int sv[2];
     int ret = socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sv);
@@ -17,7 +17,7 @@ int wg_ipc_create_pair(wg_ipc_channel_t *ch)
     return 0;
 }
 
-void wg_ipc_close(wg_ipc_channel_t *ch)
+void rw_ipc_close(rw_ipc_channel_t *ch)
 {
     if (ch->parent_fd >= 0) {
         close(ch->parent_fd);
@@ -29,7 +29,7 @@ void wg_ipc_close(wg_ipc_channel_t *ch)
     }
 }
 
-int wg_ipc_send(int fd, const uint8_t *data, size_t len)
+int rw_ipc_send(int fd, const uint8_t *data, size_t len)
 {
     ssize_t n = send(fd, data, len, MSG_NOSIGNAL);
     if (n < 0) {
@@ -38,7 +38,7 @@ int wg_ipc_send(int fd, const uint8_t *data, size_t len)
     return 0;
 }
 
-ssize_t wg_ipc_recv(int fd, uint8_t *buf, size_t buf_size)
+ssize_t rw_ipc_recv(int fd, uint8_t *buf, size_t buf_size)
 {
     ssize_t n = recv(fd, buf, buf_size, 0);
     if (n < 0) {
@@ -47,7 +47,7 @@ ssize_t wg_ipc_recv(int fd, uint8_t *buf, size_t buf_size)
     return n;
 }
 
-int wg_ipc_send_fd(int socket_fd, int fd_to_send)
+int rw_ipc_send_fd(int socket_fd, int fd_to_send)
 {
     struct msghdr msg = {0};
     struct iovec iov;
@@ -79,7 +79,7 @@ int wg_ipc_send_fd(int socket_fd, int fd_to_send)
     return 0;
 }
 
-int wg_ipc_recv_fd(int socket_fd)
+int rw_ipc_recv_fd(int socket_fd)
 {
     struct msghdr msg = {0};
     struct iovec iov;

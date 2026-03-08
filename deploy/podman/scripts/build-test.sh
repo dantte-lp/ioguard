@@ -3,15 +3,15 @@ set -euo pipefail
 
 # build-test.sh - Test Container Build Script
 # Creates a runtime testing environment with test frameworks and coverage tools
-# for wolfguard
+# for ringwall
 
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-IMAGE_NAME="${IMAGE_NAME:-localhost/wolfguard-test}"
+IMAGE_NAME="${IMAGE_NAME:-localhost/ringwall-test}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-DEV_IMAGE="${DEV_IMAGE:-localhost/wolfguard-dev:latest}"
+DEV_IMAGE="${DEV_IMAGE:-localhost/ringwall-dev:latest}"
 
 # Color output
 RED='\033[0;31m'
@@ -58,12 +58,12 @@ container=$(buildah from "$DEV_IMAGE")
 
 # Configure container metadata
 buildah config \
-    --label "io.wolfguard.version=2.0.0-alpha.1" \
-    --label "io.wolfguard.environment=test" \
+    --label "io.ringwall.version=2.0.0-alpha.1" \
+    --label "io.ringwall.environment=test" \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
-    --label "org.opencontainers.image.title=wolfguard-test" \
-    --label "org.opencontainers.image.description=Test environment for wolfguard" \
+    --label "org.opencontainers.image.title=ringwall-test" \
+    --label "org.opencontainers.image.description=Test environment for ringwall" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \
     "$container"
@@ -124,13 +124,13 @@ buildah run "$container" -- bash -c "
 #!/bin/bash
 set -euo pipefail
 
-# Test runner for wolfguard
+# Test runner for ringwall
 WORKSPACE=\${WORKSPACE:-/workspace}
 TEST_RESULTS=\${TEST_RESULTS:-\$WORKSPACE/test-results}
 COVERAGE_REPORTS=\${COVERAGE_REPORTS:-\$WORKSPACE/coverage-reports}
 
 echo '================================================'
-echo 'wolfguard Test Runner'
+echo 'ringwall Test Runner'
 echo '================================================'
 
 # Run meson tests
@@ -173,11 +173,11 @@ buildah run "$container" -- bash -c "
 #!/bin/bash
 set -euo pipefail
 
-# Benchmark runner for wolfguard
+# Benchmark runner for ringwall
 WORKSPACE=\${WORKSPACE:-/workspace}
 
 echo '================================================'
-echo 'wolfguard Benchmark Runner'
+echo 'ringwall Benchmark Runner'
 echo '================================================'
 
 if [ -d \$WORKSPACE/tests/bench ]; then
@@ -235,7 +235,7 @@ log_info "Test container build completed successfully!"
 log_info "Image: $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_info "To run tests:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/wolfguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_info "To run interactively:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/wolfguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG /bin/bash"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG /bin/bash"

@@ -6,62 +6,62 @@
  * establishment) requests from Cisco AnyConnect / OpenConnect clients.
  */
 
-#ifndef WOLFGUARD_NETWORK_HTTP_H
-#define WOLFGUARD_NETWORK_HTTP_H
+#ifndef RINGWALL_NETWORK_HTTP_H
+#define RINGWALL_NETWORK_HTTP_H
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <llhttp.h>
 
-constexpr uint32_t WG_HTTP_MAX_HEADERS = 32;
-constexpr size_t WG_HTTP_MAX_URL = 512;
-constexpr size_t WG_HTTP_MAX_HEADER_NAME = 128;
-constexpr size_t WG_HTTP_MAX_HEADER_VALUE = 1024;
-constexpr size_t WG_HTTP_MAX_BODY = 8192;
+constexpr uint32_t RW_HTTP_MAX_HEADERS = 32;
+constexpr size_t RW_HTTP_MAX_URL = 512;
+constexpr size_t RW_HTTP_MAX_HEADER_NAME = 128;
+constexpr size_t RW_HTTP_MAX_HEADER_VALUE = 1024;
+constexpr size_t RW_HTTP_MAX_BODY = 8192;
 
 typedef struct {
-	char name[WG_HTTP_MAX_HEADER_NAME];
-	char value[WG_HTTP_MAX_HEADER_VALUE];
-} wg_http_header_t;
+	char name[RW_HTTP_MAX_HEADER_NAME];
+	char value[RW_HTTP_MAX_HEADER_VALUE];
+} rw_http_header_t;
 
 typedef struct {
 	uint8_t method;          /* llhttp_method_t */
-	char url[WG_HTTP_MAX_URL];
+	char url[RW_HTTP_MAX_URL];
 	size_t url_len;
-	wg_http_header_t headers[WG_HTTP_MAX_HEADERS];
+	rw_http_header_t headers[RW_HTTP_MAX_HEADERS];
 	uint32_t header_count;
-	char body[WG_HTTP_MAX_BODY];
+	char body[RW_HTTP_MAX_BODY];
 	size_t body_len;
 	bool headers_complete;
 	bool message_complete;
 	bool is_upgrade;
 	/* internal parsing state */
-	char _cur_header_field[WG_HTTP_MAX_HEADER_NAME];
+	char _cur_header_field[RW_HTTP_MAX_HEADER_NAME];
 	size_t _cur_field_len;
-	char _cur_header_value[WG_HTTP_MAX_HEADER_VALUE];
+	char _cur_header_value[RW_HTTP_MAX_HEADER_VALUE];
 	size_t _cur_value_len;
 	bool _parsing_value;
-} wg_http_request_t;
+} rw_http_request_t;
 
 typedef struct {
 	llhttp_t parser;
 	llhttp_settings_t settings;
-	wg_http_request_t request;
-} wg_http_parser_t;
+	rw_http_request_t request;
+} rw_http_parser_t;
 
 /**
  * @brief Initialize an HTTP parser for request parsing.
  * @param p Parser instance to initialize.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int wg_http_parser_init(wg_http_parser_t *p);
+[[nodiscard]] int rw_http_parser_init(rw_http_parser_t *p);
 
 /**
  * @brief Reset the parser for a new request (reuses allocated memory).
  * @param p Parser instance to reset.
  */
-void wg_http_parser_reset(wg_http_parser_t *p);
+void rw_http_parser_reset(rw_http_parser_t *p);
 
 /**
  * @brief Parse HTTP data (may be called incrementally).
@@ -70,7 +70,7 @@ void wg_http_parser_reset(wg_http_parser_t *p);
  * @param len Length of data.
  * @return 0 on success, negative errno on parse error.
  */
-[[nodiscard]] int wg_http_parse(wg_http_parser_t *p, const char *data, size_t len);
+[[nodiscard]] int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len);
 
 /**
  * @brief Look up a header value by name (case-insensitive).
@@ -78,7 +78,7 @@ void wg_http_parser_reset(wg_http_parser_t *p);
  * @param name Header name to search for.
  * @return Pointer to the header value string, or nullptr if not found.
  */
-const char *wg_http_get_header(const wg_http_request_t *req, const char *name);
+const char *rw_http_get_header(const rw_http_request_t *req, const char *name);
 
 /**
  * @brief Format an HTTP response into a buffer.
@@ -91,10 +91,10 @@ const char *wg_http_get_header(const wg_http_request_t *req, const char *name);
  * @param body_len Length of body.
  * @return Number of bytes written on success, negative errno on failure.
  */
-[[nodiscard]] int wg_http_format_response(char *buf, size_t buf_size,
+[[nodiscard]] int rw_http_format_response(char *buf, size_t buf_size,
                                           int status_code,
-                                          const wg_http_header_t *headers,
+                                          const rw_http_header_t *headers,
                                           uint32_t header_count,
                                           const char *body, size_t body_len);
 
-#endif /* WOLFGUARD_NETWORK_HTTP_H */
+#endif /* RINGWALL_NETWORK_HTTP_H */

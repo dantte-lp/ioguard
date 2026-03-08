@@ -1,6 +1,6 @@
 # Deployment Instructions for CI/CD Infrastructure
 
-This guide provides step-by-step instructions to deploy the updated CI/CD infrastructure for wolfguard.
+This guide provides step-by-step instructions to deploy the updated CI/CD infrastructure for ringwall.
 
 ## Prerequisites
 
@@ -78,7 +78,7 @@ podman image prune -f
 
 ```bash
 # Get GitHub runner registration token
-# Go to: https://github.com/dantte-lp/wolfguard/settings/actions/runners/new
+# Go to: https://github.com/dantte-lp/ringwall/settings/actions/runners/new
 
 # Start Debian runner with new image
 podman run -d \
@@ -87,7 +87,7 @@ podman run -d \
   -e RUNNER_NAME="debian-runner-1" \
   -e RUNNER_LABELS="self-hosted,linux,x64,debian" \
   -e GITHUB_TOKEN="<your-github-token>" \
-  -e REPO_URL="https://github.com/dantte-lp/wolfguard" \
+  -e REPO_URL="https://github.com/dantte-lp/ringwall" \
   -v /var/run/docker.sock:/var/run/docker.sock:Z \
   github-runner-debian:latest
 ```
@@ -102,7 +102,7 @@ podman run -d \
   -e RUNNER_NAME="oracle-runner-1" \
   -e RUNNER_LABELS="self-hosted,linux,x64,oracle-linux" \
   -e GITHUB_TOKEN="<your-github-token>" \
-  -e REPO_URL="https://github.com/dantte-lp/wolfguard" \
+  -e REPO_URL="https://github.com/dantte-lp/ringwall" \
   -v /var/run/docker.sock:/var/run/docker.sock:Z \
   github-runner-oracle:latest
 ```
@@ -124,8 +124,8 @@ gh runner list
 ### Test dev-ci.yml (Development Workflow)
 
 ```bash
-# Navigate to wolfguard repository
-cd /opt/projects/repositories/wolfguard
+# Navigate to ringwall repository
+cd /opt/projects/repositories/ringwall
 
 # Create test branch
 git checkout -b ci-test-branch
@@ -214,7 +214,7 @@ exit
 
 ```bash
 # Watch logs from a real build
-cd /opt/projects/repositories/wolfguard
+cd /opt/projects/repositories/ringwall
 
 # Create a feature branch
 git checkout -b feature/real-test
@@ -251,7 +251,7 @@ echo $GITHUB_TOKEN
 # Re-register manually
 podman exec -it github-runner-oracle bash
 cd /home/runner
-./config.sh --url https://github.com/dantte-lp/wolfguard --token <token>
+./config.sh --url https://github.com/dantte-lp/ringwall --token <token>
 ```
 
 ### Issue: Library Not Found During Build
@@ -310,7 +310,7 @@ If you need to rollback to the previous configuration:
 ### Rollback Workflow Files
 
 ```bash
-cd /opt/projects/repositories/wolfguard
+cd /opt/projects/repositories/ringwall
 
 # Restore original containers.yml
 cp .github/workflows/containers-backup.yml.bak .github/workflows/containers.yml
@@ -369,6 +369,6 @@ For issues or questions:
 - **Documentation**: See `.github/WORKFLOWS.md` and `QUICKSTART_CI.md`
 - **Runner Setup**: See `self-hosted-runners/RUNNER_SETUP_OCSERV.md`
 - **GitHub Actions**: https://docs.github.com/en/actions
-- **Project Issues**: https://github.com/dantte-lp/wolfguard/issues
+- **Project Issues**: https://github.com/dantte-lp/ringwall/issues
 
 Last Updated: 2025-10-29

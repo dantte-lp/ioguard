@@ -1,4 +1,4 @@
-name: wolfguard CI
+name: ringwall CI
 
 on:
   push:

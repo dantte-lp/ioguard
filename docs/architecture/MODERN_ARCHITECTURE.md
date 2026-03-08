@@ -1,16 +1,16 @@
-# wolfguard: Modern VPN Architecture Design
+# ringwall: Modern VPN Architecture Design
 
 **Document Version**: 2.0
 **Date**: 2026-03-07
 **Status**: Approved
-**Target**: wolfguard v2.0.0 (C23, ISO/IEC 9899:2024)
+**Target**: ringwall v2.0.0 (C23, ISO/IEC 9899:2024)
 **Platform**: Linux only (kernel 6.7+, glibc 2.39+)
 
 ---
 
 ## Executive Summary
 
-wolfguard is a high-performance VPN server implementing the AnyConnect/OpenConnect protocol, built entirely in C23. The architecture is designed around three core decisions: io_uring as the single I/O subsystem (no libuv), a three-process privilege-separated model (Main, sec-mod, Workers), and Linux-only deployment targeting kernel 6.7+ with glibc 2.39+.
+ringwall is a high-performance VPN server implementing the AnyConnect/OpenConnect protocol, built entirely in C23. The architecture is designed around three core decisions: io_uring as the single I/O subsystem (no libuv), a three-process privilege-separated model (Main, sec-mod, Workers), and Linux-only deployment targeting kernel 6.7+ with glibc 2.39+.
 
 All network I/O, TUN I/O, timers, and signal handling flow through liburing. Workers are stateless and sandboxed with seccomp BPF and Landlock. Session state lives in sec-mod, enabling transparent worker crash recovery via cookie-based reconnection. The cryptographic layer uses wolfSSL's native API exclusively (not the OpenSSL compatibility shim), with wolfSentry providing pre-TLS intrusion detection.
 
@@ -85,7 +85,7 @@ All network I/O, TUN I/O, timers, and signal handling flow through liburing. Wor
 
 ### io_uring as the Universal I/O Layer
 
-Every I/O operation in wolfguard goes through io_uring. There is no libuv, no epoll fallback, no abstraction layer that hides the ring.
+Every I/O operation in ringwall goes through io_uring. There is no libuv, no epoll fallback, no abstraction layer that hides the ring.
 
 | Operation | io_uring Op | Notes |
 |-----------|-------------|-------|
@@ -108,10 +108,10 @@ Every I/O operation in wolfguard goes through io_uring. There is no libuv, no ep
 
 ```c
 // src/io/uring.h
-wg_io_ctx_t *wg_io_init(uint32_t queue_depth, uint32_t flags);
-void wg_io_prep_accept(wg_io_ctx_t *ctx, int fd, wg_io_cb cb);
-void wg_io_prep_recv(wg_io_ctx_t *ctx, int fd, void *buf, size_t len, wg_io_cb cb);
-void wg_io_prep_timeout(wg_io_ctx_t *ctx, uint64_t ms, wg_io_cb cb);
+rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags);
+void rw_io_prep_accept(rw_io_ctx_t *ctx, int fd, rw_io_cb cb);
+void rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb cb);
+void rw_io_prep_timeout(rw_io_ctx_t *ctx, uint64_t ms, rw_io_cb cb);
 ```
 
 ---
@@ -175,7 +175,7 @@ Client                    Worker                     sec-mod
 
 - Preferred channel for VPN data (lower overhead, UDP, no head-of-line blocking).
 - DTLS 1.2 with master secret bootstrap for Cisco Secure Client compatibility.
-- DTLS 1.3 reserved for future wolfguard-connect client.
+- DTLS 1.3 reserved for future ringwall-connect client.
 - Session bootstrapped from CSTP via `X-DTLS-Master-Secret` header.
 
 ### DPD State Machine
@@ -184,10 +184,10 @@ Dead Peer Detection runs on both CSTP and DTLS channels with three states:
 
 ```c
 typedef enum {
-    WG_CHANNEL_CSTP_ONLY,      // DTLS not established or not supported
-    WG_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control only
-    WG_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back to CSTP
-} wg_channel_state_t;
+    RW_CHANNEL_CSTP_ONLY,      // DTLS not established or not supported
+    RW_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control only
+    RW_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back to CSTP
+} rw_channel_state_t;
 ```
 
 - DPD probes every 30 seconds.
@@ -302,7 +302,7 @@ Static configuration loaded at startup, reloaded on `SIGHUP`:
 
 ## Management
 
-### wgctl CLI
+### rwctl CLI
 
 Juniper-style CLI with two modes:
 
@@ -334,9 +334,9 @@ stumpless library providing RFC 5424 structured logging. Key fields:
 - Severity, facility, timestamp, process ID
 - Structured data elements for session ID, client IP, username, event type
 
-### Mini CA (wgctl pki)
+### Mini CA (rwctl pki)
 
-`wgctl pki` subcommands using wolfCrypt:
+`rwctl pki` subcommands using wolfCrypt:
 - Key generation (RSA, ECC)
 - CSR creation and signing
 - Certificate revocation list (CRL) management
@@ -394,7 +394,7 @@ stumpless library providing RFC 5424 structured logging. Key fields:
 | Library | Version | Role |
 |---------|---------|------|
 | stumpless | latest | Structured logging (RFC 5424) |
-| linenoise | latest | CLI line editing (wgctl) |
+| linenoise | latest | CLI line editing (rwctl) |
 
 ---
 
@@ -418,6 +418,6 @@ stumpless library providing RFC 5424 structured logging. Key fields:
 ---
 
 **Document Status**: Architecture Reference
-**Maintainer**: wolfguard architecture team
+**Maintainer**: ringwall architecture team
 **Review Schedule**: Quarterly
 **Next Review**: 2026-06-07

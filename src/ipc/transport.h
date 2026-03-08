@@ -1,5 +1,5 @@
-#ifndef WOLFGUARD_IPC_TRANSPORT_H
-#define WOLFGUARD_IPC_TRANSPORT_H
+#ifndef RINGWALL_IPC_TRANSPORT_H
+#define RINGWALL_IPC_TRANSPORT_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -9,27 +9,27 @@
 typedef struct {
     int parent_fd; /* used by parent process (Main) */
     int child_fd;  /* used by child process (worker/sec-mod) */
-} wg_ipc_channel_t;
+} rw_ipc_channel_t;
 
 /* Maximum IPC message size (must fit in provided buffers) */
-constexpr size_t WG_IPC_MAX_MSG_SIZE = 4096;
+constexpr size_t RW_IPC_MAX_MSG_SIZE = 4096;
 
 /* Create a SOCK_SEQPACKET socketpair for IPC */
-[[nodiscard]] int wg_ipc_create_pair(wg_ipc_channel_t *ch);
+[[nodiscard]] int rw_ipc_create_pair(rw_ipc_channel_t *ch);
 
 /* Close both ends of the channel */
-void wg_ipc_close(wg_ipc_channel_t *ch);
+void rw_ipc_close(rw_ipc_channel_t *ch);
 
 /* Send raw bytes. Returns 0 on success, -errno on error. */
-[[nodiscard]] int wg_ipc_send(int fd, const uint8_t *data, size_t len);
+[[nodiscard]] int rw_ipc_send(int fd, const uint8_t *data, size_t len);
 
 /* Receive raw bytes. Returns message length, or negative errno. */
-[[nodiscard]] ssize_t wg_ipc_recv(int fd, uint8_t *buf, size_t buf_size);
+[[nodiscard]] ssize_t rw_ipc_recv(int fd, uint8_t *buf, size_t buf_size);
 
 /* Send a file descriptor via SCM_RIGHTS. Returns 0 on success. */
-[[nodiscard]] int wg_ipc_send_fd(int socket_fd, int fd_to_send);
+[[nodiscard]] int rw_ipc_send_fd(int socket_fd, int fd_to_send);
 
 /* Receive a file descriptor via SCM_RIGHTS. Returns fd or negative errno. */
-[[nodiscard]] int wg_ipc_recv_fd(int socket_fd);
+[[nodiscard]] int rw_ipc_recv_fd(int socket_fd);
 
-#endif /* WOLFGUARD_IPC_TRANSPORT_H */
+#endif /* RINGWALL_IPC_TRANSPORT_H */

@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2025 wolfguard Contributors
+ * Copyright (C) 2025 ringwall Contributors
  *
- * This file is part of wolfguard.
+ * This file is part of ringwall.
  *
- * wolfguard is free software: you can redistribute it and/or modify it
+ * ringwall is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
  *
- * wolfguard is distributed in the hope that it will be useful, but
+ * ringwall is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
@@ -16,11 +16,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef WOLFGUARD_TLS_ABSTRACT_H
-#define WOLFGUARD_TLS_ABSTRACT_H
+#ifndef RINGWALL_TLS_ABSTRACT_H
+#define RINGWALL_TLS_ABSTRACT_H
 
 /**
- * TLS Abstraction Layer for wolfguard
+ * TLS Abstraction Layer for ringwall
  *
  * This abstraction provides a unified API for both GnuTLS and wolfSSL backends,
  * enabling gradual migration and performance comparison. The API is designed to:
@@ -760,4 +760,4 @@ static inline void tls_context_cleanup(tls_context_t **ctx_ptr) {
     }
 }
 
-#endif // WOLFGUARD_TLS_ABSTRACT_H
+#endif // RINGWALL_TLS_ABSTRACT_H

@@ -1,22 +1,22 @@
 #define _GNU_SOURCE
 #include "ipc/messages.h"
-#include "wg_ipc.pb-c.h"
+#include "rw_ipc.pb-c.h"
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
-void wg_ipc_msg_init(wg_ipc_msg_t *msg, wg_ipc_msg_type_t type)
+void rw_ipc_msg_init(rw_ipc_msg_t *msg, rw_ipc_msg_type_t type)
 {
     msg->type = type;
     msg->seq = 0;
 }
 
-ssize_t wg_ipc_pack_auth_request(const wg_ipc_auth_request_t *req,
+ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req,
                                   uint8_t *buf, size_t buf_size)
 {
-    WgIpc__AuthRequest pb = WG_IPC__AUTH_REQUEST__INIT;
-    WgIpc__IpcHeader hdr = WG_IPC__IPC_HEADER__INIT;
-    hdr.type = WG_IPC__MSG_TYPE__MSG_TYPE_AUTH_REQUEST;
+    RwIpc__AuthRequest pb = RW_IPC__AUTH_REQUEST__INIT;
+    RwIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
+    hdr.type = RW_IPC__MSG_TYPE__MSG_TYPE_AUTH_REQUEST;
 
     pb.header = &hdr;
     pb.username = (char *)req->username;
@@ -29,17 +29,17 @@ ssize_t wg_ipc_pack_auth_request(const wg_ipc_auth_request_t *req,
         pb.cookie.len = req->cookie_len;
     }
 
-    size_t packed_size = wg_ipc__auth_request__get_packed_size(&pb);
+    size_t packed_size = rw_ipc__auth_request__get_packed_size(&pb);
     if (packed_size > buf_size) {
         return -ENOBUFS;
     }
-    return (ssize_t)wg_ipc__auth_request__pack(&pb, buf);
+    return (ssize_t)rw_ipc__auth_request__pack(&pb, buf);
 }
 
-int wg_ipc_unpack_auth_request(const uint8_t *data, size_t len,
-                                wg_ipc_auth_request_t *out)
+int rw_ipc_unpack_auth_request(const uint8_t *data, size_t len,
+                                rw_ipc_auth_request_t *out)
 {
-    WgIpc__AuthRequest *pb = wg_ipc__auth_request__unpack(nullptr, len, data);
+    RwIpc__AuthRequest *pb = rw_ipc__auth_request__unpack(nullptr, len, data);
     if (pb == nullptr) {
         return -EINVAL;
     }
@@ -57,11 +57,11 @@ int wg_ipc_unpack_auth_request(const uint8_t *data, size_t len,
             out->cookie_len = pb->cookie.len;
         }
     }
-    wg_ipc__auth_request__free_unpacked(pb, nullptr);
+    rw_ipc__auth_request__free_unpacked(pb, nullptr);
     return 0;
 }
 
-void wg_ipc_free_auth_request(wg_ipc_auth_request_t *req)
+void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req)
 {
     free((void *)req->username);
     free((void *)req->group);
@@ -75,12 +75,12 @@ void wg_ipc_free_auth_request(wg_ipc_auth_request_t *req)
     memset(req, 0, sizeof(*req));
 }
 
-ssize_t wg_ipc_pack_auth_response(const wg_ipc_auth_response_t *resp,
+ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp,
                                     uint8_t *buf, size_t buf_size)
 {
-    WgIpc__AuthResponse pb = WG_IPC__AUTH_RESPONSE__INIT;
-    WgIpc__IpcHeader hdr = WG_IPC__IPC_HEADER__INIT;
-    hdr.type = WG_IPC__MSG_TYPE__MSG_TYPE_AUTH_RESPONSE;
+    RwIpc__AuthResponse pb = RW_IPC__AUTH_RESPONSE__INIT;
+    RwIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
+    hdr.type = RW_IPC__MSG_TYPE__MSG_TYPE_AUTH_RESPONSE;
 
     pb.header = &hdr;
     pb.success = resp->success;
@@ -96,17 +96,17 @@ ssize_t wg_ipc_pack_auth_response(const wg_ipc_auth_response_t *resp,
         pb.session_cookie.len = resp->session_cookie_len;
     }
 
-    size_t packed_size = wg_ipc__auth_response__get_packed_size(&pb);
+    size_t packed_size = rw_ipc__auth_response__get_packed_size(&pb);
     if (packed_size > buf_size) {
         return -ENOBUFS;
     }
-    return (ssize_t)wg_ipc__auth_response__pack(&pb, buf);
+    return (ssize_t)rw_ipc__auth_response__pack(&pb, buf);
 }
 
-int wg_ipc_unpack_auth_response(const uint8_t *data, size_t len,
-                                  wg_ipc_auth_response_t *out)
+int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len,
+                                  rw_ipc_auth_response_t *out)
 {
-    WgIpc__AuthResponse *pb = wg_ipc__auth_response__unpack(nullptr, len, data);
+    RwIpc__AuthResponse *pb = rw_ipc__auth_response__unpack(nullptr, len, data);
     if (pb == nullptr) {
         return -EINVAL;
     }
@@ -137,11 +137,11 @@ int wg_ipc_unpack_auth_response(const uint8_t *data, size_t len,
             out->session_cookie_len = pb->session_cookie.len;
         }
     }
-    wg_ipc__auth_response__free_unpacked(pb, nullptr);
+    rw_ipc__auth_response__free_unpacked(pb, nullptr);
     return 0;
 }
 
-void wg_ipc_free_auth_response(wg_ipc_auth_response_t *resp)
+void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp)
 {
     free((void *)resp->error_msg);
     free((void *)resp->assigned_ip);
@@ -155,12 +155,12 @@ void wg_ipc_free_auth_response(wg_ipc_auth_response_t *resp)
     memset(resp, 0, sizeof(*resp));
 }
 
-ssize_t wg_ipc_pack_session_validate(const wg_ipc_session_validate_t *req,
+ssize_t rw_ipc_pack_session_validate(const rw_ipc_session_validate_t *req,
                                       uint8_t *buf, size_t buf_size)
 {
-    WgIpc__SessionValidate pb = WG_IPC__SESSION_VALIDATE__INIT;
-    WgIpc__IpcHeader hdr = WG_IPC__IPC_HEADER__INIT;
-    hdr.type = WG_IPC__MSG_TYPE__MSG_TYPE_SESSION_VALIDATE;
+    RwIpc__SessionValidate pb = RW_IPC__SESSION_VALIDATE__INIT;
+    RwIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
+    hdr.type = RW_IPC__MSG_TYPE__MSG_TYPE_SESSION_VALIDATE;
 
     pb.header = &hdr;
     if (req->cookie != nullptr && req->cookie_len > 0) {
@@ -168,17 +168,17 @@ ssize_t wg_ipc_pack_session_validate(const wg_ipc_session_validate_t *req,
         pb.cookie.len = req->cookie_len;
     }
 
-    size_t packed_size = wg_ipc__session_validate__get_packed_size(&pb);
+    size_t packed_size = rw_ipc__session_validate__get_packed_size(&pb);
     if (packed_size > buf_size) {
         return -ENOBUFS;
     }
-    return (ssize_t)wg_ipc__session_validate__pack(&pb, buf);
+    return (ssize_t)rw_ipc__session_validate__pack(&pb, buf);
 }
 
-int wg_ipc_unpack_session_validate(const uint8_t *data, size_t len,
-                                    wg_ipc_session_validate_t *out)
+int rw_ipc_unpack_session_validate(const uint8_t *data, size_t len,
+                                    rw_ipc_session_validate_t *out)
 {
-    WgIpc__SessionValidate *pb = wg_ipc__session_validate__unpack(nullptr, len, data);
+    RwIpc__SessionValidate *pb = rw_ipc__session_validate__unpack(nullptr, len, data);
     if (pb == nullptr) {
         return -EINVAL;
     }
@@ -191,22 +191,22 @@ int wg_ipc_unpack_session_validate(const uint8_t *data, size_t len,
             out->cookie_len = pb->cookie.len;
         }
     }
-    wg_ipc__session_validate__free_unpacked(pb, nullptr);
+    rw_ipc__session_validate__free_unpacked(pb, nullptr);
     return 0;
 }
 
-void wg_ipc_free_session_validate(wg_ipc_session_validate_t *req)
+void rw_ipc_free_session_validate(rw_ipc_session_validate_t *req)
 {
     free((void *)req->cookie);
     memset(req, 0, sizeof(*req));
 }
 
-ssize_t wg_ipc_pack_worker_status(const wg_ipc_worker_status_t *status,
+ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status,
                                     uint8_t *buf, size_t buf_size)
 {
-    WgIpc__WorkerStatus pb = WG_IPC__WORKER_STATUS__INIT;
-    WgIpc__IpcHeader hdr = WG_IPC__IPC_HEADER__INIT;
-    hdr.type = WG_IPC__MSG_TYPE__MSG_TYPE_WORKER_STATUS;
+    RwIpc__WorkerStatus pb = RW_IPC__WORKER_STATUS__INIT;
+    RwIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
+    hdr.type = RW_IPC__MSG_TYPE__MSG_TYPE_WORKER_STATUS;
 
     pb.header = &hdr;
     pb.active_connections = status->active_connections;
@@ -214,17 +214,17 @@ ssize_t wg_ipc_pack_worker_status(const wg_ipc_worker_status_t *status,
     pb.bytes_tx = status->bytes_tx;
     pb.pid = status->pid;
 
-    size_t packed_size = wg_ipc__worker_status__get_packed_size(&pb);
+    size_t packed_size = rw_ipc__worker_status__get_packed_size(&pb);
     if (packed_size > buf_size) {
         return -ENOBUFS;
     }
-    return (ssize_t)wg_ipc__worker_status__pack(&pb, buf);
+    return (ssize_t)rw_ipc__worker_status__pack(&pb, buf);
 }
 
-int wg_ipc_unpack_worker_status(const uint8_t *data, size_t len,
-                                  wg_ipc_worker_status_t *out)
+int rw_ipc_unpack_worker_status(const uint8_t *data, size_t len,
+                                  rw_ipc_worker_status_t *out)
 {
-    WgIpc__WorkerStatus *pb = wg_ipc__worker_status__unpack(nullptr, len, data);
+    RwIpc__WorkerStatus *pb = rw_ipc__worker_status__unpack(nullptr, len, data);
     if (pb == nullptr) {
         return -EINVAL;
     }
@@ -232,6 +232,6 @@ int wg_ipc_unpack_worker_status(const uint8_t *data, size_t len,
     out->bytes_rx = pb->bytes_rx;
     out->bytes_tx = pb->bytes_tx;
     out->pid = pb->pid;
-    wg_ipc__worker_status__free_unpacked(pb, nullptr);
+    rw_ipc__worker_status__free_unpacked(pb, nullptr);
     return 0;
 }

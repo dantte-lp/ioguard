@@ -3,7 +3,7 @@
 **Document Version**: 1.0
 **Last Updated**: 2025-10-29
 **Based on**: Reverse engineering analysis of Cisco Secure Client 5.1.2.42
-**Project**: wolfguard v2.0.0
+**Project**: ringwall v2.0.0
 
 ---
 
@@ -93,7 +93,7 @@ X-AnyConnect-STRAP-Pubkey: <optional-public-key>
 
 **Minimum for compatibility** (C23):
 ```c
-// File: wolfguard/src/http/routes.c
+// File: ringwall/src/http/routes.c
 #include <stdint.h>
 #include <stdbool.h>
 #include "http_server.h"
@@ -1184,7 +1184,7 @@ CONNECT /tunnel        # Tunnel establishment
 
 ---
 
-**Document Maintainer**: wolfguard protocol team
+**Document Maintainer**: ringwall protocol team
 **Review Schedule**: Bi-weekly during implementation
 **Next Review**: 2025-11-12
 **Status**: Active Development Guide
@@ -1202,7 +1202,7 @@ CONNECT /tunnel        # Tunnel establishment
 ### 17.1 Session Cookie Management (C23)
 
 ```c
-// File: wolfguard/src/auth/session_cookie.c
+// File: ringwall/src/auth/session_cookie.c
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -1324,7 +1324,7 @@ int verify_session_cookie(
 ### 17.2 DPD (Dead Peer Detection) Implementation (C23)
 
 ```c
-// File: wolfguard/src/tunnel/dpd.c
+// File: ringwall/src/tunnel/dpd.c
 #include <stdint.h>
 #include <time.h>
 #include <stdbool.h>
@@ -1452,7 +1452,7 @@ uint32_t perform_mtu_discovery(mtu_dpd_manager_t *mgr, tunnel_t *tunnel) {
 ### 17.3 Reconnection Manager (C23)
 
 ```c
-// File: wolfguard/src/tunnel/reconnect.c
+// File: ringwall/src/tunnel/reconnect.c
 #include <stdint.h>
 #include <time.h>
 #include <stdbool.h>
@@ -1572,7 +1572,7 @@ static int dtls_only_reconnect(
 ### 17.4 Split DNS Matcher (C23)
 
 ```c
-// File: wolfguard/src/dns/split_dns.c
+// File: ringwall/src/dns/split_dns.c
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
@@ -1705,7 +1705,7 @@ int add_split_dns_domain(
 ### 17.5 Always-On VPN Validation (C23)
 
 ```c
-// File: wolfguard/src/auth/always_on.c
+// File: ringwall/src/auth/always_on.c
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -1891,7 +1891,7 @@ The **Network Visibility Module (NVM)** provides enterprise-grade network teleme
                          │ or DTLS (encrypted)
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│            wolfguard (with NVM Collector)            │
+│            ringwall (with NVM Collector)            │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │  NVM Collector Module (src/nvm/)                   │ │
 │  │  - IPFIX protocol decoder                          │ │

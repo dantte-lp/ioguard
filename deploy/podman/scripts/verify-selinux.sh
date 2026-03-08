@@ -72,7 +72,7 @@ fi
 # Check 3: Check source code directory
 echo ""
 log_info "Checking source code directory SELinux labels..."
-SOURCE_DIR="/opt/projects/repositories/wolfguard"
+SOURCE_DIR="/opt/projects/repositories/ringwall"
 if [ -d "$SOURCE_DIR" ]; then
     SOURCE_CONTEXT=$(ls -Zd "$SOURCE_DIR" | awk '{print $1}')
     log_info "Source directory context: $SOURCE_CONTEXT"

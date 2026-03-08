@@ -25,7 +25,7 @@
 
 extern char **environ;
 
-int wg_process_spawn(wg_process_t *proc, const char *path,
+int rw_process_spawn(rw_process_t *proc, const char *path,
                       const char *const argv[])
 {
     memset(proc, 0, sizeof(*proc));
@@ -55,7 +55,7 @@ int wg_process_spawn(wg_process_t *proc, const char *path,
         ret = -errno;
         goto cleanup;
     }
-    /* pid will be obtained during waitid in wg_process_wait */
+    /* pid will be obtained during waitid in rw_process_wait */
 #else
     /* Fallback: posix_spawn + pidfd_open */
     pid_t pid;
@@ -80,7 +80,7 @@ cleanup:
     return ret;
 }
 
-int wg_process_wait(wg_process_t *proc, int *exit_status, uint32_t timeout_ms)
+int rw_process_wait(rw_process_t *proc, int *exit_status, uint32_t timeout_ms)
 {
     *exit_status = -1;
 
@@ -127,7 +127,7 @@ int wg_process_wait(wg_process_t *proc, int *exit_status, uint32_t timeout_ms)
     return 0;
 }
 
-int wg_process_signal(wg_process_t *proc, int sig)
+int rw_process_signal(rw_process_t *proc, int sig)
 {
     if (proc->pidfd >= 0) {
         int ret = (int)syscall(__NR_pidfd_send_signal, proc->pidfd, sig, nullptr, 0);
@@ -142,7 +142,7 @@ int wg_process_signal(wg_process_t *proc, int sig)
     return 0;
 }
 
-void wg_process_cleanup(wg_process_t *proc)
+void rw_process_cleanup(rw_process_t *proc)
 {
     if (proc->pidfd >= 0) {
         close(proc->pidfd);

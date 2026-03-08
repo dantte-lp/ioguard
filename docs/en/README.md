@@ -87,7 +87,7 @@ graph TD
 | 08 | [**Development**](./08-development.md) | Build system, testing, C23 conventions, toolchain |
 | 09 | [**RFC Compliance**](./09-rfc-compliance.md) | RFC compliance matrix, implementation notes |
 | 10 | [**Monitoring**](./10-monitoring.md) | Prometheus metrics, structured logging, alerts |
-| 11 | [**CLI Reference**](./11-cli-reference.md) | wgctl commands, output formats, REST API |
+| 11 | [**CLI Reference**](./11-cli-reference.md) | rwctl commands, output formats, REST API |
 
 ---
 

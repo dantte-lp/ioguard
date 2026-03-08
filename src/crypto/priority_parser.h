@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2025 wolfguard Contributors
+ * Copyright (C) 2025 ringwall Contributors
  *
- * This file is part of wolfguard.
+ * This file is part of ringwall.
  *
- * wolfguard is free software: you can redistribute it and/or modify it
+ * ringwall is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
  *
- * wolfguard is distributed in the hope that it will be useful, but
+ * ringwall is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
@@ -16,11 +16,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef WOLFGUARD_PRIORITY_PARSER_H
-#define WOLFGUARD_PRIORITY_PARSER_H
+#ifndef RINGWALL_PRIORITY_PARSER_H
+#define RINGWALL_PRIORITY_PARSER_H
 
 /**
- * GnuTLS Priority String Parser for wolfguard
+ * GnuTLS Priority String Parser for ringwall
  *
  * This module parses GnuTLS priority strings and translates them to wolfSSL
  * cipher configuration. This enables backward compatibility with existing
@@ -536,4 +536,4 @@ void wolfssl_config_init(wolfssl_config_t *wolfssl_cfg);
                                           char *buffer,
                                           size_t buffer_len);
 
-#endif // WOLFGUARD_PRIORITY_PARSER_H
+#endif // RINGWALL_PRIORITY_PARSER_H

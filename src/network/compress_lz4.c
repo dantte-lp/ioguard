@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <lz4.h>
 
-int wg_lz4_compress(const uint8_t *in, size_t in_len,
+int rw_lz4_compress(const uint8_t *in, size_t in_len,
                      uint8_t *out, size_t out_size)
 {
 	if (!in || !out)
@@ -18,7 +18,7 @@ int wg_lz4_compress(const uint8_t *in, size_t in_len,
 	return ret;
 }
 
-int wg_lz4_decompress(const uint8_t *in, size_t in_len,
+int rw_lz4_decompress(const uint8_t *in, size_t in_len,
                        uint8_t *out, size_t out_size)
 {
 	if (!in || !out)

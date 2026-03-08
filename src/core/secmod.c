@@ -15,39 +15,39 @@
  * Build and send an auth response over IPC.
  */
 static int secmod_send_auth_response(int fd,
-                                      const wg_ipc_auth_response_t *resp)
+                                      const rw_ipc_auth_response_t *resp)
 {
-    uint8_t buf[WG_IPC_MAX_MSG_SIZE];
-    ssize_t packed = wg_ipc_pack_auth_response(resp, buf, sizeof(buf));
+    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    ssize_t packed = rw_ipc_pack_auth_response(resp, buf, sizeof(buf));
 
     if (packed < 0) {
         return (int)packed;
     }
-    return wg_ipc_send(fd, buf, (size_t)packed);
+    return rw_ipc_send(fd, buf, (size_t)packed);
 }
 
 /**
  * Handle an authentication request (username + password).
  */
-static int secmod_handle_auth(wg_secmod_ctx_t *ctx,
-                               wg_ipc_auth_request_t *req)
+static int secmod_handle_auth(rw_secmod_ctx_t *ctx,
+                               rw_ipc_auth_request_t *req)
 {
-    wg_ipc_auth_response_t resp;
+    rw_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
-    wg_auth_result_t result = wg_pam_authenticate(&ctx->pam_cfg,
+    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg,
                                                     req->username,
                                                     req->password);
-    if (result == WG_AUTH_SUCCESS) {
-        wg_session_t *session = nullptr;
-        int ret = wg_session_create(ctx->sessions, req->username,
+    if (result == RW_AUTH_SUCCESS) {
+        rw_session_t *session = nullptr;
+        int ret = rw_session_create(ctx->sessions, req->username,
                                      req->group,
                                      ctx->config->auth.cookie_timeout,
                                      &session);
         if (ret == 0 && session != nullptr) {
             resp.success = true;
             resp.session_cookie = session->cookie;
-            resp.session_cookie_len = WG_SESSION_COOKIE_SIZE;
+            resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
             resp.session_ttl = session->ttl_seconds;
             resp.assigned_ip = session->assigned_ip;
             resp.dns_server = (ctx->config->network.dns_count > 0)
@@ -69,20 +69,20 @@ static int secmod_handle_auth(wg_secmod_ctx_t *ctx,
 /**
  * Handle a session validation request (cookie lookup).
  */
-static int secmod_handle_session_validate(wg_secmod_ctx_t *ctx,
-                                           wg_ipc_session_validate_t *req)
+static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx,
+                                           rw_ipc_session_validate_t *req)
 {
-    wg_ipc_auth_response_t resp;
+    rw_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
-    wg_session_t *session = nullptr;
-    int ret = wg_session_validate(ctx->sessions, req->cookie,
+    rw_session_t *session = nullptr;
+    int ret = rw_session_validate(ctx->sessions, req->cookie,
                                    req->cookie_len, &session);
 
     if (ret == 0 && session != nullptr) {
         resp.success = true;
         resp.session_cookie = session->cookie;
-        resp.session_cookie_len = WG_SESSION_COOKIE_SIZE;
+        resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
         resp.session_ttl = session->ttl_seconds;
         resp.assigned_ip = session->assigned_ip;
         resp.dns_server = (ctx->config->network.dns_count > 0)
@@ -101,8 +101,8 @@ static int secmod_handle_session_validate(wg_secmod_ctx_t *ctx,
 /* Public API                                                          */
 /* ------------------------------------------------------------------ */
 
-int wg_secmod_init(wg_secmod_ctx_t *ctx, int ipc_fd,
-                    const wg_config_t *config)
+int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd,
+                    const rw_config_t *config)
 {
     if (ctx == nullptr || config == nullptr) {
         return -EINVAL;
@@ -117,7 +117,7 @@ int wg_secmod_init(wg_secmod_ctx_t *ctx, int ipc_fd,
     const char *service = (config->auth.method[0] != '\0')
                               ? config->auth.method
                               : nullptr;
-    int ret = wg_pam_init(&ctx->pam_cfg, service);
+    int ret = rw_pam_init(&ctx->pam_cfg, service);
 
     if (ret != 0) {
         return ret;
@@ -127,9 +127,9 @@ int wg_secmod_init(wg_secmod_ctx_t *ctx, int ipc_fd,
     uint32_t max = config->server.max_clients;
 
     if (max == 0) {
-        max = WG_SESSION_MAX_SESSIONS;
+        max = RW_SESSION_MAX_SESSIONS;
     }
-    ctx->sessions = wg_session_store_create(max);
+    ctx->sessions = rw_session_store_create(max);
     if (ctx->sessions == nullptr) {
         return -ENOMEM;
     }
@@ -137,7 +137,7 @@ int wg_secmod_init(wg_secmod_ctx_t *ctx, int ipc_fd,
     return 0;
 }
 
-int wg_secmod_handle_message(wg_secmod_ctx_t *ctx,
+int rw_secmod_handle_message(rw_secmod_ctx_t *ctx,
                               const uint8_t *data, size_t len)
 {
     if (ctx == nullptr || data == nullptr || len == 0) {
@@ -149,41 +149,41 @@ int wg_secmod_handle_message(wg_secmod_ctx_t *ctx,
      * (non-null), treat it as a login attempt.  Otherwise fall through
      * and try session_validate.
      */
-    wg_ipc_auth_request_t auth_req;
+    rw_ipc_auth_request_t auth_req;
     memset(&auth_req, 0, sizeof(auth_req));
 
-    int ret = wg_ipc_unpack_auth_request(data, len, &auth_req);
+    int ret = rw_ipc_unpack_auth_request(data, len, &auth_req);
 
     if (ret == 0 && auth_req.password != nullptr
         && auth_req.username != nullptr) {
         ret = secmod_handle_auth(ctx, &auth_req);
-        wg_ipc_free_auth_request(&auth_req);
+        rw_ipc_free_auth_request(&auth_req);
         return ret;
     }
 
     /* Not a password-based auth request — clean up and try session_validate */
     if (ret == 0) {
-        wg_ipc_free_auth_request(&auth_req);
+        rw_ipc_free_auth_request(&auth_req);
     }
 
-    wg_ipc_session_validate_t sv_req;
+    rw_ipc_session_validate_t sv_req;
     memset(&sv_req, 0, sizeof(sv_req));
 
-    ret = wg_ipc_unpack_session_validate(data, len, &sv_req);
+    ret = rw_ipc_unpack_session_validate(data, len, &sv_req);
     if (ret == 0 && sv_req.cookie != nullptr && sv_req.cookie_len > 0) {
         ret = secmod_handle_session_validate(ctx, &sv_req);
-        wg_ipc_free_session_validate(&sv_req);
+        rw_ipc_free_session_validate(&sv_req);
         return ret;
     }
 
     if (ret == 0) {
-        wg_ipc_free_session_validate(&sv_req);
+        rw_ipc_free_session_validate(&sv_req);
     }
 
     return -EPROTO;
 }
 
-int wg_secmod_run(wg_secmod_ctx_t *ctx)
+int rw_secmod_run(rw_secmod_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return -EINVAL;
@@ -203,36 +203,36 @@ int wg_secmod_run(wg_secmod_ctx_t *ctx)
         }
 
         if (ret > 0 && (pfd.revents & POLLIN)) {
-            uint8_t buf[WG_IPC_MAX_MSG_SIZE];
-            ssize_t n = wg_ipc_recv(ctx->ipc_fd, buf, sizeof(buf));
+            uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+            ssize_t n = rw_ipc_recv(ctx->ipc_fd, buf, sizeof(buf));
 
             if (n > 0) {
-                (void)wg_secmod_handle_message(ctx, buf, (size_t)n);
+                (void)rw_secmod_handle_message(ctx, buf, (size_t)n);
             }
         }
 
         /* Periodic cleanup of expired sessions */
-        wg_session_cleanup_expired(ctx->sessions);
+        rw_session_cleanup_expired(ctx->sessions);
     }
 
     return 0;
 }
 
-void wg_secmod_stop(wg_secmod_ctx_t *ctx)
+void rw_secmod_stop(rw_secmod_ctx_t *ctx)
 {
     if (ctx != nullptr) {
         ctx->running = false;
     }
 }
 
-void wg_secmod_destroy(wg_secmod_ctx_t *ctx)
+void rw_secmod_destroy(rw_secmod_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return;
     }
 
     if (ctx->sessions != nullptr) {
-        wg_session_store_destroy(ctx->sessions);
+        rw_session_store_destroy(ctx->sessions);
     }
 
     explicit_bzero(ctx, sizeof(*ctx));

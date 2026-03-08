@@ -20,13 +20,13 @@ static void timeout_cb(int res, void *user_data)
     *flag = 1;
 }
 
-wg_io_ctx_t *wg_io_init(uint32_t queue_depth, uint32_t flags)
+rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags)
 {
     if (queue_depth == 0) {
         return nullptr;
     }
 
-    wg_io_ctx_t *ctx = calloc(1, sizeof(*ctx));
+    rw_io_ctx_t *ctx = calloc(1, sizeof(*ctx));
     if (ctx == nullptr) {
         return nullptr;
     }
@@ -42,7 +42,7 @@ wg_io_ctx_t *wg_io_init(uint32_t queue_depth, uint32_t flags)
     return ctx;
 }
 
-void wg_io_destroy(wg_io_ctx_t *ctx)
+void rw_io_destroy(rw_io_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return;
@@ -51,7 +51,7 @@ void wg_io_destroy(wg_io_ctx_t *ctx)
     free(ctx);
 }
 
-int wg_io_run_once(wg_io_ctx_t *ctx, uint32_t timeout_ms)
+int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
 {
     struct io_uring_cqe *cqe;
     int ret;
@@ -78,7 +78,7 @@ int wg_io_run_once(wg_io_ctx_t *ctx, uint32_t timeout_ms)
     /* Process all available CQEs */
     unsigned head;
     io_uring_for_each_cqe(&ctx->ring, head, cqe) {
-        wg_io_completion_t *comp = io_uring_cqe_get_data(cqe);
+        rw_io_completion_t *comp = io_uring_cqe_get_data(cqe);
         if (comp != nullptr) {
             comp->cb(cqe->res, comp->user_data);
             free(comp);
@@ -90,11 +90,11 @@ int wg_io_run_once(wg_io_ctx_t *ctx, uint32_t timeout_ms)
     return processed;
 }
 
-int wg_io_run(wg_io_ctx_t *ctx)
+int rw_io_run(rw_io_ctx_t *ctx)
 {
     ctx->running = true;
     while (ctx->running) {
-        int ret = wg_io_run_once(ctx, 1000);
+        int ret = rw_io_run_once(ctx, 1000);
         if (ret < 0) {
             return ret;
         }
@@ -102,19 +102,19 @@ int wg_io_run(wg_io_ctx_t *ctx)
     return 0;
 }
 
-void wg_io_stop(wg_io_ctx_t *ctx)
+void rw_io_stop(rw_io_ctx_t *ctx)
 {
     ctx->running = false;
 }
 
-int wg_io_submit_nop(wg_io_ctx_t *ctx, int *completed)
+int rw_io_submit_nop(rw_io_ctx_t *ctx, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    wg_io_completion_t *comp = calloc(1, sizeof(*comp));
+    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -127,14 +127,14 @@ int wg_io_submit_nop(wg_io_ctx_t *ctx, int *completed)
     return 0;
 }
 
-int wg_io_prep_recv(wg_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
+int rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    wg_io_completion_t *comp = calloc(1, sizeof(*comp));
+    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -147,14 +147,14 @@ int wg_io_prep_recv(wg_io_ctx_t *ctx, int fd, void *buf, size_t len, int *comple
     return 0;
 }
 
-int wg_io_prep_send(wg_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
+int rw_io_prep_send(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    wg_io_completion_t *comp = calloc(1, sizeof(*comp));
+    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -167,14 +167,14 @@ int wg_io_prep_send(wg_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *
     return 0;
 }
 
-int wg_io_prep_read(wg_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
+int rw_io_prep_read(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    wg_io_completion_t *comp = calloc(1, sizeof(*comp));
+    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -187,14 +187,14 @@ int wg_io_prep_read(wg_io_ctx_t *ctx, int fd, void *buf, size_t len, int *comple
     return 0;
 }
 
-int wg_io_prep_write(wg_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
+int rw_io_prep_write(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    wg_io_completion_t *comp = calloc(1, sizeof(*comp));
+    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -207,7 +207,7 @@ int wg_io_prep_write(wg_io_ctx_t *ctx, int fd, const void *buf, size_t len, int 
     return 0;
 }
 
-int wg_io_add_timeout(wg_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
+int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -216,7 +216,7 @@ int wg_io_add_timeout(wg_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 
     /* Allocate completion + timespec together */
     typedef struct {
-        wg_io_completion_t comp;
+        rw_io_completion_t comp;
         struct __kernel_timespec ts;
     } timeout_data_t;
 

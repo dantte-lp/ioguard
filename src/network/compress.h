@@ -6,40 +6,40 @@
  * Backends: NONE (passthrough), LZ4, LZS.
  */
 
-#ifndef WOLFGUARD_NETWORK_COMPRESS_H
-#define WOLFGUARD_NETWORK_COMPRESS_H
+#ifndef RINGWALL_NETWORK_COMPRESS_H
+#define RINGWALL_NETWORK_COMPRESS_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t WG_COMPRESS_MAX_INPUT = 16384;
-constexpr size_t WG_COMPRESS_MAX_OUTPUT = 16384 + 256;
+constexpr size_t RW_COMPRESS_MAX_INPUT = 16384;
+constexpr size_t RW_COMPRESS_MAX_OUTPUT = 16384 + 256;
 
 typedef enum : uint8_t {
-	WG_COMPRESS_NONE,
-	WG_COMPRESS_LZ4,
-	WG_COMPRESS_LZS,
-} wg_compress_type_t;
+	RW_COMPRESS_NONE,
+	RW_COMPRESS_LZ4,
+	RW_COMPRESS_LZS,
+} rw_compress_type_t;
 
 typedef struct {
-	wg_compress_type_t type;
+	rw_compress_type_t type;
 	void *codec_ctx;
-} wg_compress_ctx_t;
+} rw_compress_ctx_t;
 
-[[nodiscard]] int wg_compress_init(wg_compress_ctx_t *ctx, wg_compress_type_t type);
+[[nodiscard]] int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type);
 
-[[nodiscard]] int wg_compress(wg_compress_ctx_t *ctx,
+[[nodiscard]] int rw_compress(rw_compress_ctx_t *ctx,
                                const uint8_t *in, size_t in_len,
                                uint8_t *out, size_t out_size);
 
-[[nodiscard]] int wg_decompress(wg_compress_ctx_t *ctx,
+[[nodiscard]] int rw_decompress(rw_compress_ctx_t *ctx,
                                  const uint8_t *in, size_t in_len,
                                  uint8_t *out, size_t out_size);
 
-void wg_compress_destroy(wg_compress_ctx_t *ctx);
+void rw_compress_destroy(rw_compress_ctx_t *ctx);
 
-[[nodiscard]] const char *wg_compress_type_name(wg_compress_type_t type);
+[[nodiscard]] const char *rw_compress_type_name(rw_compress_type_t type);
 
-[[nodiscard]] wg_compress_type_t wg_compress_negotiate(const char *accept_encoding);
+[[nodiscard]] rw_compress_type_t rw_compress_negotiate(const char *accept_encoding);
 
-#endif /* WOLFGUARD_NETWORK_COMPRESS_H */
+#endif /* RINGWALL_NETWORK_COMPRESS_H */

@@ -12,8 +12,8 @@
 #include <unistd.h>
 #endif
 
-struct wg_session_store {
-    wg_session_t *sessions;
+struct rw_session_store {
+    rw_session_t *sessions;
     uint32_t max_sessions;
     uint32_t count;
 #ifdef USE_WOLFSSL
@@ -47,7 +47,7 @@ static int fill_random(uint8_t *buf, size_t len)
 }
 #endif
 
-static int generate_cookie(wg_session_store_t *store, uint8_t *buf,
+static int generate_cookie(rw_session_store_t *store, uint8_t *buf,
                             size_t len)
 {
 #ifdef USE_WOLFSSL
@@ -60,12 +60,12 @@ static int generate_cookie(wg_session_store_t *store, uint8_t *buf,
 #endif
 }
 
-wg_session_store_t *wg_session_store_create(uint32_t max_sessions)
+rw_session_store_t *rw_session_store_create(uint32_t max_sessions)
 {
     if (max_sessions == 0)
         return nullptr;
 
-    wg_session_store_t *store = calloc(1, sizeof(*store));
+    rw_session_store_t *store = calloc(1, sizeof(*store));
 
     if (store == nullptr)
         return nullptr;
@@ -90,7 +90,7 @@ wg_session_store_t *wg_session_store_create(uint32_t max_sessions)
     return store;
 }
 
-void wg_session_store_destroy(wg_session_store_t *store)
+void rw_session_store_destroy(rw_session_store_t *store)
 {
     if (store == nullptr)
         return;
@@ -112,9 +112,9 @@ void wg_session_store_destroy(wg_session_store_t *store)
     free(store);
 }
 
-int wg_session_create(wg_session_store_t *store, const char *username,
+int rw_session_create(rw_session_store_t *store, const char *username,
                        const char *group, uint32_t ttl_seconds,
-                       wg_session_t **out)
+                       rw_session_t **out)
 {
     if (store == nullptr || username == nullptr || out == nullptr)
         return -EINVAL;
@@ -123,7 +123,7 @@ int wg_session_create(wg_session_store_t *store, const char *username,
         return -EAGAIN;
 
     /* Find an inactive slot */
-    wg_session_t *slot = nullptr;
+    rw_session_t *slot = nullptr;
 
     for (uint32_t i = 0; i < store->max_sessions; i++) {
         if (!store->sessions[i].active) {
@@ -136,7 +136,7 @@ int wg_session_create(wg_session_store_t *store, const char *username,
         return -EAGAIN;
 
     /* Generate random cookie */
-    int ret = generate_cookie(store, slot->cookie, WG_SESSION_COOKIE_SIZE);
+    int ret = generate_cookie(store, slot->cookie, RW_SESSION_COOKIE_SIZE);
 
     if (ret != 0)
         return ret;
@@ -169,13 +169,13 @@ int wg_session_create(wg_session_store_t *store, const char *username,
     return 0;
 }
 
-int wg_session_validate(wg_session_store_t *store, const uint8_t *cookie,
-                          size_t cookie_len, wg_session_t **out)
+int rw_session_validate(rw_session_store_t *store, const uint8_t *cookie,
+                          size_t cookie_len, rw_session_t **out)
 {
     if (store == nullptr || cookie == nullptr || out == nullptr)
         return -EINVAL;
 
-    if (cookie_len != WG_SESSION_COOKIE_SIZE)
+    if (cookie_len != RW_SESSION_COOKIE_SIZE)
         return -EINVAL;
 
     for (uint32_t i = 0; i < store->max_sessions; i++) {
@@ -183,7 +183,7 @@ int wg_session_validate(wg_session_store_t *store, const uint8_t *cookie,
             continue;
 
         if (constant_time_compare(store->sessions[i].cookie, cookie,
-                                   WG_SESSION_COOKIE_SIZE) == 0) {
+                                   RW_SESSION_COOKIE_SIZE) == 0) {
             /* Check expiry */
             time_t now = time(nullptr);
 
@@ -191,7 +191,7 @@ int wg_session_validate(wg_session_store_t *store, const uint8_t *cookie,
                 store->sessions[i].ttl_seconds) {
                 /* Session expired — clean it up */
                 explicit_bzero(store->sessions[i].cookie,
-                               WG_SESSION_COOKIE_SIZE);
+                               RW_SESSION_COOKIE_SIZE);
                 explicit_bzero(&store->sessions[i],
                                sizeof(store->sessions[i]));
                 store->count--;
@@ -207,13 +207,13 @@ int wg_session_validate(wg_session_store_t *store, const uint8_t *cookie,
     return -ENOENT;
 }
 
-int wg_session_delete(wg_session_store_t *store, const uint8_t *cookie,
+int rw_session_delete(rw_session_store_t *store, const uint8_t *cookie,
                        size_t cookie_len)
 {
     if (store == nullptr || cookie == nullptr)
         return -EINVAL;
 
-    if (cookie_len != WG_SESSION_COOKIE_SIZE)
+    if (cookie_len != RW_SESSION_COOKIE_SIZE)
         return -EINVAL;
 
     for (uint32_t i = 0; i < store->max_sessions; i++) {
@@ -221,9 +221,9 @@ int wg_session_delete(wg_session_store_t *store, const uint8_t *cookie,
             continue;
 
         if (constant_time_compare(store->sessions[i].cookie, cookie,
-                                   WG_SESSION_COOKIE_SIZE) == 0) {
+                                   RW_SESSION_COOKIE_SIZE) == 0) {
             explicit_bzero(store->sessions[i].cookie,
-                           WG_SESSION_COOKIE_SIZE);
+                           RW_SESSION_COOKIE_SIZE);
             explicit_bzero(&store->sessions[i],
                            sizeof(store->sessions[i]));
             store->count--;
@@ -234,7 +234,7 @@ int wg_session_delete(wg_session_store_t *store, const uint8_t *cookie,
     return -ENOENT;
 }
 
-uint32_t wg_session_cleanup_expired(wg_session_store_t *store)
+uint32_t rw_session_cleanup_expired(rw_session_store_t *store)
 {
     if (store == nullptr)
         return 0;
@@ -249,7 +249,7 @@ uint32_t wg_session_cleanup_expired(wg_session_store_t *store)
         if ((uint32_t)(now - store->sessions[i].created) >
             store->sessions[i].ttl_seconds) {
             explicit_bzero(store->sessions[i].cookie,
-                           WG_SESSION_COOKIE_SIZE);
+                           RW_SESSION_COOKIE_SIZE);
             explicit_bzero(&store->sessions[i],
                            sizeof(store->sessions[i]));
             store->count--;
@@ -260,7 +260,7 @@ uint32_t wg_session_cleanup_expired(wg_session_store_t *store)
     return cleaned;
 }
 
-uint32_t wg_session_count(const wg_session_store_t *store)
+uint32_t rw_session_count(const rw_session_store_t *store)
 {
     if (store == nullptr)
         return 0;

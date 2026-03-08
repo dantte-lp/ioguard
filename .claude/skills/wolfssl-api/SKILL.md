@@ -3,7 +3,7 @@ name: wolfssl-api
 description: Use when writing or modifying code that interacts with wolfSSL/wolfCrypt APIs — TLS/DTLS handshakes, certificate management, session caching, FIPS 140-3 constraints, callback-based I/O integration with libuv
 ---
 
-# wolfSSL API Patterns for wolfguard
+# wolfSSL API Patterns for ringwall
 
 ## Context7 Reference
 Always fetch latest docs: library ID `/wolfssl/wolfssl`
@@ -16,14 +16,14 @@ Always fetch latest docs: library ID `/wolfssl/wolfssl`
 #include <wolfssl/ssl.h>
 
 [[nodiscard]]
-static int wg_tls_init(void) {
+static int rw_tls_init(void) {
     if (wolfSSL_Init() != WOLFSSL_SUCCESS) {
         return -1;
     }
     return 0;
 }
 
-static void wg_tls_cleanup(void) {
+static void rw_tls_cleanup(void) {
     wolfSSL_Cleanup();
 }
 ```
@@ -32,7 +32,7 @@ static void wg_tls_cleanup(void) {
 
 ```c
 [[nodiscard]]
-static WOLFSSL_CTX *wg_create_ctx(bool is_server, bool use_dtls) {
+static WOLFSSL_CTX *rw_create_ctx(bool is_server, bool use_dtls) {
     WOLFSSL_METHOD *method;
 
     if (use_dtls) {
@@ -60,17 +60,17 @@ wolfSSL MUST use custom I/O callbacks for non-blocking operation with libuv:
 
 ```c
 // Set callbacks on context
-wolfSSL_CTX_SetIORecv(ctx, wg_tls_recv_cb);
-wolfSSL_CTX_SetIOSend(ctx, wg_tls_send_cb);
+wolfSSL_CTX_SetIORecv(ctx, rw_tls_recv_cb);
+wolfSSL_CTX_SetIOSend(ctx, rw_tls_send_cb);
 
 // Callback signatures
-static int wg_tls_recv_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
-    wg_connection_t *conn = (wg_connection_t *)ctx;
+static int rw_tls_recv_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
+    rw_connection_t *conn = (rw_connection_t *)ctx;
     // Read from libuv buffer, return WOLFSSL_CBIO_ERR_WANT_READ if no data
 }
 
-static int wg_tls_send_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
-    wg_connection_t *conn = (wg_connection_t *)ctx;
+static int rw_tls_send_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
+    rw_connection_t *conn = (rw_connection_t *)ctx;
     // Write via libuv uv_write, return sz on success
 }
 ```
@@ -119,19 +119,19 @@ if (ret != WOLFSSL_SUCCESS) {
     int err = wolfSSL_get_error(ssl, ret);
     if (err == WOLFSSL_ERROR_WANT_READ || err == WOLFSSL_ERROR_WANT_WRITE) {
         // Non-blocking, retry later
-        return WG_WANT_IO;
+        return RW_WANT_IO;
     }
     char errbuf[WOLFSSL_MAX_ERROR_SZ];
     wolfSSL_ERR_error_string(err, errbuf);
     // Log error
-    return WG_ERROR;
+    return RW_ERROR;
 }
 ```
 
 ## Cisco-Compatible Cipher Configuration
 
 wolfSSL cipher strings must match Cisco Secure Client expectations.
-See `/opt/projects/repositories/wolfguard-docs/docs/openconnect-protocol/protocol/crypto.md`
+See `/opt/projects/repositories/ringwall-docs/docs/openconnect-protocol/protocol/crypto.md`
 
 ```c
 // TLS 1.3 ciphers (Cisco priority order)
@@ -178,7 +178,7 @@ Cisco Secure Client does NOT support DTLS 1.3. Use DTLS 1.2 for Cisco compat:
 // For Cisco clients: DTLS 1.2
 WOLFSSL_METHOD *dtls_method = wolfDTLSv1_2_server_method();
 
-// For own client (wolfguard-connect): DTLS 1.3
+// For own client (ringwall-connect): DTLS 1.3
 WOLFSSL_METHOD *dtls13_method = wolfDTLSv1_3_server_method();
 ```
 
@@ -201,7 +201,7 @@ wolfSSL_set_session_id(dtls_ssl, session_id, 32);
 
 ```c
 // Custom verify callback for multi-cert scenarios
-static int wg_verify_callback(int preverify, WOLFSSL_X509_STORE_CTX *ctx) {
+static int rw_verify_callback(int preverify, WOLFSSL_X509_STORE_CTX *ctx) {
     WOLFSSL_X509 *cert = wolfSSL_X509_STORE_CTX_get_current_cert(ctx);
     // 1. Check validity period
     // 2. Check Enhanced Key Usage (Client Authentication)
@@ -212,7 +212,7 @@ static int wg_verify_callback(int preverify, WOLFSSL_X509_STORE_CTX *ctx) {
 
 wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_PEER |
                              WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                       wg_verify_callback);
+                       rw_verify_callback);
 ```
 
 ## Post-Quantum Crypto (wolfSSL 5.8.4+)
@@ -235,5 +235,5 @@ wolfSSL_UseKeyShare(ssl, WOLFSSL_ML_KEM_512);
 - [ ] Set ALPN with `wolfSSL_UseALPN()`
 - [ ] Zero DTLS master secret after session setup
 - [ ] Configure Cisco-compatible cipher suites
-- [ ] Use DTLS 1.2 for Cisco, DTLS 1.3 for wolfguard-connect
+- [ ] Use DTLS 1.2 for Cisco, DTLS 1.3 for ringwall-connect
 - [ ] Implement wolfSentry AcceptFilter integration

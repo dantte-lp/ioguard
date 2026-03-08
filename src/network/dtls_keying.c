@@ -5,7 +5,7 @@
 
 static constexpr char hex_chars[] = "0123456789abcdef";
 
-int wg_dtls_hex_encode(const uint8_t *in, size_t in_len,
+int rw_dtls_hex_encode(const uint8_t *in, size_t in_len,
                         char *hex, size_t hex_size)
 {
 	if (!in || !hex)
@@ -29,7 +29,7 @@ static int hex_digit(char c)
 	return -1;
 }
 
-int wg_dtls_hex_decode(const char *hex, size_t hex_len,
+int rw_dtls_hex_decode(const char *hex, size_t hex_len,
                         uint8_t *out, size_t out_size)
 {
 	if (!hex || !out)
@@ -51,7 +51,7 @@ int wg_dtls_hex_decode(const char *hex, size_t hex_len,
 	return (int)out_len;
 }
 
-void wg_dtls_master_secret_clear(wg_dtls_master_secret_t *ms)
+void rw_dtls_master_secret_clear(rw_dtls_master_secret_t *ms)
 {
 	if (!ms)
 		return;

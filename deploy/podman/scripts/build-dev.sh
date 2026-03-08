@@ -3,13 +3,13 @@ set -euo pipefail
 
 # build-dev.sh - Development Container Build Script
 # Creates a full development environment with debug symbols and development tools
-# for wolfguard with wolfSSL and modern C libraries
+# for ringwall with wolfSSL and modern C libraries
 
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-IMAGE_NAME="${IMAGE_NAME:-localhost/wolfguard-dev}"
+IMAGE_NAME="${IMAGE_NAME:-localhost/ringwall-dev}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 # Library versions (verified and updated 2025-10-29)
@@ -69,12 +69,12 @@ container=$(buildah from "$BASE_IMAGE")
 
 # Configure container metadata
 buildah config \
-    --label "io.wolfguard.version=2.0.0-alpha.1" \
-    --label "io.wolfguard.environment=development" \
+    --label "io.ringwall.version=2.0.0-alpha.1" \
+    --label "io.ringwall.environment=development" \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
-    --label "org.opencontainers.image.title=wolfguard-dev" \
-    --label "org.opencontainers.image.description=Development environment for wolfguard" \
+    --label "org.opencontainers.image.title=ringwall-dev" \
+    --label "org.opencontainers.image.description=Development environment for ringwall" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \
     "$container"
@@ -402,7 +402,7 @@ buildah run "$container" -- bash -c "
 log_info "Installing developer environment configuration..."
 buildah run "$container" -- bash -c "
     cat > /home/developer/.bashrc << 'EOF'
-# Developer environment for wolfguard
+# Developer environment for ringwall
 
 # Environment variables
 export PS1='\\[\\033[01;32m\\]\\u@ocserv-dev\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]\\$ '
@@ -422,7 +422,7 @@ alias meson-coverage='ninja -C build coverage-html'
 
 # Welcome message
 echo '================================================'
-echo 'wolfguard Development Environment'
+echo 'ringwall Development Environment'
 echo '================================================'
 echo 'Library versions:'
 echo '  wolfSSL:     ${WOLFSSL_VERSION} (GPLv3 - LICENSE CHANGE!)'
@@ -474,7 +474,7 @@ log_info "Image: $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_warn "IMPORTANT LICENSE NOTICE:"
 log_warn "  wolfSSL ${WOLFSSL_VERSION} changed license from GPLv2 to GPLv3"
-log_warn "  Verify compatibility with wolfguard GPLv2 license before distribution"
+log_warn "  Verify compatibility with ringwall GPLv2 license before distribution"
 log_info ""
 log_info "To run the container:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/wolfguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"

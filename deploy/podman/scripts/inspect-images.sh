@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# inspect-images.sh - Inspect all wolfguard images using Skopeo
+# inspect-images.sh - Inspect all ringwall images using Skopeo
 # Provides detailed information about built images
 
 # Color output
@@ -23,13 +23,13 @@ log_section() {
 
 # Images to inspect
 IMAGES=(
-    "localhost/wolfguard-dev:latest"
-    "localhost/wolfguard-test:latest"
-    "localhost/wolfguard-build:latest"
-    "localhost/wolfguard-ci:latest"
+    "localhost/ringwall-dev:latest"
+    "localhost/ringwall-test:latest"
+    "localhost/ringwall-build:latest"
+    "localhost/ringwall-ci:latest"
 )
 
-log_section "Inspecting wolfguard Container Images"
+log_section "Inspecting ringwall Container Images"
 
 for IMAGE in "${IMAGES[@]}"; do
     log_section "Image: $IMAGE"

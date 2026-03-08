@@ -1,9 +1,9 @@
-# CMakeLists.txt for wolfguard
+# CMakeLists.txt for ringwall
 # Modern C23 VPN server with io_uring event loop
 # Dual-compiler: Clang 22+ (dev) / GCC 15+ (release)
 cmake_minimum_required(VERSION 3.25)
 
-project(wolfguard
+project(ringwall
     VERSION 2.0.0
     DESCRIPTION "Modern C23 VPN server with io_uring event loop"
     LANGUAGES C
@@ -206,133 +206,133 @@ include_directories(
 )
 
 # ============================================================================
-# wolfguard core libraries
+# ringwall core libraries
 # ============================================================================
 
-add_library(wg_io STATIC src/io/uring.c)
-target_link_libraries(wg_io PUBLIC ${LIBURING_LIBRARIES})
-target_link_directories(wg_io PUBLIC ${LIBURING_LIBRARY_DIRS})
-target_include_directories(wg_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
-target_compile_definitions(wg_io PUBLIC _GNU_SOURCE)
+add_library(rw_io STATIC src/io/uring.c)
+target_link_libraries(rw_io PUBLIC ${LIBURING_LIBRARIES})
+target_link_directories(rw_io PUBLIC ${LIBURING_LIBRARY_DIRS})
+target_include_directories(rw_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
+target_compile_definitions(rw_io PUBLIC _GNU_SOURCE)
 
-add_library(wg_memory STATIC src/utils/memory.c)
-target_include_directories(wg_memory PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(rw_memory STATIC src/utils/memory.c)
+target_include_directories(rw_memory PUBLIC ${CMAKE_SOURCE_DIR}/src)
 if(MIMALLOC_FOUND)
-    target_link_libraries(wg_memory PUBLIC ${MIMALLOC_LIBRARY})
-    target_include_directories(wg_memory PUBLIC ${MIMALLOC_INCLUDE_DIR})
-    target_compile_definitions(wg_memory PUBLIC USE_MIMALLOC)
+    target_link_libraries(rw_memory PUBLIC ${MIMALLOC_LIBRARY})
+    target_include_directories(rw_memory PUBLIC ${MIMALLOC_INCLUDE_DIR})
+    target_compile_definitions(rw_memory PUBLIC USE_MIMALLOC)
 endif()
 
-add_library(wg_config STATIC src/config/config.c)
-target_include_directories(wg_config PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(rw_config STATIC src/config/config.c)
+target_include_directories(rw_config PUBLIC ${CMAKE_SOURCE_DIR}/src)
 if(TOML_FOUND)
-    target_link_libraries(wg_config PUBLIC ${TOML_LIBRARY})
-    target_include_directories(wg_config PUBLIC ${TOML_INCLUDE_DIR})
-    target_compile_definitions(wg_config PUBLIC USE_TOML)
+    target_link_libraries(rw_config PUBLIC ${TOML_LIBRARY})
+    target_include_directories(rw_config PUBLIC ${TOML_INCLUDE_DIR})
+    target_compile_definitions(rw_config PUBLIC USE_TOML)
 endif()
 
 # Generate protobuf-c sources
-set(PROTO_SRC ${CMAKE_SOURCE_DIR}/src/ipc/proto/wg_ipc.proto)
+set(PROTO_SRC ${CMAKE_SOURCE_DIR}/src/ipc/proto/rw_ipc.proto)
 if(EXISTS ${PROTO_SRC})
     add_custom_command(
-        OUTPUT ${PROTO_GEN_DIR}/wg_ipc.pb-c.h ${PROTO_GEN_DIR}/wg_ipc.pb-c.c
+        OUTPUT ${PROTO_GEN_DIR}/rw_ipc.pb-c.h ${PROTO_GEN_DIR}/rw_ipc.pb-c.c
         COMMAND ${PROTOC_C} --c_out=${PROTO_GEN_DIR}
                 --proto_path=${CMAKE_SOURCE_DIR}/src/ipc/proto
                 ${PROTO_SRC}
         DEPENDS ${PROTO_SRC}
-        COMMENT "Generating protobuf-c sources from wg_ipc.proto"
+        COMMENT "Generating protobuf-c sources from rw_ipc.proto"
     )
-    add_custom_target(proto_gen DEPENDS ${PROTO_GEN_DIR}/wg_ipc.pb-c.h)
-    set(PROTO_GEN_SOURCES ${PROTO_GEN_DIR}/wg_ipc.pb-c.c)
+    add_custom_target(proto_gen DEPENDS ${PROTO_GEN_DIR}/rw_ipc.pb-c.h)
+    set(PROTO_GEN_SOURCES ${PROTO_GEN_DIR}/rw_ipc.pb-c.c)
 else()
     set(PROTO_GEN_SOURCES "")
 endif()
 
-add_library(wg_ipc STATIC src/ipc/transport.c src/ipc/messages.c ${PROTO_GEN_SOURCES})
+add_library(rw_ipc STATIC src/ipc/transport.c src/ipc/messages.c ${PROTO_GEN_SOURCES})
 if(TARGET proto_gen)
-    add_dependencies(wg_ipc proto_gen)
+    add_dependencies(rw_ipc proto_gen)
 endif()
-target_link_libraries(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} wg_memory)
-target_link_directories(wg_ipc PUBLIC ${PROTOBUF_C_LIBRARY_DIRS})
-target_include_directories(wg_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS} ${PROTO_GEN_DIR})
+target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} rw_memory)
+target_link_directories(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARY_DIRS})
+target_include_directories(rw_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS} ${PROTO_GEN_DIR})
 
-add_library(wg_xml_auth STATIC src/network/xml_auth.c)
-target_include_directories(wg_xml_auth PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(rw_xml_auth STATIC src/network/xml_auth.c)
+target_include_directories(rw_xml_auth PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-add_library(wg_http STATIC src/network/http.c)
-target_include_directories(wg_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/include)
-target_link_libraries(wg_http PUBLIC llhttp)
-target_link_directories(wg_http PUBLIC /usr/local/lib64)
-target_compile_definitions(wg_http PUBLIC _GNU_SOURCE)
+add_library(rw_http STATIC src/network/http.c)
+target_include_directories(rw_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/include)
+target_link_libraries(rw_http PUBLIC llhttp)
+target_link_directories(rw_http PUBLIC /usr/local/lib64)
+target_compile_definitions(rw_http PUBLIC _GNU_SOURCE)
 
-add_library(wg_core STATIC src/core/process.c)
-target_include_directories(wg_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(rw_core STATIC src/core/process.c)
+target_include_directories(rw_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-add_library(wg_session STATIC src/core/session.c)
-target_include_directories(wg_session PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_compile_definitions(wg_session PUBLIC _GNU_SOURCE)
+add_library(rw_session STATIC src/core/session.c)
+target_include_directories(rw_session PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(rw_session PUBLIC _GNU_SOURCE)
 if(WOLFSSL_FOUND)
-    target_compile_definitions(wg_session PRIVATE USE_WOLFSSL)
-    target_include_directories(wg_session PRIVATE ${WOLFSSL_INCLUDE_DIRS})
-    target_link_libraries(wg_session PRIVATE ${WOLFSSL_LIBRARIES})
-    target_link_directories(wg_session PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+    target_compile_definitions(rw_session PRIVATE USE_WOLFSSL)
+    target_include_directories(rw_session PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+    target_link_libraries(rw_session PRIVATE ${WOLFSSL_LIBRARIES})
+    target_link_directories(rw_session PRIVATE ${WOLFSSL_LIBRARY_DIRS})
 endif()
 
 # --- Crypto / TLS libraries ---
 # wolfSSL backend
 if(WOLFSSL_FOUND)
-    add_library(wg_crypto STATIC
+    add_library(rw_crypto STATIC
         src/crypto/tls_wolfssl.c
         src/crypto/tls_abstract.c
         src/crypto/priority_parser.c
         src/crypto/session_cache.c
     )
-    target_compile_definitions(wg_crypto PUBLIC _GNU_SOURCE USE_WOLFSSL)
-    target_include_directories(wg_crypto PUBLIC
+    target_compile_definitions(rw_crypto PUBLIC _GNU_SOURCE USE_WOLFSSL)
+    target_include_directories(rw_crypto PUBLIC
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/crypto
         ${WOLFSSL_INCLUDE_DIRS}
     )
-    target_link_libraries(wg_crypto PUBLIC ${WOLFSSL_LIBRARIES} pthread)
-    target_link_directories(wg_crypto PUBLIC ${WOLFSSL_LIBRARY_DIRS})
-    message(STATUS "wg_crypto (wolfSSL backend) configured")
+    target_link_libraries(rw_crypto PUBLIC ${WOLFSSL_LIBRARIES} pthread)
+    target_link_directories(rw_crypto PUBLIC ${WOLFSSL_LIBRARY_DIRS})
+    message(STATUS "rw_crypto (wolfSSL backend) configured")
 endif()
 
 # GnuTLS backend
 if(GNUTLS_FOUND)
-    add_library(wg_crypto_gnutls STATIC
+    add_library(rw_crypto_gnutls STATIC
         src/crypto/tls_gnutls.c
         src/crypto/tls_abstract.c
         src/crypto/session_cache.c
     )
-    target_compile_definitions(wg_crypto_gnutls PUBLIC _GNU_SOURCE USE_GNUTLS)
-    target_include_directories(wg_crypto_gnutls PUBLIC
+    target_compile_definitions(rw_crypto_gnutls PUBLIC _GNU_SOURCE USE_GNUTLS)
+    target_include_directories(rw_crypto_gnutls PUBLIC
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/crypto
         ${GNUTLS_INCLUDE_DIRS}
     )
-    target_link_libraries(wg_crypto_gnutls PUBLIC ${GNUTLS_LIBRARIES} pthread)
-    target_link_directories(wg_crypto_gnutls PUBLIC ${GNUTLS_LIBRARY_DIRS})
-    message(STATUS "wg_crypto_gnutls (GnuTLS backend) configured")
+    target_link_libraries(rw_crypto_gnutls PUBLIC ${GNUTLS_LIBRARIES} pthread)
+    target_link_directories(rw_crypto_gnutls PUBLIC ${GNUTLS_LIBRARY_DIRS})
+    message(STATUS "rw_crypto_gnutls (GnuTLS backend) configured")
 endif()
 
 # --- PAM authentication backend ---
 find_library(PAM_LIBRARY pam)
 if(PAM_LIBRARY)
-    add_library(wg_pam STATIC src/auth/pam.c)
-    target_link_libraries(wg_pam PRIVATE ${PAM_LIBRARY})
-    target_compile_definitions(wg_pam PRIVATE _GNU_SOURCE)
-    target_include_directories(wg_pam PUBLIC ${CMAKE_SOURCE_DIR}/src)
-    message(STATUS "wg_pam (PAM authentication backend) configured")
+    add_library(rw_pam STATIC src/auth/pam.c)
+    target_link_libraries(rw_pam PRIVATE ${PAM_LIBRARY})
+    target_compile_definitions(rw_pam PRIVATE _GNU_SOURCE)
+    target_include_directories(rw_pam PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    message(STATUS "rw_pam (PAM authentication backend) configured")
 endif()
 
 # --- sec-mod authentication process ---
-if(TARGET wg_pam)
-    add_library(wg_secmod STATIC src/core/secmod.c)
-    target_include_directories(wg_secmod PUBLIC ${CMAKE_SOURCE_DIR}/src)
-    target_compile_definitions(wg_secmod PRIVATE _GNU_SOURCE)
-    target_link_libraries(wg_secmod PUBLIC wg_ipc wg_session wg_pam wg_config)
-    message(STATUS "wg_secmod (sec-mod authentication process) configured")
+if(TARGET rw_pam)
+    add_library(rw_secmod STATIC src/core/secmod.c)
+    target_include_directories(rw_secmod PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    target_compile_definitions(rw_secmod PRIVATE _GNU_SOURCE)
+    target_link_libraries(rw_secmod PUBLIC rw_ipc rw_session rw_pam rw_config)
+    message(STATUS "rw_secmod (sec-mod authentication process) configured")
 endif()
 
 # ============================================================================
@@ -357,153 +357,155 @@ if(BUILD_TESTING)
         add_library(unity STATIC ${UNITY_SRC_DIR}/unity.c)
         target_include_directories(unity PUBLIC ${UNITY_INCLUDE_DIR} ${UNITY_INCLUDE_DIR}/unity)
 
-        macro(wg_add_test TEST_NAME TEST_SRC)
+        macro(rw_add_test TEST_NAME TEST_SRC)
             add_executable(${TEST_NAME} ${TEST_SRC})
             target_link_libraries(${TEST_NAME} PRIVATE unity ${ARGN})
+            target_compile_definitions(${TEST_NAME} PRIVATE
+                TEST_FIXTURES_DIR="${CMAKE_SOURCE_DIR}/tests/fixtures")
             add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
         endmacro()
 
         # Sprint 1 tests
-        wg_add_test(test_memory tests/unit/test_memory.c wg_memory)
-        wg_add_test(test_io_uring tests/unit/test_io_uring.c wg_io)
-        wg_add_test(test_ipc_transport tests/unit/test_ipc_transport.c wg_ipc)
-        wg_add_test(test_ipc_messages tests/unit/test_ipc_messages.c wg_ipc)
-        wg_add_test(test_config_toml tests/unit/test_config_toml.c wg_config)
-        wg_add_test(test_process tests/unit/test_process.c wg_core)
+        rw_add_test(test_memory tests/unit/test_memory.c rw_memory)
+        rw_add_test(test_io_uring tests/unit/test_io_uring.c rw_io)
+        rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c rw_ipc)
+        rw_add_test(test_ipc_messages tests/unit/test_ipc_messages.c rw_ipc)
+        rw_add_test(test_config_toml tests/unit/test_config_toml.c rw_config)
+        rw_add_test(test_process tests/unit/test_process.c rw_core)
         if(EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_ipc_roundtrip.c)
-            wg_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c wg_ipc wg_io)
+            rw_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c rw_ipc rw_io)
         endif()
-        if(TARGET wg_secmod AND EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_auth_flow.c)
-            wg_add_test(test_auth_flow tests/integration/test_auth_flow.c wg_secmod wg_ipc wg_session wg_pam wg_config wg_memory)
+        if(TARGET rw_secmod AND EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_auth_flow.c)
+            rw_add_test(test_auth_flow tests/integration/test_auth_flow.c rw_secmod rw_ipc rw_session rw_pam rw_config rw_memory)
         endif()
 
         # Sprint 2 crypto tests
-        if(TARGET wg_crypto)
-            wg_add_test(test_tls_wolfssl tests/unit/test_tls_wolfssl.c wg_crypto)
-            wg_add_test(test_priority_parser tests/unit/test_priority_parser.c wg_crypto)
+        if(TARGET rw_crypto)
+            rw_add_test(test_tls_wolfssl tests/unit/test_tls_wolfssl.c rw_crypto)
+            rw_add_test(test_priority_parser tests/unit/test_priority_parser.c rw_crypto)
         endif()
-        if(TARGET wg_crypto_gnutls)
-            wg_add_test(test_tls_gnutls tests/unit/test_tls_gnutls.c wg_crypto_gnutls)
+        if(TARGET rw_crypto_gnutls)
+            rw_add_test(test_tls_gnutls tests/unit/test_tls_gnutls.c rw_crypto_gnutls)
         endif()
 
         # Sprint 2 network tests
-        wg_add_test(test_http tests/unit/test_http.c wg_http)
-        wg_add_test(test_xml_auth tests/unit/test_xml_auth.c wg_xml_auth)
+        rw_add_test(test_http tests/unit/test_http.c rw_http)
+        rw_add_test(test_xml_auth tests/unit/test_xml_auth.c rw_xml_auth)
 
         # Sprint 2 session tests (needs wolfSSL for wolfCrypt RNG)
-        wg_add_test(test_session tests/unit/test_session.c wg_session)
+        rw_add_test(test_session tests/unit/test_session.c rw_session)
         if(WOLFSSL_FOUND)
             target_link_libraries(test_session PRIVATE ${WOLFSSL_LIBRARIES})
             target_link_directories(test_session PRIVATE ${WOLFSSL_LIBRARY_DIRS})
         endif()
 
         # Sprint 2 PAM authentication tests
-        if(TARGET wg_pam)
-            wg_add_test(test_auth_pam tests/unit/test_auth_pam.c wg_pam)
+        if(TARGET rw_pam)
+            rw_add_test(test_auth_pam tests/unit/test_auth_pam.c rw_pam)
         endif()
 
         # Sprint 2 sec-mod authentication process tests
-        if(TARGET wg_secmod)
-            wg_add_test(test_secmod tests/unit/test_secmod.c wg_secmod)
+        if(TARGET rw_secmod)
+            rw_add_test(test_secmod tests/unit/test_secmod.c rw_secmod)
         endif()
 
         # Sprint 3 — CSTP framing
-        add_library(wg_cstp STATIC src/network/cstp.c)
-        target_include_directories(wg_cstp PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        add_library(rw_cstp STATIC src/network/cstp.c)
+        target_include_directories(rw_cstp PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        wg_add_test(test_cstp tests/unit/test_cstp.c wg_cstp)
+        rw_add_test(test_cstp tests/unit/test_cstp.c rw_cstp)
 
         # Sprint 3 — TUN device
-        add_library(wg_tun STATIC src/network/tun.c)
-        target_include_directories(wg_tun PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(wg_tun PUBLIC _GNU_SOURCE)
+        add_library(rw_tun STATIC src/network/tun.c)
+        target_include_directories(rw_tun PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_tun PUBLIC _GNU_SOURCE)
 
-        wg_add_test(test_tun tests/unit/test_tun.c wg_tun)
+        rw_add_test(test_tun tests/unit/test_tun.c rw_tun)
 
         # Sprint 3 — DPD state machine
-        add_library(wg_dpd STATIC src/network/dpd.c)
-        target_include_directories(wg_dpd PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        add_library(rw_dpd STATIC src/network/dpd.c)
+        target_include_directories(rw_dpd PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        wg_add_test(test_dpd tests/unit/test_dpd.c wg_dpd)
+        rw_add_test(test_dpd tests/unit/test_dpd.c rw_dpd)
 
         # Sprint 3 — Worker process context
-        add_library(wg_worker STATIC src/core/worker.c)
-        target_include_directories(wg_worker PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(wg_worker PUBLIC _GNU_SOURCE)
-        target_link_libraries(wg_worker PUBLIC wg_cstp wg_dpd wg_compress)
+        add_library(rw_worker STATIC src/core/worker.c)
+        target_include_directories(rw_worker PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_worker PUBLIC _GNU_SOURCE)
+        target_link_libraries(rw_worker PUBLIC rw_cstp rw_dpd rw_compress)
 
-        wg_add_test(test_worker tests/unit/test_worker.c wg_worker wg_cstp wg_dpd)
+        rw_add_test(test_worker tests/unit/test_worker.c rw_worker rw_cstp rw_dpd)
 
         # Sprint 3 — Data path integration test
-        wg_add_test(test_data_path tests/integration/test_data_path.c wg_cstp wg_dpd wg_worker wg_io)
+        rw_add_test(test_data_path tests/integration/test_data_path.c rw_cstp rw_dpd rw_worker rw_io)
 
         # Sprint 4 — Compression abstraction
-        add_library(wg_compress STATIC src/network/compress.c)
-        target_include_directories(wg_compress PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        add_library(rw_compress STATIC src/network/compress.c)
+        target_include_directories(rw_compress PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        wg_add_test(test_compress tests/unit/test_compress.c wg_compress)
+        rw_add_test(test_compress tests/unit/test_compress.c rw_compress)
 
         # Sprint 4 — LZS compression
-        add_library(wg_compress_lzs STATIC src/network/compress_lzs.c)
-        target_include_directories(wg_compress_lzs PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        add_library(rw_compress_lzs STATIC src/network/compress_lzs.c)
+        target_include_directories(rw_compress_lzs PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        target_link_libraries(wg_compress PUBLIC wg_compress_lzs)
-        wg_add_test(test_compress_lzs tests/unit/test_compress_lzs.c wg_compress_lzs)
+        target_link_libraries(rw_compress PUBLIC rw_compress_lzs)
+        rw_add_test(test_compress_lzs tests/unit/test_compress_lzs.c rw_compress_lzs)
 
         # Sprint 4 — LZ4 compression
-        add_library(wg_compress_lz4 STATIC src/network/compress_lz4.c)
-        target_include_directories(wg_compress_lz4 PUBLIC
+        add_library(rw_compress_lz4 STATIC src/network/compress_lz4.c)
+        target_include_directories(rw_compress_lz4 PUBLIC
             ${CMAKE_SOURCE_DIR}/src ${LZ4_INCLUDE_DIRS})
-        target_link_libraries(wg_compress_lz4 PRIVATE ${LZ4_LIBRARIES})
-        target_link_directories(wg_compress_lz4 PRIVATE ${LZ4_LIBRARY_DIRS})
+        target_link_libraries(rw_compress_lz4 PRIVATE ${LZ4_LIBRARIES})
+        target_link_directories(rw_compress_lz4 PRIVATE ${LZ4_LIBRARY_DIRS})
 
-        target_link_libraries(wg_compress PUBLIC wg_compress_lz4)
-        wg_add_test(test_compress_lz4 tests/unit/test_compress_lz4.c wg_compress_lz4)
+        target_link_libraries(rw_compress PUBLIC rw_compress_lz4)
+        rw_add_test(test_compress_lz4 tests/unit/test_compress_lz4.c rw_compress_lz4)
         target_link_libraries(test_compress_lz4 PRIVATE ${LZ4_LIBRARIES})
         target_link_directories(test_compress_lz4 PRIVATE ${LZ4_LIBRARY_DIRS})
 
         # Sprint 4 — DTLS context management
-        add_library(wg_dtls STATIC src/network/dtls.c)
-        target_include_directories(wg_dtls PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(wg_dtls PUBLIC _GNU_SOURCE)
+        add_library(rw_dtls STATIC src/network/dtls.c)
+        target_include_directories(rw_dtls PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_dtls PUBLIC _GNU_SOURCE)
         if(WOLFSSL_FOUND)
-            target_compile_definitions(wg_dtls PUBLIC USE_WOLFSSL)
-            target_include_directories(wg_dtls PUBLIC ${WOLFSSL_INCLUDE_DIRS})
-            target_link_libraries(wg_dtls PUBLIC ${WOLFSSL_LIBRARIES})
-            target_link_directories(wg_dtls PUBLIC ${WOLFSSL_LIBRARY_DIRS})
+            target_compile_definitions(rw_dtls PUBLIC USE_WOLFSSL)
+            target_include_directories(rw_dtls PUBLIC ${WOLFSSL_INCLUDE_DIRS})
+            target_link_libraries(rw_dtls PUBLIC ${WOLFSSL_LIBRARIES})
+            target_link_directories(rw_dtls PUBLIC ${WOLFSSL_LIBRARY_DIRS})
         endif()
 
-        wg_add_test(test_dtls tests/unit/test_dtls.c wg_dtls)
+        rw_add_test(test_dtls tests/unit/test_dtls.c rw_dtls)
 
         # Sprint 4 — DTLS keying material
-        add_library(wg_dtls_keying STATIC src/network/dtls_keying.c)
-        target_include_directories(wg_dtls_keying PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(wg_dtls_keying PUBLIC _GNU_SOURCE)
+        add_library(rw_dtls_keying STATIC src/network/dtls_keying.c)
+        target_include_directories(rw_dtls_keying PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_dtls_keying PUBLIC _GNU_SOURCE)
 
-        wg_add_test(test_dtls_keying tests/unit/test_dtls_keying.c wg_dtls_keying)
+        rw_add_test(test_dtls_keying tests/unit/test_dtls_keying.c rw_dtls_keying)
 
         # Sprint 4 — Channel state machine
-        add_library(wg_channel STATIC src/network/channel.c)
-        target_include_directories(wg_channel PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_link_libraries(wg_channel PUBLIC wg_dpd wg_compress)
+        add_library(rw_channel STATIC src/network/channel.c)
+        target_include_directories(rw_channel PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_link_libraries(rw_channel PUBLIC rw_dpd rw_compress)
 
-        wg_add_test(test_channel tests/unit/test_channel.c wg_channel wg_dpd wg_compress)
+        rw_add_test(test_channel tests/unit/test_channel.c rw_channel rw_dpd rw_compress)
 
         # Sprint 4 — DTLS HTTP headers
-        add_library(wg_dtls_headers STATIC src/network/dtls_headers.c)
-        target_include_directories(wg_dtls_headers PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_link_libraries(wg_dtls_headers PUBLIC wg_compress)
+        add_library(rw_dtls_headers STATIC src/network/dtls_headers.c)
+        target_include_directories(rw_dtls_headers PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_link_libraries(rw_dtls_headers PUBLIC rw_compress)
 
-        wg_add_test(test_dtls_headers tests/unit/test_dtls_headers.c wg_dtls_headers wg_compress)
+        rw_add_test(test_dtls_headers tests/unit/test_dtls_headers.c rw_dtls_headers rw_compress)
 
         # Sprint 4 — CSTP compression integration
-        wg_add_test(test_compress_cstp tests/unit/test_compress_cstp.c wg_cstp wg_compress wg_worker wg_dpd)
+        rw_add_test(test_compress_cstp tests/unit/test_compress_cstp.c rw_cstp rw_compress rw_worker rw_dpd)
 
         # Sprint 4 — DTLS + channel + compression integration
-        wg_add_test(test_dtls_channel tests/integration/test_dtls_channel.c
-            wg_channel wg_compress wg_cstp wg_dpd wg_dtls_headers wg_dtls_keying wg_worker)
+        rw_add_test(test_dtls_channel tests/integration/test_dtls_channel.c
+            rw_channel rw_compress rw_cstp rw_dpd rw_dtls_headers rw_dtls_keying rw_worker)
 
-        message(STATUS "Unit test infrastructure ready (wg_add_test macro)")
+        message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
     endif()
@@ -657,7 +659,7 @@ add_custom_target(analyze
 # ============================================================================
 
 message(STATUS "")
-message(STATUS "wolfguard Configuration Summary")
+message(STATUS "ringwall Configuration Summary")
 message(STATUS "===================================")
 message(STATUS "Version:           ${PROJECT_VERSION}")
 message(STATUS "Build type:        ${CMAKE_BUILD_TYPE}")

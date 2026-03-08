@@ -6,15 +6,15 @@
  * No handshake logic — just context setup with cipher suites and MTU.
  */
 
-#ifndef WOLFGUARD_NETWORK_DTLS_H
-#define WOLFGUARD_NETWORK_DTLS_H
+#ifndef RINGWALL_NETWORK_DTLS_H
+#define RINGWALL_NETWORK_DTLS_H
 
 #include <stdbool.h>
 #include <stdint.h>
 
-constexpr uint32_t WG_DTLS_DEFAULT_MTU = 1400;
-constexpr uint32_t WG_DTLS_DEFAULT_TIMEOUT_S = 5;
-constexpr uint32_t WG_DTLS_DEFAULT_REKEY_S = 3600;
+constexpr uint32_t RW_DTLS_DEFAULT_MTU = 1400;
+constexpr uint32_t RW_DTLS_DEFAULT_TIMEOUT_S = 5;
+constexpr uint32_t RW_DTLS_DEFAULT_REKEY_S = 3600;
 
 typedef struct {
 	uint32_t mtu;
@@ -25,26 +25,26 @@ typedef struct {
 	const char *ca_file;
 	const char *cipher_list;
 	bool enable_cookies;
-} wg_dtls_config_t;
+} rw_dtls_config_t;
 
-typedef struct wg_dtls_ctx wg_dtls_ctx_t;
+typedef struct rw_dtls_ctx rw_dtls_ctx_t;
 
 /** Initialize DTLS config with defaults. */
-void wg_dtls_config_init(wg_dtls_config_t *cfg);
+void rw_dtls_config_init(rw_dtls_config_t *cfg);
 
 /** Validate DTLS config. Returns 0 or negative errno. */
-[[nodiscard]] int wg_dtls_config_validate(const wg_dtls_config_t *cfg);
+[[nodiscard]] int rw_dtls_config_validate(const rw_dtls_config_t *cfg);
 
 /** Create DTLS context. Returns nullptr on failure. */
-[[nodiscard]] wg_dtls_ctx_t *wg_dtls_create(const wg_dtls_config_t *cfg);
+[[nodiscard]] rw_dtls_ctx_t *rw_dtls_create(const rw_dtls_config_t *cfg);
 
 /** Destroy DTLS context. */
-void wg_dtls_destroy(wg_dtls_ctx_t *ctx);
+void rw_dtls_destroy(rw_dtls_ctx_t *ctx);
 
 /** Get MTU for DTLS context. */
-[[nodiscard]] uint32_t wg_dtls_get_mtu(const wg_dtls_ctx_t *ctx);
+[[nodiscard]] uint32_t rw_dtls_get_mtu(const rw_dtls_ctx_t *ctx);
 
 /** Cisco-compatible DTLS 1.2 cipher list string. */
-[[nodiscard]] const char *wg_dtls_cisco_ciphers(void);
+[[nodiscard]] const char *rw_dtls_cisco_ciphers(void);
 
-#endif /* WOLFGUARD_NETWORK_DTLS_H */
+#endif /* RINGWALL_NETWORK_DTLS_H */

@@ -1,9 +1,9 @@
-# Quick Start Guide - wolfguard Containers
+# Quick Start Guide - ringwall Containers
 
 ## 30-Second Quick Start
 
 ```bash
-cd /opt/projects/repositories/wolfguard/deploy/podman
+cd /opt/projects/repositories/ringwall/deploy/podman
 
 # Build all containers (10-12 minutes)
 make build-all
@@ -56,7 +56,7 @@ make build-ci       # CI (1 min, requires build)
 
 ```bash
 # Check images
-podman images | grep wolfguard
+podman images | grep ringwall
 
 # System info
 make info
@@ -128,7 +128,7 @@ grep "^$USER:" /etc/subuid /etc/subgid
 
 ```bash
 ./scripts/verify-selinux.sh
-chcon -R -t container_file_t /opt/projects/repositories/wolfguard
+chcon -R -t container_file_t /opt/projects/repositories/ringwall
 ```
 
 ### Build Failures
@@ -155,7 +155,7 @@ make build-all
 
 ## Support
 
-- Issues: https://github.com/dantte-lp/wolfguard/issues
+- Issues: https://github.com/dantte-lp/ringwall/issues
 - Documentation: [README.md](README.md)
 
 ---

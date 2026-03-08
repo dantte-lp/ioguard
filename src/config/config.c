@@ -22,7 +22,7 @@ static void safe_copy(char *dst, const char *src, size_t dst_size)
     dst[len] = '\0';
 }
 
-void wg_config_set_defaults(wg_config_t *cfg)
+void rw_config_set_defaults(rw_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
     safe_copy(cfg->server.listen_address, "0.0.0.0",
@@ -42,7 +42,7 @@ void wg_config_set_defaults(wg_config_t *cfg)
 
 #ifdef USE_TOML
 
-static void parse_server(toml_table_t *tbl, wg_config_server_t *srv)
+static void parse_server(toml_table_t *tbl, rw_config_server_t *srv)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "listen-address");
@@ -60,7 +60,7 @@ static void parse_server(toml_table_t *tbl, wg_config_server_t *srv)
     if (d.ok) { srv->worker_count = (uint32_t)d.u.i; }
 }
 
-static void parse_auth(toml_table_t *tbl, wg_config_auth_t *auth)
+static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "method");
@@ -74,7 +74,7 @@ static void parse_auth(toml_table_t *tbl, wg_config_auth_t *auth)
     if (d.ok) { auth->cookie_rekey = (uint32_t)d.u.i; }
 }
 
-static void parse_network(toml_table_t *tbl, wg_config_network_t *net)
+static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "ipv4-pool");
@@ -94,7 +94,7 @@ static void parse_network(toml_table_t *tbl, wg_config_network_t *net)
     if (dns_arr != nullptr) {
         int nelem = toml_array_nelem(dns_arr);
         size_t n = nelem > 0 ? (size_t)nelem : 0;
-        if (n > WG_CONFIG_MAX_DNS) { n = WG_CONFIG_MAX_DNS; }
+        if (n > RW_CONFIG_MAX_DNS) { n = RW_CONFIG_MAX_DNS; }
         for (size_t i = 0; i < n; i++) {
             d = toml_string_at(dns_arr, i);
             if (d.ok) {
@@ -106,7 +106,7 @@ static void parse_network(toml_table_t *tbl, wg_config_network_t *net)
     }
 }
 
-static void parse_tls(toml_table_t *tbl, wg_config_tls_t *tls)
+static void parse_tls(toml_table_t *tbl, rw_config_tls_t *tls)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "cert-file");
@@ -131,7 +131,7 @@ static void parse_tls(toml_table_t *tbl, wg_config_tls_t *tls)
     }
 }
 
-static void parse_security(toml_table_t *tbl, wg_config_security_t *sec)
+static void parse_security(toml_table_t *tbl, rw_config_security_t *sec)
 {
     toml_datum_t d;
     d = toml_bool_in(tbl, "seccomp");
@@ -146,9 +146,9 @@ static void parse_security(toml_table_t *tbl, wg_config_security_t *sec)
     }
 }
 
-int wg_config_load(const char *path, wg_config_t *cfg)
+int rw_config_load(const char *path, rw_config_t *cfg)
 {
-    wg_config_set_defaults(cfg);
+    rw_config_set_defaults(cfg);
 
     FILE *fp = fopen(path, "r");
     if (fp == nullptr) {
@@ -180,16 +180,16 @@ int wg_config_load(const char *path, wg_config_t *cfg)
 
 #else
 
-int wg_config_load(const char *path, wg_config_t *cfg)
+int rw_config_load(const char *path, rw_config_t *cfg)
 {
     (void)path;
-    wg_config_set_defaults(cfg);
+    rw_config_set_defaults(cfg);
     return -ENOTSUP;
 }
 
 #endif
 
-void wg_config_free(wg_config_t *cfg)
+void rw_config_free(rw_config_t *cfg)
 {
     (void)cfg;
 }

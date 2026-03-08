@@ -1,4 +1,4 @@
-# Makefile for wolfguard Podman Container Management
+# Makefile for ringwall Podman Container Management
 # Production-grade container operations using Podman, Buildah, and Skopeo
 #
 # Quick Start:
@@ -21,7 +21,7 @@
         up down logs ps stats
 
 # Configuration
-PROJECT_NAME := wolfguard
+PROJECT_NAME := ringwall
 PROJECT_VERSION := 2.0.0-alpha.1
 REGISTRY := ghcr.io/dantte-lp
 IMAGE_PREFIX := $(PROJECT_NAME)
@@ -51,7 +51,7 @@ NC := \033[0m # No Color
 ##@ General
 
 help: ## Display this help message
-	@echo "$(GREEN)wolfguard Container Management$(NC)"
+	@echo "$(GREEN)ringwall Container Management$(NC)"
 	@echo "$(BLUE)Version: $(PROJECT_VERSION)$(NC)"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(BLUE)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -185,7 +185,7 @@ volumes-clean: ## Remove all named volumes (WARNING: data loss!)
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		podman volume rm -f wolfguard_dev-home wolfguard_build-cache wolfguard_test-results wolfguard_ci-reports || true; \
+		podman volume rm -f ringwall_dev-home ringwall_build-cache ringwall_test-results ringwall_ci-reports || true; \
 		echo "$(GREEN)Volumes cleaned$(NC)"; \
 	else \
 		echo "$(YELLOW)Aborted$(NC)"; \

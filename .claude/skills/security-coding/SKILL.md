@@ -3,7 +3,7 @@ name: security-coding
 description: Use when writing any security-sensitive code — crypto operations, input validation, memory handling, privilege management, seccomp filters, network parsing. MANDATORY for all VPN data path code.
 ---
 
-# Security-Critical Coding for wolfguard
+# Security-Critical Coding for ringwall
 
 ## This is a VPN server handling untrusted network data. Every function is attack surface.
 
@@ -15,12 +15,12 @@ ALL comparisons of secrets, tokens, cookies, MACs MUST be constant-time:
 // CORRECT: constant-time comparison
 #include <wolfssl/wolfcrypt/misc.h>
 
-bool wg_verify_cookie(const uint8_t *a, const uint8_t *b, size_t len) {
+bool rw_verify_cookie(const uint8_t *a, const uint8_t *b, size_t len) {
     return ConstantCompare(a, b, (int)len) == 0;
 }
 
 // WRONG: timing side-channel
-bool wg_verify_cookie_INSECURE(const uint8_t *a, const uint8_t *b, size_t len) {
+bool rw_verify_cookie_INSECURE(const uint8_t *a, const uint8_t *b, size_t len) {
     return memcmp(a, b, len) == 0;  // NEVER for secrets
 }
 ```
@@ -32,7 +32,7 @@ ALL sensitive data MUST be zeroed before freeing:
 ```c
 #include <wolfssl/wolfcrypt/misc.h>
 
-void wg_free_session(wg_session_t *sess) {
+void rw_free_session(rw_session_t *sess) {
     if (sess == nullptr) return;
     ForceZero(sess->master_secret, sizeof(sess->master_secret));
     ForceZero(sess->cookie, sizeof(sess->cookie));
@@ -47,17 +47,17 @@ ALL data from network is untrusted. Validate BEFORE processing:
 
 ```c
 [[nodiscard]]
-static int wg_parse_packet(const uint8_t *data, size_t len) {
+static int rw_parse_packet(const uint8_t *data, size_t len) {
     // Check minimum length
-    if (len < WG_MIN_PACKET_SIZE) return WG_ERR_TOO_SHORT;
-    if (len > WG_MAX_PACKET_SIZE) return WG_ERR_TOO_LONG;
+    if (len < RW_MIN_PACKET_SIZE) return RW_ERR_TOO_SHORT;
+    if (len > RW_MAX_PACKET_SIZE) return RW_ERR_TOO_LONG;
 
     // Validate header fields with bounds
     uint16_t payload_len = ntohs(*(uint16_t *)(data + 2));
-    if (payload_len > len - WG_HEADER_SIZE) return WG_ERR_INVALID;
+    if (payload_len > len - RW_HEADER_SIZE) return RW_ERR_INVALID;
 
     // Safe to process
-    return WG_OK;
+    return RW_OK;
 }
 ```
 
@@ -79,11 +79,11 @@ static int wg_parse_packet(const uint8_t *data, size_t len) {
 #include <stdckdint.h>
 
 [[nodiscard]]
-static int wg_safe_add(size_t a, size_t b, size_t *result) {
+static int rw_safe_add(size_t a, size_t b, size_t *result) {
     if (ckd_add(result, a, b)) {
-        return WG_ERR_OVERFLOW;
+        return RW_ERR_OVERFLOW;
     }
-    return WG_OK;
+    return RW_OK;
 }
 ```
 
@@ -93,10 +93,10 @@ static int wg_safe_add(size_t a, size_t b, size_t *result) {
 // Drop privileges after binding to port 443
 #include <sys/capability.h>
 
-static void wg_drop_privileges(void) {
+static void rw_drop_privileges(void) {
     // Set UID/GID to unprivileged user
-    setgid(wg_config.gid);
-    setuid(wg_config.uid);
+    setgid(rw_config.gid);
+    setuid(rw_config.uid);
 
     // Drop all capabilities except needed ones
     cap_t caps = cap_init();
@@ -112,7 +112,7 @@ Worker processes MUST have restricted syscalls:
 ```c
 #include <seccomp.h>
 
-static int wg_setup_seccomp(void) {
+static int rw_setup_seccomp(void) {
     scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
 
     // Allow only necessary syscalls

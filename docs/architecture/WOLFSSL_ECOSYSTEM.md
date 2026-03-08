@@ -2,13 +2,13 @@
 
 **Document Version**: 1.0
 **Last Updated**: 2025-10-29
-**Project**: wolfguard v2.0.0
+**Project**: ringwall v2.0.0
 
 ---
 
 ## Overview
 
-This document provides comprehensive analysis of the wolfSSL ecosystem components and how they can enhance wolfguard VPN server security, performance, and functionality.
+This document provides comprehensive analysis of the wolfSSL ecosystem components and how they can enhance ringwall VPN server security, performance, and functionality.
 
 ---
 
@@ -108,7 +108,7 @@ wolfSentry is a lightweight, embeddable Intrusion Detection and Prevention Syste
    - **NEW in v1.6.3**: CAN bus address family
    - Bitmask-based address matching
 
-### Use Cases for wolfguard
+### Use Cases for ringwall
 
 #### 1. VPN Connection Rate Limiting
 
@@ -236,7 +236,7 @@ int dtls_handshake_handler(const char *client_ip, uint16_t client_port) {
 
 ```
 ┌─────────────────────────────────────────────┐
-│         wolfguard VPN Server            │
+│         ringwall VPN Server            │
 │                                             │
 │  ┌─────────────┐        ┌──────────────┐   │
 │  │ Connection  │───────>│  wolfSentry  │   │
@@ -288,7 +288,7 @@ wolfCLU provides OpenSSL-compatible command-line tools built on wolfSSL, useful 
 6. **wolfssl dgst** - Hash/digest operations
 7. **wolfssl enc** - Encryption/decryption
 
-### Use Cases for wolfguard
+### Use Cases for ringwall
 
 #### 1. Certificate Generation for Testing
 
@@ -302,7 +302,7 @@ wolfCLU provides OpenSSL-compatible command-line tools built on wolfSSL, useful 
 # Generate CA key and certificate
 wolfssl genkey -out ca-key.pem -keytype rsa -size 4096
 wolfssl gencert -key ca-key.pem -out ca-cert.pem \
-    -subject "/CN=wolfguard Test CA" \
+    -subject "/CN=ringwall Test CA" \
     -days 3650 -ca
 
 # Generate server key and certificate
@@ -425,7 +425,7 @@ PKCS#11 (Cryptoki) is the standard API for hardware security modules, smart card
    - Nitrokey
    - SoftHSM (software emulation)
 
-### Use Cases for wolfguard
+### Use Cases for ringwall
 
 #### 1. Enterprise PKI Integration
 
@@ -659,6 +659,6 @@ pkcs11_backend_t wolfssl_pkcs11_backend = {
 
 ---
 
-**Document Maintainer**: wolfguard team
+**Document Maintainer**: ringwall team
 **Review Schedule**: Monthly
 **Next Review**: 2025-11-29

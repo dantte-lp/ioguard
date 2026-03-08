@@ -1,4 +1,4 @@
-# Rebranding (wolfguard -> ringwall) + S5 Storage & Security Design
+# Rebranding (ringwall -> ringwall) + S5 Storage & Security Design
 
 **Date**: 2026-03-08
 **Status**: Approved
@@ -8,7 +8,7 @@
 
 ## 1. Execution Order
 
-1. **Rebrand** — single atomic commit renaming wolfguard -> ringwall across entire codebase
+1. **Rebrand** — single atomic commit renaming ringwall -> ringwall across entire codebase
 2. **S5** — Storage & Security Hardening (all new code uses `rw_*` prefix)
 
 ---
@@ -19,18 +19,18 @@
 
 | Old | New | Scope |
 |-----|-----|-------|
-| `wolfguard` | `ringwall` | Binary, strings, paths, comments, filenames |
-| `wg_` | `rw_` | Function/variable prefixes |
-| `WG_` | `RW_` | Enum values, macros, constexpr |
-| `WOLFGUARD_` | `RINGWALL_` | Include guards |
-| `wgctl` | `rwctl` | CLI binary |
-| `wolfguard.toml` | `ringwall.toml` | Config files |
-| `/etc/wolfguard/` | `/etc/ringwall/` | System paths |
-| `localhost/wolfguard-*` | `localhost/ringwall-*` | Container images |
+| `ringwall` | `ringwall` | Binary, strings, paths, comments, filenames |
+| `rw_` | `rw_` | Function/variable prefixes |
+| `RW_` | `RW_` | Enum values, macros, constexpr |
+| `RINGWALL_` | `RINGWALL_` | Include guards |
+| `rwctl` | `rwctl` | CLI binary |
+| `ringwall.toml` | `ringwall.toml` | Config files |
+| `/etc/ringwall/` | `/etc/ringwall/` | System paths |
+| `localhost/ringwall-*` | `localhost/ringwall-*` | Container images |
 
 ### 2.2 Scope
 
-- ~55 source files (`.c`, `.h`) with ~572 occurrences of `wg_`/`wolfguard`
+- ~55 source files (`.c`, `.h`) with ~572 occurrences of `rw_`/`ringwall`
 - ~32 test files with ~739 occurrences
 - CMakeLists.txt, CMakePresets.json
 - deploy/podman/ (Dockerfiles, scripts, Makefile)
@@ -39,18 +39,18 @@
 
 ### 2.3 Execution
 
-Single atomic commit: `rebrand: wolfguard -> ringwall`
+Single atomic commit: `rebrand: ringwall -> ringwall`
 
 Approach:
 1. `find + sed` for pattern replacement across all files
 2. `git mv` for file/directory renames
 3. Verify build: `cmake --preset clang-debug && cmake --build --preset clang-debug`
 4. Verify tests: `ctest --preset clang-debug`
-5. Verify no remnants: `grep -r "wolfguard\|WOLFGUARD\|wg_" --include="*.c" --include="*.h" src/ tests/`
+5. Verify no remnants: `grep -r "ringwall\|RINGWALL\|rw_" --include="*.c" --include="*.h" src/ tests/`
 
 ### 2.4 GitHub Operations (gh api graphql)
 
-- Rename repository: `dantte-lp/wolfguard` -> `dantte-lp/ringwall`
+- Rename repository: `dantte-lp/ringwall` -> `dantte-lp/ringwall`
 - Update description, topics, homepage URL
 - Close issue #11 with completion comment
 

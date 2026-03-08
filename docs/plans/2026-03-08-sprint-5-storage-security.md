@@ -8,7 +8,7 @@
 
 **Tech Stack:** C23, liburing 2.14+, wolfSSL 5.8+, wolfSentry 1.6+, libmdbx 0.14+, SQLite 3.40+, libseccomp 2.5+, libmnl, libnftnl, Unity tests, Linux kernel 6.7+.
 
-**IMPORTANT:** This plan assumes the rebranding (wolfguard -> ringwall) has been completed. All new code uses `rw_` prefix, `RW_` macros, `RINGWALL_` include guards.
+**IMPORTANT:** This plan assumes the rebranding (ringwall -> ringwall) has been completed. All new code uses `rw_` prefix, `RW_` macros, `RINGWALL_` include guards.
 
 **Build/test:**
 ```bash

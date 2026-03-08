@@ -1,12 +1,12 @@
-# CI/CD Implementation Summary for wolfguard
+# CI/CD Implementation Summary for ringwall
 
-**Project**: wolfguard (Modern OpenConnect VPN Server with wolfSSL)
+**Project**: ringwall (Modern OpenConnect VPN Server with wolfSSL)
 **Date**: 2025-10-29
 **Status**: Implementation Complete
 
 ## Executive Summary
 
-Successfully implemented a complete CI/CD infrastructure for wolfguard using self-hosted GitHub Actions runners optimized for C23 development. The solution provides:
+Successfully implemented a complete CI/CD infrastructure for ringwall using self-hosted GitHub Actions runners optimized for C23 development. The solution provides:
 
 - **Fast Development Feedback**: < 15 minute CI pipeline for feature branches
 - **Comprehensive Testing**: Unit tests, sanitizers, memory leak detection, code coverage
@@ -19,7 +19,7 @@ Successfully implemented a complete CI/CD infrastructure for wolfguard using sel
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   GitHub Repository                          │
-│                  wolfguard                               │
+│                  ringwall                               │
 │                                                              │
 │  ┌──────────────┐         ┌──────────────┐                 │
 │  │ containers.yml│         │ dev-ci.yml   │                 │
@@ -58,7 +58,7 @@ Successfully implemented a complete CI/CD infrastructure for wolfguard using sel
 #### Debian Runner (Universal Development)
 - **Location**: `/opt/projects/repositories/self-hosted-runners/pods/github-runner-debian/`
 - **Base**: Python 3.14 on Debian Trixie
-- **Containerfile**: Updated with wolfguard dependencies
+- **Containerfile**: Updated with ringwall dependencies
 - **Key Changes**:
   - Added missing system libraries: libnl-3-dev, libkrb5-dev, libtasn1-6-dev, libp11-kit-dev
   - Built wolfSSL 5.8.2 with optimized configure flags
@@ -74,7 +74,7 @@ podman build -t github-runner-debian:latest -f Containerfile .
 #### Oracle Linux Runner (Production/RPM)
 - **Location**: `/opt/projects/repositories/self-hosted-runners/pods/github-runner-oracle/`
 - **Base**: Oracle Linux 10
-- **Containerfile**: Updated with wolfguard dependencies
+- **Containerfile**: Updated with ringwall dependencies
 - **Key Changes**:
   - Added missing system libraries: all RPM -devel packages
   - Built wolfSSL 5.8.2 with security hardening
@@ -106,7 +106,7 @@ Both runners provide **GCC 14.2+ with full C23 support**:
 ### 2. Workflow Files
 
 #### containers.yml (Production Workflow)
-- **Location**: `/opt/projects/repositories/wolfguard/.github/workflows/containers.yml`
+- **Location**: `/opt/projects/repositories/ringwall/.github/workflows/containers.yml`
 - **Purpose**: Build and publish production containers
 - **Trigger**: Push to main/master/develop, PRs, manual dispatch
 - **Target Time**: 30-45 minutes
@@ -133,7 +133,7 @@ build-dev → build-test → run-tests
 ```
 
 #### dev-ci.yml (Development Workflow)
-- **Location**: `/opt/projects/repositories/wolfguard/.github/workflows/dev-ci.yml`
+- **Location**: `/opt/projects/repositories/ringwall/.github/workflows/dev-ci.yml`
 - **Purpose**: Fast development feedback loop
 - **Trigger**: Push to develop/feature/bugfix branches, PRs
 - **Target Time**: < 15 minutes
@@ -189,7 +189,7 @@ Created comprehensive documentation for developers and CI maintainers:
   - Performance benchmarks
 
 #### WORKFLOWS.md
-- **Location**: `/opt/projects/repositories/wolfguard/.github/WORKFLOWS.md`
+- **Location**: `/opt/projects/repositories/ringwall/.github/WORKFLOWS.md`
 - **Contents**:
   - Workflow overview and job dependencies
   - Runner label usage
@@ -201,7 +201,7 @@ Created comprehensive documentation for developers and CI maintainers:
   - Migration guide from generic runners
 
 #### QUICKSTART_CI.md
-- **Location**: `/opt/projects/repositories/wolfguard/.github/QUICKSTART_CI.md`
+- **Location**: `/opt/projects/repositories/ringwall/.github/QUICKSTART_CI.md`
 - **Contents**:
   - Quick reference for common tasks
   - Workflow selection guide
@@ -280,7 +280,7 @@ Created comprehensive documentation for developers and CI maintainers:
 | wolfSSL compilation | 3-4 min | N/A (in image) |
 | libuv compilation | 1-2 min | N/A (in image) |
 | Full runner build | 15-20 min | N/A |
-| wolfguard build | 2-3 min | 1-2 min |
+| ringwall build | 2-3 min | 1-2 min |
 | Unit tests | 1-2 min | 1 min |
 | Full dev-ci.yml | 20-25 min | 10-15 min |
 | Full containers.yml | 45-60 min | 15-20 min |
@@ -407,7 +407,7 @@ podman rm github-runner-oracle
    - Fallback to Make available
 
 2. **wolfSSL License**: Changed from GPLv2 to GPLv3 in v5.8.2+
-   - Verify compatibility with wolfguard GPLv2
+   - Verify compatibility with ringwall GPLv2
    - Consider commercial license for distribution
 
 3. **Native Optimizations**: Libraries built with `-march=native`
@@ -492,8 +492,8 @@ Before production use:
 ### Troubleshooting Resources
 
 1. **Runner Issues**: `/opt/projects/repositories/self-hosted-runners/RUNNER_SETUP_OCSERV.md`
-2. **Workflow Issues**: `/opt/projects/repositories/wolfguard/.github/WORKFLOWS.md`
-3. **Quick Reference**: `/opt/projects/repositories/wolfguard/.github/QUICKSTART_CI.md`
+2. **Workflow Issues**: `/opt/projects/repositories/ringwall/.github/WORKFLOWS.md`
+3. **Quick Reference**: `/opt/projects/repositories/ringwall/.github/QUICKSTART_CI.md`
 
 ### Contact Points
 
@@ -504,7 +504,7 @@ Before production use:
 
 ## Conclusion
 
-The CI/CD implementation provides a robust, production-ready infrastructure for wolfguard development. Key achievements:
+The CI/CD implementation provides a robust, production-ready infrastructure for ringwall development. Key achievements:
 
 1. **Fast Feedback**: < 15 minute development cycle
 2. **Comprehensive Testing**: Unit, memory safety, integration

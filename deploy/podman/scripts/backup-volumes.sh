@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# backup-volumes.sh - Backup all named volumes for wolfguard
+# backup-volumes.sh - Backup all named volumes for ringwall
 # Creates compressed archives of volume data for disaster recovery
 #
 # Usage:
@@ -36,10 +36,10 @@ BACKUP_SUBDIR="${BACKUP_DIR}/${TIMESTAMP}"
 
 # Volumes to backup
 VOLUMES=(
-    "wolfguard_dev-home"
-    "wolfguard_build-cache"
-    "wolfguard_test-results"
-    "wolfguard_ci-reports"
+    "ringwall_dev-home"
+    "ringwall_build-cache"
+    "ringwall_test-results"
+    "ringwall_ci-reports"
 )
 
 log_info "Starting volume backup"

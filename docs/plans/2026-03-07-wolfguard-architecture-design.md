@@ -1,4 +1,4 @@
-# wolfguard Server Architecture Design
+# ringwall Server Architecture Design
 
 **Date**: 2026-03-07
 **Status**: Approved
@@ -107,7 +107,7 @@ src/
 ├── utils/                 # Utilities
 │   └── memory.c/h        # mimalloc setup, arena allocator
 └── occtl/                 # Control utility
-    ├── wgctl.c           # CLI entry point
+    ├── rwctl.c           # CLI entry point
     ├── cli_parser.c/h    # Juniper-style command parser (linenoise)
     └── pki.c/h           # Mini CA (wolfCrypt)
 ```
@@ -116,18 +116,18 @@ src/
 
 ```c
 // io_uring wrapper (src/io/uring.h)
-wg_io_ctx_t *wg_io_init(uint32_t queue_depth, uint32_t flags);
-void wg_io_prep_accept(wg_io_ctx_t *ctx, int fd, wg_io_cb cb);
-void wg_io_prep_recv(wg_io_ctx_t *ctx, int fd, void *buf, size_t len, wg_io_cb cb);
-void wg_io_prep_timeout(wg_io_ctx_t *ctx, uint64_t ms, wg_io_cb cb);
+rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags);
+void rw_io_prep_accept(rw_io_ctx_t *ctx, int fd, rw_io_cb cb);
+void rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb cb);
+void rw_io_prep_timeout(rw_io_ctx_t *ctx, uint64_t ms, rw_io_cb cb);
 
 // Auth plugin API (src/auth/plugin.h)
 typedef struct {
     const char *name;
     int (*init)(const char *config);
-    int (*authenticate)(const wg_auth_request_t *req, wg_auth_result_t *res);
+    int (*authenticate)(const rw_auth_request_t *req, rw_auth_result_t *res);
     void (*cleanup)(void);
-} wg_auth_plugin_t;
+} rw_auth_plugin_t;
 ```
 
 ## 3. Data Flow and Protocol Handling
@@ -183,10 +183,10 @@ All I/O via io_uring:
 
 ```c
 typedef enum {
-    WG_CHANNEL_CSTP_ONLY,      // DTLS not established
-    WG_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control
-    WG_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back
-} wg_channel_state_t;
+    RW_CHANNEL_CSTP_ONLY,      // DTLS not established
+    RW_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control
+    RW_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back
+} rw_channel_state_t;
 ```
 
 - Data prefers DTLS (lower overhead, UDP)
@@ -245,7 +245,7 @@ typedef struct {
     size_t   max_rx_buffer;        // per-connection receive buffer
     uint64_t idle_timeout_ms;
     uint32_t max_routes_per_user;
-} wg_worker_limits_t;
+} rw_worker_limits_t;
 ```
 
 ### Sandbox Failures
@@ -297,7 +297,7 @@ typedef struct {
 | S4 | DTLS & Compression: DTLS 1.2, channel switch, LZ4/LZS | 7-8 |
 | S5 | Security: wolfSentry, seccomp, Landlock, nftables | 9-10 |
 | S6 | Auth Expansion: RADIUS, LDAP, TOTP, plugin API | 11-12 |
-| S7 | Management: wgctl CLI, REST API, metrics, logging | 13-14 |
+| S7 | Management: rwctl CLI, REST API, metrics, logging | 13-14 |
 | S8 | PKI & Polish: mini CA, split tunnel/DNS, E2E, docs | 15-16 |
 
 ### S1 — Foundation (weeks 1-2)
@@ -354,7 +354,7 @@ typedef struct {
 
 ### S7 — Management (weeks 13-14)
 
-- `src/occtl/wgctl.c` — Juniper-style CLI (operational + config mode)
+- `src/occtl/rwctl.c` — Juniper-style CLI (operational + config mode)
 - `src/occtl/cli_parser.c` — Command parser with linenoise
 - `src/network/rest.c` — REST API (llhttp + io_uring + wolfSSL)
 - `src/metrics/prometheus.c` — Custom Prometheus text exposition
@@ -435,7 +435,7 @@ typedef struct {
 
 ## 9. Future Considerations (not in scope)
 
-- **wolfguard-connect** client (own VPN client, DTLS 1.3)
+- **ringwall-connect** client (own VPN client, DTLS 1.3)
 - **Cluster mode** (multi-server, session sync)
 - **XDP** fast path (line-rate packet filtering)
 - **WireGuard protocol** support (alternative to CSTP)

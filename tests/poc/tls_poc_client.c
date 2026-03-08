@@ -1,11 +1,11 @@
 /*
- * TLS PoC Client - wolfguard
+ * TLS PoC Client - ringwall
  *
- * Copyright (C) 2025 wolfguard Contributors
+ * Copyright (C) 2025 ringwall Contributors
  *
- * This file is part of wolfguard.
+ * This file is part of ringwall.
  *
- * wolfguard is free software: you can redistribute it and/or modify it
+ * ringwall is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
  *

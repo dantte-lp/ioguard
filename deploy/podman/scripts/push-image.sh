@@ -8,9 +8,9 @@ set -euo pipefail
 #   ./push-image.sh <source-image> <dest-image> [--sign]
 #
 # Examples:
-#   ./push-image.sh localhost/wolfguard-dev:latest ghcr.io/dantte-lp/wolfguard-dev:latest
-#   ./push-image.sh localhost/wolfguard-dev:latest ghcr.io/dantte-lp/wolfguard-dev:v2.0.0
-#   ./push-image.sh localhost/wolfguard-dev:latest ghcr.io/dantte-lp/wolfguard-dev:latest --sign
+#   ./push-image.sh localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:latest
+#   ./push-image.sh localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:v2.0.0
+#   ./push-image.sh localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:latest --sign
 
 # Color output
 RED='\033[0;31m'
@@ -34,7 +34,7 @@ log_error() {
 # Check arguments
 if [ $# -lt 2 ]; then
     log_error "Usage: $0 <source-image> <dest-image> [--sign]"
-    log_error "Example: $0 localhost/wolfguard-dev:latest ghcr.io/dantte-lp/wolfguard-dev:latest"
+    log_error "Example: $0 localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:latest"
     exit 1
 fi
 
@@ -51,7 +51,7 @@ log_info "Checking if source image exists: $SOURCE_IMAGE"
 if ! skopeo inspect "containers-storage:$SOURCE_IMAGE" >/dev/null 2>&1; then
     log_error "Source image not found: $SOURCE_IMAGE"
     log_error "Available images:"
-    podman images | grep wolfguard || echo "  No wolfguard images found"
+    podman images | grep ringwall || echo "  No ringwall images found"
     exit 1
 fi
 

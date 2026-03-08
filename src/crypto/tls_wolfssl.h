@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2025 wolfguard Contributors
+ * Copyright (C) 2025 ringwall Contributors
  *
- * This file is part of wolfguard.
+ * This file is part of ringwall.
  *
- * wolfguard is free software: you can redistribute it and/or modify it
+ * ringwall is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
  *
- * wolfguard is distributed in the hope that it will be useful, but
+ * ringwall is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef WOLFGUARD_TLS_WOLFSSL_H
-#define WOLFGUARD_TLS_WOLFSSL_H
+#ifndef RINGWALL_TLS_WOLFSSL_H
+#define RINGWALL_TLS_WOLFSSL_H
 
 /**
  * wolfSSL Backend Implementation for TLS Abstraction Layer
@@ -229,4 +229,4 @@ void tls_wolfssl_deinit(void);
  * are defined as static in the implementation file and not exposed in this header.
  */
 
-#endif // WOLFGUARD_TLS_WOLFSSL_H
+#endif // RINGWALL_TLS_WOLFSSL_H

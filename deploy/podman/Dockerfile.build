@@ -1,7 +1,7 @@
 FROM oraclelinux:10
 
-LABEL maintainer="wolfguard development team"
-LABEL description="Build environment for release builds of wolfguard"
+LABEL maintainer="ringwall development team"
+LABEL description="Build environment for release builds of ringwall"
 
 # Install build tools
 RUN dnf install -y \

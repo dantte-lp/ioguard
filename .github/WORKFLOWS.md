@@ -1,6 +1,6 @@
-# GitHub Actions Workflows for wolfguard
+# GitHub Actions Workflows for ringwall
 
-This document describes the CI/CD workflows configured for the wolfguard project.
+This document describes the CI/CD workflows configured for the ringwall project.
 
 ## Overview
 
@@ -54,7 +54,7 @@ verify-setup → build-build → build-ci → quick-validate
 
 #### 2. `build-dev`
 - **Purpose**: Build development container with all dependencies
-- **Image**: `localhost/wolfguard-dev:latest`
+- **Image**: `localhost/ringwall-dev:latest`
 - **Contents**: Full toolchain, wolfSSL, libuv, cJSON, mimalloc
 - **Time**: ~25-30 minutes (cached after first build)
 - **Artifact**: Saved as `dev-image.tar` for downstream jobs
@@ -267,7 +267,7 @@ gh run download <run-id>
 
 Expected directory structure:
 ```
-wolfguard/
+ringwall/
 ├── meson.build           # Main build file
 ├── src/
 │   └── meson.build

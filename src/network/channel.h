@@ -7,39 +7,39 @@
  * when available.
  */
 
-#ifndef WOLFGUARD_NETWORK_CHANNEL_H
-#define WOLFGUARD_NETWORK_CHANNEL_H
+#ifndef RINGWALL_NETWORK_CHANNEL_H
+#define RINGWALL_NETWORK_CHANNEL_H
 
 #include "network/compress.h"
 #include "network/dpd.h"
 
-constexpr uint32_t WG_CHANNEL_DEFAULT_MAX_FAILS = 3;
+constexpr uint32_t RW_CHANNEL_DEFAULT_MAX_FAILS = 3;
 
 typedef struct {
-	wg_channel_state_t state;
+	rw_channel_state_t state;
 	bool cstp_active;
 	bool dtls_active;
 	uint32_t dtls_fail_count;
 	uint32_t dtls_max_fails;
-	wg_compress_type_t compress_type;
-} wg_channel_ctx_t;
+	rw_compress_type_t compress_type;
+} rw_channel_ctx_t;
 
 /** Initialize channel context (starts CSTP_ONLY). */
-void wg_channel_init(wg_channel_ctx_t *ctx);
+void rw_channel_init(rw_channel_ctx_t *ctx);
 
 /** DTLS handshake succeeded — switch to DTLS_PRIMARY. */
-[[nodiscard]] wg_channel_state_t wg_channel_on_dtls_up(wg_channel_ctx_t *ctx);
+[[nodiscard]] rw_channel_state_t rw_channel_on_dtls_up(rw_channel_ctx_t *ctx);
 
 /** DTLS failed (DPD timeout, error) — switch to DTLS_FALLBACK or CSTP_ONLY. */
-[[nodiscard]] wg_channel_state_t wg_channel_on_dtls_down(wg_channel_ctx_t *ctx);
+[[nodiscard]] rw_channel_state_t rw_channel_on_dtls_down(rw_channel_ctx_t *ctx);
 
 /** DTLS recovered from fallback — switch back to DTLS_PRIMARY. */
-[[nodiscard]] wg_channel_state_t wg_channel_on_dtls_recovery(wg_channel_ctx_t *ctx);
+[[nodiscard]] rw_channel_state_t rw_channel_on_dtls_recovery(rw_channel_ctx_t *ctx);
 
 /** Should data be sent over DTLS? */
-[[nodiscard]] bool wg_channel_use_dtls(const wg_channel_ctx_t *ctx);
+[[nodiscard]] bool rw_channel_use_dtls(const rw_channel_ctx_t *ctx);
 
 /** Get current channel state name. */
-[[nodiscard]] const char *wg_channel_state_str(const wg_channel_ctx_t *ctx);
+[[nodiscard]] const char *rw_channel_state_str(const rw_channel_ctx_t *ctx);
 
-#endif /* WOLFGUARD_NETWORK_CHANNEL_H */
+#endif /* RINGWALL_NETWORK_CHANNEL_H */

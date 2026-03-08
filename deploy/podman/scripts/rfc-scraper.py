@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RFC scraper for the wolfguard VPN project.
+"""RFC scraper for the ringwall VPN project.
 
 Searches datatracker.ietf.org API for RFCs and active Internet-Drafts
 relevant to TLS, DTLS, QUIC, VPN, authentication, and cryptography.
@@ -7,7 +7,7 @@ Outputs a structured Markdown registry.
 
 Usage:
     python3 rfc-scraper.py                          # stdout
-    python3 rfc-scraper.py -o wolfguard-rfcs.md     # file
+    python3 rfc-scraper.py -o ringwall-rfcs.md     # file
     python3 rfc-scraper.py --download docs/rfc/     # download .txt
     python3 rfc-scraper.py --json                   # JSON output
 """
@@ -35,7 +35,7 @@ log = logging.getLogger("rfc-scraper")
 DATATRACKER_BASE = "https://datatracker.ietf.org"
 DATATRACKER_API = f"{DATATRACKER_BASE}/api/v1"
 RFC_EDITOR_BASE = "https://www.rfc-editor.org"
-USER_AGENT = "wolfguard-rfc-scraper/2.0"
+USER_AGENT = "ringwall-rfc-scraper/2.0"
 REQUEST_TIMEOUT = 15
 RATE_LIMIT_DELAY = 0.3
 
@@ -1215,7 +1215,7 @@ def collect_rfcs(
 
 
 def relevance_score(entry: RfcEntry) -> int:
-    """Score an RFC's relevance to the wolfguard project."""
+    """Score an RFC's relevance to the ringwall project."""
     score = 0
     title_lower = entry.title.lower()
 
@@ -1257,7 +1257,7 @@ def generate_markdown(rfcs: dict[int, RfcEntry], drafts: dict[str, DraftEntry]) 
     lines: list[str] = []
     w = lines.append
 
-    w("# wolfguard VPN — RFC Registry\n")
+    w("# ringwall VPN — RFC Registry\n")
     w(f"**Generated**: {now}")
     w(f"**RFCs found**: {len(rfcs)}")
     w(f"**Active Internet-Drafts found**: {len(drafts)}")
@@ -1360,7 +1360,7 @@ def generate_markdown(rfcs: dict[int, RfcEntry], drafts: dict[str, DraftEntry]) 
 
     # Protocol matrix
     w("\n---\n")
-    w("## Protocol-to-RFC matrix for wolfguard\n")
+    w("## Protocol-to-RFC matrix for ringwall\n")
     for component, rfc_refs in PROTOCOL_MATRIX.items():
         w(f"\n### {component}\n")
         for ref in rfc_refs:
@@ -1402,7 +1402,7 @@ def generate_json(rfcs: dict[int, RfcEntry], drafts: dict[str, DraftEntry]) -> s
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="RFC scraper for the wolfguard VPN project",
+        description="RFC scraper for the ringwall VPN project",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(

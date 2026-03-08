@@ -17,12 +17,12 @@ default-domain = "corp.example.com"
 mtu = 1400
 
 [tls]
-cert-file = "/etc/wolfguard/server.pem"
-key-file = "/etc/wolfguard/server.key"
+cert-file = "/etc/ringwall/server.pem"
+key-file = "/etc/ringwall/server.key"
 min-version = "1.2"
 ciphers = "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256"
 
 [security]
 seccomp = true
 landlock = true
-wolfsentry-config = "/etc/wolfguard/wolfsentry.json"
+wolfsentry-config = "/etc/ringwall/wolfsentry.json"
