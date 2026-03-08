@@ -6,7 +6,7 @@ LABEL description="Development environment for ringwall with wolfSSL and modern 
 # Build arguments for tool versions
 ARG CMAKE_VERSION=4.2.3
 ARG CLANG_VERSION=22.1.0
-ARG GCC_VERSION=15.2.0
+# GCC 15 via gcc-toolset-15 (no version ARG needed — from OL10 repos)
 ARG SQLITE_VERSION=3520000
 ARG SQLITE_YEAR=2026
 ARG DOXYGEN_VERSION=1.16.1
@@ -30,7 +30,7 @@ RUN dnf install -y oraclelinux-developer-release-el10 && \
     dnf config-manager --set-enabled ol10_codeready_builder && \
     dnf clean all
 
-# Install base development tools (system gcc/g++ needed to bootstrap GCC 15)
+# Install base development tools (system gcc needed for libraries that build with default cc)
 RUN dnf install -y \
     gcc \
     gcc-c++ \
@@ -52,48 +52,50 @@ RUN dnf install -y \
     patch \
     flex \
     bison \
-    texinfo \
-    zlib-devel \
     && dnf clean all
 
 # ═══════════════════════════════════════════════════════
 # Compilers (from source / pre-built)
 # ═══════════════════════════════════════════════════════
 
-# Install Clang 22.1.0 from pre-built release binary
+# Install Clang 22.1.0 from pre-built release binary (selective — only needed tools)
+# The LLVM tarball is ~6GB extracted; copy only what we need to keep the layer small.
+# clang/clang++ are symlinks to clang-N, lld to lld-N, etc. — copy real binaries + symlinks.
 RUN cd /tmp && \
     curl -fsSL -o llvm.tar.xz \
         https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
     tar xJf llvm.tar.xz && \
-    cp -a LLVM-${CLANG_VERSION}-Linux-X64/bin/* /usr/local/bin/ && \
-    cp -a LLVM-${CLANG_VERSION}-Linux-X64/lib/* /usr/local/lib/ 2>/dev/null || true && \
-    cp -a LLVM-${CLANG_VERSION}-Linux-X64/lib64/* /usr/local/lib64/ 2>/dev/null || true && \
-    cp -a LLVM-${CLANG_VERSION}-Linux-X64/include/* /usr/local/include/ 2>/dev/null || true && \
-    cp -a LLVM-${CLANG_VERSION}-Linux-X64/share/* /usr/local/share/ 2>/dev/null || true && \
-    cd /tmp && rm -rf LLVM-* llvm.tar.xz && \
+    LLVM_DIR=LLVM-${CLANG_VERSION}-Linux-X64 && \
+    CLANG_MAJOR=$(echo ${CLANG_VERSION} | cut -d. -f1) && \
+    for tool in clang clang++ clang-cl clang-cpp clang-${CLANG_MAJOR} \
+                clang-format clang-tidy clang-apply-replacements \
+                clang-rename clang-check \
+                lld ld.lld ld64.lld wasm-ld \
+                llvm-ar llvm-nm llvm-objdump llvm-ranlib llvm-strip \
+                llvm-symbolizer llvm-profdata llvm-cov llvm-objcopy \
+                llvm-readelf llvm-size llvm-strings llvm-addr2line \
+                scan-build scan-view; do \
+        [ -e "$LLVM_DIR/bin/$tool" ] && cp -a "$LLVM_DIR/bin/$tool" /usr/local/bin/; \
+    done && \
+    cp -a $LLVM_DIR/lib/clang /usr/local/lib/ && \
+    rm -rf /tmp/LLVM-* /tmp/llvm.tar.xz && \
     ldconfig && \
     clang --version
 
-# Build GCC 15.2 from source (--disable-bootstrap for faster build)
-RUN cd /tmp && \
-    curl -fsSL -o gcc.tar.gz \
-        https://ftp.gnu.org/pub/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.gz && \
-    tar xzf gcc.tar.gz && \
-    cd gcc-${GCC_VERSION} && \
-    ./contrib/download_prerequisites && \
-    mkdir build && cd build && \
-    ../configure \
-        --prefix=/usr/local \
-        --enable-languages=c,c++ \
-        --disable-multilib \
-        --disable-bootstrap \
-        --disable-libsanitizer \
-        --with-system-zlib && \
-    make -j$(nproc) && \
-    make install && \
-    ldconfig && \
-    cd /tmp && rm -rf gcc-* gcc.tar.gz && \
-    /usr/local/bin/gcc --version
+# Install GCC 15 from gcc-toolset-15 (OL10 appstream, pre-built)
+# Provides GCC 15.1.1 at /opt/rh/gcc-toolset-15/root/usr/bin/gcc
+RUN dnf install -y \
+        gcc-toolset-15-gcc \
+        gcc-toolset-15-gcc-c++ \
+        gcc-toolset-15-libatomic-devel \
+        gcc-toolset-15-libasan-devel \
+        gcc-toolset-15-libubsan-devel \
+        gcc-toolset-15-libtsan-devel \
+        gcc-toolset-15-binutils \
+    && dnf clean all && \
+    ln -sf /opt/rh/gcc-toolset-15/root/usr/bin/gcc /usr/local/bin/gcc-15 && \
+    ln -sf /opt/rh/gcc-toolset-15/root/usr/bin/g++ /usr/local/bin/g++-15 && \
+    gcc-15 --version
 
 # Install system dependencies from OL10 repos (baseos + codeready_builder)
 RUN dnf install -y \
@@ -467,12 +469,11 @@ RUN cd /tmp && \
     ./configure \
         --prefix=/usr/local \
         --enable-fts5 \
-        --enable-json1 \
         CFLAGS="-O2 -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=1 -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 \
                 -DSQLITE_DEFAULT_MEMSTATUS=0 -DSQLITE_DEFAULT_JOURNAL_SIZE_LIMIT=67108864 \
                 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_OMIT_DEPRECATED \
                 -DSQLITE_OMIT_SHARED_CACHE -DSQLITE_USE_ALLOCA \
-                -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 \
+                -DSQLITE_ENABLE_FTS5 \
                 -DSQLITE_SECURE_DELETE -DSQLITE_ENABLE_COLUMN_METADATA" && \
     make -j$(nproc) && \
     make install && \
