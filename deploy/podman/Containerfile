@@ -13,7 +13,7 @@ ARG DOXYGEN_VERSION=1.16.1
 ARG UNITY_VERSION=2.6.1
 ARG CMOCK_VERSION=2.6.0
 ARG CEEDLING_VERSION=1.0.1
-ARG WOLFSSL_VERSION=5.8.2
+ARG WOLFSSL_VERSION=5.8.4
 ARG WOLFSENTRY_VERSION=1.6.2
 ARG LIBURING_VERSION=2.14
 ARG YYJSON_VERSION=0.12.0
@@ -128,8 +128,13 @@ RUN dnf install -y \
     rubygems \
     && dnf clean all
 
-# Install ninja from PyPI (not in OL10 repos)
-RUN pip3 install ninja
+# Install ninja, flawfinder, ccache from PyPI / repos
+RUN pip3 install ninja flawfinder
+
+RUN dnf install -y \
+    ccache \
+    lcov \
+    && dnf clean all
 
 # Install Ruby gems for Ceedling
 RUN gem install --no-document \
@@ -150,7 +155,7 @@ RUN cd /tmp && \
 
 # Build and install cppcheck from source
 RUN cd /tmp && \
-    git clone --depth 1 --branch 2.18.3 https://github.com/danmar/cppcheck.git && \
+    git clone --depth 1 --branch 2.20.0 https://github.com/danmar/cppcheck.git && \
     cd cppcheck && \
     mkdir build && cd build && \
     cmake .. \
@@ -443,8 +448,9 @@ RUN cd /tmp && \
     rm -rf /tmp/linenoise
 
 # Install mold linker for fast debug builds
+ARG MOLD_VERSION=2.40.4
 RUN cd /tmp && \
-    git clone --depth 1 https://github.com/rui314/mold.git && \
+    git clone --depth 1 --branch v${MOLD_VERSION} https://github.com/rui314/mold.git && \
     cd mold && \
     mkdir build && cd build && \
     cmake .. \
@@ -519,7 +525,23 @@ RUN cd /tmp && \
     cd /tmp && rm -rf pvs-studio* && \
     pvs-studio --version
 
+# Activate PVS-Studio b4all license (free for open-source)
+RUN pvs-studio-analyzer credentials "PVS-Studio Free" "SRUG-709S-2Q5H-EE03"
+
+# ═══════════════════════════════════════════════════════
+# Build Acceleration
+# ═══════════════════════════════════════════════════════
+
+# Configure ccache defaults (CMAKE_C_COMPILER_LAUNCHER=ccache)
+RUN mkdir -p /root/.config/ccache && \
+    printf "max_size = 2G\ncompression = true\ncompression_level = 6\n" \
+        > /root/.config/ccache/ccache.conf
+
 # Update ldconfig cache
 RUN ldconfig
+
+# NOTE: IWYU (include-what-you-use) not installed — latest supports clang_21,
+# our Clang is 22.1.0. Re-evaluate when IWYU releases clang_22 branch.
+# See: https://github.com/include-what-you-use/include-what-you-use/branches
 
 CMD ["/bin/bash"]
