@@ -411,7 +411,7 @@ After successful PoC validation:
 4. **US-014**: Certificate verification
 5. **US-017**: Test with Cisco Secure Client
 
-See `/opt/projects/repositories/wolfguard/docs/agile/USER_STORIES.md` for full roadmap.
+See `/opt/projects/repositories/ringwall/docs/agile/USER_STORIES.md` for full roadmap.
 
 ## References
 

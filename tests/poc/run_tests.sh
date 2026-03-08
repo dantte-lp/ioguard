@@ -21,7 +21,7 @@ NC='\033[0m' # No Color
 if [ -d "/workspace" ] && [ -f "/workspace/Makefile" ]; then
     PROJECT_ROOT="/workspace"
 else
-    PROJECT_ROOT="/opt/projects/repositories/wolfguard"
+    PROJECT_ROOT="/opt/projects/repositories/ringwall"
 fi
 
 TEST_PORT=4433
