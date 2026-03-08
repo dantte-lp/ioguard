@@ -522,6 +522,29 @@ if(BUILD_TESTING)
             message(WARNING "libmdbx not found — skipping storage/mdbx")
         endif()
 
+        # Sprint 5 — SQLite control plane
+        find_path(SQLITE3_INCLUDE_DIR sqlite3.h
+            PATHS /usr/local/include /usr/include)
+        find_library(SQLITE3_LIBRARY sqlite3
+            PATHS /usr/local/lib /usr/local/lib64 /usr/lib64)
+
+        if(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
+            add_library(rw_sqlite STATIC src/storage/sqlite.c)
+            target_include_directories(rw_sqlite PUBLIC
+                ${CMAKE_SOURCE_DIR}/src ${SQLITE3_INCLUDE_DIR})
+            target_link_libraries(rw_sqlite PUBLIC ${SQLITE3_LIBRARY})
+            target_compile_definitions(rw_sqlite PUBLIC _GNU_SOURCE)
+
+            rw_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c
+                rw_sqlite)
+            target_link_libraries(test_storage_sqlite PRIVATE ${SQLITE3_LIBRARY})
+            target_include_directories(test_storage_sqlite PRIVATE
+                ${SQLITE3_INCLUDE_DIR})
+            message(STATUS "Found SQLite3: ${SQLITE3_LIBRARY}")
+        else()
+            message(WARNING "SQLite3 not found — skipping storage/sqlite")
+        endif()
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
