@@ -5,18 +5,18 @@
 - **Language**: C23 (ISO/IEC 9899:2024), `-std=c23`, `CMAKE_C_EXTENSIONS OFF`
 - **Project**: VPN server (ocserv refactoring), wolfSSL native API
 - **License**: GPLv3 (wolfSSL dependency requires GPLv3)
-- **Status**: Pre-release (Sprint 4 complete, no tags yet). First release: 0.1.0
+- **Status**: Pre-release (S1-S4 done, 30 tests, no tags). First release: 0.1.0
 - **Platform**: Linux only (kernel 6.7+, glibc 2.39+)
 
 ## Build Commands
 
 ```bash
-# CMake (primary build system)
+# CMake (primary build system — builds everything)
 cmake --preset clang-debug              # Configure with Clang debug
 cmake --build --preset clang-debug      # Build
 ctest --preset clang-debug              # Run tests
 
-# Make (legacy, for quick iteration)
+# Make (legacy — TLS abstraction layer only, src/crypto/)
 make BACKEND=wolfssl                    # Build with wolfSSL
 make BACKEND=gnutls                     # Build with GnuTLS
 make test-both                          # Test both backends
@@ -29,8 +29,9 @@ cmake --build --preset clang-debug --target cppcheck  # static analysis
 
 ## Compiler Strategy (dual-compiler)
 
-- **Clang 22+**: Primary dev (MSan, LibFuzzer, clang-tidy, fast builds with mold)
-- **GCC 15+**: Validation & release (LTO, -fanalyzer, PGO, unique warnings)
+- **Clang 22.1.0**: Primary dev (MSan, LibFuzzer, clang-tidy, fast builds with mold)
+- **GCC 15.1.1**: Validation & release (gcc-toolset-15, LTO, -fanalyzer, unique warnings)
+- **System GCC 14.3.1**: Used by some library builds in container
 - **Debug linker**: mold (instant linking)
 - **Release linker**: GNU ld (GCC LTO) or lld (Clang ThinLTO)
 - Always use `-std=c23` explicitly for both compilers
@@ -40,22 +41,24 @@ cmake --build --preset clang-debug --target cppcheck  # static analysis
 ```
 src/crypto/         # TLS abstraction layer (wolfSSL + GnuTLS backends)
 src/io/             # io_uring abstraction layer
-src/network/        # Network layer (llhttp, liburing)
+src/network/        # Network layer (CSTP, DTLS, TUN, DPD, compression)
 src/ipc/            # Inter-process communication (protobuf-c)
-src/auth/           # Authentication (PAM, RADIUS, LDAP, TOTP, certs)
-src/security/       # wolfSentry, seccomp, Landlock, nftables
-src/config/         # TOML/JSON configuration
-src/log/            # Structured logging (stumpless)
-src/metrics/        # Prometheus metrics
-src/core/           # Core VPN logic
-src/utils/          # Utilities
-src/occtl/          # Control utility
+src/auth/           # Authentication (PAM; RADIUS, LDAP, TOTP planned S6)
+src/security/       # wolfSentry, seccomp, Landlock, nftables (planned S5)
+src/config/         # TOML configuration (tomlc99)
+src/core/           # Core VPN logic (worker, session, secmod, process)
+src/utils/          # Utilities (memory)
+src/storage/        # libmdbx + SQLite (planned S5)
+src/log/            # Structured logging — stumpless (planned S7)
+src/metrics/        # Prometheus metrics — custom (planned S7)
 tests/unit/         # Unity-based unit tests (test_*.c)
+tests/integration/  # Integration tests (multi-component)
 tests/poc/          # Proof-of-concept server/client
 tests/bench/        # Performance benchmarks
-tests/fuzz/         # LibFuzzer targets (Clang only)
+tests/fuzz/         # LibFuzzer targets (Clang only, planned S5)
 docs/architecture/  # Architecture documentation
-docs/draft/         # Research and recommendations
+docs/plans/         # Sprint plans, ROADMAP, BACKLOG
+docs/rfc/           # Local RFC copies (41 files)
 deploy/podman/      # Container configurations
 ```
 
@@ -99,13 +102,13 @@ deploy/podman/      # Container configurations
 ### Core Crypto & Security
 | Library       | Version | Role                    | Context7 ID        |
 |---------------|---------|-------------------------|---------------------|
-| wolfSSL       | 5.8.4+  | TLS 1.3 / DTLS 1.3     | /wolfssl/wolfssl    |
-| wolfSentry    | 1.6.3+  | IDPS / dynamic firewall | /wolfssl/wolfsentry |
+| wolfSSL       | 5.8.2+  | TLS 1.3 / DTLS 1.2     | /wolfssl/wolfssl    |
+| wolfSentry    | 1.6.2+  | IDPS / dynamic firewall | /wolfssl/wolfsentry |
 
 ### Network & I/O
 | Library       | Version | Role                    | Context7 ID        |
 |---------------|---------|-------------------------|---------------------|
-| liburing      | 2.7+    | All I/O: network, TUN, timers, signals | /axboe/liburing     |
+| liburing      | 2.14+   | All I/O: network, TUN, timers, signals | /axboe/liburing     |
 | llhttp        | 9.3.1+  | HTTP parser             | /nodejs/llhttp      |
 | c-ares        | 1.34+   | Async DNS resolver      | /c-ares/c-ares      |
 
@@ -115,19 +118,25 @@ deploy/podman/      # Container configurations
 | yyjson        | 0.12+   | Fast JSON (API/metrics) | /ibireme/yyjson     |
 | cJSON         | 1.7.19+ | Simple JSON (config)    | -                   |
 | tomlc99       | latest  | TOML config parser      | /cktan/tomlc99      |
-| protobuf-c    | 1.5.1+  | IPC serialization       | /protobuf-c/protobuf-c |
+| protobuf-c    | 1.5.2+  | IPC serialization       | /protobuf-c/protobuf-c |
+
+### Storage (S5)
+| Library       | Version | Role                    | Context7 ID        |
+|---------------|---------|-------------------------|---------------------|
+| libmdbx       | 0.14+   | Session store (hot path, ns latency) | /erthink/libmdbx |
+| SQLite        | 3.52.0+ | Control plane (users, audit, WAL)    | /sqlite/sqlite   |
 
 ### System & Memory
 | Library       | Version | Role                    | Context7 ID        |
 |---------------|---------|-------------------------|---------------------|
-| mimalloc      | 3.1.5+  | Memory allocator (MI_SECURE) | -              |
+| mimalloc      | 3.2.8+  | Memory allocator (MI_SECURE) | -              |
 | LZ4           | 1.10+   | Compression             | -                   |
 | libseccomp    | 2.5+    | Syscall sandbox         | -                   |
 
 ### Logging & Monitoring
 | Library       | Version | Role                    | Context7 ID        |
 |---------------|---------|-------------------------|---------------------|
-| stumpless     | latest  | Structured logging (RFC 5424) | /goatshriek/stumpless |
+| stumpless     | 2.2.0+  | Structured logging (RFC 5424) | /goatshriek/stumpless |
 | (custom)      | -       | Prometheus metrics (text exposition) | -         |
 
 ### Authentication
@@ -166,6 +175,9 @@ Use context7 to fetch up-to-date documentation:
 - protobuf-c IPC: `/protobuf-c/protobuf-c`
 - tomlc99 TOML config: `/cktan/tomlc99`
 - stumpless logging: `/goatshriek/stumpless`
+- libmdbx storage: `/erthink/libmdbx`
+- libmdbx docs (ru): `/websites/libmdbx_dqdkfa_ru`
+- SQLite storage: `/sqlite/sqlite`
 - CMake build: `/websites/cmake_cmake_help`
 
 ## RFC References
@@ -202,6 +214,8 @@ Local copies in `docs/rfc/` — see `docs/rfc/README.md` for full index.
 - stumpless for structured logging (RFC 5424)
 - Dual TLS backend build (wolfSSL primary, GnuTLS fallback)
 - mimalloc for memory (per-worker heaps, MI_SECURE=ON)
+- Hybrid storage: libmdbx (sessions, hot path) + SQLite WAL (users, audit)
+- Custom Prometheus metrics (~500-800 LOC, no cmetrics)
 
 ## Git Workflow
 
