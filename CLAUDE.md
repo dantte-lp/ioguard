@@ -312,8 +312,9 @@ See `.claude/skills/` for detailed guidance on:
 - **`coding-standards/`** — File structure, naming, comments, errors, memory, tests (MANDATORY)
 - **`io-uring-patterns/`** — SQE/CQE patterns, provided buffers, multishot, error handling, send serialization, fd lifecycle, backpressure, memory domains, anti-patterns (MANDATORY for src/io/, src/network/)
 - `c23-standards/` — C23 features, conventions, compiler compatibility
-- `security-coding/` — constant-time, zeroing, input validation, seccomp, io_uring ring hardening
+- `security-coding/` — constant-time, zeroing, input validation, seccomp, io_uring ring hardening, database security, session cookies, plugin sandboxing
+- `storage-patterns/` — libmdbx + SQLite hybrid storage, transaction patterns, anti-patterns (MANDATORY for src/storage/)
 - `wolfssl-api/` — TLS/DTLS API patterns, FIPS constraints, buffer-based I/O with io_uring
-- `ocprotocol/` — OpenConnect protocol, Cisco compatibility, cookies
+- `ocprotocol/` — OpenConnect protocol, Cisco compatibility, cookies, traffic classification, graceful shutdown
 - `wolfsentry-idps/` — IDPS firewall, rate limiting, connection tracking, nftables
-- `rfc-reference/` — TLS/DTLS RFC index, key sections, security policies (41 RFCs in `docs/rfc/`)
+- `rfc-reference/` — RFC index by category: TLS/DTLS, auth, PKI, crypto, DNS, transport, NAT (41+ RFCs in `docs/rfc/`)
