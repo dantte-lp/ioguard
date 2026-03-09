@@ -6,6 +6,7 @@
 #include <liburing.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/socket.h>
 
 /* Opaque io_uring event loop context */
 typedef struct rw_io_ctx rw_io_ctx_t;
@@ -25,6 +26,10 @@ struct rw_io_ctx {
     struct io_uring ring;
     bool running;
     uint32_t queue_depth;
+    /* Active completions for cancel-by-user_data lookup */
+    rw_io_completion_t **active;
+    uint32_t active_count;
+    uint32_t active_cap;
 };
 
 /* Create io_uring context. Returns nullptr on failure.
@@ -69,5 +74,29 @@ void rw_io_stop(rw_io_ctx_t *ctx);
 /* Submit a write operation on a file descriptor */
 [[nodiscard]] int rw_io_prep_write(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
                                    int *completed);
+
+/* Callback-based operations — for production event loops.
+ * cb is invoked with CQE result (bytes or negative errno) and user_data. */
+
+[[nodiscard]] int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                      rw_io_cb cb, void *user_data);
+
+[[nodiscard]] int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                      rw_io_cb cb, void *user_data);
+
+[[nodiscard]] int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                      rw_io_cb cb, void *user_data);
+
+[[nodiscard]] int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                       rw_io_cb cb, void *user_data);
+
+[[nodiscard]] int rw_io_prep_accept_cb(rw_io_ctx_t *ctx, int fd,
+                                        struct sockaddr *addr, socklen_t *addrlen,
+                                        rw_io_cb cb, void *user_data);
+
+[[nodiscard]] int rw_io_add_timeout_cb(rw_io_ctx_t *ctx, uint64_t timeout_ms,
+                                        rw_io_cb cb, void *user_data);
+
+[[nodiscard]] int rw_io_cancel(rw_io_ctx_t *ctx, void *user_data);
 
 #endif /* RINGWALL_IO_URING_H */

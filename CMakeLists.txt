@@ -368,6 +368,7 @@ if(BUILD_TESTING)
         # Sprint 1 tests
         rw_add_test(test_memory tests/unit/test_memory.c rw_memory)
         rw_add_test(test_io_uring tests/unit/test_io_uring.c rw_io)
+        rw_add_test(test_io_callback tests/unit/test_io_callback.c rw_io)
         rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c rw_ipc)
         rw_add_test(test_ipc_messages tests/unit/test_ipc_messages.c rw_ipc)
         rw_add_test(test_config_toml tests/unit/test_config_toml.c rw_config)
