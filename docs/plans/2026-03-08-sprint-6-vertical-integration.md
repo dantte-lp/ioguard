@@ -1,10 +1,10 @@
-# Sprint 6: Vertical Integration — Main Process, Worker Data Path, Security Activation
+# Sprint 6: Vertical Integration — Main Process, Worker Data Path, IPAM, Split DNS
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task.
 
-**Goal:** Wire all existing S1-S5 building blocks into a working VPN server — main process bootstrap, worker io_uring data path (TLS↔CSTP↔TUN), auth-mod storage integration, security module activation, and graceful shutdown.
+**Goal:** Wire all existing S1-S5 building blocks into a working VPN server — main process bootstrap, worker io_uring data path (TLS↔CSTP↔TUN), auth-mod storage integration, security module activation, graceful shutdown. Add IP address management (dual-stack pools with collision detection) and split DNS configuration.
 
-**Architecture:** Main process loads config, creates IPC socketpairs, forks auth-mod and worker children. Workers run io_uring event loops: accept client fds via SCM_RIGHTS from main, perform wolfSSL TLS handshake (with wolfSentry pre-check), exchange OpenConnect HTTP auth via IPC to auth-mod, then enter CSTP tunnel mode: TLS recv → CSTP decode → decompress → TUN write (and reverse). Auth-mod stores sessions in libmdbx, audit in SQLite. Security modules (seccomp, Landlock) activate at fork time. nftables rules create/destroy per session.
+**Architecture:** Main process loads config, creates IPC socketpairs, forks auth-mod and worker children. Workers run io_uring event loops: accept client fds via SCM_RIGHTS from main, perform wolfSSL TLS handshake (with wolfSentry pre-check), exchange OpenConnect HTTP auth via IPC to auth-mod, then enter CSTP tunnel mode: TLS recv → CSTP decode → decompress → TUN write (and reverse). Auth-mod stores sessions in libmdbx, audit in SQLite. Security modules (seccomp, Landlock) activate at fork time. nftables rules create/destroy per session. IPAM manages dual-stack (IPv4+IPv6) address pools with bitmap allocation, collision detection against server interfaces, and RADIUS override support. Split DNS advertises per-group domain routing via X-CSTP headers.
 
 **Tech Stack:** C23, liburing 2.7+, wolfSSL 5.8.4+, wolfSentry 1.6.3+, libmdbx 0.14+, SQLite 3.52.0+, libseccomp 2.5+, libmnl, libnftnl, Unity tests, Linux kernel 6.7+.
 
@@ -1166,6 +1166,365 @@ git commit -m "chore: Sprint 6 complete — vertical integration, cleanup"
 
 ---
 
+## Task 13: IP address pool management (IPAM)
+
+**Files:**
+- Create: `src/network/ipam.h`
+- Create: `src/network/ipam.c`
+- Create: `tests/unit/test_ipam.c`
+- Modify: `src/config/config.h` (add multi-pool + IPv6 config)
+- Modify: `CMakeLists.txt`
+
+**Why:** VPN cannot function without assigning IP addresses to clients. Current config stores a CIDR string (`ipv4_pool`) but has no allocation logic. Need dual-stack pool management with collision detection against server networks.
+
+**Step 1: Write failing tests (test_ipam.c)**
+
+```c
+#include <unity/unity.h>
+#include "network/ipam.h"
+#include <arpa/inet.h>
+#include <string.h>
+
+void setUp(void) {}
+void tearDown(void) {}
+
+/* Pool creation and validation */
+void test_ipam_pool_create_ipv4(void);              /* "10.10.0.0/24" → 254 available */
+void test_ipam_pool_create_ipv6(void);              /* "fd00:vpn::/112" → 65534 available */
+void test_ipam_pool_create_invalid_cidr(void);      /* "invalid" → -EINVAL */
+void test_ipam_pool_create_host_addr(void);         /* "10.0.0.1/32" → -EINVAL (no range) */
+
+/* Allocation and release */
+void test_ipam_alloc_ipv4_first(void);              /* alloc → .1 (skip network .0) */
+void test_ipam_alloc_ipv4_sequential(void);         /* 3 allocs → .1, .2, .3 */
+void test_ipam_free_and_reuse(void);                /* alloc → free → alloc same addr */
+void test_ipam_alloc_exhausted(void);               /* /30 pool (2 hosts) → 3rd alloc fails -ENOSPC */
+void test_ipam_alloc_ipv6(void);                    /* fd00:vpn::1 allocated */
+
+/* Collision detection */
+void test_ipam_collision_detect_overlap(void);      /* pool 10.0.1.0/24 vs server 10.0.1.1 → -EEXIST */
+void test_ipam_collision_detect_no_overlap(void);   /* pool 10.10.0.0/24 vs server 192.168.1.1 → OK */
+void test_ipam_collision_detect_supernet(void);     /* pool 10.0.0.0/8 vs server 10.0.1.1 → -EEXIST */
+void test_ipam_collision_detect_ipv6(void);         /* IPv6 overlap detection */
+
+/* Multi-pool */
+void test_ipam_multi_pool_add(void);                /* add 2 pools, both tracked */
+void test_ipam_multi_pool_alloc_first(void);        /* allocs from first pool with space */
+
+/* RADIUS override */
+void test_ipam_reserve_specific_ipv4(void);         /* reserve 10.10.0.50 → OK */
+void test_ipam_reserve_already_taken(void);         /* reserve taken addr → -EADDRINUSE */
+void test_ipam_reserve_outside_pool(void);          /* reserve addr not in any pool → OK (external) */
+
+/* Statistics */
+void test_ipam_stats_total_and_used(void);          /* verify counts after alloc/free */
+```
+
+**Step 2: Write ipam.h**
+
+```c
+#ifndef RINGWALL_NETWORK_IPAM_H
+#define RINGWALL_NETWORK_IPAM_H
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <netinet/in.h>
+
+constexpr size_t RW_IPAM_MAX_POOLS = 16;
+
+typedef struct {
+    int af;                        /* AF_INET or AF_INET6 */
+    union {
+        struct in_addr  v4;
+        struct in6_addr v6;
+    } network;
+    union {
+        struct in_addr  v4;
+        struct in6_addr v6;
+    } netmask;
+    uint32_t prefix_len;
+    uint32_t total_hosts;          /* usable host count (excluding network/broadcast for v4) */
+    uint32_t used_count;
+    uint8_t *bitmap;               /* 1 bit per host address */
+} rw_ipam_pool_t;
+
+typedef struct {
+    rw_ipam_pool_t pools[RW_IPAM_MAX_POOLS];
+    uint32_t pool_count;
+} rw_ipam_t;
+
+typedef struct {
+    uint32_t total_pools;
+    uint32_t total_addresses;
+    uint32_t used_addresses;
+    uint32_t available_addresses;
+} rw_ipam_stats_t;
+
+/* Lifecycle */
+[[nodiscard]] int rw_ipam_init(rw_ipam_t *ipam);
+void rw_ipam_destroy(rw_ipam_t *ipam);
+
+/* Pool management */
+[[nodiscard]] int rw_ipam_add_pool(rw_ipam_t *ipam, const char *cidr);
+
+/* Collision detection — call after adding pools, before accepting clients.
+ * Enumerates server interfaces via getifaddrs(), returns -EEXIST if any
+ * pool overlaps an existing server network. */
+[[nodiscard]] int rw_ipam_check_collisions(const rw_ipam_t *ipam);
+
+/* Allocation */
+[[nodiscard]] int rw_ipam_alloc_ipv4(rw_ipam_t *ipam, struct in_addr *out);
+[[nodiscard]] int rw_ipam_alloc_ipv6(rw_ipam_t *ipam, struct in6_addr *out);
+[[nodiscard]] int rw_ipam_free_ipv4(rw_ipam_t *ipam, const struct in_addr *addr);
+[[nodiscard]] int rw_ipam_free_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr);
+
+/* RADIUS override — reserve a specific address (may be outside pools) */
+[[nodiscard]] int rw_ipam_reserve_ipv4(rw_ipam_t *ipam, const struct in_addr *addr);
+[[nodiscard]] int rw_ipam_reserve_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr);
+
+/* Statistics */
+void rw_ipam_get_stats(const rw_ipam_t *ipam, rw_ipam_stats_t *stats);
+
+#endif /* RINGWALL_NETWORK_IPAM_H */
+```
+
+**Step 3: Write ipam.c**
+
+Key implementation details:
+- `rw_ipam_add_pool()`: parse CIDR via `inet_pton()` + prefix extraction, allocate bitmap (`calloc((total_hosts + 7) / 8)`), skip network/broadcast for IPv4
+- `rw_ipam_alloc_ipv4()`: scan bitmap for first zero bit, set it, compute address from `network + offset`, return via `out`
+- `rw_ipam_check_collisions()`: call `getifaddrs()`, for each `AF_INET`/`AF_INET6` interface, check if interface IP falls within any pool's CIDR range. Return `-EEXIST` with logging on overlap
+- `rw_ipam_reserve_ipv4()`: find pool containing address, mark bit. If not in any pool, return 0 (external RADIUS assignment)
+- `rw_ipam_free_ipv4()`: find pool, clear bit, decrement used_count
+- Bitmap operations: `bitmap[idx / 8] |= (1 << (idx % 8))` for set, `& ~(...)` for clear
+
+**Step 4: Update config.h**
+
+```c
+/* Replace single ipv4_pool string with multi-pool support */
+typedef struct {
+    char ipv4_pools[RW_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];  /* CIDR strings */
+    uint32_t ipv4_pool_count;
+    char ipv6_pools[RW_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];
+    uint32_t ipv6_pool_count;
+    char dns[RW_CONFIG_MAX_DNS][RW_CONFIG_MAX_STR];
+    uint32_t dns_count;
+    char default_domain[RW_CONFIG_MAX_STR];
+    uint32_t mtu;
+} rw_config_network_t;
+```
+
+**Step 5: Add to CMakeLists.txt**
+
+```cmake
+# IPAM — IP address pool management
+add_library(rw_ipam STATIC src/network/ipam.c)
+target_include_directories(rw_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+rw_add_test(test_ipam tests/unit/test_ipam.c rw_ipam)
+```
+
+**Step 6: Build and run**
+
+```bash
+cmake --preset clang-debug && cmake --build --preset clang-debug && ctest --preset clang-debug -R test_ipam
+```
+
+**Step 7: Commit**
+
+```bash
+git add src/network/ipam.h src/network/ipam.c src/config/config.h tests/unit/test_ipam.c CMakeLists.txt
+git commit -m "feat: IPAM dual-stack pool management with collision detection (19 tests)"
+```
+
+---
+
+## Task 14: Split DNS configuration
+
+**Files:**
+- Create: `src/network/dns.h`
+- Create: `src/network/dns.c`
+- Create: `tests/unit/test_dns.c`
+- Modify: `CMakeLists.txt`
+
+**Why:** Cisco AnyConnect clients expect `X-CSTP-DNS`, `X-CSTP-Default-Domain`, and split DNS domain lists. Server must advertise DNS configuration per-group. Client handles actual DNS routing — server just sends the config via CSTP headers.
+
+**Step 1: Write failing tests (test_dns.c)**
+
+```c
+#include <unity/unity.h>
+#include "network/dns.h"
+#include <string.h>
+
+void setUp(void) {}
+void tearDown(void) {}
+
+/* DNS config initialization */
+void test_dns_config_init_defaults(void);            /* mode=STANDARD, 0 servers, 0 domains */
+void test_dns_config_add_server(void);               /* add "8.8.8.8", count=1 */
+void test_dns_config_add_server_ipv6(void);          /* add "2001:4860:4860::8888" */
+void test_dns_config_add_server_max(void);           /* add RW_DNS_MAX_SERVERS+1 → -ENOSPC */
+void test_dns_config_set_domain(void);               /* set "corp.example.com" */
+
+/* Split DNS domain matching */
+void test_dns_domain_match_exact(void);              /* "corp.example.com" matches "corp.example.com" */
+void test_dns_domain_match_subdomain(void);          /* "mail.corp.example.com" matches "corp.example.com" */
+void test_dns_domain_no_match(void);                 /* "example.org" does NOT match "corp.example.com" */
+void test_dns_domain_no_partial_match(void);         /* "notcorp.example.com" does NOT match "corp.example.com" */
+void test_dns_domain_case_insensitive(void);         /* "CORP.EXAMPLE.COM" matches "corp.example.com" */
+
+/* Split DNS domain list */
+void test_dns_add_split_domain(void);                /* add domain, count=1 */
+void test_dns_add_split_domain_max(void);            /* overflow → -ENOSPC */
+void test_dns_is_split_domain(void);                 /* query matches added domain → true */
+void test_dns_is_not_split_domain(void);             /* query doesn't match → false */
+
+/* Mode validation */
+void test_dns_mode_split(void);                      /* RW_DNS_SPLIT */
+void test_dns_mode_tunnel_all(void);                 /* RW_DNS_TUNNEL_ALL */
+void test_dns_mode_standard(void);                   /* RW_DNS_STANDARD */
+```
+
+**Step 2: Write dns.h**
+
+```c
+#ifndef RINGWALL_NETWORK_DNS_H
+#define RINGWALL_NETWORK_DNS_H
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+constexpr size_t RW_DNS_MAX_SERVERS = 4;
+constexpr size_t RW_DNS_MAX_DOMAINS = 32;
+constexpr size_t RW_DNS_MAX_NAME = 256;
+
+typedef enum : uint8_t {
+    RW_DNS_STANDARD    = 0,   /* all DNS through tunnel (legacy) */
+    RW_DNS_TUNNEL_ALL  = 1,   /* all DNS forced through tunnel */
+    RW_DNS_SPLIT       = 2,   /* domain-based routing */
+} rw_dns_mode_t;
+
+typedef struct {
+    rw_dns_mode_t mode;
+    char servers[RW_DNS_MAX_SERVERS][46];     /* INET6_ADDRSTRLEN */
+    uint32_t server_count;
+    char default_domain[RW_DNS_MAX_NAME];
+    char split_domains[RW_DNS_MAX_DOMAINS][RW_DNS_MAX_NAME];
+    uint32_t split_domain_count;
+} rw_dns_config_t;
+
+/* Lifecycle */
+void rw_dns_config_init(rw_dns_config_t *cfg);
+
+/* Configuration */
+[[nodiscard]] int rw_dns_add_server(rw_dns_config_t *cfg, const char *addr);
+void rw_dns_set_default_domain(rw_dns_config_t *cfg, const char *domain);
+void rw_dns_set_mode(rw_dns_config_t *cfg, rw_dns_mode_t mode);
+[[nodiscard]] int rw_dns_add_split_domain(rw_dns_config_t *cfg, const char *domain);
+
+/* Domain matching — suffix match with '.' boundary.
+ * "mail.corp.example.com" matches split domain "corp.example.com".
+ * "notcorp.example.com" does NOT match "corp.example.com". */
+[[nodiscard]] bool rw_dns_is_split_domain(const rw_dns_config_t *cfg, const char *query);
+
+/* Domain match helper (exported for testing) */
+[[nodiscard]] bool rw_dns_domain_matches(const char *query, const char *domain);
+
+#endif /* RINGWALL_NETWORK_DNS_H */
+```
+
+**Step 3: Write dns.c**
+
+Key implementation:
+- `rw_dns_domain_matches()`: case-insensitive suffix match. Query must equal domain exactly OR end with `.domain` (boundary check prevents `notcorp.example.com` matching `corp.example.com`)
+- `rw_dns_is_split_domain()`: iterate `split_domains[]`, return true on first match
+- `rw_dns_add_server()`: validate with `inet_pton(AF_INET)` || `inet_pton(AF_INET6)`, copy to array
+
+**Step 4: Add to CMakeLists.txt**
+
+```cmake
+# Split DNS configuration
+add_library(rw_dns STATIC src/network/dns.c)
+target_include_directories(rw_dns PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+rw_add_test(test_dns tests/unit/test_dns.c rw_dns)
+```
+
+**Step 5: Build and run**
+
+```bash
+cmake --preset clang-debug && cmake --build --preset clang-debug && ctest --preset clang-debug -R test_dns
+```
+
+**Step 6: Commit**
+
+```bash
+git add src/network/dns.h src/network/dns.c tests/unit/test_dns.c CMakeLists.txt
+git commit -m "feat: split DNS configuration with domain matching (17 tests)"
+```
+
+---
+
+## Task 15: IPv6 MTU calculation fix
+
+**Files:**
+- Modify: `src/network/tun.h`
+- Modify: `src/network/tun.c`
+- Modify: `tests/unit/test_tun.c`
+
+**Why:** `rw_tun_calc_mtu()` subtracts only 20 bytes (IPv4 header). IPv6 header is 40 bytes. Must accept address family parameter for correct MTU calculation.
+
+**Step 1: Add tests to test_tun.c**
+
+```c
+void test_tun_calc_mtu_ipv4(void);     /* rw_tun_calc_mtu(1500, AF_INET)  → 1500 - 20 - 20 - 37 - 4 = 1419 */
+void test_tun_calc_mtu_ipv6(void);     /* rw_tun_calc_mtu(1500, AF_INET6) → 1500 - 40 - 20 - 37 - 4 = 1399 */
+void test_tun_calc_mtu_ipv6_clamp(void); /* small base_mtu → clamp to RW_TUN_MIN_MTU */
+```
+
+**Step 2: Update tun.h signature**
+
+```c
+/* Old: uint32_t rw_tun_calc_mtu(uint32_t base_mtu); */
+/* New: */
+[[nodiscard]] uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af);
+```
+
+**Step 3: Update tun.c**
+
+```c
+uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af)
+{
+    /* IP header: 20 (IPv4) or 40 (IPv6) */
+    uint32_t ip_overhead = (af == AF_INET6) ? 40 : 20;
+    /* TCP: 20, TLS record: 37, CSTP header: 4 */
+    uint32_t total_overhead = ip_overhead + 20 + 37 + 4;
+
+    if (base_mtu <= total_overhead + RW_TUN_MIN_MTU)
+        return RW_TUN_MIN_MTU;
+    return base_mtu - total_overhead;
+}
+```
+
+**Step 4: Update callers** — grep for `rw_tun_calc_mtu(` and add `AF_INET` as second arg (existing callers are IPv4-only).
+
+**Step 5: Build and run**
+
+```bash
+cmake --preset clang-debug && cmake --build --preset clang-debug && ctest --preset clang-debug -R test_tun
+```
+
+**Step 6: Commit**
+
+```bash
+git add src/network/tun.h src/network/tun.c tests/unit/test_tun.c
+git commit -m "fix: dual-stack MTU calculation — IPv6 header is 40 bytes (3 tests)"
+```
+
+---
+
 ## Summary
 
 | Task | Component | New Tests | Key Integration |
@@ -1182,9 +1541,12 @@ git commit -m "chore: Sprint 6 complete — vertical integration, cleanup"
 | 10 | Graceful shutdown | 4 | Drain + signal + cleanup |
 | 11 | Integration test | 5 | End-to-end VPN flow |
 | 12 | Finalization | — | Quality pipeline |
+| 13 | IPAM (dual-stack) | 19 | IP pool alloc + collision detection |
+| 14 | Split DNS | 17 | DNS config + domain matching |
+| 15 | IPv6 MTU fix | 3 | Dual-stack MTU calculation |
 
-**New tests: ~75. Total after Sprint 6: ~130.**
-**New source files: 12 (6 .h + 6 .c). Modified: 6 existing files.**
+**New tests: ~114. Total after Sprint 6: ~170.**
+**New source files: 16 (8 .h + 8 .c). Modified: 8 existing files.**
 
 ## Critical Files
 
@@ -1195,15 +1557,17 @@ git commit -m "chore: Sprint 6 complete — vertical integration, cleanup"
 - `src/core/main.c` — rewrite from stub to real entry point
 - `src/network/cstp.{h,c}` — consumed by conn_data
 - `src/network/dpd.{h,c}` — consumed by conn_timer
+- `src/network/tun.{h,c}` — MTU fix (Task 15), consumed by conn_data
 - `src/network/compress.{h,c}` — consumed by conn_data
 - `src/network/channel.{h,c}` — consumed by conn_data
+- `src/config/config.{h,c}` — multi-pool + IPv6 config (Task 13)
 - `src/crypto/tls_wolfssl.{h,c}` — consumed by conn_tls
-- `src/storage/mdbx.{h,c}` — consumed by secmod
+- `src/storage/mdbx.{h,c}` — consumed by secmod, IPAM persistence
 - `src/storage/sqlite.{h,c}` — consumed by secmod
 - `src/security/sandbox.{h,c}` — consumed by security_hooks
 - `src/security/landlock.{h,c}` — consumed by security_hooks
 - `src/security/wolfsentry.{h,c}` — consumed by security_hooks
-- `src/security/firewall.{h,c}` — consumed by security_hooks
+- `src/security/firewall.{h,c}` — consumed by security_hooks, IPAM integration
 
 **New:**
 - `src/ipc/fdpass.{h,c}` — fd passing via SCM_RIGHTS
@@ -1213,20 +1577,25 @@ git commit -m "chore: Sprint 6 complete — vertical integration, cleanup"
 - `src/core/conn_data.{h,c}` — CSTP data path (the core pipeline)
 - `src/core/conn_timer.{h,c}` — DPD + keepalive timers
 - `src/core/security_hooks.{h,c}` — security module activation
+- `src/network/ipam.{h,c}` — IP address pool management (dual-stack)
+- `src/network/dns.{h,c}` — split DNS configuration
 
 **Reference:**
 - `docs/architecture/PROTOCOL_REFERENCE.md` — OpenConnect protocol spec
+- `docs/architecture/CISCO_COMPATIBILITY_GUIDE.md` — Cisco feature compatibility
 - `.claude/skills/ocprotocol/SKILL.md` — connection flow, CSTP packet types
 - `.claude/skills/security-coding/SKILL.md` — constant-time, zeroing, banned functions
 - `.claude/skills/coding-standards/SKILL.md` — naming, errors, C23 patterns
 - `.claude/skills/io-uring-patterns/SKILL.md` — SQE/CQE patterns, send serialization
 - `.claude/skills/wolfssl-api/SKILL.md` — TLS API, non-blocking I/O, buffer callbacks
 - `.claude/skills/wolfsentry-idps/SKILL.md` — wolfSentry integration, rate limiting
+- `/opt/projects/repositories/ocproto-research/analysis/DNS_BEHAVIOR.md` — split DNS algorithm
+- `/opt/projects/repositories/wolfguard-docs/docs/ocserv-vanilla/features/dns.md` — DNS modes
 
 ## Verification
 
 After all tasks:
-1. `ctest --preset clang-debug --output-on-failure` — all ~130 tests pass
+1. `ctest --preset clang-debug --output-on-failure` — all ~170 tests pass
 2. `cmake --build --preset clang-debug --target format-check` — formatting clean
 3. Main process: starts, forks auth-mod + worker, handles SIGTERM
 4. Worker: accepts fd-passed connections, completes TLS handshake
@@ -1235,4 +1604,7 @@ After all tasks:
 7. Security: seccomp applied per process, wolfSentry checked pre-handshake
 8. DPD: timer fires, probes sent, dead connections cleaned up
 9. Shutdown: DISCONNECT sent to all clients, children reaped, no fd leaks
-10. Quality pipeline: zero PVS errors, zero CodeChecker HIGH findings
+10. IPAM: pools loaded from config, collision check passes, alloc/free works
+11. Split DNS: domain matching correct, config serialized to X-CSTP headers
+12. MTU: correct for both IPv4 (1419) and IPv6 (1399) with base 1500
+13. Quality pipeline: zero PVS errors, zero CodeChecker HIGH findings
