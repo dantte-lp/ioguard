@@ -13,12 +13,12 @@ description: Use when writing new C code or reviewing code for C23 compliance �
 | `nullptr` | Yes | Yes | Replace all NULL |
 | `constexpr` | Yes | Yes | Constants and buffer sizes |
 | `typeof` / `typeof_unqual` | Yes | Yes | Generic macros |
-| `_BitInt(N)` | Yes | Yes | Crypto operations |
+| `_BitInt(N)` | Yes | Yes | Avoid — non-portable, limited debugger support |
 | `_Static_assert` | Yes | Yes | Structure validation |
 | `_Atomic` | Yes | Yes | Lock-free counters |
-| `auto` type inference | Yes | Yes | Local variables with obvious types |
+| `auto` type inference | Yes | Yes | Avoid — obscures types in C, unlike C++ |
 | `bool/true/false` keywords | Yes | Yes | Replace stdbool.h macros |
-| `#embed` | Partial | Yes | Embedded certs (GCC-only for now) |
+| `#embed` | Partial | Yes | Avoid — Clang partial support only |
 | `<stdckdint.h>` | Yes | Yes | Checked integer arithmetic |
 | `<stdbit.h>` | Yes | Yes | Bit manipulation |
 | `enum : type` | Yes | Yes | Fixed-width enums |
@@ -97,11 +97,19 @@ typedef enum rw_packet_type : uint8_t {
 
 ```c
 // Type-safe min/max macros
+// NOTE: ({...}) is a GNU extension (GCC + Clang), not standard C23
 #define rw_min(a, b) ({       \
     typeof(a) _a = (a);       \
     typeof(b) _b = (b);       \
     _a < _b ? _a : _b;        \
 })
+
+// Standard C23 typeof usage — type-safe swap
+void rw_swap(typeof(int) *a, typeof(int) *b) {
+    typeof(*a) tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
 ```
 
 ### Structure Validation with _Static_assert
@@ -135,6 +143,86 @@ static void rw_stats_connection_add(rw_stats_t *stats) {
     atomic_fetch_add(&stats->total_connections, 1);
 }
 ```
+
+### [[fallthrough]] Attribute
+
+Use for intentional switch case fall-through, especially in CQE processing:
+
+```c
+switch (op_type) {
+    case RW_OP_ACCEPT:
+        rw_handle_accept(conn);
+        [[fallthrough]];
+    case RW_OP_READ:
+        rw_prep_read(conn);
+        break;
+}
+```
+
+### [[maybe_unused]] Attribute
+
+Use for debug-only variables and callback parameters:
+
+```c
+static void rw_on_timeout([[maybe_unused]] void *ctx, int result) {
+    // ctx used only in debug builds
+}
+```
+
+### unreachable()
+
+From `<stdnoreturn.h>`, for exhaustive switches:
+
+```c
+#include <stdnoreturn.h>
+switch (state) {
+    case RW_STATE_NEW: ... break;
+    case RW_STATE_ACTIVE: ... break;
+    case RW_STATE_CLOSED: ... break;
+}
+unreachable();  // tells compiler all cases handled
+```
+
+### Digit Separators
+
+For readability of large numeric constants:
+
+```c
+constexpr size_t RW_MAX_BUFFER = 16'384;
+constexpr uint64_t RW_SESSION_TTL_NS = 3'600'000'000'000ULL;  // 1 hour
+```
+
+### Error Handling Pattern — goto cleanup with [[nodiscard]]
+
+```c
+[[nodiscard]]
+int rw_session_init(rw_session_t **out) {
+    rw_session_t *s = mi_calloc(1, sizeof(*s));
+    if (s == nullptr) return -ENOMEM;
+
+    int rc = rw_cookie_generate(&s->cookie);
+    if (rc < 0) goto cleanup;
+
+    rc = rw_dpd_init(&s->dpd);
+    if (rc < 0) goto cleanup;
+
+    *out = s;
+    return 0;
+
+cleanup:
+    mi_free(s);
+    return rc;
+}
+```
+
+## Anti-Patterns
+
+- NEVER use `auto` for return types or function parameters (C23 does not support this)
+- NEVER use `_BitInt` in public API (debugger support poor, portability concerns)
+- NEVER use `#embed` in critical paths (Clang support incomplete)
+- NEVER omit `[[nodiscard]]` on functions returning error codes
+- NEVER use `memcmp` for secret comparison — use `ConstantCompare` from wolfCrypt
+- NEVER use `typeof` on expressions with side effects
 
 ## Naming Conventions
 
