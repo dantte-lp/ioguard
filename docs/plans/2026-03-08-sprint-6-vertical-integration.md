@@ -1,6 +1,6 @@
 # Sprint 6: Vertical Integration — Main Process, Worker Data Path, IPAM, Split DNS
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Wire all existing S1-S5 building blocks into a working VPN server — main process bootstrap, worker io_uring data path (TLS↔CSTP↔TUN), auth-mod storage integration, security module activation, graceful shutdown. Add IP address management (dual-stack pools with collision detection) and split DNS configuration.
 
