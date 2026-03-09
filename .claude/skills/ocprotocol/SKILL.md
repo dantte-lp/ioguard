@@ -254,3 +254,57 @@ MTU: `link_MTU - IP_hdr(20/40) - UDP_hdr(8) - DTLS_overhead(~29-37)`
 - [ ] Accept `X-Aggregate-Auth: 1` header
 - [ ] MTU discovery via DPD probing
 - [ ] NVM telemetry support (IPFIX on port 2055, optional)
+
+## HTTP Traffic Routing
+
+### Dual-Port Architecture (production)
+
+- **Port 443/TCP+UDP**: VPN clients (CSTP over TLS, DTLS), public-facing
+- **Port 8443/TCP**: Admin SPA + REST API, management VLAN only, mTLS required
+
+### Single-Port Classification (dev/MVP)
+
+VPN client detection algorithm (`rw_classify_connection()`):
+
+```
+Incoming TLS connection on port 443
+        │
+        ▼
+┌─────────────────────────┐
+│ X-Aggregate-Auth header │──── present ────▶ VPN CLIENT
+│       present?          │
+└───────────┬─────────────┘
+            │ no
+            ▼
+┌─────────────────────────┐
+│ User-Agent contains     │──── match ──────▶ VPN CLIENT
+│ "AnyConnect" or         │
+│ "OpenConnect"?          │
+└───────────┬─────────────┘
+            │ no
+            ▼
+┌─────────────────────────┐
+│ Method = CONNECT and    │──── match ──────▶ VPN CLIENT
+│ path = /CSCOSSLC/tunnel │
+└───────────┬─────────────┘
+            │ no
+            ▼
+      BROWSER / API
+  (serve admin SPA/REST)
+```
+
+### Graceful Shutdown Sequence
+
+```
+SIGTERM received
+  1. rw_listener_stop()        — stop accepting new connections
+  2. rw_cstp_disconnect_all()  — send DISCONNECT (type 0x05) to all clients
+  3. rw_worker_drain(timeout)  — drain active VPN tunnels (30s default, configurable)
+     └─ uses IORING_OP_TIMEOUT for drain timer
+  4. rw_tun_close_all()        — close TUN devices
+  5. rw_authmod_shutdown()     — finish pending auth, close libmdbx/SQLite handles
+  6. exit(0)
+
+SIGQUIT received
+  → immediate shutdown (skip steps 2-3, go straight to cleanup)
+```
