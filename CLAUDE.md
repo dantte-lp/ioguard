@@ -170,6 +170,24 @@ deploy/podman/      # Container configurations
 | libnftnl      | 1.3.1+  | nftables rules          | -                   |
 | libnl3        | 3.9+    | Netlink protocol        | -                   |
 
+## Storage Hardening Rules (MANDATORY)
+
+### libmdbx
+- Geometry: 1MB lower, 1GB upper, 16MB growth, 64MB shrink
+- Max readers: 128, max DBs: 8
+- HSR callback: check `kill(pid, 0)`, evict dead readers
+- Workers: **read-only transactions ONLY** (never write from worker process)
+- NEVER store `data.iov_base` pointer after `mdbx_txn_abort()` — always `memcpy` first
+- File permissions: 0600 (owner read/write only)
+
+### SQLite
+- WAL mode mandatory: `PRAGMA journal_mode=WAL`
+- Hardening PRAGMAs: `synchronous=NORMAL`, `secure_delete=ON`, `foreign_keys=ON`
+- `max_page_count=262144` (1GB limit), `mmap_size=268435456` (256MB)
+- **Prepared statements ONLY** with `SQLITE_PREPARE_PERSISTENT` — NO `sprintf` + `sqlite3_exec`
+- Disable: `sqlite3_enable_load_extension(db, 0)`, `sqlite3_db_config(db, SQLITE_DBCONFIG_DQS_DDL, 0)`
+- Each function: `sqlite3_reset()` + `sqlite3_clear_bindings()` before reuse
+
 ## Testing Rules
 
 - All new code MUST have unit tests (Unity framework)
@@ -234,6 +252,19 @@ Local copies in `docs/rfc/` — see `docs/rfc/README.md` for full index.
 - RFC 9146 — Connection Identifier for DTLS 1.2
 - RFC 9848/9849 — Deprecating obsolete key exchanges and cipher suites
 
+## Authentication Tiers
+
+| Tier | Methods | Sprint |
+|------|---------|--------|
+| **Tier 1 (MVP)** | mTLS/X.509, Username/Password (PAM), RADIUS (RadSec), TOTP, local DB | S5-S6 |
+| **Tier 2** | LDAP/Active Directory, Kerberos/GSSAPI, SAML 2.0 | S7+ |
+| **Tier 3** | OAuth 2.0/OIDC, WebAuthn/FIDO2 | Future |
+
+- Auth-mod process handles ALL authentication (privilege separation)
+- Circuit breaker pattern for backend failover (threshold 5 failures, half-open after 30s)
+- Multi-factor via XML form exchange (AggAuth protocol)
+- Session cookies: HMAC-SHA256 signed, 32-byte random, configurable TTL
+
 ## Architecture Decisions (DO NOT CHANGE)
 
 - Keep protobuf-c for IPC (do not replace)
@@ -248,6 +279,24 @@ Local copies in `docs/rfc/` — see `docs/rfc/README.md` for full index.
 - mimalloc for memory (per-worker heaps, MI_SECURE=ON)
 - Hybrid storage: libmdbx (sessions, hot path) + SQLite WAL (users, audit)
 - Custom Prometheus metrics (~500-800 LOC, no cmetrics)
+
+## HTTP Traffic Routing
+
+### Dual-Port Architecture (production)
+- **Port 443/TCP+UDP**: VPN clients (CSTP over TLS, DTLS), public-facing
+- **Port 8443/TCP**: Admin SPA + REST API, management VLAN only, mTLS required
+
+### Single-Port Classification (dev/MVP)
+- VPN client detection: `X-Aggregate-Auth` header, `User-Agent` matching (AnyConnect, OpenConnect)
+- Browser detection: standard `Accept: text/html` + no VPN headers
+- Route: VPN clients → tunnel handler, browsers → admin SPA/API
+
+### Graceful Shutdown
+- SIGTERM → stop accepting → drain active VPN tunnels → close TUN devices → cleanup
+- Drain timeout: 30s (configurable), force-close after timeout
+- Send CSTP DISCONNECT to all connected clients during drain
+- Auth-mod: finish pending auth requests, close storage handles
+- SIGQUIT → immediate shutdown (skip drain)
 
 ## Git Workflow
 
