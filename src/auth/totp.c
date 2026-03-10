@@ -122,13 +122,36 @@ hmac_err:
 #endif
 }
 
-int rw_totp_validate([[maybe_unused]] const uint8_t *secret,
-                     [[maybe_unused]] size_t secret_len,
-                     [[maybe_unused]] uint32_t code,
-                     [[maybe_unused]] uint64_t time_now,
-                     [[maybe_unused]] uint32_t window)
+int rw_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code, uint64_t time_now,
+                     uint32_t window)
 {
-	return -ENOTSUP;
+	if (secret == nullptr || secret_len == 0)
+		return -EINVAL;
+
+	uint64_t current_counter = time_now / RW_TOTP_TIME_STEP;
+
+	for (uint32_t i = 0; i <= window; i++) {
+		uint32_t candidate = 0;
+		int ret;
+
+		/* Check current counter (or forward drift for i>0) */
+		ret = rw_totp_generate(secret, secret_len, current_counter + i, &candidate);
+		if (ret != 0)
+			return ret;
+		if (candidate == code)
+			return 0;
+
+		/* Check backward drift (i>0 only, guard underflow) */
+		if (i > 0 && current_counter >= i) {
+			ret = rw_totp_generate(secret, secret_len, current_counter - i, &candidate);
+			if (ret != 0)
+				return ret;
+			if (candidate == code)
+				return 0;
+		}
+	}
+
+	return -EACCES;
 }
 
 int rw_totp_generate_secret([[maybe_unused]] uint8_t *secret,

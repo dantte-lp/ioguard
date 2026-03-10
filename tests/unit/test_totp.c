@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <string.h>
 #include <unity/unity.h>
 #include "auth/totp.h"
@@ -128,6 +129,39 @@ void test_totp_generate_null_params(void)
 	TEST_ASSERT_LESS_THAN_INT(0, rw_totp_generate(s, 20, 1, nullptr));
 }
 
+/* --- Validation tests (Task 3) --- */
+
+void test_totp_validate_exact_match(void)
+{
+	uint8_t secret[] = "12345678901234567890";
+	/* counter=1 at time=30..59, code=287082 */
+	int ret = rw_totp_validate(secret, 20, 287082, 59, 0);
+	TEST_ASSERT_EQUAL_INT(0, ret);
+}
+
+void test_totp_validate_wrong_code(void)
+{
+	uint8_t secret[] = "12345678901234567890";
+	int ret = rw_totp_validate(secret, 20, 999999, 59, 0);
+	TEST_ASSERT_EQUAL_INT(-EACCES, ret);
+}
+
+void test_totp_validate_window_drift(void)
+{
+	uint8_t secret[] = "12345678901234567890";
+	/* Code for counter=1 should match at time=60 (counter=2) with window=1 */
+	int ret = rw_totp_validate(secret, 20, 287082, 60, 1);
+	TEST_ASSERT_EQUAL_INT(0, ret);
+}
+
+void test_totp_validate_window_too_far(void)
+{
+	uint8_t secret[] = "12345678901234567890";
+	/* Code for counter=1 should NOT match at time=120 (counter=4) with window=1 */
+	int ret = rw_totp_validate(secret, 20, 287082, 120, 1);
+	TEST_ASSERT_EQUAL_INT(-EACCES, ret);
+}
+
 int main(void)
 {
 	UNITY_BEGIN();
@@ -145,5 +179,9 @@ int main(void)
 	RUN_TEST(test_totp_generate_rfc6238_time1234567890);
 	RUN_TEST(test_totp_generate_rfc6238_time2000000000);
 	RUN_TEST(test_totp_generate_null_params);
+	RUN_TEST(test_totp_validate_exact_match);
+	RUN_TEST(test_totp_validate_wrong_code);
+	RUN_TEST(test_totp_validate_window_drift);
+	RUN_TEST(test_totp_validate_window_too_far);
 	return UNITY_END();
 }
