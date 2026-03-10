@@ -1,7 +1,6 @@
 #ifndef RINGWALL_NETWORK_DNS_H
 #define RINGWALL_NETWORK_DNS_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

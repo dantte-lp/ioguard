@@ -1,7 +1,6 @@
 #ifndef RINGWALL_CONFIG_CONFIG_H
 #define RINGWALL_CONFIG_CONFIG_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

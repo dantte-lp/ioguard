@@ -5,7 +5,6 @@
 #include "core/worker.h"
 #include "network/cstp.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 
 /** Default drain timeout in seconds before force-closing connections. */

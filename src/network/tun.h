@@ -9,7 +9,6 @@
 #ifndef RINGWALL_NETWORK_TUN_H
 #define RINGWALL_NETWORK_TUN_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

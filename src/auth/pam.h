@@ -1,7 +1,6 @@
 #ifndef RINGWALL_AUTH_PAM_H
 #define RINGWALL_AUTH_PAM_H
 
-#include <stdbool.h>
 #include <stddef.h>
 
 constexpr size_t RW_PAM_MAX_SERVICE = 64;

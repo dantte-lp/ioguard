@@ -10,7 +10,6 @@
 #define RINGWALL_NETWORK_HTTP_H
 
 #include <llhttp.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

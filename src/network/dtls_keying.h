@@ -8,7 +8,6 @@
 #ifndef RINGWALL_NETWORK_DTLS_KEYING_H
 #define RINGWALL_NETWORK_DTLS_KEYING_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

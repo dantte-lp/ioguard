@@ -10,7 +10,6 @@
 #define RINGWALL_STORAGE_SQLITE_H
 
 #include <sqlite3.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

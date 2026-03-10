@@ -11,7 +11,6 @@
 #define RINGWALL_STORAGE_MDBX_H
 
 #include <mdbx.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 

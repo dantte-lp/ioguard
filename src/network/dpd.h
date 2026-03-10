@@ -10,7 +10,6 @@
 #ifndef RINGWALL_NETWORK_DPD_H
 #define RINGWALL_NETWORK_DPD_H
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 

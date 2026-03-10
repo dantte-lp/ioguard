@@ -4,7 +4,6 @@
 #include "core/conn_data.h"
 #include "network/dpd.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 

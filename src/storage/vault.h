@@ -1,7 +1,6 @@
 #ifndef RINGWALL_STORAGE_VAULT_H
 #define RINGWALL_STORAGE_VAULT_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>

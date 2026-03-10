@@ -1,7 +1,6 @@
 #ifndef RINGWALL_IPC_MESSAGES_H
 #define RINGWALL_IPC_MESSAGES_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>

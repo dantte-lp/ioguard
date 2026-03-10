@@ -9,7 +9,6 @@
 #ifndef RINGWALL_SECURITY_LANDLOCK_H
 #define RINGWALL_SECURITY_LANDLOCK_H
 
-#include <stdbool.h>
 #include <stdint.h>
 
 /** Landlock profile selecting which filesystem paths to allow. */

@@ -8,7 +8,6 @@
 #include "storage/sqlite.h"
 #include "storage/vault.h"
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

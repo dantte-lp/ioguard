@@ -4,7 +4,6 @@
 #include "core/worker.h"
 #include "io/uring.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 
 /**
