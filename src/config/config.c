@@ -89,8 +89,9 @@ static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "ipv4-pool");
-    if (d.ok) {
-        safe_copy(net->ipv4_pool, d.u.s, sizeof(net->ipv4_pool));
+    if (d.ok && net->ipv4_pool_count < RW_CONFIG_MAX_POOLS) {
+        safe_copy(net->ipv4_pools[net->ipv4_pool_count], d.u.s, sizeof(net->ipv4_pools[0]));
+        net->ipv4_pool_count++;
         free(d.u.s);
     }
     d = toml_string_in(tbl, "default-domain");

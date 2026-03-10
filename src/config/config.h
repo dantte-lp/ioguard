@@ -22,8 +22,13 @@ typedef struct {
     uint32_t cookie_rekey;
 } rw_config_auth_t;
 
+constexpr size_t RW_CONFIG_MAX_POOLS = 16;
+
 typedef struct {
-    char ipv4_pool[RW_CONFIG_MAX_STR];
+    char ipv4_pools[RW_CONFIG_MAX_POOLS][RW_CONFIG_MAX_STR];
+    uint32_t ipv4_pool_count;
+    char ipv6_pools[RW_CONFIG_MAX_POOLS][RW_CONFIG_MAX_STR];
+    uint32_t ipv6_pool_count;
     char dns[RW_CONFIG_MAX_DNS][RW_CONFIG_MAX_STR];
     uint32_t dns_count;
     char default_domain[RW_CONFIG_MAX_STR];

@@ -61,7 +61,7 @@ void test_config_network_values(void)
     int ret = rw_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    TEST_ASSERT_EQUAL_STRING("10.10.0.0/16", cfg.network.ipv4_pool);
+    TEST_ASSERT_EQUAL_STRING("10.10.0.0/16", cfg.network.ipv4_pools[0]);
     TEST_ASSERT_EQUAL_UINT32(1400, cfg.network.mtu);
     TEST_ASSERT_EQUAL_STRING("corp.example.com", cfg.network.default_domain);
 
