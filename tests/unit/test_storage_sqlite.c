@@ -169,6 +169,57 @@ void test_sqlite_ban_add_and_check(void)
     TEST_ASSERT_FALSE(banned);
 }
 
+void test_sqlite_user_totp_set_and_lookup(void)
+{
+    rw_user_record_t u;
+    make_user(&u, "totp_user");
+    TEST_ASSERT_EQUAL_INT(0, rw_sqlite_user_create(&ctx, &u));
+
+    uint8_t secret[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    TEST_ASSERT_EQUAL_INT(
+        0, rw_sqlite_user_totp_set(&ctx, "totp_user", secret, sizeof(secret),
+                                    "[\"ABCD1234\"]"));
+
+    rw_user_record_t out = {0};
+    TEST_ASSERT_EQUAL_INT(0, rw_sqlite_user_lookup(&ctx, "totp_user", &out));
+    TEST_ASSERT_TRUE(out.totp_enabled);
+    TEST_ASSERT_EQUAL_UINT(sizeof(secret), out.totp_secret_len);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(secret, out.totp_secret, sizeof(secret));
+    TEST_ASSERT_EQUAL_STRING("[\"ABCD1234\"]", out.totp_recovery);
+}
+
+void test_sqlite_user_totp_clear(void)
+{
+    rw_user_record_t u;
+    make_user(&u, "clear_user");
+    TEST_ASSERT_EQUAL_INT(0, rw_sqlite_user_create(&ctx, &u));
+
+    uint8_t secret[] = {0xAA, 0xBB};
+    TEST_ASSERT_EQUAL_INT(
+        0, rw_sqlite_user_totp_set(&ctx, "clear_user", secret, sizeof(secret), "[]"));
+
+    TEST_ASSERT_EQUAL_INT(0, rw_sqlite_user_totp_clear(&ctx, "clear_user"));
+
+    rw_user_record_t out = {0};
+    TEST_ASSERT_EQUAL_INT(0, rw_sqlite_user_lookup(&ctx, "clear_user", &out));
+    TEST_ASSERT_FALSE(out.totp_enabled);
+    TEST_ASSERT_EQUAL_UINT(0, out.totp_secret_len);
+}
+
+void test_sqlite_user_totp_set_nonexistent_returns_enoent(void)
+{
+    uint8_t secret[] = {0x01};
+    TEST_ASSERT_EQUAL_INT(
+        -ENOENT, rw_sqlite_user_totp_set(&ctx, "ghost", secret, sizeof(secret), "[]"));
+}
+
+void test_sqlite_user_totp_null_params(void)
+{
+    TEST_ASSERT_EQUAL_INT(-EINVAL,
+                          rw_sqlite_user_totp_set(nullptr, nullptr, nullptr, 0, nullptr));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_sqlite_user_totp_clear(nullptr, nullptr));
+}
+
 void test_sqlite_injection_prevention(void)
 {
     /*
@@ -206,6 +257,10 @@ int main(void)
     RUN_TEST(test_sqlite_audit_log_query_by_username);
     RUN_TEST(test_sqlite_ban_check_not_banned);
     RUN_TEST(test_sqlite_ban_add_and_check);
+    RUN_TEST(test_sqlite_user_totp_set_and_lookup);
+    RUN_TEST(test_sqlite_user_totp_clear);
+    RUN_TEST(test_sqlite_user_totp_set_nonexistent_returns_enoent);
+    RUN_TEST(test_sqlite_user_totp_null_params);
     RUN_TEST(test_sqlite_injection_prevention);
     return UNITY_END();
 }
