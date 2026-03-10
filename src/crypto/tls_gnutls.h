@@ -115,8 +115,9 @@ struct tls_private_key {
 [[nodiscard]] int tls_gnutls_map_error(int gnutls_err);
 
 /* GnuTLS I/O callback wrappers */
-ssize_t tls_gnutls_push_wrapper(gnutls_transport_ptr_t ptr, const void *data, size_t len);
-ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr, void *data, size_t len);
-int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms);
+[[nodiscard]] ssize_t tls_gnutls_push_wrapper(gnutls_transport_ptr_t ptr, const void *data,
+                                              size_t len);
+[[nodiscard]] ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr, void *data, size_t len);
+[[nodiscard]] int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms);
 
 #endif /* RINGWALL_TLS_GNUTLS_H */

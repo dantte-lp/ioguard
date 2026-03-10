@@ -1,7 +1,6 @@
 #ifndef RINGWALL_CONFIG_CONFIG_H
 #define RINGWALL_CONFIG_CONFIG_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -20,6 +19,9 @@ typedef struct {
     char method[64];
     uint32_t cookie_timeout;
     uint32_t cookie_rekey;
+    char totp_issuer[128];
+    uint32_t totp_digits;
+    uint32_t totp_window;
 } rw_config_auth_t;
 
 constexpr size_t RW_CONFIG_MAX_POOLS = 16;
@@ -51,6 +53,7 @@ typedef struct {
 typedef struct {
     char mdbx_path[RW_CONFIG_MAX_STR];
     char sqlite_path[RW_CONFIG_MAX_STR];
+    char vault_key_path[RW_CONFIG_MAX_STR];
 } rw_config_storage_t;
 
 typedef struct {

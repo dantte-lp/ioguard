@@ -2,7 +2,6 @@
 #define RINGWALL_NETWORK_IPAM_H
 
 #include <netinet/in.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

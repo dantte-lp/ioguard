@@ -203,7 +203,7 @@ static void handle_client(tls_context_t *ctx, int client_fd, struct sockaddr_in 
         if (received == TLS_E_AGAIN || received == TLS_E_INTERRUPTED) {
             // Non-blocking I/O - retry with 10ms delay
             struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000000}; // 10ms
-            nanosleep(&ts, NULL);
+            nanosleep(&ts, nullptr);
             continue;
         }
 

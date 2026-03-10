@@ -7,7 +7,6 @@
 #include "security/sandbox.h"
 
 #include <netinet/in.h>
-#include <stdbool.h>
 #include <stdint.h>
 
 /**

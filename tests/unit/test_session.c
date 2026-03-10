@@ -165,9 +165,11 @@ void test_session_count(void)
     TEST_ASSERT_EQUAL_UINT32(2, rw_session_count(store));
 
     uint8_t cookie[RW_SESSION_COOKIE_SIZE];
+    int ret;
 
     memcpy(cookie, s1->cookie, RW_SESSION_COOKIE_SIZE);
-    rw_session_delete(store, cookie, RW_SESSION_COOKIE_SIZE);
+    ret = rw_session_delete(store, cookie, RW_SESSION_COOKIE_SIZE);
+    TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT32(1, rw_session_count(store));
 }
 

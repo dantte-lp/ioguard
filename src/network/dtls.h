@@ -9,7 +9,6 @@
 #ifndef RINGWALL_NETWORK_DTLS_H
 #define RINGWALL_NETWORK_DTLS_H
 
-#include <stdbool.h>
 #include <stdint.h>
 
 constexpr uint32_t RW_DTLS_DEFAULT_MTU = 1400;

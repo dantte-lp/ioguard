@@ -1,7 +1,6 @@
 #ifndef _GNU_SOURCE
 #    define _GNU_SOURCE
 #endif
-#include <stdbool.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>

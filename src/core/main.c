@@ -7,7 +7,6 @@
 
 #include <errno.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -161,7 +160,7 @@ int main(int argc, char *argv[])
     while (running) {
         ssize_t n = read(sigfd, &ssi, sizeof(ssi));
         if (n != (ssize_t)sizeof(ssi)) {
-            break;  /* blocking fd — partial read is fatal */
+            break; /* blocking fd — partial read is fatal */
         }
         if (ssi.ssi_signo == SIGTERM || ssi.ssi_signo == SIGINT) {
             running = false;

@@ -10,7 +10,6 @@
 #define RINGWALL_SECURITY_WOLFSENTRY_H
 
 #include <netinet/in.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <wolfsentry/wolfsentry.h>
 

@@ -3,7 +3,6 @@
 
 #include "crypto/tls_abstract.h"
 
-#include <stdbool.h>
 #include <stdint.h>
 
 /**

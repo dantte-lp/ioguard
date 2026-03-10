@@ -6,6 +6,7 @@
 #include "storage/sqlite.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 
 /* ---- Schema DDL ---- */
@@ -17,7 +18,9 @@ static const char *const DDL_USERS = "CREATE TABLE IF NOT EXISTS users ("
                                      "  enabled         INTEGER DEFAULT 1,"
                                      "  failed_attempts INTEGER DEFAULT 0,"
                                      "  locked_until    TEXT DEFAULT '',"
-                                     "  totp_enabled    INTEGER DEFAULT 0"
+                                     "  totp_enabled    INTEGER DEFAULT 0,"
+                                     "  totp_secret     BLOB DEFAULT NULL,"
+                                     "  totp_recovery   TEXT DEFAULT NULL"
                                      ")";
 
 static const char *const DDL_AUDIT_LOG = "CREATE TABLE IF NOT EXISTS audit_log ("
@@ -44,13 +47,14 @@ static const char *const DDL_BAN_LIST = "CREATE TABLE IF NOT EXISTS ban_list ("
 
 static const char *const SQL_USER_LOOKUP =
     "SELECT username, password_hash, groups, enabled, failed_attempts,"
-    "       locked_until, totp_enabled"
+    "       locked_until, totp_enabled, totp_secret, totp_recovery"
     " FROM users WHERE username = ?";
 
 static const char *const SQL_USER_CREATE =
     "INSERT INTO users (username, password_hash, groups, enabled,"
-    "                   failed_attempts, locked_until, totp_enabled)"
-    " VALUES (?, ?, ?, ?, ?, ?, ?)";
+    "                   failed_attempts, locked_until, totp_enabled,"
+    "                   totp_secret, totp_recovery)"
+    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 static const char *const SQL_AUDIT_INSERT =
     "INSERT INTO audit_log (event_type, username, source_ip, source_port,"
@@ -68,6 +72,14 @@ static const char *const SQL_BAN_CHECK =
 
 static const char *const SQL_BAN_ADD = "INSERT OR REPLACE INTO ban_list (ip, reason, expires_at)"
                                        " VALUES (?, ?, datetime('now', '+' || ? || ' minutes'))";
+
+static const char *const SQL_USER_TOTP_SET =
+    "UPDATE users SET totp_enabled = 1, totp_secret = ?, totp_recovery = ?"
+    " WHERE username = ?";
+
+static const char *const SQL_USER_TOTP_CLEAR =
+    "UPDATE users SET totp_enabled = 0, totp_secret = NULL, totp_recovery = NULL"
+    " WHERE username = ?";
 
 /* ---- Helpers ---- */
 
@@ -156,6 +168,8 @@ int rw_sqlite_init(rw_sqlite_ctx_t *ctx, const char *path)
     err = err ? err : prepare_stmt(ctx->db, SQL_AUDIT_QUERY, &ctx->stmt_audit_query);
     err = err ? err : prepare_stmt(ctx->db, SQL_BAN_CHECK, &ctx->stmt_ban_check);
     err = err ? err : prepare_stmt(ctx->db, SQL_BAN_ADD, &ctx->stmt_ban_add);
+    err = err ? err : prepare_stmt(ctx->db, SQL_USER_TOTP_SET, &ctx->stmt_user_totp_set);
+    err = err ? err : prepare_stmt(ctx->db, SQL_USER_TOTP_CLEAR, &ctx->stmt_user_totp_clear);
     if (err != 0) {
         goto cleanup;
     }
@@ -179,6 +193,8 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx)
     sqlite3_finalize(ctx->stmt_audit_query);
     sqlite3_finalize(ctx->stmt_ban_check);
     sqlite3_finalize(ctx->stmt_ban_add);
+    sqlite3_finalize(ctx->stmt_user_totp_set);
+    sqlite3_finalize(ctx->stmt_user_totp_clear);
 
     if (ctx->db != nullptr) {
         sqlite3_close(ctx->db);
@@ -204,6 +220,16 @@ int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx, const rw_user_record_t *user)
     sqlite3_bind_int(stmt, 5, (int)user->failed_attempts);
     sqlite3_bind_text(stmt, 6, user->locked_until, -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 7, user->totp_enabled ? 1 : 0);
+    if (user->totp_secret_len > 0) {
+        sqlite3_bind_blob(stmt, 8, user->totp_secret, (int)user->totp_secret_len, SQLITE_TRANSIENT);
+    } else {
+        sqlite3_bind_null(stmt, 8);
+    }
+    if (user->totp_recovery[0] != '\0') {
+        sqlite3_bind_text(stmt, 9, user->totp_recovery, -1, SQLITE_TRANSIENT);
+    } else {
+        sqlite3_bind_null(stmt, 9);
+    }
 
     int rc = sqlite3_step(stmt);
     if (rc == SQLITE_CONSTRAINT) {
@@ -246,6 +272,16 @@ int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx, const char *username, rw_user_re
     safe_copy(out->locked_until, sizeof(out->locked_until),
               (const char *)sqlite3_column_text(stmt, 5));
     out->totp_enabled = sqlite3_column_int(stmt, 6) != 0;
+
+    /* TOTP secret (BLOB) */
+    const void *blob = sqlite3_column_blob(stmt, 7);
+    int blob_bytes = sqlite3_column_bytes(stmt, 7);
+    if (blob != nullptr && blob_bytes > 0 && (size_t)blob_bytes <= sizeof(out->totp_secret)) {
+        memcpy(out->totp_secret, blob, (size_t)blob_bytes);
+        out->totp_secret_len = (size_t)blob_bytes;
+    }
+    safe_copy(out->totp_recovery, sizeof(out->totp_recovery),
+              (const char *)sqlite3_column_text(stmt, 8));
 
     return 0;
 }
@@ -357,6 +393,63 @@ int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason,
     int rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE) {
         return -EIO;
+    }
+
+    return 0;
+}
+
+int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
+                            const uint8_t *encrypted_secret, size_t secret_len,
+                            const char *encrypted_recovery)
+{
+    if (ctx == nullptr || username == nullptr || encrypted_secret == nullptr || secret_len == 0 ||
+        secret_len > INT_MAX) {
+        return -EINVAL;
+    }
+
+    sqlite3_stmt *stmt = ctx->stmt_user_totp_set;
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+
+    sqlite3_bind_blob(stmt, 1, encrypted_secret, (int)secret_len, SQLITE_TRANSIENT);
+    if (encrypted_recovery != nullptr) {
+        sqlite3_bind_text(stmt, 2, encrypted_recovery, -1, SQLITE_TRANSIENT);
+    } else {
+        sqlite3_bind_null(stmt, 2);
+    }
+    sqlite3_bind_text(stmt, 3, username, -1, SQLITE_TRANSIENT);
+
+    int rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        return -EIO;
+    }
+
+    if (sqlite3_changes(ctx->db) == 0) {
+        return -ENOENT;
+    }
+
+    return 0;
+}
+
+int rw_sqlite_user_totp_clear(rw_sqlite_ctx_t *ctx, const char *username)
+{
+    if (ctx == nullptr || username == nullptr) {
+        return -EINVAL;
+    }
+
+    sqlite3_stmt *stmt = ctx->stmt_user_totp_clear;
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+
+    sqlite3_bind_text(stmt, 1, username, -1, SQLITE_TRANSIENT);
+
+    int rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        return -EIO;
+    }
+
+    if (sqlite3_changes(ctx->db) == 0) {
+        return -ENOENT;
     }
 
     return 0;

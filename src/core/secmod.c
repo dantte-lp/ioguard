@@ -1,6 +1,8 @@
 #include "core/secmod.h"
+#include "auth/totp.h"
 #include "ipc/messages.h"
 #include "ipc/transport.h"
+#include "storage/vault.h"
 
 #include <errno.h>
 #include <poll.h>
@@ -74,7 +76,108 @@ static int secmod_send_auth_response(int fd, const rw_ipc_auth_response_t *resp)
     return rw_ipc_send(fd, buf, (size_t)packed);
 }
 
-/* Handle an authentication request (username + password). */
+/* Create a session and populate the response fields. */
+static int secmod_create_session_response(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
+                                          rw_ipc_auth_response_t *resp)
+{
+    rw_session_t *session = nullptr;
+    int ret = rw_session_create(ctx->sessions, req->username, req->group,
+                                ctx->config->auth.cookie_timeout, &session);
+    if (ret == 0 && session != nullptr) {
+        resp->success = true;
+        resp->session_cookie = session->cookie;
+        resp->session_cookie_len = RW_SESSION_COOKIE_SIZE;
+        resp->session_ttl = session->ttl_seconds;
+        resp->assigned_ip = session->assigned_ip;
+        resp->dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
+                                                                : nullptr;
+        resp->default_domain = ctx->config->network.default_domain;
+
+        /* Persist to mdbx */
+        (void)secmod_persist_session(ctx, session);
+
+        /* Audit success */
+        secmod_audit_log(ctx, "AUTH", req->username, req->source_ip, "OK");
+        return 0;
+    }
+
+    resp->success = false;
+    resp->error_msg = "session creation failed";
+    return -1;
+}
+
+/* Handle TOTP second-factor validation. Returns 0 on success, <0 on failure. */
+static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
+                              rw_ipc_auth_response_t *resp)
+{
+    rw_user_record_t user;
+    memset(&user, 0, sizeof(user));
+
+    if (req->otp == nullptr || req->otp[0] == '\0') {
+        resp->success = false;
+        resp->error_msg = "missing OTP";
+        return -EINVAL;
+    }
+
+    int ret = rw_sqlite_user_lookup(ctx->sqlite, req->username, &user);
+    if (ret < 0) {
+        resp->success = false;
+        resp->error_msg = "user lookup failed";
+        explicit_bzero(&user, sizeof(user));
+        return ret;
+    }
+
+    if (!user.totp_enabled || user.totp_secret_len == 0) {
+        resp->success = false;
+        resp->error_msg = "TOTP not configured for user";
+        explicit_bzero(&user, sizeof(user));
+        return -EINVAL;
+    }
+
+    /* Decrypt the TOTP secret via vault */
+    uint8_t decrypted[RW_TOTP_SECRET_SIZE + 16];
+    size_t dec_len = 0;
+
+    ret = rw_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len, decrypted,
+                           sizeof(decrypted), &dec_len);
+    explicit_bzero(&user, sizeof(user));
+
+    if (ret < 0) {
+        explicit_bzero(decrypted, sizeof(decrypted));
+        resp->success = false;
+        resp->error_msg = "TOTP secret decryption failed";
+        return ret;
+    }
+
+    /* Parse OTP string to uint32_t (6-8 digits max) */
+    char *end = nullptr;
+    errno = 0;
+    unsigned long otp_val = strtoul(req->otp, &end, 10);
+    if (end == req->otp || *end != '\0' || otp_val > UINT32_MAX || errno == ERANGE) {
+        explicit_bzero(decrypted, sizeof(decrypted));
+        resp->success = false;
+        resp->error_msg = "invalid OTP format";
+        secmod_audit_log(ctx, "TOTP", req->username, req->source_ip, "TOTP_FAIL");
+        return -EINVAL;
+    }
+
+    uint32_t otp_code = (uint32_t)otp_val;
+    ret = rw_totp_validate(decrypted, dec_len, otp_code, (uint64_t)time(nullptr), 1);
+    explicit_bzero(decrypted, sizeof(decrypted));
+
+    if (ret < 0) {
+        resp->success = false;
+        resp->error_msg = "TOTP validation failed";
+        secmod_audit_log(ctx, "TOTP", req->username, req->source_ip, "TOTP_FAIL");
+        return ret;
+    }
+
+    /* TOTP valid — create session */
+    secmod_audit_log(ctx, "TOTP", req->username, req->source_ip, "OK");
+    return secmod_create_session_response(ctx, req, resp);
+}
+
+/* Handle an authentication request (username + password, or OTP second factor). */
 static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
 {
     rw_ipc_auth_response_t resp;
@@ -92,30 +195,36 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
         }
     }
 
+    /* TOTP second-factor: OTP provided without password (second round-trip) */
+    if (req->otp != nullptr && req->otp[0] != '\0' && req->username != nullptr &&
+        req->username[0] != '\0' && (req->password == nullptr || req->password[0] == '\0') &&
+        ctx->sqlite != nullptr && ctx->vault != nullptr) {
+        (void)secmod_handle_totp(ctx, req, &resp);
+        return secmod_send_auth_response(ctx->ipc_fd, &resp);
+    }
+
+    /* Primary authentication via PAM */
     rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
     if (result == RW_AUTH_SUCCESS) {
-        rw_session_t *session = nullptr;
-        int ret = rw_session_create(ctx->sessions, req->username, req->group,
-                                    ctx->config->auth.cookie_timeout, &session);
-        if (ret == 0 && session != nullptr) {
-            resp.success = true;
-            resp.session_cookie = session->cookie;
-            resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
-            resp.session_ttl = session->ttl_seconds;
-            resp.assigned_ip = session->assigned_ip;
-            resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
-                                                                   : nullptr;
-            resp.default_domain = ctx->config->network.default_domain;
-
-            /* Persist to mdbx */
-            (void)secmod_persist_session(ctx, session);
-
-            /* Audit success */
-            secmod_audit_log(ctx, "AUTH", req->username, req->source_ip, "OK");
-        } else {
-            resp.success = false;
-            resp.error_msg = "session creation failed";
+        /* Check if user has TOTP enabled */
+        if (ctx->sqlite != nullptr && ctx->vault != nullptr) {
+            rw_user_record_t user;
+            memset(&user, 0, sizeof(user));
+            int lret = rw_sqlite_user_lookup(ctx->sqlite, req->username, &user);
+            if (lret == 0 && user.totp_enabled && user.totp_secret_len > 0) {
+                /* TOTP required — signal challenge, do not create session yet */
+                explicit_bzero(&user, sizeof(user));
+                resp.success = false;
+                resp.requires_totp = true;
+                resp.error_msg = "TOTP required";
+                secmod_audit_log(ctx, "AUTH", req->username, req->source_ip, "TOTP_REQUIRED");
+                return secmod_send_auth_response(ctx->ipc_fd, &resp);
+            }
+            explicit_bzero(&user, sizeof(user));
         }
+
+        /* No TOTP — create session directly */
+        (void)secmod_create_session_response(ctx, req, &resp);
     } else {
         resp.success = false;
         resp.error_msg = "authentication failed";
@@ -265,6 +374,23 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
         }
     }
 
+    /* Initialize vault for field-level encryption (TOTP secrets) */
+    if (config->storage.vault_key_path[0] != '\0') {
+        ret = rw_vault_init(config->storage.vault_key_path, &ctx->vault);
+        if (ret < 0) {
+            if (ctx->sqlite != nullptr) {
+                rw_sqlite_close(ctx->sqlite);
+                free(ctx->sqlite);
+            }
+            if (ctx->mdbx != nullptr) {
+                rw_mdbx_close(ctx->mdbx);
+                free(ctx->mdbx);
+            }
+            rw_session_store_destroy(ctx->sessions);
+            return ret;
+        }
+    }
+
     return 0;
 }
 
@@ -279,7 +405,7 @@ int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t l
 
     int ret = rw_ipc_unpack_auth_request(data, len, &auth_req);
 
-    if (ret == 0 && auth_req.password != nullptr && auth_req.username != nullptr) {
+    if (ret == 0 && auth_req.username != nullptr) {
         ret = secmod_handle_auth(ctx, &auth_req);
         rw_ipc_free_auth_request(&auth_req);
         return ret;
@@ -367,6 +493,10 @@ void rw_secmod_destroy(rw_secmod_ctx_t *ctx)
     if (ctx->sqlite != nullptr) {
         rw_sqlite_close(ctx->sqlite);
         free(ctx->sqlite);
+    }
+
+    if (ctx->vault != nullptr) {
+        rw_vault_destroy(ctx->vault);
     }
 
     explicit_bzero(ctx, sizeof(*ctx));

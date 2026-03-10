@@ -1,7 +1,6 @@
 #ifndef RINGWALL_IPC_MESSAGES_H
 #define RINGWALL_IPC_MESSAGES_H
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -52,6 +51,7 @@ typedef struct {
     const char *default_domain;
     const char **routes;
     uint32_t route_count;
+    bool requires_totp;
 } rw_ipc_auth_response_t;
 
 [[nodiscard]] ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp, uint8_t *buf,

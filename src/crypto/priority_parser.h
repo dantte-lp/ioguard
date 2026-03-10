@@ -43,7 +43,6 @@
  * - Architecture Document: docs/architecture/PRIORITY_STRING_PARSER.md
  */
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "tls_abstract.h"

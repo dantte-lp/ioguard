@@ -262,10 +262,25 @@ target_include_directories(rw_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_IN
 add_library(rw_xml_auth STATIC src/network/xml_auth.c)
 target_include_directories(rw_xml_auth PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
+find_path(IOHTTPPARSER_INCLUDE_DIR iohttpparser/ihtp_parser.h
+    PATHS /usr/local/include /usr/include)
+find_library(IOHTTPPARSER_LIBRARY iohttpparser
+    PATHS /usr/local/lib /usr/local/lib64 /usr/lib /usr/lib64)
+if(IOHTTPPARSER_INCLUDE_DIR AND IOHTTPPARSER_LIBRARY)
+    set(IOHTTPPARSER_FOUND TRUE)
+    message(STATUS "Found iohttpparser: ${IOHTTPPARSER_LIBRARY}")
+else()
+    message(WARNING "iohttpparser not found — HTTP parser will not build")
+endif()
+
 add_library(rw_http STATIC src/network/http.c)
-target_include_directories(rw_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/include)
-target_link_libraries(rw_http PUBLIC llhttp)
-target_link_directories(rw_http PUBLIC /usr/local/lib64)
+target_include_directories(rw_http PUBLIC ${CMAKE_SOURCE_DIR}/src)
+if(IOHTTPPARSER_FOUND)
+    target_include_directories(rw_http PUBLIC ${IOHTTPPARSER_INCLUDE_DIR})
+    target_link_libraries(rw_http PUBLIC ${IOHTTPPARSER_LIBRARY})
+else()
+    message(WARNING "rw_http: iohttpparser not found — linking will fail")
+endif()
 target_compile_definitions(rw_http PUBLIC _GNU_SOURCE)
 
 add_library(rw_core STATIC src/core/process.c)
@@ -296,6 +311,8 @@ if(WOLFSSL_FOUND)
         src/crypto/session_cache.c
     )
     target_compile_definitions(rw_crypto PUBLIC _GNU_SOURCE USE_WOLFSSL)
+    target_compile_definitions(rw_crypto PRIVATE
+        CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     target_include_directories(rw_crypto PUBLIC
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/crypto
@@ -367,6 +384,107 @@ else()
     message(WARNING "SQLite3 not found — skipping storage/sqlite")
 endif()
 
+# --- Sprint 7: TOTP authentication library ---
+add_library(rw_totp STATIC src/auth/totp.c)
+target_include_directories(rw_totp PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(rw_totp PRIVATE _GNU_SOURCE)
+target_compile_features(rw_totp PRIVATE c_std_23)
+if(WOLFSSL_FOUND)
+    target_include_directories(rw_totp PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+    target_link_libraries(rw_totp PRIVATE ${WOLFSSL_LIBRARIES})
+    target_link_directories(rw_totp PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+    target_compile_definitions(rw_totp PRIVATE USE_WOLFSSL)
+endif()
+
+# --- Sprint 7: Crypto vault (AES-256-GCM field encryption) ---
+add_library(rw_vault STATIC src/storage/vault.c)
+target_include_directories(rw_vault PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(rw_vault PRIVATE _GNU_SOURCE)
+target_compile_features(rw_vault PRIVATE c_std_23)
+if(WOLFSSL_FOUND)
+    target_include_directories(rw_vault PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+    target_link_libraries(rw_vault PRIVATE ${WOLFSSL_LIBRARIES})
+    target_link_directories(rw_vault PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+    target_compile_definitions(rw_vault PRIVATE USE_WOLFSSL)
+endif()
+
+# --- Sprint 7: Auth backend registry ---
+add_library(rw_auth_backend STATIC src/auth/auth_backend.c)
+target_include_directories(rw_auth_backend PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+# --- Sprint 7: RADIUS authentication backend ---
+if(RADCLI_FOUND)
+    add_library(rw_auth_radius STATIC src/auth/radius.c)
+    target_include_directories(rw_auth_radius PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    target_link_libraries(rw_auth_radius PUBLIC rw_auth_backend)
+    target_compile_definitions(rw_auth_radius PRIVATE USE_RADCLI)
+    target_include_directories(rw_auth_radius PRIVATE ${RADCLI_INCLUDE_DIRS})
+    target_link_libraries(rw_auth_radius PUBLIC ${RADCLI_LIBRARIES})
+    target_link_directories(rw_auth_radius PUBLIC ${RADCLI_LIBRARY_DIRS})
+    message(STATUS "rw_auth_radius (RADIUS backend via radcli) configured")
+else()
+    add_library(rw_auth_radius STATIC src/auth/radius.c)
+    target_include_directories(rw_auth_radius PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    target_link_libraries(rw_auth_radius PUBLIC rw_auth_backend)
+    message(STATUS "rw_auth_radius (config validation only, no radcli)")
+endif()
+
+# --- Sprint 7: LDAP authentication backend ---
+if(LDAP_FOUND)
+    add_library(rw_auth_ldap STATIC src/auth/ldap_auth.c)
+    target_include_directories(rw_auth_ldap PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    target_link_libraries(rw_auth_ldap PUBLIC rw_auth_backend)
+    target_compile_definitions(rw_auth_ldap PRIVATE USE_LDAP)
+    target_include_directories(rw_auth_ldap PRIVATE ${LDAP_INCLUDE_DIRS})
+    target_link_libraries(rw_auth_ldap PUBLIC ${LDAP_LIBRARIES})
+    target_link_directories(rw_auth_ldap PUBLIC ${LDAP_LIBRARY_DIRS})
+    message(STATUS "rw_auth_ldap (LDAP backend via libldap) configured")
+else()
+    add_library(rw_auth_ldap STATIC src/auth/ldap_auth.c)
+    target_include_directories(rw_auth_ldap PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    target_link_libraries(rw_auth_ldap PUBLIC rw_auth_backend)
+    message(STATUS "rw_auth_ldap (config validation only, no libldap)")
+endif()
+
+# --- Sprint 7: Certificate authentication backend ---
+add_library(rw_auth_cert STATIC src/auth/cert_auth.c)
+target_include_directories(rw_auth_cert PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(rw_auth_cert PUBLIC rw_auth_backend)
+if(WOLFSSL_FOUND)
+    target_compile_definitions(rw_auth_cert PRIVATE USE_WOLFSSL)
+    target_include_directories(rw_auth_cert PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+    target_link_libraries(rw_auth_cert PRIVATE ${WOLFSSL_LIBRARIES})
+    target_link_directories(rw_auth_cert PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+    message(STATUS "rw_auth_cert (certificate auth via wolfSSL) configured")
+else()
+    message(STATUS "rw_auth_cert (config validation only, no wolfSSL)")
+endif()
+
+# --- Sprint 7: Structured logging (stumpless) ---
+find_path(STUMPLESS_INCLUDE_DIR stumpless.h
+    PATHS /usr/local/include /usr/include)
+find_library(STUMPLESS_LIBRARY stumpless
+    PATHS /usr/local/lib /usr/local/lib64 /usr/lib /usr/lib64)
+if(STUMPLESS_INCLUDE_DIR AND STUMPLESS_LIBRARY)
+    set(STUMPLESS_FOUND TRUE)
+    message(STATUS "Found stumpless: ${STUMPLESS_LIBRARY}")
+else()
+    set(STUMPLESS_FOUND FALSE)
+    message(STATUS "stumpless not found — logging uses stderr fallback")
+endif()
+
+add_library(rw_log STATIC src/log/rw_log.c)
+target_include_directories(rw_log PUBLIC ${CMAKE_SOURCE_DIR}/src)
+if(STUMPLESS_FOUND)
+    target_compile_definitions(rw_log PRIVATE USE_STUMPLESS)
+    target_include_directories(rw_log PRIVATE ${STUMPLESS_INCLUDE_DIR})
+    target_link_libraries(rw_log PRIVATE ${STUMPLESS_LIBRARY})
+endif()
+
+# --- Sprint 7: Prometheus metrics ---
+add_library(rw_metrics STATIC src/metrics/prometheus.c)
+target_include_directories(rw_metrics PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
 # --- sec-mod authentication process ---
 if(TARGET rw_pam)
     add_library(rw_secmod STATIC src/core/secmod.c)
@@ -378,6 +496,12 @@ if(TARGET rw_pam)
     endif()
     if(TARGET rw_sqlite)
         target_link_libraries(rw_secmod PUBLIC rw_sqlite)
+    endif()
+    if(TARGET rw_totp)
+        target_link_libraries(rw_secmod PUBLIC rw_totp)
+    endif()
+    if(TARGET rw_vault)
+        target_link_libraries(rw_secmod PUBLIC rw_vault)
     endif()
     message(STATUS "rw_secmod (sec-mod authentication process) configured")
 endif()
@@ -754,6 +878,65 @@ if(BUILD_TESTING)
         target_compile_definitions(rw_dns PRIVATE _GNU_SOURCE)
         rw_add_test(test_dns tests/unit/test_dns.c rw_dns)
 
+        # Sprint 7 — TOTP test
+        rw_add_test(test_totp tests/unit/test_totp.c rw_totp)
+        if(WOLFSSL_FOUND)
+            target_include_directories(test_totp PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+            target_link_directories(test_totp PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+            target_compile_definitions(test_totp PRIVATE USE_WOLFSSL)
+        endif()
+
+        # Sprint 7 — Vault test
+        rw_add_test(test_vault tests/unit/test_vault.c rw_vault)
+        if(WOLFSSL_FOUND)
+            target_include_directories(test_vault PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+            target_link_directories(test_vault PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+            target_compile_definitions(test_vault PRIVATE USE_WOLFSSL)
+        endif()
+
+        # Sprint 7 — Auth backend registry test
+        rw_add_test(test_auth_backend tests/unit/test_auth_backend.c rw_auth_backend)
+
+        # Sprint 7 — RADIUS authentication test
+        rw_add_test(test_auth_radius tests/unit/test_auth_radius.c rw_auth_radius rw_auth_backend)
+
+        # Sprint 7 — LDAP authentication test
+        rw_add_test(test_auth_ldap tests/unit/test_auth_ldap.c rw_auth_ldap rw_auth_backend)
+
+        # Sprint 7 — Certificate authentication test
+        rw_add_test(test_auth_cert tests/unit/test_auth_cert.c rw_auth_cert rw_auth_backend)
+        if(WOLFSSL_FOUND)
+            target_include_directories(test_auth_cert PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+            target_link_directories(test_auth_cert PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+            target_compile_definitions(test_auth_cert PRIVATE USE_WOLFSSL)
+        endif()
+
+        # Sprint 7 — Structured logging test
+        rw_add_test(test_log tests/unit/test_log.c rw_log)
+        if(STUMPLESS_FOUND)
+            target_compile_definitions(test_log PRIVATE USE_STUMPLESS)
+            target_include_directories(test_log PRIVATE ${STUMPLESS_INCLUDE_DIR})
+            target_link_libraries(test_log PRIVATE ${STUMPLESS_LIBRARY})
+        endif()
+
+        # Sprint 7 — Prometheus metrics test
+        rw_add_test(test_prometheus tests/unit/test_prometheus.c rw_metrics)
+
+        # Sprint 7 — MFA integration test
+        if(TARGET rw_secmod AND TARGET rw_totp AND TARGET rw_vault AND TARGET rw_sqlite)
+            rw_add_test(test_auth_mfa tests/integration/test_auth_mfa.c
+                rw_secmod rw_totp rw_vault rw_sqlite)
+            target_link_libraries(test_auth_mfa PRIVATE
+                ${SQLITE3_LIBRARY})
+            target_include_directories(test_auth_mfa PRIVATE
+                ${SQLITE3_INCLUDE_DIR})
+            if(WOLFSSL_FOUND)
+                target_include_directories(test_auth_mfa PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+                target_link_directories(test_auth_mfa PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+                target_compile_definitions(test_auth_mfa PRIVATE USE_WOLFSSL)
+            endif()
+        endif()
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
@@ -942,6 +1125,8 @@ message(STATUS "  LZ4:             ${LZ4_FOUND}")
 message(STATUS "  libseccomp:      ${LIBSECCOMP_FOUND}")
 message(STATUS "  PAM:             ${PAM_FOUND}")
 message(STATUS "  Kerberos:        ${KRB5_FOUND}")
+message(STATUS "  iohttpparser:    ${IOHTTPPARSER_FOUND}")
+message(STATUS "  stumpless:       ${STUMPLESS_FOUND}")
 message(STATUS "")
 message(STATUS "TLS / Crypto:")
 message(STATUS "  wolfSSL:         ${WOLFSSL_FOUND}")

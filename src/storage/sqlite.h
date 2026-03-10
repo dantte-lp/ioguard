@@ -10,7 +10,6 @@
 #define RINGWALL_STORAGE_SQLITE_H
 
 #include <sqlite3.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -22,6 +21,9 @@ typedef struct {
     uint32_t failed_attempts;
     char locked_until[32]; /* ISO 8601 or empty */
     bool totp_enabled;
+    uint8_t totp_secret[128]; /* encrypted blob (IV+ct+tag) */
+    size_t totp_secret_len;   /* 0 if not set */
+    char totp_recovery[1024]; /* encrypted JSON, or empty */
 } rw_user_record_t;
 
 typedef struct {
@@ -43,6 +45,8 @@ typedef struct {
     sqlite3_stmt *stmt_audit_query;
     sqlite3_stmt *stmt_ban_check;
     sqlite3_stmt *stmt_ban_add;
+    sqlite3_stmt *stmt_user_totp_set;
+    sqlite3_stmt *stmt_user_totp_clear;
 } rw_sqlite_ctx_t;
 
 /**
@@ -117,5 +121,26 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  */
 [[nodiscard]] int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason,
                                     int duration_minutes);
+
+/**
+ * @brief Enable TOTP for a user with encrypted secret and recovery codes.
+ * @param ctx              Initialised SQLite context.
+ * @param username         User to update.
+ * @param encrypted_secret Encrypted TOTP secret blob.
+ * @param secret_len       Length of encrypted secret.
+ * @param encrypted_recovery Encrypted recovery codes (JSON string).
+ * @return 0 on success, -ENOENT if user not found, negative errno on error.
+ */
+[[nodiscard]] int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
+                                          const uint8_t *encrypted_secret, size_t secret_len,
+                                          const char *encrypted_recovery);
+
+/**
+ * @brief Disable TOTP for a user, clearing secret and recovery codes.
+ * @param ctx      Initialised SQLite context.
+ * @param username User to update.
+ * @return 0 on success, -ENOENT if user not found, negative errno on error.
+ */
+[[nodiscard]] int rw_sqlite_user_totp_clear(rw_sqlite_ctx_t *ctx, const char *username);
 
 #endif /* RINGWALL_STORAGE_SQLITE_H */

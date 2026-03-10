@@ -9,7 +9,6 @@
 #ifndef RINGWALL_CORE_WORKER_H
 #define RINGWALL_CORE_WORKER_H
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include "network/compress.h"

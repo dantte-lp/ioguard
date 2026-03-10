@@ -1,9 +1,9 @@
 /**
  * @file fuzz_http.c
- * @brief LibFuzzer target for HTTP request parsing via llhttp.
+ * @brief LibFuzzer target for HTTP request parsing via iohttpparser.
  *
  * Feeds arbitrary bytes to rw_http_parse() to find crashes or UB in the
- * llhttp-based request parser.
+ * iohttpparser-based request parser.
  */
 
 #include <network/http.h>

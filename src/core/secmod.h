@@ -6,8 +6,8 @@
 #include "core/session.h"
 #include "storage/mdbx.h"
 #include "storage/sqlite.h"
+#include "storage/vault.h"
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -29,6 +29,7 @@ typedef struct {
     rw_session_store_t *sessions;
     rw_mdbx_ctx_t *mdbx;     /* persistent sessions (nullable) */
     rw_sqlite_ctx_t *sqlite; /* audit + users (nullable) */
+    rw_vault_t *vault;       /* field-level encryption (nullable) */
     const rw_config_t *config;
     bool running;
 } rw_secmod_ctx_t;

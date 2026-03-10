@@ -39,7 +39,6 @@
  * - Explicit lifetimes and ownership
  */
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/socket.h>

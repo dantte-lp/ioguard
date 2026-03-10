@@ -36,6 +36,15 @@ Items to investigate or implement, not yet assigned to a sprint.
     upgrading**, may break code expecting mutable returns
   No io_uring changes in any release. OL10 may ship updates via `dnf`.
 
+## Research (Open)
+
+- [ ] **HashiCorp Vault integration** — evaluate adding Vault as an external
+  secrets backend (alternative to local file-based vault key). Use cases:
+  auto-unseal, dynamic TOTP secret rotation, centralized key management for
+  multi-node deployments. Assess: Vault Agent sidecar vs direct HTTP API,
+  AppRole auth, transit secrets engine for AES-256-GCM key wrapping,
+  latency impact on auth-mod hot path. Target: S9+.
+
 ## Technical Debt
 
 - [ ] Fix pre-existing test failures: `test_tls_wolfssl` (3 failures),

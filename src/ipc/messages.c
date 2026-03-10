@@ -68,7 +68,10 @@ void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req)
         explicit_bzero((void *)req->password, strlen(req->password));
         free((void *)req->password);
     }
-    free((void *)req->otp);
+    if (req->otp != nullptr) {
+        explicit_bzero((void *)req->otp, strlen(req->otp));
+        free((void *)req->otp);
+    }
     free((void *)req->cookie);
     memset(req, 0, sizeof(*req));
 }
@@ -92,6 +95,7 @@ ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp, uint8_t *b
         pb.session_cookie.data = (uint8_t *)resp->session_cookie;
         pb.session_cookie.len = resp->session_cookie_len;
     }
+    pb.requires_totp = resp->requires_totp;
 
     size_t packed_size = rw_ipc__auth_response__get_packed_size(&pb);
     if (packed_size > buf_size) {
@@ -132,6 +136,7 @@ int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len, rw_ipc_auth_res
             out->session_cookie_len = pb->session_cookie.len;
         }
     }
+    out->requires_totp = pb->requires_totp;
     rw_ipc__auth_response__free_unpacked(pb, nullptr);
     return 0;
 }
@@ -146,7 +151,10 @@ void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp)
         free((void *)resp->routes[i]);
     }
     free((void *)resp->routes);
-    free((void *)resp->session_cookie);
+    if (resp->session_cookie != nullptr) {
+        explicit_bzero((void *)resp->session_cookie, resp->session_cookie_len);
+        free((void *)resp->session_cookie);
+    }
     memset(resp, 0, sizeof(*resp));
 }
 

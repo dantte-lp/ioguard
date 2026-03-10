@@ -4,7 +4,6 @@
 /* liburing.h requires POSIX/GNU types (sigset_t, AT_FDCWD, idtype_t, etc.)
  * _GNU_SOURCE is set via target_compile_definitions in CMakeLists.txt */
 #include <liburing.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <sys/socket.h>
 
