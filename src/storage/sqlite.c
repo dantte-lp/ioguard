@@ -6,6 +6,7 @@
 #include "storage/sqlite.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 
 /* ---- Schema DDL ---- */
@@ -404,7 +405,7 @@ int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
                              const char *encrypted_recovery)
 {
     if (ctx == nullptr || username == nullptr || encrypted_secret == nullptr ||
-        secret_len == 0) {
+        secret_len == 0 || secret_len > INT_MAX) {
         return -EINVAL;
     }
 

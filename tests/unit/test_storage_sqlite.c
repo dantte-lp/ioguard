@@ -55,6 +55,8 @@ void test_sqlite_init_and_close(void)
     TEST_ASSERT_NOT_NULL(ctx.stmt_audit_query);
     TEST_ASSERT_NOT_NULL(ctx.stmt_ban_check);
     TEST_ASSERT_NOT_NULL(ctx.stmt_ban_add);
+    TEST_ASSERT_NOT_NULL(ctx.stmt_user_totp_set);
+    TEST_ASSERT_NOT_NULL(ctx.stmt_user_totp_clear);
 
     /* Close and re-open to exercise the full lifecycle. */
     rw_sqlite_close(&ctx);
