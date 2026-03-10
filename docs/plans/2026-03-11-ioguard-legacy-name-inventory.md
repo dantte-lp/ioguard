@@ -103,7 +103,7 @@ These need explicit naming decisions before editing:
    - `RW_`
    - `RINGWALL_`
 2. Build/package identity:
-   - `project(ringwall)`
+   - `project(ioguard)`
    - install include directory `ringwall/`
 3. Runtime artifacts:
    - binary name `ringwall`
@@ -114,7 +114,7 @@ These need explicit naming decisions before editing:
    - `ringwall-test`
    - `ringwall-build`
    - `ringwall-ci`
-   - `io.ringwall.*`
+   - `io.ioguard.*`
 5. Product-adjacent names:
    - `ringwall-connect`
    - `ringwall-docs`

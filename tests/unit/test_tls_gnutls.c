@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2025 ioguard Contributors
  *
- * This file is part of ringwall.
+ * This file is part of ioguard.
  *
  * Unit Tests for GnuTLS Backend
  *

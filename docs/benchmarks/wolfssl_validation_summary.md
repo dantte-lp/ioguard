@@ -141,7 +141,7 @@ wolfSSL has demonstrated **superior performance** across all key metrics, with:
 
 The abstraction layer successfully enables runtime backend selection, and wolfSSL is the clear performance winner.
 
-**Recommendation:** Proceed with wolfSSL as the primary TLS backend for ringwall.
+**Recommendation:** Proceed with wolfSSL as the primary TLS backend for ioguard.
 
 ---
 

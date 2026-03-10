@@ -1,6 +1,6 @@
 # Contributing to ioguard
 
-Thank you for your interest in contributing to ringwall. This document explains
+Thank you for your interest in contributing to ioguard. This document explains
 the process for contributing changes and the standards we follow.
 
 ## Getting Started

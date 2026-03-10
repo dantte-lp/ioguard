@@ -1,6 +1,6 @@
 ---
 name: wolfsentry-idps
-description: Use when implementing firewall rules, rate limiting, connection tracking, DDoS mitigation, IP blocking, geographic filtering, or integrating wolfSentry IDPS into ringwall. Also use for per-user/per-group firewall and nftables integration.
+description: Use when implementing firewall rules, rate limiting, connection tracking, DDoS mitigation, IP blocking, geographic filtering, or integrating wolfSentry IDPS into ioguard. Also use for per-user/per-group firewall and nftables integration.
 ---
 
 # wolfSentry IDPS Integration for ioguard

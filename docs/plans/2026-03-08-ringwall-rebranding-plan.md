@@ -424,7 +424,7 @@ mutation {
 **Step 5: Close issue #11**
 
 ```bash
-gh issue close 11 --repo dantte-lp/ioguard --comment "Completed. Project renamed to ringwall. See commit $(git rev-parse HEAD)."
+gh issue close 11 --repo dantte-lp/ioguard --comment "Completed. Project renamed to ioguard. See commit $(git rev-parse HEAD)."
 ```
 
 ---
