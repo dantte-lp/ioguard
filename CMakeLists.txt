@@ -754,6 +754,14 @@ if(BUILD_TESTING)
         target_compile_definitions(rw_dns PRIVATE _GNU_SOURCE)
         rw_add_test(test_dns tests/unit/test_dns.c rw_dns)
 
+        # Sprint 7 — TOTP authentication
+        add_library(rw_totp STATIC src/auth/totp.c)
+        target_include_directories(rw_totp PRIVATE ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_totp PRIVATE _GNU_SOURCE)
+        target_compile_features(rw_totp PRIVATE c_std_23)
+
+        rw_add_test(test_totp tests/unit/test_totp.c rw_totp)
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
