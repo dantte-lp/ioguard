@@ -76,6 +76,17 @@ void rw_worker_destroy(rw_worker_t *w);
 /** Get current number of active connections. */
 [[nodiscard]] uint32_t rw_worker_connection_count(const rw_worker_t *w);
 
+/** Get maximum connection slots (for iteration). */
+[[nodiscard]] uint32_t rw_worker_max_connections(const rw_worker_t *w);
+
+/**
+ * @brief Get connection at slot index (for iteration over all slots).
+ * @param w    Worker context.
+ * @param idx  Slot index (0..max_connections-1).
+ * @return Pointer to connection if active, nullptr if slot is empty.
+ */
+[[nodiscard]] rw_connection_t *rw_worker_connection_at(rw_worker_t *w, uint32_t idx);
+
 /** Get human-readable worker state name. */
 [[nodiscard]] const char *rw_worker_state_name(rw_worker_state_t state);
 

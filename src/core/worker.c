@@ -137,6 +137,22 @@ uint32_t rw_worker_connection_count(const rw_worker_t *w)
     return w->conn_count;
 }
 
+uint32_t rw_worker_max_connections(const rw_worker_t *w)
+{
+    return w->config.max_connections;
+}
+
+rw_connection_t *rw_worker_connection_at(rw_worker_t *w, uint32_t idx)
+{
+    if (idx >= w->config.max_connections) {
+        return nullptr;
+    }
+    if (!w->conns[idx].active) {
+        return nullptr;
+    }
+    return &w->conns[idx];
+}
+
 const char *rw_worker_state_name(rw_worker_state_t state)
 {
     switch (state) {

@@ -1,6 +1,7 @@
 #include "core/main.h"
 #include "config/config.h"
 #include "core/secmod.h"
+#include "core/worker_loop.h"
 #include "ipc/fdpass.h"
 #include "security/sandbox.h"
 
@@ -56,7 +57,7 @@ int rw_main_create_signalfd(void)
     if (sigprocmask(SIG_BLOCK, &mask, nullptr) < 0) {
         return -errno;
     }
-    int fd = signalfd(-1, &mask, SFD_CLOEXEC | SFD_NONBLOCK);
+    int fd = signalfd(-1, &mask, SFD_CLOEXEC);
     if (fd < 0) {
         return -errno;
     }
@@ -126,9 +127,25 @@ int main(int argc, char *argv[])
     if (worker_pid == 0) {
         close(worker_sv[0]);
         close(authmod_sv[0]);
-        /* rw_worker_loop_run() — implemented in Task 4 */
+
+        rw_worker_config_t wcfg;
+        rw_worker_config_init(&wcfg);
+        rw_worker_loop_config_t wlcfg = {
+            .accept_fd = worker_sv[1],
+            .ipc_fd = -1,
+            .worker_cfg = &wcfg,
+        };
+
+        rw_worker_loop_t loop;
+        rc = rw_worker_loop_init(&loop, &wlcfg);
+        if (rc == 0) {
+            rc = rw_worker_loop_run(&loop);
+            rw_worker_loop_destroy(&loop);
+        }
+
+        close(worker_sv[1]);
         rw_config_free(&config);
-        _exit(EXIT_SUCCESS);
+        _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
     }
     close(worker_sv[1]);
 
@@ -144,10 +161,7 @@ int main(int argc, char *argv[])
     while (running) {
         ssize_t n = read(sigfd, &ssi, sizeof(ssi));
         if (n != (ssize_t)sizeof(ssi)) {
-            if (errno == EAGAIN) {
-                continue;
-            }
-            break;
+            break;  /* blocking fd — partial read is fatal */
         }
         if (ssi.ssi_signo == SIGTERM || ssi.ssi_signo == SIGINT) {
             running = false;
