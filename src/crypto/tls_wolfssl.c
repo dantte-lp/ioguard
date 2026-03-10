@@ -18,6 +18,7 @@
 
 #include "tls_wolfssl.h"
 #include <errno.h>
+#include <stdckdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -270,7 +271,7 @@ tls_context_t *tls_context_new(bool is_server, bool is_dtls)
     }
 
     // Allocate context structure
-    tls_context_t *ctx = (tls_context_t *)calloc(1, sizeof(tls_context_t));
+    tls_context_t *ctx = (tls_context_t *)calloc(1, sizeof(*ctx));
     if (ctx == nullptr) {
         return nullptr;
     }
@@ -807,7 +808,7 @@ tls_session_t *tls_session_new(tls_context_t *ctx)
     }
 
     // Allocate session structure
-    tls_session_t *session = (tls_session_t *)calloc(1, sizeof(tls_session_t));
+    tls_session_t *session = (tls_session_t *)calloc(1, sizeof(*session));
     if (session == nullptr) {
         return nullptr;
     }
@@ -1334,7 +1335,12 @@ char *tls_get_session_desc(tls_session_t *session)
         break;
     }
 
-    size_t desc_len = strlen(version_str) + 1 + strlen(info.cipher_name) + 1;
+    size_t v_len = strlen(version_str);
+    size_t c_len = strlen(info.cipher_name);
+    size_t desc_len;
+    if (ckd_add(&desc_len, v_len, c_len) || ckd_add(&desc_len, desc_len, 2)) {
+        return nullptr;
+    }
     char *desc = (char *)malloc(desc_len);
     if (desc != nullptr) {
         snprintf(desc, desc_len, "%s-%s", version_str, info.cipher_name);

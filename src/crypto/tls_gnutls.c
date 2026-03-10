@@ -209,7 +209,7 @@ void tls_gnutls_deinit(void)
         return nullptr;
     }
 
-    tls_context_t *ctx = (tls_context_t *)calloc(1, sizeof(tls_context_t));
+    tls_context_t *ctx = (tls_context_t *)calloc(1, sizeof(*ctx));
     if (ctx == nullptr) {
         return nullptr;
     }
@@ -586,7 +586,7 @@ static int gnutls_db_remove_cb(void *ptr, gnutls_datum_t key)
         return nullptr;
     }
 
-    tls_session_t *session = (tls_session_t *)calloc(1, sizeof(tls_session_t));
+    tls_session_t *session = (tls_session_t *)calloc(1, sizeof(*session));
     if (session == nullptr) {
         return nullptr;
     }

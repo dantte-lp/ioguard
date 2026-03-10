@@ -1,6 +1,7 @@
 #include "network/dtls_keying.h"
 
 #include <errno.h>
+#include <stdckdint.h>
 #include <string.h>
 
 static constexpr char hex_chars[] = "0123456789abcdef";
@@ -10,7 +11,11 @@ int rw_dtls_hex_encode(const uint8_t *in, size_t in_len, char *hex, size_t hex_s
     if (!in || !hex) {
         return -EINVAL;
     }
-    if (hex_size < in_len * 2 + 1) {
+    size_t needed;
+    if (ckd_mul(&needed, in_len, 2) || ckd_add(&needed, needed, 1)) {
+        return -EOVERFLOW;
+    }
+    if (hex_size < needed) {
         return -ENOSPC;
     }
 

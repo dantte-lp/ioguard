@@ -272,7 +272,7 @@ static void hash_remove(session_cache_t *cache, cache_entry_t *entry)
  */
 static cache_entry_t *entry_new(const tls_session_cache_entry_t *session)
 {
-    cache_entry_t *entry = calloc(1, sizeof(cache_entry_t));
+    cache_entry_t *entry = calloc(1, sizeof(*entry));
     if (entry == nullptr) {
         return nullptr;
     }
@@ -315,7 +315,7 @@ session_cache_t *session_cache_new(size_t capacity, unsigned int timeout_secs)
         return nullptr;
     }
 
-    session_cache_t *cache = calloc(1, sizeof(session_cache_t));
+    session_cache_t *cache = calloc(1, sizeof(*cache));
     if (cache == nullptr) {
         return nullptr;
     }
