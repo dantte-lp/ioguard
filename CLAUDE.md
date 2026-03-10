@@ -5,7 +5,7 @@
 - **Language**: C23 (ISO/IEC 9899:2024), `-std=c23`, `CMAKE_C_EXTENSIONS OFF`
 - **Project**: VPN server (ocserv refactoring), wolfSSL native API
 - **License**: GPLv3 (wolfSSL dependency requires GPLv3)
-- **Status**: Pre-release (S1-S5 done, ~130 tests, no tags). First release: 0.1.0 (after S6)
+- **Status**: Pre-release (S1-S6 done, ~150+ tests, no tags). First release: 0.1.0 (tag pending)
 - **Platform**: Linux only (kernel 6.7+, glibc 2.39+)
 
 ## Build Commands
@@ -43,12 +43,12 @@ src/crypto/         # TLS abstraction layer (wolfSSL + GnuTLS backends)
 src/io/             # io_uring abstraction layer
 src/network/        # Network layer (CSTP, DTLS, TUN, DPD, compression)
 src/ipc/            # Inter-process communication (protobuf-c)
-src/auth/           # Authentication (PAM; RADIUS, LDAP, TOTP planned S6)
-src/security/       # wolfSentry, seccomp, Landlock, nftables (planned S5)
+src/auth/           # Authentication (PAM, TOTP; RADIUS, LDAP planned S7)
+src/security/       # wolfSentry, seccomp, Landlock, nftables
 src/config/         # TOML configuration (tomlc99)
 src/core/           # Core VPN logic (worker, session, secmod, process)
 src/utils/          # Utilities (memory)
-src/storage/        # libmdbx + SQLite (planned S5)
+src/storage/        # libmdbx + SQLite + crypto vault
 src/log/            # Structured logging — stumpless (planned S7)
 src/metrics/        # Prometheus metrics — custom (planned S7)
 tests/unit/         # Unity-based unit tests (test_*.c)
@@ -125,7 +125,8 @@ deploy/podman/      # Container configurations
 | Library       | Version | Role                    | Context7 ID        |
 |---------------|---------|-------------------------|---------------------|
 | liburing      | 2.14+   | All I/O: network, TUN, timers, signals | /axboe/liburing     |
-| llhttp        | 9.3.1+  | HTTP parser             | /nodejs/llhttp      |
+| iohttpparser  | 0.1.0+  | HTTP parser (pull-based, zero-copy, SIMD) | — |
+| llhttp        | 9.3.1+  | HTTP parser (legacy, replacing with iohttpparser in S7) | /nodejs/llhttp |
 | c-ares        | 1.34+   | Async DNS resolver      | /c-ares/c-ares      |
 
 ### Data & Configuration
@@ -219,7 +220,8 @@ Use context7 to fetch up-to-date documentation:
 - wolfSSL API: `/wolfssl/wolfssl`
 - wolfSentry IDPS: `/wolfssl/wolfsentry`
 - liburing io_uring: `/axboe/liburing`
-- llhttp HTTP parser: `/nodejs/llhttp`
+- iohttpparser HTTP: local at `/opt/projects/repositories/iohttpparser`
+- llhttp HTTP parser (legacy): `/nodejs/llhttp`
 - yyjson JSON: `/ibireme/yyjson`
 - c-ares DNS: `/c-ares/c-ares`
 - protobuf-c IPC: `/protobuf-c/protobuf-c`
@@ -275,6 +277,7 @@ Local copies in `docs/rfc/` — see `docs/rfc/README.md` for full index.
 - pidfd_spawn + IORING_OP_WAITID for process management
 - TOML for static config, JSON for wolfSentry rules and REST API
 - stumpless for structured logging (RFC 5424)
+- iohttpparser for VPN HTTP parsing (not llhttp)
 - Dual TLS backend build (wolfSSL primary, GnuTLS fallback)
 - mimalloc for memory (per-worker heaps, MI_SECURE=ON)
 - Hybrid storage: libmdbx (sessions, hot path) + SQLite WAL (users, audit)

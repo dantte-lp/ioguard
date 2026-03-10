@@ -11,13 +11,13 @@ Sprint-based development plan. Each sprint ~2 weeks.
 | S3 | VPN Tunnel | **DONE** | 42 | CSTP framing, TUN, DPD, worker process |
 | S4 | DTLS & Compression | **DONE** | 68 | DTLS 1.2, LZ4/LZS, channel switching |
 | S5 | Storage & Security | **DONE** | 100+ | libmdbx, SQLite WAL, wolfSentry, seccomp, Landlock, nftables, 5 fuzz targets |
-| S6 | Vertical Integration | NEXT | ~90 | Main process, worker data path, IPAM (dual-stack), split DNS, security activation |
-| S7 | Auth & Observability | PLANNED | ~50 | RADIUS, LDAP, TOTP, cert auth, stumpless, Prometheus |
+| S6 | Integration + TOTP MFA | **DONE** | 150+ | Main process, worker loop, IPAM, split DNS, TOTP/vault, MFA pipeline, security audit |
+| S7 | Auth Backends + Observability | NEXT | ~60 | RADIUS, LDAP, cert auth, iohttpparser, stumpless, Prometheus, tech debt |
 | S8 | Admin & iohttp | PLANNED | ~45 | REST API (iohttp), rwctl CLI, admin SPA, config reload |
 | S9 | Production Hardening | PLANNED | ~35 | Mini CA, E2E tests, benchmarks, split tunnel enforcement, docs |
 
-**Current:** S1-S5 done (~130 tests, 13,852 LOC). S6 next.
-**Target at 1.0.0:** ~350+ tests, 5 fuzz targets, E2E validated.
+**Current:** S1-S6 done (~150+ tests). S7 next.
+**Target at 1.0.0:** ~350+ tests, 5+ fuzz targets, E2E validated.
 
 ## Version Plan (SemVer)
 
@@ -25,8 +25,8 @@ All work is `[Unreleased]` until first tag.
 
 | Version | Sprint | Criteria |
 |---------|--------|----------|
-| 0.1.0 | S6 | Working VPN tunnel with IPAM + split DNS |
-| 0.2.0 | S7 | Multi-backend auth + observability |
+| 0.1.0 | S6 | Working VPN tunnel + IPAM + split DNS + TOTP MFA |
+| 0.2.0 | S7 | Multi-backend auth + observability + HTTP parser migration |
 | 0.3.0 | S8 | Admin API (iohttp) + CLI |
 | 1.0.0 | S9 | E2E tested, benchmarked, documented |
 
@@ -51,49 +51,59 @@ All work is `[Unreleased]` until first tag.
 
 **Plan:** `docs/plans/2026-03-08-sprint-5-storage-security.md`
 
-### S6: Vertical Integration + IPAM + Split DNS (NEXT)
+### S6: Integration + TOTP MFA (DONE)
 
-**Goal:** Wire S1-S5 into a working VPN server. Add IP address management (dual-stack, collision detection) and split DNS.
+**Goal:** Wire S1-S5 into a working VPN server. Add IPAM, split DNS, and TOTP multi-factor authentication.
 
-**Vertical integration (Tasks 1-12):**
+**Vertical integration:**
 - Main process bootstrap (config → fork auth-mod + workers → signal loop)
 - Worker io_uring event loop (accept fd via SCM_RIGHTS → TLS → CSTP → TUN)
 - Auth-mod storage integration (libmdbx sessions, SQLite audit)
 - Security module activation (seccomp, Landlock, wolfSentry, nftables per-session)
-- DPD + keepalive timers via io_uring timeouts
+- Per-connection TLS handshake via tls_abstract API
+- CSTP data path + DPD/keepalive timers via io_uring timeouts
 - Graceful shutdown (DISCONNECT → drain → cleanup)
 
-**IPAM — IP address pool management (Task 13):**
-- `src/network/ipam.{h,c}` — dual-stack pool allocator
-- Multiple CIDR pools (IPv4 + IPv6), including external subnets
-- Bitmap allocator: O(1) alloc/free per address
-- **Collision detection at startup**: `getifaddrs()` to enumerate server interfaces, reject pools overlapping existing networks
-- RADIUS override support (`Framed-IP-Address` attr 8, `Framed-IPv6-Address` attr 168)
-- Integration: auth-mod allocates → libmdbx store → IPC to worker → firewall + TUN
+**IPAM — IP address pool management:**
+- `src/network/ipam.{h,c}` — dual-stack pool allocator (bitmap, O(1) alloc/free)
+- Collision detection at startup via `getifaddrs()`
+- RADIUS override support (`Framed-IP-Address`, `Framed-IPv6-Address`)
 
-**Split DNS (Task 14):**
-- `src/network/dns.{h,c}` — DNS configuration module
-- Three modes: `RW_DNS_SPLIT`, `RW_DNS_TUNNEL_ALL`, `RW_DNS_STANDARD`
-- Per-group domain lists (suffix matching with `.` boundary)
-- X-CSTP headers: `X-CSTP-DNS`, `X-CSTP-Default-Domain`, `X-CSTP-Split-DNS`
-- Config: `[network.split-dns]` section with domain lists
+**Split DNS:**
+- `src/network/dns.{h,c}` — three modes (split, tunnel-all, standard)
+- Per-group domain lists, X-CSTP headers
 
-**IPv6 MTU fix (Task 15):**
-- `rw_tun_calc_mtu()` accepts `int af`: subtract 40 for IPv6 (currently only 20 for IPv4)
+**TOTP MFA (RFC 6238):**
+- `src/auth/totp.{h,c}` — HMAC-SHA1 via wolfCrypt, Base32 codec, secret generation
+- `src/storage/vault.{h,c}` — AES-256-GCM field encryption for SQLite TOTP secrets
+- MFA challenge-response pipeline in secmod (PAM → requires_totp → OTP validation)
+- TOTP config fields in `[auth]` section, vault key path in `[storage]`
 
-**Plan:** `docs/plans/2026-03-08-sprint-6-vertical-integration.md`
+**Security audit (P0-P2):**
+- wolfSSL include order fix (unblocked 17 tests)
+- explicit_bzero for OTP, session cookie, base32 buffers
+- Constant-time session ID comparison
+- Overflow checks (stdckdint.h) in base32, hex encoding, string concat
+- sizeof(*ptr) fixes, [[nodiscard]], C23 stdbool.h cleanup
 
-### S7: Auth & Observability
+**Plans:** `docs/plans/2026-03-08-sprint-6-vertical-integration.md`
 
-**Goal:** Multi-backend authentication and production observability.
+### S7: Auth Backends + Observability (NEXT)
 
-**Authentication:**
+**Goal:** Multi-backend authentication, production observability, HTTP parser migration, and tech debt cleanup.
+
+**Authentication backends:**
 - RADIUS client (radcli) — Access-Request/Accept/Reject, Cisco VSAs, Framed-IP integration with IPAM
-- LDAP (libldap) — bind + search, group membership, TLS
-- TOTP/HOTP (liboath) — RFC 6238, Google Authenticator compatible (Base32 + HMAC-SHA1)
+- LDAP (libldap) — bind + search, group membership, StartTLS
 - Certificate authentication — client certs via wolfSSL, Microsoft AD template filtering (OID 1.3.6.1.4.1.311.20.2)
 - Auth plugin API — dlopen-based extensibility (load before seccomp, `RTLD_LOCAL`)
-- Multi-factor via XML form exchange (AggAuth protocol)
+- Multi-factor combination via XML form exchange (AggAuth protocol)
+
+**HTTP parser migration:**
+- Replace llhttp → iohttpparser (`/opt/projects/repositories/iohttpparser`)
+- Pull-based, zero-copy, SIMD-accelerated (SSE4.2/AVX2), C23 native
+- Update `src/network/http.{h,c}`, CMakeLists.txt, fuzz_http, container
+- Strict RFC 9112 policy (TE+CL rejection, obs-fold rejection, bare LF rejection)
 
 **Observability:**
 - Structured logging — stumpless (RFC 5424), async io_uring writes
@@ -101,6 +111,11 @@ All work is `[Unreleased]` until first tag.
   - counters: connections, bytes, auth attempts/failures, IPAM allocations
   - gauges: active sessions, memory, fd count, pool utilization
   - histograms: TLS handshake latency, auth latency
+
+**Tech debt:**
+- Fix test_tls_wolfssl (3 failures) — wolfSSL session creation issues
+- Fix test_priority_parser (6 failures) — priority string tokenization
+- Complete worker_loop.c TODOs: TLS decrypt loop + CSTP framing + TUN forwarding
 
 ### S8: Admin & iohttp
 
@@ -126,6 +141,7 @@ All work is `[Unreleased]` until first tag.
 - Performance benchmarks — iperf3 through tunnel, 1000 concurrent sessions
 - Documentation — all `docs/en/` stubs filled, deployment guide, security hardening guide
 - CHANGELOG.md — conventional-changelog from git history
+- HashiCorp Vault research — external secrets backend evaluation (see BACKLOG)
 
 ## Cisco AnyConnect Compatibility
 
@@ -138,12 +154,12 @@ Ringwall implements the OpenConnect/AnyConnect protocol for interoperability wit
 | DPD + keepalive | Yes | Yes | S3 |
 | LZ4/LZS compression | Yes | Yes | S4 |
 | PAM auth | Yes | Yes | S2 |
-| IP pool (IPv4+IPv6) | Yes | S6 | S6 |
-| Split DNS | Yes | S6 | S6 |
+| IP pool (IPv4+IPv6) | Yes | Yes | S6 |
+| Split DNS | Yes | Yes | S6 |
+| TOTP/MFA | Yes | Yes | S6 |
 | Split tunneling (routes) | Yes | S6 (config), S9 (enforce) | S6/S9 |
 | RADIUS + Cisco VSAs | Yes | S7 | S7 |
 | LDAP/AD | Yes | S7 | S7 |
-| TOTP/MFA | Yes | S7 | S7 |
 | Certificate auth + templates | Yes | S7 | S7 |
 | REST API | ASA ASDM | iohttp | S8 |
 | CLI management | Cisco CLI | rwctl | S8 |
@@ -179,3 +195,4 @@ These decisions are final and MUST NOT change:
 - TOML config + JSON dynamic rules
 - Hybrid storage: libmdbx (sessions) + SQLite WAL (users, audit)
 - iohttp for admin REST API (not hand-built)
+- iohttpparser for VPN client HTTP parsing (not llhttp)
