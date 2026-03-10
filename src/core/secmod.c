@@ -115,10 +115,17 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
     rw_user_record_t user;
     memset(&user, 0, sizeof(user));
 
+    if (req->otp == nullptr || req->otp[0] == '\0') {
+        resp->success = false;
+        resp->error_msg = "missing OTP";
+        return -EINVAL;
+    }
+
     int ret = rw_sqlite_user_lookup(ctx->sqlite, req->username, &user);
     if (ret < 0) {
         resp->success = false;
         resp->error_msg = "user lookup failed";
+        explicit_bzero(&user, sizeof(user));
         return ret;
     }
 
@@ -144,10 +151,12 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
         return ret;
     }
 
-    /* Parse OTP string to uint32_t */
+    /* Parse OTP string to uint32_t (6-8 digits max) */
     char *end = nullptr;
+    errno = 0;
     unsigned long otp_val = strtoul(req->otp, &end, 10);
-    if (end == req->otp || *end != '\0' || otp_val > UINT32_MAX) {
+    if (end == req->otp || *end != '\0' || otp_val > UINT32_MAX ||
+        errno == ERANGE) {
         explicit_bzero(decrypted, sizeof(decrypted));
         resp->success = false;
         resp->error_msg = "invalid OTP format";
@@ -403,7 +412,7 @@ int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t l
 
     int ret = rw_ipc_unpack_auth_request(data, len, &auth_req);
 
-    if (ret == 0 && auth_req.password != nullptr && auth_req.username != nullptr) {
+    if (ret == 0 && auth_req.username != nullptr) {
         ret = secmod_handle_auth(ctx, &auth_req);
         rw_ipc_free_auth_request(&auth_req);
         return ret;
