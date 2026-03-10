@@ -699,6 +699,11 @@ if(BUILD_TESTING)
             message(WARNING "libmnl/libnftnl not found — skipping security/firewall")
         endif()
 
+        # Sprint 6 — End-to-end VPN flow integration test
+        rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
+            rw_conn_data rw_conn_timer rw_shutdown rw_worker
+            rw_cstp rw_dpd rw_compress)
+
         # Sprint 6 — Graceful shutdown
         add_library(rw_shutdown STATIC src/core/shutdown.c)
         target_include_directories(rw_shutdown PUBLIC ${CMAKE_SOURCE_DIR}/src)
