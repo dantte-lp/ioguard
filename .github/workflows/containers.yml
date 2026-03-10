@@ -26,7 +26,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, oracle-linux]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Display versions
         run: |
@@ -48,7 +48,7 @@ jobs:
     needs: verify-setup
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Clean previous builds
         run: |
@@ -90,7 +90,7 @@ jobs:
     needs: build-dev
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download dev image
         uses: actions/download-artifact@v4
@@ -126,7 +126,7 @@ jobs:
     needs: verify-setup
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Clean previous builds
         run: |
@@ -158,7 +158,7 @@ jobs:
     needs: build-build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download build image
         uses: actions/download-artifact@v4
@@ -197,7 +197,7 @@ jobs:
         backend: [gnutls, wolfssl]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download dev image
         uses: actions/download-artifact@v4
@@ -233,7 +233,7 @@ jobs:
     needs: build-ci
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download CI image
         uses: actions/download-artifact@v4
@@ -259,7 +259,7 @@ jobs:
     needs: build-test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download test image
         uses: actions/download-artifact@v4
@@ -323,7 +323,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download all images
         uses: actions/download-artifact@v4
@@ -369,7 +369,7 @@ jobs:
     needs: build-dev
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download dev image
         uses: actions/download-artifact@v4
