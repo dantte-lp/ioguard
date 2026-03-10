@@ -800,6 +800,21 @@ if(BUILD_TESTING)
             target_compile_definitions(test_vault PRIVATE USE_WOLFSSL)
         endif()
 
+        # Sprint 7 — MFA integration test
+        if(TARGET rw_secmod AND TARGET rw_totp AND TARGET rw_vault AND TARGET rw_sqlite)
+            rw_add_test(test_auth_mfa tests/integration/test_auth_mfa.c
+                rw_secmod rw_totp rw_vault rw_sqlite)
+            target_link_libraries(test_auth_mfa PRIVATE
+                ${SQLITE3_LIBRARY})
+            target_include_directories(test_auth_mfa PRIVATE
+                ${SQLITE3_INCLUDE_DIR})
+            if(WOLFSSL_FOUND)
+                target_include_directories(test_auth_mfa PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+                target_link_directories(test_auth_mfa PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+                target_compile_definitions(test_auth_mfa PRIVATE USE_WOLFSSL)
+            endif()
+        endif()
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
