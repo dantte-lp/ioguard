@@ -40,8 +40,7 @@ typedef struct rw_vault rw_vault_t;
  * @param out      Output vault handle.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_vault_init_from_key(const uint8_t *key, size_t key_len,
-                                         rw_vault_t **out);
+[[nodiscard]] int rw_vault_init_from_key(const uint8_t *key, size_t key_len, rw_vault_t **out);
 
 /**
  * @brief Destroy vault and zero all key material.
@@ -62,10 +61,8 @@ void rw_vault_destroy(rw_vault_t *vault);
  * @param out_len   Actual bytes written.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_vault_encrypt(rw_vault_t *vault,
-                                   const uint8_t *plaintext, size_t plain_len,
-                                   uint8_t *out, size_t out_size,
-                                   size_t *out_len);
+[[nodiscard]] int rw_vault_encrypt(rw_vault_t *vault, const uint8_t *plaintext, size_t plain_len,
+                                   uint8_t *out, size_t out_size, size_t *out_len);
 
 /**
  * @brief Decrypt a field value.
@@ -81,9 +78,7 @@ void rw_vault_destroy(rw_vault_t *vault);
  * @param out_len    Actual plaintext bytes written.
  * @return 0 on success, -EACCES on authentication failure, negative errno on error.
  */
-[[nodiscard]] int rw_vault_decrypt(rw_vault_t *vault,
-                                   const uint8_t *cipherblob, size_t blob_len,
-                                   uint8_t *out, size_t out_size,
-                                   size_t *out_len);
+[[nodiscard]] int rw_vault_decrypt(rw_vault_t *vault, const uint8_t *cipherblob, size_t blob_len,
+                                   uint8_t *out, size_t out_size, size_t *out_len);
 
 #endif /* RINGWALL_STORAGE_VAULT_H */

@@ -22,9 +22,9 @@ typedef struct {
     uint32_t failed_attempts;
     char locked_until[32]; /* ISO 8601 or empty */
     bool totp_enabled;
-    uint8_t totp_secret[128];        /* encrypted blob (IV+ct+tag) */
-    size_t totp_secret_len;          /* 0 if not set */
-    char totp_recovery[1024];        /* encrypted JSON, or empty */
+    uint8_t totp_secret[128]; /* encrypted blob (IV+ct+tag) */
+    size_t totp_secret_len;   /* 0 if not set */
+    char totp_recovery[1024]; /* encrypted JSON, or empty */
 } rw_user_record_t;
 
 typedef struct {
@@ -133,8 +133,8 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @return 0 on success, -ENOENT if user not found, negative errno on error.
  */
 [[nodiscard]] int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
-                                           const uint8_t *encrypted_secret, size_t secret_len,
-                                           const char *encrypted_recovery);
+                                          const uint8_t *encrypted_secret, size_t secret_len,
+                                          const char *encrypted_recovery);
 
 /**
  * @brief Disable TOTP for a user, clearing secret and recovery codes.

@@ -12,6 +12,7 @@
 #    define _GNU_SOURCE
 #endif
 
+#include "auth/totp.h"
 #include "config/config.h"
 #include "core/secmod.h"
 #include "core/session.h"
@@ -19,7 +20,6 @@
 #include "ipc/transport.h"
 #include "storage/sqlite.h"
 #include "storage/vault.h"
-#include "auth/totp.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -41,17 +41,14 @@ static char vault_key_path[PATH_MAX];
 
 /* Fixed 32-byte test key (hex-encoded in file) */
 static const uint8_t test_key[RW_VAULT_KEY_SIZE] = {
-    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-    0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
-    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-    0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+    0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
 };
 
 /* Fixed 20-byte TOTP secret for test user */
 static const uint8_t test_totp_secret[RW_TOTP_SECRET_SIZE] = {
-    0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-    0x39, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,
-    0x37, 0x38, 0x39, 0x30,
+    0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
+    0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
 };
 
 static int write_hex_key_file(const char *path, const uint8_t *key, size_t len)
@@ -74,8 +71,8 @@ static int write_hex_key_file(const char *path, const uint8_t *key, size_t len)
 /**
  * Create a user in SQLite with TOTP enabled, encrypting the secret via vault.
  */
-static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault,
-                           const char *username, bool totp_enabled)
+static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault, const char *username,
+                           bool totp_enabled)
 {
     /* Create base user record */
     rw_user_record_t user;
@@ -96,8 +93,8 @@ static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault,
     /* Encrypt the TOTP secret via vault */
     uint8_t encrypted[RW_TOTP_SECRET_SIZE + RW_VAULT_OVERHEAD];
     size_t enc_len = 0;
-    ret = rw_vault_encrypt(vault, test_totp_secret, RW_TOTP_SECRET_SIZE,
-                           encrypted, sizeof(encrypted), &enc_len);
+    ret = rw_vault_encrypt(vault, test_totp_secret, RW_TOTP_SECRET_SIZE, encrypted,
+                           sizeof(encrypted), &enc_len);
     if (ret < 0) {
         return ret;
     }
@@ -110,8 +107,7 @@ static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault,
 /**
  * Helper: pack an auth request, feed to secmod, read and unpack response.
  */
-static int do_auth_roundtrip(const rw_ipc_auth_request_t *req,
-                             rw_ipc_auth_response_t *resp)
+static int do_auth_roundtrip(const rw_ipc_auth_request_t *req, rw_ipc_auth_response_t *resp)
 {
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
     ssize_t packed = rw_ipc_pack_auth_request(req, buf, sizeof(buf));
@@ -141,20 +137,17 @@ void setUp(void)
     memset(&ctx, 0, sizeof(ctx));
 
     /* Write vault key to temp file */
-    snprintf(vault_key_path, sizeof(vault_key_path),
-             "/tmp/rw_test_vault_XXXXXX");
+    snprintf(vault_key_path, sizeof(vault_key_path), "/tmp/rw_test_vault_XXXXXX");
     int fd = mkstemp(vault_key_path);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
     close(fd);
-    TEST_ASSERT_EQUAL_INT(0, write_hex_key_file(vault_key_path,
-                                                 test_key, RW_VAULT_KEY_SIZE));
+    TEST_ASSERT_EQUAL_INT(0, write_hex_key_file(vault_key_path, test_key, RW_VAULT_KEY_SIZE));
 
     /* Configure: in-memory SQLite, vault key, no mdbx */
     rw_config_set_defaults(&config);
-    snprintf(config.storage.sqlite_path, sizeof(config.storage.sqlite_path),
-             ":memory:");
-    snprintf(config.storage.vault_key_path,
-             sizeof(config.storage.vault_key_path), "%s", vault_key_path);
+    snprintf(config.storage.sqlite_path, sizeof(config.storage.sqlite_path), ":memory:");
+    snprintf(config.storage.vault_key_path, sizeof(config.storage.vault_key_path), "%s",
+             vault_key_path);
     /* Clear mdbx path to avoid file creation */
     config.storage.mdbx_path[0] = '\0';
 
@@ -199,8 +192,7 @@ void test_mfa_flow_totp_second_factor(void)
     /* Generate a valid TOTP code for current time */
     uint64_t time_step = (uint64_t)time(nullptr) / RW_TOTP_TIME_STEP;
     uint32_t code = 0;
-    ret = rw_totp_generate(test_totp_secret, RW_TOTP_SECRET_SIZE,
-                           time_step, &code);
+    ret = rw_totp_generate(test_totp_secret, RW_TOTP_SECRET_SIZE, time_step, &code);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Format as 6-digit zero-padded string */
@@ -335,8 +327,7 @@ void test_mfa_flow_audit_trail(void)
     /* Second: correct OTP */
     uint64_t time_step = (uint64_t)time(nullptr) / RW_TOTP_TIME_STEP;
     uint32_t code = 0;
-    ret = rw_totp_generate(test_totp_secret, RW_TOTP_SECRET_SIZE,
-                           time_step, &code);
+    ret = rw_totp_generate(test_totp_secret, RW_TOTP_SECRET_SIZE, time_step, &code);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     char otp_str[16];
@@ -357,8 +348,7 @@ void test_mfa_flow_audit_trail(void)
     /* Verify audit entries exist for dave */
     rw_audit_entry_t entries[8];
     size_t count = 0;
-    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "dave",
-                                            entries, 8, &count);
+    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "dave", entries, 8, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);
     /* At least a TOTP_FAIL and a TOTP OK + AUTH OK should be present */
     TEST_ASSERT_GREATER_OR_EQUAL(2, (int)count);

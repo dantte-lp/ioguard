@@ -77,8 +77,7 @@ static int secmod_send_auth_response(int fd, const rw_ipc_auth_response_t *resp)
 }
 
 /* Create a session and populate the response fields. */
-static int secmod_create_session_response(rw_secmod_ctx_t *ctx,
-                                          rw_ipc_auth_request_t *req,
+static int secmod_create_session_response(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
                                           rw_ipc_auth_response_t *resp)
 {
     rw_session_t *session = nullptr;
@@ -90,9 +89,8 @@ static int secmod_create_session_response(rw_secmod_ctx_t *ctx,
         resp->session_cookie_len = RW_SESSION_COOKIE_SIZE;
         resp->session_ttl = session->ttl_seconds;
         resp->assigned_ip = session->assigned_ip;
-        resp->dns_server = (ctx->config->network.dns_count > 0)
-                               ? ctx->config->network.dns[0]
-                               : nullptr;
+        resp->dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
+                                                                : nullptr;
         resp->default_domain = ctx->config->network.default_domain;
 
         /* Persist to mdbx */
@@ -140,8 +138,8 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
     uint8_t decrypted[RW_TOTP_SECRET_SIZE + 16];
     size_t dec_len = 0;
 
-    ret = rw_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len,
-                           decrypted, sizeof(decrypted), &dec_len);
+    ret = rw_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len, decrypted,
+                           sizeof(decrypted), &dec_len);
     explicit_bzero(&user, sizeof(user));
 
     if (ret < 0) {
@@ -155,8 +153,7 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
     char *end = nullptr;
     errno = 0;
     unsigned long otp_val = strtoul(req->otp, &end, 10);
-    if (end == req->otp || *end != '\0' || otp_val > UINT32_MAX ||
-        errno == ERANGE) {
+    if (end == req->otp || *end != '\0' || otp_val > UINT32_MAX || errno == ERANGE) {
         explicit_bzero(decrypted, sizeof(decrypted));
         resp->success = false;
         resp->error_msg = "invalid OTP format";
@@ -165,8 +162,7 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
     }
 
     uint32_t otp_code = (uint32_t)otp_val;
-    ret = rw_totp_validate(decrypted, dec_len, otp_code,
-                           (uint64_t)time(nullptr), 1);
+    ret = rw_totp_validate(decrypted, dec_len, otp_code, (uint64_t)time(nullptr), 1);
     explicit_bzero(decrypted, sizeof(decrypted));
 
     if (ret < 0) {
@@ -200,17 +196,15 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
     }
 
     /* TOTP second-factor: OTP provided without password (second round-trip) */
-    if (req->otp != nullptr && req->otp[0] != '\0' &&
-        req->username != nullptr && req->username[0] != '\0' &&
-        (req->password == nullptr || req->password[0] == '\0') &&
+    if (req->otp != nullptr && req->otp[0] != '\0' && req->username != nullptr &&
+        req->username[0] != '\0' && (req->password == nullptr || req->password[0] == '\0') &&
         ctx->sqlite != nullptr && ctx->vault != nullptr) {
         (void)secmod_handle_totp(ctx, req, &resp);
         return secmod_send_auth_response(ctx->ipc_fd, &resp);
     }
 
     /* Primary authentication via PAM */
-    rw_auth_result_t result =
-        rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
+    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
     if (result == RW_AUTH_SUCCESS) {
         /* Check if user has TOTP enabled */
         if (ctx->sqlite != nullptr && ctx->vault != nullptr) {
@@ -223,8 +217,7 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
                 resp.success = false;
                 resp.requires_totp = true;
                 resp.error_msg = "TOTP required";
-                secmod_audit_log(ctx, "AUTH", req->username,
-                                 req->source_ip, "TOTP_REQUIRED");
+                secmod_audit_log(ctx, "AUTH", req->username, req->source_ip, "TOTP_REQUIRED");
                 return secmod_send_auth_response(ctx->ipc_fd, &resp);
             }
             explicit_bzero(&user, sizeof(user));

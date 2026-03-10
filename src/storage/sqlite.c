@@ -221,8 +221,7 @@ int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx, const rw_user_record_t *user)
     sqlite3_bind_text(stmt, 6, user->locked_until, -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 7, user->totp_enabled ? 1 : 0);
     if (user->totp_secret_len > 0) {
-        sqlite3_bind_blob(stmt, 8, user->totp_secret, (int)user->totp_secret_len,
-                          SQLITE_TRANSIENT);
+        sqlite3_bind_blob(stmt, 8, user->totp_secret, (int)user->totp_secret_len, SQLITE_TRANSIENT);
     } else {
         sqlite3_bind_null(stmt, 8);
     }
@@ -277,8 +276,7 @@ int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx, const char *username, rw_user_re
     /* TOTP secret (BLOB) */
     const void *blob = sqlite3_column_blob(stmt, 7);
     int blob_bytes = sqlite3_column_bytes(stmt, 7);
-    if (blob != nullptr && blob_bytes > 0 &&
-        (size_t)blob_bytes <= sizeof(out->totp_secret)) {
+    if (blob != nullptr && blob_bytes > 0 && (size_t)blob_bytes <= sizeof(out->totp_secret)) {
         memcpy(out->totp_secret, blob, (size_t)blob_bytes);
         out->totp_secret_len = (size_t)blob_bytes;
     }
@@ -401,11 +399,11 @@ int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason,
 }
 
 int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
-                             const uint8_t *encrypted_secret, size_t secret_len,
-                             const char *encrypted_recovery)
+                            const uint8_t *encrypted_secret, size_t secret_len,
+                            const char *encrypted_recovery)
 {
-    if (ctx == nullptr || username == nullptr || encrypted_secret == nullptr ||
-        secret_len == 0 || secret_len > INT_MAX) {
+    if (ctx == nullptr || username == nullptr || encrypted_secret == nullptr || secret_len == 0 ||
+        secret_len > INT_MAX) {
         return -EINVAL;
     }
 
