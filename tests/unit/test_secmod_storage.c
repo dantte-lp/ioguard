@@ -33,10 +33,8 @@ void setUp(void)
     unlink(sqlite_path); /* sqlite creates its own file */
 
     rw_config_set_defaults(&config);
-    snprintf(config.storage.mdbx_path, sizeof(config.storage.mdbx_path),
-             "%s", mdbx_path);
-    snprintf(config.storage.sqlite_path, sizeof(config.storage.sqlite_path),
-             "%s", sqlite_path);
+    snprintf(config.storage.mdbx_path, sizeof(config.storage.mdbx_path), "%s", mdbx_path);
+    snprintf(config.storage.sqlite_path, sizeof(config.storage.sqlite_path), "%s", sqlite_path);
 }
 
 void tearDown(void)
@@ -116,8 +114,7 @@ void test_secmod_sqlite_audit_insert(void)
     /* Query audit entries for alice */
     rw_audit_entry_t results[4];
     size_t count = 0;
-    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "alice", results,
-                                             4, &count);
+    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "alice", results, 4, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(1, count);
     TEST_ASSERT_EQUAL_STRING("AUTH", results[0].event_type);
@@ -149,8 +146,7 @@ void test_secmod_auth_failure_audit(void)
     /* Verify the failure was logged */
     rw_audit_entry_t results[4];
     size_t count = 0;
-    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "bob", results,
-                                             4, &count);
+    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "bob", results, 4, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(1, count);
     TEST_ASSERT_EQUAL_STRING("FAIL", results[0].result);
@@ -178,8 +174,7 @@ void test_secmod_session_delete_cleans_mdbx(void)
     TEST_ASSERT_EQUAL_INT(0, rw_mdbx_session_create(ctx.mdbx, &session));
 
     /* Delete it */
-    TEST_ASSERT_EQUAL_INT(0, rw_mdbx_session_delete(ctx.mdbx,
-                                                      session.session_id));
+    TEST_ASSERT_EQUAL_INT(0, rw_mdbx_session_delete(ctx.mdbx, session.session_id));
 
     /* Verify gone */
     rw_session_record_t out;
@@ -197,8 +192,7 @@ typedef struct {
     size_t count;
 } test_expired_batch_t;
 
-static int expired_session_collect_iter(const rw_session_record_t *session,
-                                         void *userdata)
+static int expired_session_collect_iter(const rw_session_record_t *session, void *userdata)
 {
     test_expired_batch_t *batch = userdata;
     time_t now = time(nullptr);
@@ -236,8 +230,8 @@ void test_secmod_expired_session_cleanup(void)
     /* Pass 1: collect expired session IDs (read-only iterate) */
     test_expired_batch_t batch;
     memset(&batch, 0, sizeof(batch));
-    TEST_ASSERT_EQUAL_INT(0, rw_mdbx_session_iterate(ctx.mdbx,
-        expired_session_collect_iter, &batch));
+    TEST_ASSERT_EQUAL_INT(0,
+                          rw_mdbx_session_iterate(ctx.mdbx, expired_session_collect_iter, &batch));
     TEST_ASSERT_EQUAL_UINT(1, batch.count);
 
     /* Pass 2: delete collected sessions (separate write txns) */

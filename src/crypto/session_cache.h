@@ -49,12 +49,12 @@
  *   session_cache_free(cache);
  */
 
-#include "tls_abstract.h"
 #include <pthread.h>
+#include "tls_abstract.h"
 
 // C23 standard compliance
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 /* ============================================================================
@@ -90,8 +90,7 @@ typedef struct session_cache session_cache_t;
  *
  * Note: capacity must be > 0, timeout_secs must be > 0
  */
-[[nodiscard]] session_cache_t* session_cache_new(size_t capacity,
-                                                   unsigned int timeout_secs);
+[[nodiscard]] session_cache_t *session_cache_new(size_t capacity, unsigned int timeout_secs);
 
 /**
  * Free session cache
@@ -122,12 +121,8 @@ void session_cache_clear(session_cache_t *cache);
  * @param misses Output: number of failed retrievals
  * @param evictions Output: number of LRU evictions
  */
-void session_cache_get_stats(session_cache_t *cache,
-                              size_t *count,
-                              size_t *capacity,
-                              uint64_t *hits,
-                              uint64_t *misses,
-                              uint64_t *evictions);
+void session_cache_get_stats(session_cache_t *cache, size_t *count, size_t *capacity,
+                             uint64_t *hits, uint64_t *misses, uint64_t *evictions);
 
 /* ============================================================================
  * TLS Callback Functions
@@ -159,10 +154,8 @@ int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry);
  *       Expired sessions are automatically removed and return -1.
  *       On successful retrieval, entry is moved to front of LRU list.
  */
-int session_cache_retrieve(void *userdata,
-                            const uint8_t *session_id,
-                            size_t session_id_size,
-                            tls_session_cache_entry_t *entry);
+int session_cache_retrieve(void *userdata, const uint8_t *session_id, size_t session_id_size,
+                           tls_session_cache_entry_t *entry);
 
 /**
  * Remove session from cache (TLS callback)
@@ -174,9 +167,7 @@ int session_cache_retrieve(void *userdata,
  *
  * Note: This function is called by TLS backend when session should be invalidated.
  */
-int session_cache_remove(void *userdata,
-                          const uint8_t *session_id,
-                          size_t session_id_size);
+int session_cache_remove(void *userdata, const uint8_t *session_id, size_t session_id_size);
 
 /* ============================================================================
  * Utility Functions
@@ -220,7 +211,8 @@ size_t session_cache_cleanup_expired(session_cache_t *cache);
  *   __attribute__((cleanup(session_cache_cleanup)))
  *   session_cache_t *cache = session_cache_new(1000, 7200);
  */
-static inline void session_cache_cleanup(session_cache_t **cache_ptr) {
+static inline void session_cache_cleanup(session_cache_t **cache_ptr)
+{
     if (cache_ptr != nullptr && *cache_ptr != nullptr) {
         session_cache_free(*cache_ptr);
         *cache_ptr = nullptr;

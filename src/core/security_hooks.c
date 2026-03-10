@@ -34,9 +34,7 @@ int rw_security_apply_process(bool is_worker, const rw_config_t *config)
     /* Apply landlock filesystem isolation if enabled and supported */
     if (config->security.landlock && rw_landlock_supported()) {
         rw_landlock_profile_t lprofile = rw_security_select_landlock(is_worker);
-        ret = rw_landlock_apply(lprofile,
-                                 config->storage.mdbx_path,
-                                 config->storage.sqlite_path);
+        ret = rw_landlock_apply(lprofile, config->storage.mdbx_path, config->storage.sqlite_path);
         if (ret < 0) {
             return ret;
         }
@@ -45,9 +43,8 @@ int rw_security_apply_process(bool is_worker, const rw_config_t *config)
     return 0;
 }
 
-int rw_security_build_fw_session(rw_fw_session_t *session,
-                                  const char *username,
-                                  int af, uint32_t ip)
+int rw_security_build_fw_session(rw_fw_session_t *session, const char *username, int af,
+                                 uint32_t ip)
 {
     if (session == nullptr || username == nullptr) {
         return -EINVAL;
@@ -62,8 +59,7 @@ int rw_security_build_fw_session(rw_fw_session_t *session,
     snprintf(session->username, sizeof(session->username), "%s", username);
 
     /* Build chain name from session */
-    int ret = rw_fw_chain_name(session, session->chain_name,
-                                sizeof(session->chain_name));
+    int ret = rw_fw_chain_name(session, session->chain_name, sizeof(session->chain_name));
     if (ret < 0) {
         return ret;
     }

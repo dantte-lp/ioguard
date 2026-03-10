@@ -17,8 +17,8 @@ static int handle_data_packet(rw_conn_data_t *data, const rw_cstp_packet_t *pkt)
     /* Decompress if COMPRESSED type and compressor available */
     uint8_t decomp_buf[RW_CSTP_MAX_PAYLOAD];
     if (pkt->type == RW_CSTP_COMPRESSED && data->compress != nullptr) {
-        int dlen = rw_decompress(data->compress, payload, payload_len,
-                                  decomp_buf, sizeof(decomp_buf));
+        int dlen =
+            rw_decompress(data->compress, payload, payload_len, decomp_buf, sizeof(decomp_buf));
         if (dlen < 0) {
             return dlen;
         }
@@ -36,17 +36,16 @@ static int handle_data_packet(rw_conn_data_t *data, const rw_cstp_packet_t *pkt)
 }
 
 /* Send a CSTP control packet (no payload or small payload) via TLS */
-static int send_cstp_packet(rw_conn_data_t *data, rw_cstp_type_t type,
-                              const uint8_t *payload, size_t payload_len)
+static int send_cstp_packet(rw_conn_data_t *data, rw_cstp_type_t type, const uint8_t *payload,
+                            size_t payload_len)
 {
-    int encoded = rw_cstp_encode(data->send_buf, sizeof(data->send_buf),
-                                  type, payload, payload_len);
+    int encoded =
+        rw_cstp_encode(data->send_buf, sizeof(data->send_buf), type, payload, payload_len);
     if (encoded < 0) {
         return encoded;
     }
 
-    ssize_t written = data->tls_write(data->tls_ctx, data->send_buf,
-                                       (size_t)encoded);
+    ssize_t written = data->tls_write(data->tls_ctx, data->send_buf, (size_t)encoded);
     if (written < 0) {
         return (int)written;
     }
@@ -97,8 +96,7 @@ int rw_conn_data_process_tls(rw_conn_data_t *data)
         return -ENOSPC;
     }
 
-    ssize_t n = data->tls_read(data->tls_ctx,
-                                data->recv_buf + data->recv_len, space);
+    ssize_t n = data->tls_read(data->tls_ctx, data->recv_buf + data->recv_len, space);
     if (n < 0) {
         return (int)n; /* -EAGAIN or error */
     }
@@ -159,8 +157,7 @@ int rw_conn_data_process_tls(rw_conn_data_t *data)
     return 0;
 }
 
-int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt,
-                              size_t pkt_len)
+int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt, size_t pkt_len)
 {
     if (data == nullptr || pkt == nullptr || pkt_len == 0) {
         return -EINVAL;
@@ -176,8 +173,7 @@ int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt,
     uint8_t comp_buf[RW_CSTP_MAX_PAYLOAD];
 
     if (data->compress != nullptr && data->compress->type != RW_COMPRESS_NONE) {
-        int clen = rw_compress(data->compress, pkt, pkt_len,
-                                comp_buf, sizeof(comp_buf));
+        int clen = rw_compress(data->compress, pkt, pkt_len, comp_buf, sizeof(comp_buf));
         if (clen > 0 && (size_t)clen < pkt_len) {
             /* Only use compressed version if it's actually smaller */
             payload = comp_buf;
@@ -187,15 +183,14 @@ int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt,
     }
 
     /* CSTP encode */
-    int encoded = rw_cstp_encode(data->send_buf, sizeof(data->send_buf),
-                                  type, payload, payload_len);
+    int encoded =
+        rw_cstp_encode(data->send_buf, sizeof(data->send_buf), type, payload, payload_len);
     if (encoded < 0) {
         return encoded;
     }
 
     /* Write to TLS */
-    ssize_t written = data->tls_write(data->tls_ctx, data->send_buf,
-                                       (size_t)encoded);
+    ssize_t written = data->tls_write(data->tls_ctx, data->send_buf, (size_t)encoded);
     if (written < 0) {
         return (int)written;
     }

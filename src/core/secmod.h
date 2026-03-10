@@ -27,8 +27,8 @@ typedef struct {
     int ipc_fd;
     rw_pam_config_t pam_cfg;
     rw_session_store_t *sessions;
-    rw_mdbx_ctx_t *mdbx;           /* persistent sessions (nullable) */
-    rw_sqlite_ctx_t *sqlite;       /* audit + users (nullable) */
+    rw_mdbx_ctx_t *mdbx;     /* persistent sessions (nullable) */
+    rw_sqlite_ctx_t *sqlite; /* audit + users (nullable) */
     const rw_config_t *config;
     bool running;
 } rw_secmod_ctx_t;

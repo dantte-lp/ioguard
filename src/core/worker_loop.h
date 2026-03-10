@@ -17,8 +17,8 @@
 typedef struct {
     rw_worker_t *worker;
     rw_io_ctx_t *io;
-    int accept_fd;             /* unix socket: main passes client fds here */
-    int ipc_fd;                /* IPC to auth-mod */
+    int accept_fd; /* unix socket: main passes client fds here */
+    int ipc_fd;    /* IPC to auth-mod */
     bool running;
 } rw_worker_loop_t;
 
@@ -34,8 +34,7 @@ typedef struct {
  * @param cfg   Configuration specifying accept_fd, ipc_fd, worker config.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_worker_loop_init(rw_worker_loop_t *loop,
-                                       const rw_worker_loop_config_t *cfg);
+[[nodiscard]] int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *cfg);
 
 /**
  * @brief Run worker event loop (blocking). Returns on rw_worker_loop_stop().

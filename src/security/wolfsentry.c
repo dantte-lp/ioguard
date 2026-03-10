@@ -235,14 +235,14 @@ int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr)
     wolfsentry_ent_id_t id = 0;
     wolfsentry_action_res_t action_results = WOLFSENTRY_ACTION_RES_NONE;
 
-    wolfsentry_errcode_t ret =
-        wolfsentry_route_insert(WOLFSENTRY_CONTEXT_ARGS_OUT_EX4(ctx->ws_ctx, thread), nullptr, /* caller_arg
-                                                                                                */
-                                (const struct wolfsentry_sockaddr *)&remote_sa,
-                                (const struct wolfsentry_sockaddr *)&local_sa, flags, nullptr, /* event_label
-                                                                                                */
-                                0, /* event_label_len */
-                                &id, &action_results);
+    wolfsentry_errcode_t ret = wolfsentry_route_insert(
+        WOLFSENTRY_CONTEXT_ARGS_OUT_EX4(ctx->ws_ctx, thread), nullptr, /* caller_arg
+                                                                        */
+        (const struct wolfsentry_sockaddr *)&remote_sa,
+        (const struct wolfsentry_sockaddr *)&local_sa, flags, nullptr, /* event_label
+                                                                        */
+        0,                                                             /* event_label_len */
+        &id, &action_results);
 
     WOLFSENTRY_THREAD_TAILER(WOLFSENTRY_THREAD_FLAG_NONE);
 
@@ -300,14 +300,14 @@ int rw_wolfsentry_unban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr)
     wolfsentry_action_res_t action_results = WOLFSENTRY_ACTION_RES_NONE;
     int n_deleted = 0;
 
-    wolfsentry_errcode_t ret =
-        wolfsentry_route_delete(WOLFSENTRY_CONTEXT_ARGS_OUT_EX4(ctx->ws_ctx, thread), nullptr, /* caller_arg
-                                                                                                */
-                                (const struct wolfsentry_sockaddr *)&remote_sa,
-                                (const struct wolfsentry_sockaddr *)&local_sa, flags, nullptr, /* trigger_label
-                                                                                                */
-                                0, /* trigger_label_len */
-                                &action_results, &n_deleted);
+    wolfsentry_errcode_t ret = wolfsentry_route_delete(
+        WOLFSENTRY_CONTEXT_ARGS_OUT_EX4(ctx->ws_ctx, thread), nullptr, /* caller_arg
+                                                                        */
+        (const struct wolfsentry_sockaddr *)&remote_sa,
+        (const struct wolfsentry_sockaddr *)&local_sa, flags, nullptr, /* trigger_label
+                                                                        */
+        0,                                                             /* trigger_label_len */
+        &action_results, &n_deleted);
 
     WOLFSENTRY_THREAD_TAILER(WOLFSENTRY_THREAD_FLAG_NONE);
 

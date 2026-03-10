@@ -3,8 +3,7 @@
 #include <errno.h>
 #include <string.h>
 
-int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker,
-                      uint32_t timeout_s)
+int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker, uint32_t timeout_s)
 {
     if (ctx == nullptr || worker == nullptr) {
         return -EINVAL;
@@ -12,8 +11,7 @@ int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker,
 
     memset(ctx, 0, sizeof(*ctx));
     ctx->worker = worker;
-    ctx->drain_timeout_s = (timeout_s > 0) ? timeout_s
-                                            : RW_SHUTDOWN_DRAIN_TIMEOUT_S;
+    ctx->drain_timeout_s = (timeout_s > 0) ? timeout_s : RW_SHUTDOWN_DRAIN_TIMEOUT_S;
     ctx->drain_started = false;
     ctx->connections_drained = 0;
 

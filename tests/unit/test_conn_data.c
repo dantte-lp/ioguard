@@ -13,8 +13,8 @@
  * Mock TLS I/O over socketpairs
  * ============================================================================ */
 
-static int tls_sv[2];   /* sv[0] = conn_data reads/writes, sv[1] = test injects/reads */
-static int tun_sv[2];   /* sv[0] = conn_data writes to, sv[1] = test reads from */
+static int tls_sv[2]; /* sv[0] = conn_data reads/writes, sv[1] = test injects/reads */
+static int tun_sv[2]; /* sv[0] = conn_data writes to, sv[1] = test reads from */
 
 /* Mock read: read from socketpair fd */
 static ssize_t mock_tls_read(void *ctx, void *buf, size_t len)
@@ -43,10 +43,8 @@ static rw_compress_ctx_t compress_ctx;
 
 void setUp(void)
 {
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK,
-                                         0, tls_sv));
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK,
-                                         0, tun_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, tls_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, tun_sv));
     rw_dpd_init(&dpd, 30, 3);
     TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, RW_COMPRESS_NONE));
 }
@@ -61,8 +59,7 @@ void tearDown(void)
 }
 
 /* Helper: inject a CSTP-encoded frame into the test end of TLS socketpair */
-static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload,
-                         size_t payload_len)
+static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload, size_t payload_len)
 {
     uint8_t buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
     int encoded = rw_cstp_encode(buf, sizeof(buf), type, payload, payload_len);
@@ -111,8 +108,7 @@ void test_conn_data_tls_to_tun(void)
 
     /* Inject a DATA packet into mock TLS */
     const uint8_t payload[] = {0x45, 0x00, 0x00, 0x1C, 0xDE, 0xAD};
-    TEST_ASSERT_GREATER_THAN(0, inject_cstp(RW_CSTP_DATA, payload,
-                                             sizeof(payload)));
+    TEST_ASSERT_GREATER_THAN(0, inject_cstp(RW_CSTP_DATA, payload, sizeof(payload)));
 
     /* Process TLS input */
     int ret = rw_conn_data_process_tls(&data);

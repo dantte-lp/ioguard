@@ -69,8 +69,7 @@ void test_shutdown_encode_disconnect(void)
 void test_shutdown_encode_disconnect_small_buf(void)
 {
     uint8_t buf[2]; /* too small */
-    TEST_ASSERT_EQUAL_INT(-EINVAL,
-                           rw_shutdown_encode_disconnect(buf, sizeof(buf)));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_shutdown_encode_disconnect(buf, sizeof(buf)));
 }
 
 void test_shutdown_drain_empty_worker(void)
@@ -110,9 +109,12 @@ void test_shutdown_drain_active_connections(void)
     TEST_ASSERT_EQUAL_UINT(0, rw_worker_connection_count(worker));
 
     /* Clean up socketpairs (worker_remove_connection doesn't close fds) */
-    close(sv1[0]); close(sv1[1]);
-    close(sv2[0]); close(sv2[1]);
-    close(sv3[0]); close(sv3[1]);
+    close(sv1[0]);
+    close(sv1[1]);
+    close(sv2[0]);
+    close(sv2[1]);
+    close(sv3[0]);
+    close(sv3[1]);
 }
 
 void test_shutdown_timeout_check(void)
@@ -147,7 +149,8 @@ void test_shutdown_force_close_after_timeout(void)
     int drained = rw_shutdown_drain(&ctx);
     TEST_ASSERT_EQUAL_INT(1, drained);
 
-    close(sv[0]); close(sv[1]);
+    close(sv[0]);
+    close(sv[1]);
 }
 
 int main(void)

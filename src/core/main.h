@@ -8,8 +8,7 @@
  * @param config_path  Receives the config file path.
  * @return 0 on success, 1 if --help was requested, negative errno on error.
  */
-[[nodiscard]] int rw_main_parse_args(int argc, char *argv[],
-                                     const char **config_path);
+[[nodiscard]] int rw_main_parse_args(int argc, char *argv[], const char **config_path);
 
 /**
  * @brief Create a SOCK_SEQPACKET socketpair for IPC.

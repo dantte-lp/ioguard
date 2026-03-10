@@ -8,8 +8,12 @@
 #include "security/landlock.h"
 #include "security/sandbox.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 /* ============================================================================
  * Tests
@@ -18,26 +22,21 @@ void tearDown(void) {}
 void test_hooks_sandbox_profile_selection(void)
 {
     /* Worker gets most restrictive profile */
-    TEST_ASSERT_EQUAL_INT(RW_SANDBOX_WORKER,
-                           rw_security_select_sandbox(true));
+    TEST_ASSERT_EQUAL_INT(RW_SANDBOX_WORKER, rw_security_select_sandbox(true));
 
     /* Auth-mod gets slightly less restrictive */
-    TEST_ASSERT_EQUAL_INT(RW_SANDBOX_AUTHMOD,
-                           rw_security_select_sandbox(false));
+    TEST_ASSERT_EQUAL_INT(RW_SANDBOX_AUTHMOD, rw_security_select_sandbox(false));
 }
 
 void test_hooks_landlock_profile_selection(void)
 {
-    TEST_ASSERT_EQUAL_INT(RW_LANDLOCK_WORKER,
-                           rw_security_select_landlock(true));
-    TEST_ASSERT_EQUAL_INT(RW_LANDLOCK_AUTHMOD,
-                           rw_security_select_landlock(false));
+    TEST_ASSERT_EQUAL_INT(RW_LANDLOCK_WORKER, rw_security_select_landlock(true));
+    TEST_ASSERT_EQUAL_INT(RW_LANDLOCK_AUTHMOD, rw_security_select_landlock(false));
 }
 
 void test_hooks_apply_process_null_config(void)
 {
-    TEST_ASSERT_EQUAL_INT(-EINVAL,
-                           rw_security_apply_process(true, nullptr));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_security_apply_process(true, nullptr));
 }
 
 void test_hooks_apply_process_disabled(void)
@@ -57,8 +56,7 @@ void test_hooks_build_fw_session(void)
     rw_fw_session_t session;
     uint32_t ip = htonl(0x0A000164); /* 10.0.1.100 */
 
-    int ret = rw_security_build_fw_session(&session, "testuser",
-                                            AF_INET, ip);
+    int ret = rw_security_build_fw_session(&session, "testuser", AF_INET, ip);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_INT(AF_INET, session.af);
     TEST_ASSERT_EQUAL_UINT(ip, session.assigned_ipv4);
@@ -70,20 +68,14 @@ void test_hooks_build_fw_session(void)
 void test_hooks_build_fw_session_null_params(void)
 {
     rw_fw_session_t session;
-    TEST_ASSERT_EQUAL_INT(-EINVAL,
-                           rw_security_build_fw_session(nullptr, "user",
-                                                         AF_INET, 0));
-    TEST_ASSERT_EQUAL_INT(-EINVAL,
-                           rw_security_build_fw_session(&session, nullptr,
-                                                         AF_INET, 0));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_security_build_fw_session(nullptr, "user", AF_INET, 0));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_security_build_fw_session(&session, nullptr, AF_INET, 0));
 }
 
 void test_hooks_build_fw_session_invalid_af(void)
 {
     rw_fw_session_t session;
-    TEST_ASSERT_EQUAL_INT(-EINVAL,
-                           rw_security_build_fw_session(&session, "user",
-                                                         AF_UNIX, 0));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_security_build_fw_session(&session, "user", AF_UNIX, 0));
 }
 
 int main(void)

@@ -23,8 +23,7 @@ int rw_main_parse_args(int argc, char *argv[], const char **config_path)
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
             *config_path = argv[++i];
-        } else if (strcmp(argv[i], "--help") == 0 ||
-                   strcmp(argv[i], "-h") == 0) {
+        } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
             return 1;
         }
     }
@@ -33,15 +32,17 @@ int rw_main_parse_args(int argc, char *argv[], const char **config_path)
 
 int rw_main_create_ipc_pair(int sv[2])
 {
-    if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sv) < 0)
+    if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sv) < 0) {
         return -errno;
+    }
     return 0;
 }
 
 int rw_main_create_accept_pair(int sv[2])
 {
-    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) < 0)
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) < 0) {
         return -errno;
+    }
     return 0;
 }
 
@@ -52,11 +53,13 @@ int rw_main_create_signalfd(void)
     sigaddset(&mask, SIGTERM);
     sigaddset(&mask, SIGINT);
     sigaddset(&mask, SIGCHLD);
-    if (sigprocmask(SIG_BLOCK, &mask, nullptr) < 0)
+    if (sigprocmask(SIG_BLOCK, &mask, nullptr) < 0) {
         return -errno;
+    }
     int fd = signalfd(-1, &mask, SFD_CLOEXEC | SFD_NONBLOCK);
-    if (fd < 0)
+    if (fd < 0) {
         return -errno;
+    }
     return fd;
 }
 
@@ -82,14 +85,16 @@ int main(int argc, char *argv[])
     /* Create IPC socketpair for auth-mod */
     int authmod_sv[2];
     rc = rw_main_create_ipc_pair(authmod_sv);
-    if (rc < 0)
+    if (rc < 0) {
         goto cleanup_config;
+    }
 
     /* Create accept socketpair for worker (fd passing) */
     int worker_sv[2];
     rc = rw_main_create_accept_pair(worker_sv);
-    if (rc < 0)
+    if (rc < 0) {
         goto cleanup_authmod_sv;
+    }
 
     /* Fork auth-mod */
     pid_t authmod_pid = fork();
@@ -139,8 +144,9 @@ int main(int argc, char *argv[])
     while (running) {
         ssize_t n = read(sigfd, &ssi, sizeof(ssi));
         if (n != (ssize_t)sizeof(ssi)) {
-            if (errno == EAGAIN)
+            if (errno == EAGAIN) {
                 continue;
+            }
             break;
         }
         if (ssi.ssi_signo == SIGTERM || ssi.ssi_signo == SIGINT) {

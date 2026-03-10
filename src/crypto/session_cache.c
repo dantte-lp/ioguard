@@ -17,14 +17,14 @@
  */
 
 #include "session_cache.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
 
 // C23 standard compliance
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 /* ============================================================================
@@ -95,7 +95,8 @@ struct session_cache {
  * @param session_id_size Length of session ID
  * @return Hash value (0 to SESSION_CACHE_HASH_BUCKETS-1)
  */
-static inline size_t hash_session_id(const uint8_t *session_id, size_t session_id_size) {
+static inline size_t hash_session_id(const uint8_t *session_id, size_t session_id_size)
+{
     // FNV-1a constants
     constexpr uint64_t FNV_OFFSET_BASIS = 14'695'981'039'346'656'037ULL;
     constexpr uint64_t FNV_PRIME = 1'099'511'628'211ULL;
@@ -116,8 +117,9 @@ static inline size_t hash_session_id(const uint8_t *session_id, size_t session_i
 /**
  * Compare session IDs for equality
  */
-static inline bool session_id_equal(const uint8_t *id1, size_t len1,
-                                     const uint8_t *id2, size_t len2) {
+static inline bool session_id_equal(const uint8_t *id1, size_t len1, const uint8_t *id2,
+                                    size_t len2)
+{
     if (len1 != len2) {
         return false;
     }
@@ -131,7 +133,8 @@ static inline bool session_id_equal(const uint8_t *id1, size_t len1,
 /**
  * Remove entry from LRU list
  */
-static void lru_remove(session_cache_t *cache, cache_entry_t *entry) {
+static void lru_remove(session_cache_t *cache, cache_entry_t *entry)
+{
     if (entry->lru_prev != nullptr) {
         entry->lru_prev->lru_next = entry->lru_next;
     } else {
@@ -153,7 +156,8 @@ static void lru_remove(session_cache_t *cache, cache_entry_t *entry) {
 /**
  * Add entry to front of LRU list (most recently used)
  */
-static void lru_add_front(session_cache_t *cache, cache_entry_t *entry) {
+static void lru_add_front(session_cache_t *cache, cache_entry_t *entry)
+{
     entry->lru_next = cache->lru_head;
     entry->lru_prev = nullptr;
 
@@ -171,7 +175,8 @@ static void lru_add_front(session_cache_t *cache, cache_entry_t *entry) {
 /**
  * Move entry to front of LRU list (mark as recently used)
  */
-static void lru_move_front(session_cache_t *cache, cache_entry_t *entry) {
+static void lru_move_front(session_cache_t *cache, cache_entry_t *entry)
+{
     if (cache->lru_head == entry) {
         // Already at front
         entry->last_access = time(nullptr);
@@ -185,7 +190,8 @@ static void lru_move_front(session_cache_t *cache, cache_entry_t *entry) {
 /**
  * Get least recently used entry (tail of LRU list)
  */
-static cache_entry_t* lru_get_tail(session_cache_t *cache) {
+static cache_entry_t *lru_get_tail(session_cache_t *cache)
+{
     return cache->lru_tail;
 }
 
@@ -196,16 +202,14 @@ static cache_entry_t* lru_get_tail(session_cache_t *cache) {
 /**
  * Find entry in hash table by session ID
  */
-static cache_entry_t* hash_find(session_cache_t *cache,
-                                  const uint8_t *session_id,
-                                  size_t session_id_size) {
+static cache_entry_t *hash_find(session_cache_t *cache, const uint8_t *session_id,
+                                size_t session_id_size)
+{
     size_t bucket = hash_session_id(session_id, session_id_size);
     cache_entry_t *entry = cache->hash_table[bucket];
 
     while (entry != nullptr) {
-        if (session_id_equal(entry->session.session_id,
-                             entry->session.session_id_size,
-                             session_id,
+        if (session_id_equal(entry->session.session_id, entry->session.session_id_size, session_id,
                              session_id_size)) {
             return entry;
         }
@@ -218,9 +222,9 @@ static cache_entry_t* hash_find(session_cache_t *cache,
 /**
  * Insert entry into hash table
  */
-static void hash_insert(session_cache_t *cache, cache_entry_t *entry) {
-    size_t bucket = hash_session_id(entry->session.session_id,
-                                      entry->session.session_id_size);
+static void hash_insert(session_cache_t *cache, cache_entry_t *entry)
+{
+    size_t bucket = hash_session_id(entry->session.session_id, entry->session.session_id_size);
 
     // Insert at head of bucket chain
     entry->hash_next = cache->hash_table[bucket];
@@ -236,9 +240,9 @@ static void hash_insert(session_cache_t *cache, cache_entry_t *entry) {
 /**
  * Remove entry from hash table
  */
-static void hash_remove(session_cache_t *cache, cache_entry_t *entry) {
-    size_t bucket = hash_session_id(entry->session.session_id,
-                                      entry->session.session_id_size);
+static void hash_remove(session_cache_t *cache, cache_entry_t *entry)
+{
+    size_t bucket = hash_session_id(entry->session.session_id, entry->session.session_id_size);
 
     if (entry->hash_prev != nullptr) {
         entry->hash_prev->hash_next = entry->hash_next;
@@ -262,7 +266,8 @@ static void hash_remove(session_cache_t *cache, cache_entry_t *entry) {
 /**
  * Create new cache entry
  */
-static cache_entry_t* entry_new(const tls_session_cache_entry_t *session) {
+static cache_entry_t *entry_new(const tls_session_cache_entry_t *session)
+{
     cache_entry_t *entry = calloc(1, sizeof(cache_entry_t));
     if (entry == nullptr) {
         return nullptr;
@@ -278,7 +283,8 @@ static cache_entry_t* entry_new(const tls_session_cache_entry_t *session) {
 /**
  * Free cache entry
  */
-static void entry_free(cache_entry_t *entry) {
+static void entry_free(cache_entry_t *entry)
+{
     if (entry != nullptr) {
         // Zero sensitive session data
         memset(&entry->session, 0, sizeof(tls_session_cache_entry_t));
@@ -289,7 +295,8 @@ static void entry_free(cache_entry_t *entry) {
 /**
  * Check if entry is expired
  */
-static bool entry_is_expired(cache_entry_t *entry, time_t now) {
+static bool entry_is_expired(cache_entry_t *entry, time_t now)
+{
     return (entry->session.expiration > 0) && (now > entry->session.expiration);
 }
 
@@ -297,7 +304,8 @@ static bool entry_is_expired(cache_entry_t *entry, time_t now) {
  * Cache Management Implementation
  * ============================================================================ */
 
-session_cache_t* session_cache_new(size_t capacity, unsigned int timeout_secs) {
+session_cache_t *session_cache_new(size_t capacity, unsigned int timeout_secs)
+{
     if (capacity == 0 || timeout_secs == 0) {
         errno = EINVAL;
         return nullptr;
@@ -332,7 +340,8 @@ session_cache_t* session_cache_new(size_t capacity, unsigned int timeout_secs) {
     return cache;
 }
 
-void session_cache_free(session_cache_t *cache) {
+void session_cache_free(session_cache_t *cache)
+{
     if (cache == nullptr) {
         return;
     }
@@ -353,7 +362,8 @@ void session_cache_free(session_cache_t *cache) {
     free(cache);
 }
 
-void session_cache_clear(session_cache_t *cache) {
+void session_cache_clear(session_cache_t *cache)
+{
     if (cache == nullptr) {
         return;
     }
@@ -381,23 +391,30 @@ void session_cache_clear(session_cache_t *cache) {
     pthread_mutex_unlock(&cache->mutex);
 }
 
-void session_cache_get_stats(session_cache_t *cache,
-                              size_t *count,
-                              size_t *capacity,
-                              uint64_t *hits,
-                              uint64_t *misses,
-                              uint64_t *evictions) {
+void session_cache_get_stats(session_cache_t *cache, size_t *count, size_t *capacity,
+                             uint64_t *hits, uint64_t *misses, uint64_t *evictions)
+{
     if (cache == nullptr) {
         return;
     }
 
     pthread_mutex_lock(&cache->mutex);
 
-    if (count != nullptr) *count = cache->count;
-    if (capacity != nullptr) *capacity = cache->capacity;
-    if (hits != nullptr) *hits = cache->hits;
-    if (misses != nullptr) *misses = cache->misses;
-    if (evictions != nullptr) *evictions = cache->evictions;
+    if (count != nullptr) {
+        *count = cache->count;
+    }
+    if (capacity != nullptr) {
+        *capacity = cache->capacity;
+    }
+    if (hits != nullptr) {
+        *hits = cache->hits;
+    }
+    if (misses != nullptr) {
+        *misses = cache->misses;
+    }
+    if (evictions != nullptr) {
+        *evictions = cache->evictions;
+    }
 
     pthread_mutex_unlock(&cache->mutex);
 }
@@ -406,7 +423,8 @@ void session_cache_get_stats(session_cache_t *cache,
  * TLS Callback Functions Implementation
  * ============================================================================ */
 
-int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry) {
+int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry)
+{
     if (userdata == nullptr || entry == nullptr) {
         return -1;
     }
@@ -416,9 +434,7 @@ int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry) 
     pthread_mutex_lock(&cache->mutex);
 
     // Check if session already exists
-    cache_entry_t *existing = hash_find(cache,
-                                         entry->session_id,
-                                         entry->session_id_size);
+    cache_entry_t *existing = hash_find(cache, entry->session_id, entry->session_id_size);
 
     if (existing != nullptr) {
         // Update existing entry
@@ -458,10 +474,9 @@ int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry) 
     return 0;
 }
 
-int session_cache_retrieve(void *userdata,
-                            const uint8_t *session_id,
-                            size_t session_id_size,
-                            tls_session_cache_entry_t *entry) {
+int session_cache_retrieve(void *userdata, const uint8_t *session_id, size_t session_id_size,
+                           tls_session_cache_entry_t *entry)
+{
     if (userdata == nullptr || session_id == nullptr || entry == nullptr) {
         return -1;
     }
@@ -504,9 +519,8 @@ int session_cache_retrieve(void *userdata,
     return 0;
 }
 
-int session_cache_remove(void *userdata,
-                          const uint8_t *session_id,
-                          size_t session_id_size) {
+int session_cache_remove(void *userdata, const uint8_t *session_id, size_t session_id_size)
+{
     if (userdata == nullptr || session_id == nullptr) {
         return -1;
     }
@@ -537,7 +551,8 @@ int session_cache_remove(void *userdata,
  * Utility Functions Implementation
  * ============================================================================ */
 
-size_t session_cache_cleanup_expired(session_cache_t *cache) {
+size_t session_cache_cleanup_expired(session_cache_t *cache)
+{
     if (cache == nullptr) {
         return 0;
     }
@@ -568,7 +583,8 @@ size_t session_cache_cleanup_expired(session_cache_t *cache) {
     return removed;
 }
 
-bool session_cache_is_full(session_cache_t *cache) {
+bool session_cache_is_full(session_cache_t *cache)
+{
     if (cache == nullptr) {
         return false;
     }
@@ -580,7 +596,8 @@ bool session_cache_is_full(session_cache_t *cache) {
     return full;
 }
 
-size_t session_cache_size(session_cache_t *cache) {
+size_t session_cache_size(session_cache_t *cache)
+{
     if (cache == nullptr) {
         return 0;
     }

@@ -5,8 +5,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds,
-                   const void *data, size_t data_len)
+int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data, size_t data_len)
 {
     if (sock_fd < 0) {
         return -EBADF;
@@ -25,9 +24,7 @@ int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds,
     /* Some kernels require at least 1 byte of payload for ancillary data */
     uint8_t dummy = 0;
     struct iovec iov = {
-        .iov_base = (data != nullptr && data_len > 0)
-                         ? (void *)(uintptr_t)data
-                         : &dummy,
+        .iov_base = (data != nullptr && data_len > 0) ? (void *)(uintptr_t)data : &dummy,
         .iov_len = (data != nullptr && data_len > 0) ? data_len : 1,
     };
 
@@ -60,8 +57,8 @@ int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds,
     return 0;
 }
 
-int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds,
-                   size_t *nfds_out, void *data, size_t *data_len)
+int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out, void *data,
+                   size_t *data_len)
 {
     if (sock_fd < 0) {
         return -EBADF;
@@ -79,12 +76,8 @@ int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds,
     /* Receive buffer: use caller's data buf, or a small dummy */
     uint8_t dummy = 0;
     struct iovec iov = {
-        .iov_base = (data != nullptr && data_len != nullptr && *data_len > 0)
-                         ? data
-                         : &dummy,
-        .iov_len = (data != nullptr && data_len != nullptr && *data_len > 0)
-                       ? *data_len
-                       : 1,
+        .iov_base = (data != nullptr && data_len != nullptr && *data_len > 0) ? data : &dummy,
+        .iov_len = (data != nullptr && data_len != nullptr && *data_len > 0) ? *data_len : 1,
     };
 
     /* Control message buffer */
@@ -115,8 +108,7 @@ int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds,
     }
 
     /* Extract fds from control message */
-    for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-         cmsg != nullptr;
+    for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
         if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
             size_t payload_len = cmsg->cmsg_len - CMSG_LEN(0);

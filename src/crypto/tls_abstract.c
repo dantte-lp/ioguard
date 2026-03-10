@@ -39,12 +39,12 @@
 
 // Conditionally include backend headers to avoid struct redefinition
 #ifdef USE_GNUTLS
-#include "tls_gnutls.h"
-#include <gnutls/gnutls.h>
+#    include <gnutls/gnutls.h>
+#    include "tls_gnutls.h"
 #endif
 
 #ifdef USE_WOLFSSL
-#include "tls_wolfssl.h"
+#    include "tls_wolfssl.h"
 #endif
 
 #include <stdatomic.h>
@@ -82,7 +82,8 @@ static tls_backend_t g_active_backend = TLS_BACKEND_NONE;
  *
  * Thread Safety: Uses atomic compare-exchange for initialization guard
  */
-[[nodiscard]] int tls_global_init(tls_backend_t backend) {
+[[nodiscard]] int tls_global_init(tls_backend_t backend)
+{
     // Validate backend parameter
     if (backend != TLS_BACKEND_GNUTLS && backend != TLS_BACKEND_WOLFSSL) {
         fprintf(stderr, "tls_global_init: Invalid backend %d\n", backend);
@@ -108,34 +109,34 @@ static tls_backend_t g_active_backend = TLS_BACKEND_NONE;
     // Dispatch to backend-specific initialization
     int ret;
     switch (backend) {
-        case TLS_BACKEND_GNUTLS:
+    case TLS_BACKEND_GNUTLS:
 #ifdef USE_GNUTLS
-            ret = tls_gnutls_init();
+        ret = tls_gnutls_init();
 #else
-            fprintf(stderr, "tls_global_init: GnuTLS backend not compiled in\n");
-            atomic_store(&g_initialized, false);
-            g_active_backend = TLS_BACKEND_NONE;
-            return TLS_E_BACKEND_ERROR;
+        fprintf(stderr, "tls_global_init: GnuTLS backend not compiled in\n");
+        atomic_store(&g_initialized, false);
+        g_active_backend = TLS_BACKEND_NONE;
+        return TLS_E_BACKEND_ERROR;
 #endif
-            break;
+        break;
 
-        case TLS_BACKEND_WOLFSSL:
+    case TLS_BACKEND_WOLFSSL:
 #ifdef USE_WOLFSSL
-            ret = tls_wolfssl_init();
+        ret = tls_wolfssl_init();
 #else
-            fprintf(stderr, "tls_global_init: wolfSSL backend not compiled in\n");
-            atomic_store(&g_initialized, false);
-            g_active_backend = TLS_BACKEND_NONE;
-            return TLS_E_BACKEND_ERROR;
+        fprintf(stderr, "tls_global_init: wolfSSL backend not compiled in\n");
+        atomic_store(&g_initialized, false);
+        g_active_backend = TLS_BACKEND_NONE;
+        return TLS_E_BACKEND_ERROR;
 #endif
-            break;
+        break;
 
-        default:
-            // Should never reach here due to validation above
-            fprintf(stderr, "tls_global_init: Unexpected backend %d\n", backend);
-            atomic_store(&g_initialized, false);
-            g_active_backend = TLS_BACKEND_NONE;
-            return TLS_E_INVALID_PARAMETER;
+    default:
+        // Should never reach here due to validation above
+        fprintf(stderr, "tls_global_init: Unexpected backend %d\n", backend);
+        atomic_store(&g_initialized, false);
+        g_active_backend = TLS_BACKEND_NONE;
+        return TLS_E_INVALID_PARAMETER;
     }
 
     // Handle initialization failure
@@ -157,29 +158,30 @@ static tls_backend_t g_active_backend = TLS_BACKEND_NONE;
  *
  * Thread Safety: Uses atomic load/store for state management
  */
-void tls_global_deinit(void) {
+void tls_global_deinit(void)
+{
     // Check if initialized
     if (!atomic_load(&g_initialized)) {
-        return;  // Not initialized, nothing to do
+        return; // Not initialized, nothing to do
     }
 
     // Dispatch to backend-specific cleanup
     switch (g_active_backend) {
-        case TLS_BACKEND_GNUTLS:
+    case TLS_BACKEND_GNUTLS:
 #ifdef USE_GNUTLS
-            tls_gnutls_deinit();
+        tls_gnutls_deinit();
 #endif
-            break;
+        break;
 
-        case TLS_BACKEND_WOLFSSL:
+    case TLS_BACKEND_WOLFSSL:
 #ifdef USE_WOLFSSL
-            tls_wolfssl_deinit();
+        tls_wolfssl_deinit();
 #endif
-            break;
+        break;
 
-        case TLS_BACKEND_NONE:
-            // Should not happen, but handle gracefully
-            break;
+    case TLS_BACKEND_NONE:
+        // Should not happen, but handle gracefully
+        break;
     }
 
     // Reset global state
@@ -192,7 +194,8 @@ void tls_global_deinit(void) {
  *
  * @return Active backend type, or TLS_BACKEND_NONE if not initialized
  */
-[[nodiscard]] tls_backend_t tls_get_backend(void) {
+[[nodiscard]] tls_backend_t tls_get_backend(void)
+{
     return g_active_backend;
 }
 
@@ -207,7 +210,8 @@ void tls_global_deinit(void) {
  *
  * Thread Safety: Safe to call from multiple threads after initialization
  */
-[[nodiscard]] const char* tls_get_version_string(void) {
+[[nodiscard]] const char *tls_get_version_string(void)
+{
     // Check initialization status
     if (!atomic_load(&g_initialized)) {
         return "Not initialized";
@@ -215,31 +219,31 @@ void tls_global_deinit(void) {
 
     // Dispatch to backend-specific version function
     switch (g_active_backend) {
-        case TLS_BACKEND_GNUTLS:
+    case TLS_BACKEND_GNUTLS:
 #ifdef USE_GNUTLS
-            {
-                // GnuTLS doesn't have a separate get_version export, so construct it here
-                static char gnutls_version[64];
-                const char *gnutls_ver = gnutls_check_version(nullptr);
-                if (gnutls_ver) {
-                    snprintf(gnutls_version, sizeof(gnutls_version), "GnuTLS %s", gnutls_ver);
-                    return gnutls_version;
-                }
-                return "GnuTLS (unknown version)";
-            }
+    {
+        // GnuTLS doesn't have a separate get_version export, so construct it here
+        static char gnutls_version[64];
+        const char *gnutls_ver = gnutls_check_version(nullptr);
+        if (gnutls_ver) {
+            snprintf(gnutls_version, sizeof(gnutls_version), "GnuTLS %s", gnutls_ver);
+            return gnutls_version;
+        }
+        return "GnuTLS (unknown version)";
+    }
 #else
-            return "GnuTLS (not compiled in)";
+        return "GnuTLS (not compiled in)";
 #endif
 
-        case TLS_BACKEND_WOLFSSL:
+    case TLS_BACKEND_WOLFSSL:
 #ifdef USE_WOLFSSL
-            return tls_wolfssl_get_version();
+        return tls_wolfssl_get_version();
 #else
-            return "wolfSSL (not compiled in)";
+        return "wolfSSL (not compiled in)";
 #endif
 
-        case TLS_BACKEND_NONE:
-        default:
-            return "Unknown backend";
+    case TLS_BACKEND_NONE:
+    default:
+        return "Unknown backend";
     }
 }

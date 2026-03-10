@@ -53,10 +53,8 @@ static void on_dead_cb(uint64_t conn_id, void *user_data)
 
 void setUp(void)
 {
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK,
-                                         0, tls_sv));
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK,
-                                         0, tun_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, tls_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, tun_sv));
     rw_dpd_init(&dpd, 30, 3);
     TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, RW_COMPRESS_NONE));
 

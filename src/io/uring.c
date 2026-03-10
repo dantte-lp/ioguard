@@ -283,8 +283,8 @@ int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 
 /* --- Callback-based operations --- */
 
-int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
-                        rw_io_cb cb, void *user_data)
+int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb cb,
+                       void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -309,8 +309,8 @@ int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
     return 0;
 }
 
-int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                        rw_io_cb cb, void *user_data)
+int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, rw_io_cb cb,
+                       void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -335,8 +335,8 @@ int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
     return 0;
 }
 
-int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
-                        rw_io_cb cb, void *user_data)
+int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb cb,
+                       void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -361,8 +361,8 @@ int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
     return 0;
 }
 
-int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                          rw_io_cb cb, void *user_data)
+int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, rw_io_cb cb,
+                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -387,9 +387,8 @@ int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
     return 0;
 }
 
-int rw_io_prep_accept_cb(rw_io_ctx_t *ctx, int fd,
-                           struct sockaddr *addr, socklen_t *addrlen,
-                           rw_io_cb cb, void *user_data)
+int rw_io_prep_accept_cb(rw_io_ctx_t *ctx, int fd, struct sockaddr *addr, socklen_t *addrlen,
+                         rw_io_cb cb, void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -414,8 +413,7 @@ int rw_io_prep_accept_cb(rw_io_ctx_t *ctx, int fd,
     return 0;
 }
 
-int rw_io_add_timeout_cb(rw_io_ctx_t *ctx, uint64_t timeout_ms,
-                           rw_io_cb cb, void *user_data)
+int rw_io_add_timeout_cb(rw_io_ctx_t *ctx, uint64_t timeout_ms, rw_io_cb cb, void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {

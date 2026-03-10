@@ -115,8 +115,10 @@ void test_fdpass_send_multiple_fds(void)
 
     close(recv_fds[0]);
     close(recv_fds[1]);
-    close(pfd1[0]); close(pfd1[1]);
-    close(pfd2[0]); close(pfd2[1]);
+    close(pfd1[0]);
+    close(pfd1[1]);
+    close(pfd2[0]);
+    close(pfd2[1]);
 }
 
 void test_fdpass_received_fd_is_usable(void)

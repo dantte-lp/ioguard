@@ -14,9 +14,8 @@
  * ============================================================================ */
 
 /* Write an audit entry to SQLite (best-effort, non-fatal) */
-static void secmod_audit_log(rw_secmod_ctx_t *ctx, const char *event_type,
-                              const char *username, const char *source_ip,
-                              const char *result)
+static void secmod_audit_log(rw_secmod_ctx_t *ctx, const char *event_type, const char *username,
+                             const char *source_ip, const char *result)
 {
     if (ctx->sqlite == nullptr) {
         return;
@@ -55,8 +54,7 @@ static int secmod_persist_session(rw_secmod_ctx_t *ctx, const rw_session_t *sess
 }
 
 /* Delete session from mdbx (if available) — used during disconnect handling */
-[[maybe_unused]] static int secmod_delete_session(rw_secmod_ctx_t *ctx,
-                                                    const uint8_t *cookie)
+[[maybe_unused]] static int secmod_delete_session(rw_secmod_ctx_t *ctx, const uint8_t *cookie)
 {
     if (ctx->mdbx == nullptr) {
         return 0;
@@ -94,8 +92,7 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
         }
     }
 
-    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username,
-                                                   req->password);
+    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
     if (result == RW_AUTH_SUCCESS) {
         rw_session_t *session = nullptr;
         int ret = rw_session_create(ctx->sessions, req->username, req->group,
@@ -106,9 +103,8 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
             resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
             resp.session_ttl = session->ttl_seconds;
             resp.assigned_ip = session->assigned_ip;
-            resp.dns_server = (ctx->config->network.dns_count > 0)
-                                  ? ctx->config->network.dns[0]
-                                  : nullptr;
+            resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
+                                                                   : nullptr;
             resp.default_domain = ctx->config->network.default_domain;
 
             /* Persist to mdbx */
@@ -132,15 +128,13 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
 }
 
 /* Handle a session validation request (cookie lookup). */
-static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx,
-                                           rw_ipc_session_validate_t *req)
+static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_validate_t *req)
 {
     rw_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
     rw_session_t *session = nullptr;
-    int ret = rw_session_validate(ctx->sessions, req->cookie, req->cookie_len,
-                                  &session);
+    int ret = rw_session_validate(ctx->sessions, req->cookie, req->cookie_len, &session);
 
     if (ret == 0 && session != nullptr) {
         resp.success = true;
@@ -148,9 +142,8 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx,
         resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
         resp.session_ttl = session->ttl_seconds;
         resp.assigned_ip = session->assigned_ip;
-        resp.dns_server = (ctx->config->network.dns_count > 0)
-                              ? ctx->config->network.dns[0]
-                              : nullptr;
+        resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
+                                                               : nullptr;
         resp.default_domain = ctx->config->network.default_domain;
     } else {
         resp.success = false;
@@ -216,9 +209,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
     ctx->running = false;
 
     /* Initialise PAM with the configured auth method (service name) */
-    const char *service = (config->auth.method[0] != '\0')
-                              ? config->auth.method
-                              : nullptr;
+    const char *service = (config->auth.method[0] != '\0') ? config->auth.method : nullptr;
     int ret = rw_pam_init(&ctx->pam_cfg, service);
     if (ret != 0) {
         return ret;

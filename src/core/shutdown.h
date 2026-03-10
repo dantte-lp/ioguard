@@ -29,9 +29,7 @@ typedef struct {
  * @param timeout_s  Drain timeout in seconds (0 = use default).
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int rw_shutdown_init(rw_shutdown_ctx_t *ctx,
-                                    rw_worker_t *worker,
-                                    uint32_t timeout_s);
+[[nodiscard]] int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker, uint32_t timeout_s);
 
 /**
  * @brief Encode a CSTP DISCONNECT frame into a buffer.
@@ -63,7 +61,6 @@ typedef struct {
  * @param elapsed_s  Seconds since drain started.
  * @return true if timeout exceeded.
  */
-[[nodiscard]] bool rw_shutdown_timed_out(const rw_shutdown_ctx_t *ctx,
-                                          uint32_t elapsed_s);
+[[nodiscard]] bool rw_shutdown_timed_out(const rw_shutdown_ctx_t *ctx, uint32_t elapsed_s);
 
 #endif /* RINGWALL_CORE_SHUTDOWN_H */

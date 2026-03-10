@@ -65,8 +65,7 @@ typedef struct {
  * @param cfg   Configuration with I/O callbacks and sub-modules.
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int rw_conn_data_init(rw_conn_data_t *data,
-                                     const rw_conn_data_config_t *cfg);
+[[nodiscard]] int rw_conn_data_init(rw_conn_data_t *data, const rw_conn_data_config_t *cfg);
 
 /**
  * @brief Process data received from TLS.
@@ -92,8 +91,8 @@ typedef struct {
  * @param pkt_len  Packet length.
  * @return Bytes sent via TLS, or negative errno.
  */
-[[nodiscard]] int rw_conn_data_process_tun(rw_conn_data_t *data,
-                                            const uint8_t *pkt, size_t pkt_len);
+[[nodiscard]] int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt,
+                                           size_t pkt_len);
 
 /**
  * @brief Send a DPD request via TLS.

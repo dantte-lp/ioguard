@@ -46,15 +46,15 @@
  * - --enable-quic          (QUIC protocol support)
  */
 
-#include "tls_abstract.h"
+#include <wolfssl/error-ssl.h>
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
-#include <wolfssl/error-ssl.h>
 #include <stdatomic.h>
+#include "tls_abstract.h"
 
 // C23 standard compliance (accept C2x/C20 from GCC 14 as it provides C23 features)
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 /* ============================================================================
@@ -71,23 +71,23 @@
  * simultaneously. However, modifying the context is NOT thread-safe.
  */
 struct tls_context {
-    WOLFSSL_CTX *wolf_ctx;                // wolfSSL context
-    bool is_server;                        // Server vs client
-    bool is_dtls;                          // DTLS vs TLS
+    WOLFSSL_CTX *wolf_ctx; // wolfSSL context
+    bool is_server;        // Server vs client
+    bool is_dtls;          // DTLS vs TLS
 
     // Certificates and keys
-    char *cert_file;                       // Certificate file path
-    char *key_file;                        // Private key file path
-    char *ca_file;                         // CA bundle file path
-    char *dh_params_file;                  // DH parameters file path
-    bool has_certificate;                  // Certificate loaded flag
+    char *cert_file;      // Certificate file path
+    char *key_file;       // Private key file path
+    char *ca_file;        // CA bundle file path
+    char *dh_params_file; // DH parameters file path
+    bool has_certificate; // Certificate loaded flag
 
     // Priority/cipher configuration
-    char *priority_string;                 // GnuTLS priority string (stored for reference)
-    char *wolfssl_cipher_list;             // Translated wolfSSL cipher list
+    char *priority_string;     // GnuTLS priority string (stored for reference)
+    char *wolfssl_cipher_list; // Translated wolfSSL cipher list
 
     // Certificate verification
-    bool verify_peer;                      // Enable peer verification
+    bool verify_peer; // Enable peer verification
     tls_cert_verify_func_t verify_callback;
     void *verify_userdata;
 
@@ -121,8 +121,8 @@ struct tls_context {
  * Multiple sessions can be used concurrently from the same context.
  */
 struct tls_session {
-    WOLFSSL *wolf_ssl;                     // wolfSSL session
-    tls_context_t *ctx;                    // Parent context
+    WOLFSSL *wolf_ssl;  // wolfSSL session
+    tls_context_t *ctx; // Parent context
 
     // I/O functions
     tls_push_func_t push_func;
@@ -131,8 +131,8 @@ struct tls_session {
     void *io_userdata;
 
     // Session state
-    bool handshake_complete;               // Handshake finished
-    bool corked;                           // Record corking enabled
+    bool handshake_complete; // Handshake finished
+    bool corked;             // Record corking enabled
 
     // User pointer
     void *user_ptr;
@@ -159,7 +159,7 @@ struct tls_certificate {
  * Wrapper around wolfSSL private key
  */
 struct tls_private_key {
-    void *wolf_key;                        // wolfSSL private key (type depends on algorithm)
+    void *wolf_key; // wolfSSL private key (type depends on algorithm)
 };
 
 /* ============================================================================
@@ -208,16 +208,15 @@ void tls_wolfssl_deinit(void);
  * @param ciphers_len Buffer size
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_wolfssl_translate_priority(const char *gnutls_priority,
-                                                  char *wolfssl_ciphers,
-                                                  size_t ciphers_len);
+[[nodiscard]] int tls_wolfssl_translate_priority(const char *gnutls_priority, char *wolfssl_ciphers,
+                                                 size_t ciphers_len);
 
 /**
  * Get wolfSSL version information
  *
  * @return Version string (e.g., "5.8.2")
  */
-[[nodiscard]] const char* tls_wolfssl_get_version(void);
+[[nodiscard]] const char *tls_wolfssl_get_version(void);
 
 /* ============================================================================
  * Internal Helper Functions

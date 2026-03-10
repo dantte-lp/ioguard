@@ -36,8 +36,7 @@
  * @param config     Server configuration.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_security_apply_process(bool is_worker,
-                                             const rw_config_t *config);
+[[nodiscard]] int rw_security_apply_process(bool is_worker, const rw_config_t *config);
 
 /**
  * @brief Build firewall session descriptor for per-user rules.
@@ -48,9 +47,8 @@
  * @param ip       Assigned IP (network byte order for IPv4).
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int rw_security_build_fw_session(rw_fw_session_t *session,
-                                                const char *username,
-                                                int af, uint32_t ip);
+[[nodiscard]] int rw_security_build_fw_session(rw_fw_session_t *session, const char *username,
+                                               int af, uint32_t ip);
 
 /**
  * @brief Create per-session firewall rules after auth success.
@@ -60,8 +58,7 @@
  * @param ip        Assigned IP address.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_security_session_create(const char *username,
-                                              int af, uint32_t ip);
+[[nodiscard]] int rw_security_session_create(const char *username, int af, uint32_t ip);
 
 /**
  * @brief Remove per-session firewall rules on disconnect.
@@ -71,7 +68,6 @@
  * @param ip        Previously assigned IP address.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_security_session_destroy(const char *username,
-                                               int af, uint32_t ip);
+[[nodiscard]] int rw_security_session_destroy(const char *username, int af, uint32_t ip);
 
 #endif /* RINGWALL_CORE_SECURITY_HOOKS_H */

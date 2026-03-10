@@ -9,8 +9,12 @@
 #include <unity/unity.h>
 #include "core/main.h"
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_main_parse_args_default_config(void)
 {

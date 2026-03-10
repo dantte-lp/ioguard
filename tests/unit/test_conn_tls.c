@@ -10,7 +10,7 @@
 #include "crypto/tls_abstract.h"
 
 #ifndef TEST_FIXTURES_DIR
-#define TEST_FIXTURES_DIR "tests"
+#    define TEST_FIXTURES_DIR "tests"
 #endif
 
 static char cert_path[512];
@@ -19,13 +19,13 @@ static char key_path[512];
 void setUp(void)
 {
     /* TEST_FIXTURES_DIR = <srcdir>/tests/fixtures, certs are at <srcdir>/tests/certs */
-    snprintf(cert_path, sizeof(cert_path), "%s/../certs/server-cert.pem",
-             TEST_FIXTURES_DIR);
-    snprintf(key_path, sizeof(key_path), "%s/../certs/server-key.pem",
-             TEST_FIXTURES_DIR);
+    snprintf(cert_path, sizeof(cert_path), "%s/../certs/server-cert.pem", TEST_FIXTURES_DIR);
+    snprintf(key_path, sizeof(key_path), "%s/../certs/server-key.pem", TEST_FIXTURES_DIR);
 }
 
-void tearDown(void) {}
+void tearDown(void)
+{
+}
 
 /* ============================================================================
  * Test: server context create/destroy
@@ -158,8 +158,7 @@ static void *client_thread_fn(void *arg)
 
         /* Try reading data if server sends something (retry for non-blocking) */
         for (int i = 0; i < 200; i++) {
-            ssize_t n = tls_recv(session, ctx->recv_buf,
-                                  sizeof(ctx->recv_buf) - 1);
+            ssize_t n = tls_recv(session, ctx->recv_buf, sizeof(ctx->recv_buf) - 1);
             if (n > 0) {
                 ctx->recv_len = (int)n;
                 ctx->recv_buf[n] = '\0';
@@ -204,8 +203,8 @@ void test_conn_tls_handshake_loopback(void)
     client_ctx.fd = sv[1];
 
     pthread_t client_thread;
-    TEST_ASSERT_EQUAL_INT(0, pthread_create(&client_thread, nullptr,
-                                             client_thread_fn, &client_ctx));
+    TEST_ASSERT_EQUAL_INT(0,
+                          pthread_create(&client_thread, nullptr, client_thread_fn, &client_ctx));
 
     /* Server handshake (retry on EAGAIN) */
     int ret = -EAGAIN;
@@ -253,8 +252,8 @@ void test_conn_tls_read_after_handshake(void)
     client_ctx.fd = sv[1];
 
     pthread_t client_thread;
-    TEST_ASSERT_EQUAL_INT(0, pthread_create(&client_thread, nullptr,
-                                             client_thread_fn, &client_ctx));
+    TEST_ASSERT_EQUAL_INT(0,
+                          pthread_create(&client_thread, nullptr, client_thread_fn, &client_ctx));
 
     /* Server handshake */
     int ret = -EAGAIN;
@@ -302,8 +301,8 @@ void test_conn_tls_write_after_handshake(void)
     client_ctx.fd = sv[1];
 
     pthread_t client_thread;
-    TEST_ASSERT_EQUAL_INT(0, pthread_create(&client_thread, nullptr,
-                                             client_thread_fn, &client_ctx));
+    TEST_ASSERT_EQUAL_INT(0,
+                          pthread_create(&client_thread, nullptr, client_thread_fn, &client_ctx));
 
     /* Server handshake */
     int ret = -EAGAIN;

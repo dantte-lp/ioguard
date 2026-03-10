@@ -30,9 +30,8 @@ static int arm_connection_recv(rw_worker_loop_t *loop, uint64_t conn_id)
     ctx->loop = loop;
     ctx->conn_id = conn_id;
 
-    int ret = rw_io_prep_recv_cb(loop->io, conn->tls_fd,
-                                  conn->recv_buf, sizeof(conn->recv_buf),
-                                  on_tls_recv, ctx);
+    int ret = rw_io_prep_recv_cb(loop->io, conn->tls_fd, conn->recv_buf, sizeof(conn->recv_buf),
+                                 on_tls_recv, ctx);
     if (ret < 0) {
         free(ctx);
         return ret;
@@ -44,8 +43,7 @@ static int arm_connection_recv(rw_worker_loop_t *loop, uint64_t conn_id)
 static void on_tls_recv(int res, void *user_data)
 {
     rw_conn_ctx_t *ctx = user_data;
-    rw_connection_t *conn = rw_worker_find_connection(ctx->loop->worker,
-                                                       ctx->conn_id);
+    rw_connection_t *conn = rw_worker_find_connection(ctx->loop->worker, ctx->conn_id);
     if (conn == nullptr) {
         free(ctx);
         return;
@@ -69,9 +67,8 @@ static void on_tls_recv(int res, void *user_data)
     /* TODO Task 7: forward plaintext to TUN via CSTP framing */
 
     /* Re-arm recv for next data */
-    int ret = rw_io_prep_recv_cb(ctx->loop->io, conn->tls_fd,
-                                  conn->recv_buf, sizeof(conn->recv_buf),
-                                  on_tls_recv, ctx);
+    int ret = rw_io_prep_recv_cb(ctx->loop->io, conn->tls_fd, conn->recv_buf,
+                                 sizeof(conn->recv_buf), on_tls_recv, ctx);
     if (ret < 0) {
         free(ctx);
     }
@@ -121,8 +118,7 @@ static int try_accept_connection(rw_worker_loop_t *loop)
     return 0;
 }
 
-int rw_worker_loop_init(rw_worker_loop_t *loop,
-                         const rw_worker_loop_config_t *cfg)
+int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *cfg)
 {
     memset(loop, 0, sizeof(*loop));
 

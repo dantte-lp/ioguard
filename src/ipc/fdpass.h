@@ -16,8 +16,8 @@ constexpr size_t RW_FDPASS_MAX_FDS = 4;
  * @param data_len Payload length.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds,
-                                 const void *data, size_t data_len);
+[[nodiscard]] int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data,
+                                 size_t data_len);
 
 /**
  * @brief Receive file descriptor(s) from a unix socket.
@@ -30,7 +30,7 @@ constexpr size_t RW_FDPASS_MAX_FDS = 4;
  * @param data_len  [in] buffer size, [out] bytes received.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds,
-                                 size_t *nfds_out, void *data, size_t *data_len);
+[[nodiscard]] int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out,
+                                 void *data, size_t *data_len);
 
 #endif /* RINGWALL_IPC_FDPASS_H */

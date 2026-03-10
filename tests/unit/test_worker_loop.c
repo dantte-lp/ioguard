@@ -228,10 +228,8 @@ void test_worker_loop_tun_write(void)
 
     /* Create mock TLS and TUN fd pairs */
     int tls_sv[2], tun_sv[2];
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC,
-                                         0, tls_sv));
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC,
-                                         0, tun_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, tls_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, tun_sv));
 
     /* Send both fds (TLS + TUN) via fdpass */
     int fds[] = {tls_sv[1], tun_sv[1]};

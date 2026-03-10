@@ -33,17 +33,17 @@
  */
 
 #include "priority_parser.h"
-#include "tls_wolfssl.h"
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
-#include <string.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <stdatomic.h>
+#include <stdio.h>
+#include <string.h>
+#include "tls_wolfssl.h"
 
 // C23 standard compliance
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 /* ============================================================================
@@ -56,27 +56,20 @@ static _Thread_local priority_error_info_t tls_last_error = {0};
 /**
  * Set last error information (internal helper)
  */
-static inline void set_last_error(int error_code,
-                                   size_t error_position,
-                                   const char *error_token,
-                                   const char *error_message)
+static inline void set_last_error(int error_code, size_t error_position, const char *error_token,
+                                  const char *error_message)
 {
     tls_last_error.error_code = error_code;
     tls_last_error.error_position = error_position;
 
     if (error_token != nullptr) {
-        snprintf(tls_last_error.error_token,
-                 sizeof(tls_last_error.error_token),
-                 "%s",
-                 error_token);
+        snprintf(tls_last_error.error_token, sizeof(tls_last_error.error_token), "%s", error_token);
     } else {
         tls_last_error.error_token[0] = '\0';
     }
 
     if (error_message != nullptr) {
-        snprintf(tls_last_error.error_message,
-                 sizeof(tls_last_error.error_message),
-                 "%s",
+        snprintf(tls_last_error.error_message, sizeof(tls_last_error.error_message), "%s",
                  error_message);
     } else {
         tls_last_error.error_message[0] = '\0';
@@ -112,14 +105,14 @@ static const char *priority_error_strings[] = {
     [-PRIORITY_E_MAPPER_FAILED] = "Failed to map to wolfSSL configuration",
 };
 
-const char* priority_strerror(int error_code)
+const char *priority_strerror(int error_code)
 {
     if (error_code == PRIORITY_E_SUCCESS) {
         return priority_error_strings[0];
     }
 
     int index = -error_code;
-    if (index < 0 || index >= (int)(sizeof(priority_error_strings) / sizeof(char*))) {
+    if (index < 0 || index >= (int)(sizeof(priority_error_strings) / sizeof(char *))) {
         return "Unknown error";
     }
 
@@ -132,21 +125,15 @@ const char* priority_strerror(int error_code)
  * ============================================================================ */
 
 static const char *token_type_names[] = {
-    [TOKEN_UNKNOWN] = "UNKNOWN",
-    [TOKEN_KEYWORD] = "KEYWORD",
-    [TOKEN_MODIFIER] = "MODIFIER",
-    [TOKEN_VERSION] = "VERSION",
-    [TOKEN_CIPHER] = "CIPHER",
-    [TOKEN_KX] = "KEY_EXCHANGE",
-    [TOKEN_MAC] = "MAC",
-    [TOKEN_SIGN] = "SIGNATURE",
-    [TOKEN_GROUP] = "GROUP",
+    [TOKEN_UNKNOWN] = "UNKNOWN",   [TOKEN_KEYWORD] = "KEYWORD", [TOKEN_MODIFIER] = "MODIFIER",
+    [TOKEN_VERSION] = "VERSION",   [TOKEN_CIPHER] = "CIPHER",   [TOKEN_KX] = "KEY_EXCHANGE",
+    [TOKEN_MAC] = "MAC",           [TOKEN_SIGN] = "SIGNATURE",  [TOKEN_GROUP] = "GROUP",
     [TOKEN_OPERATOR] = "OPERATOR",
 };
 
-const char* priority_token_type_name(token_type_t type)
+const char *priority_token_type_name(token_type_t type)
 {
-    if (type < 0 || type >= (int)(sizeof(token_type_names) / sizeof(char*))) {
+    if (type < 0 || type >= (int)(sizeof(token_type_names) / sizeof(char *))) {
         return "INVALID";
     }
     return token_type_names[type];
@@ -156,18 +143,9 @@ const char* priority_token_type_name(token_type_t type)
  * Known base keywords
  */
 static const char *base_keywords[] = {
-    "NORMAL",
-    "PERFORMANCE",
-    "SECURE128",
-    "SECURE192",
-    "SECURE256",
-    "PFS",
-    "LEGACY",
-    "SUITEB128",
-    "SUITEB192",
-    "NONE",
-    "SYSTEM",
-    nullptr  // Sentinel
+    "NORMAL", "PERFORMANCE", "SECURE128", "SECURE192", "SECURE256", "PFS",
+    "LEGACY", "SUITEB128",   "SUITEB192", "NONE",      "SYSTEM",
+    nullptr // Sentinel
 };
 
 /**
@@ -191,13 +169,13 @@ static const char *known_modifiers[] = {
     "%PROFILE_FUTURE",
     "%PROFILE_SUITEB128",
     "%PROFILE_SUITEB192",
-    nullptr  // Sentinel
+    nullptr // Sentinel
 };
 
 /**
  * Classify token based on content
  */
-static token_type_t classify_token(const char * const start, const size_t length)
+static token_type_t classify_token(const char *const start, const size_t length)
 {
     // Create null-terminated string for comparison
     char token[PRIORITY_MAX_TOKEN_LEN];
@@ -214,7 +192,7 @@ static token_type_t classify_token(const char * const start, const size_t length
                 return TOKEN_MODIFIER;
             }
         }
-        return TOKEN_UNKNOWN;  // Unknown modifier
+        return TOKEN_UNKNOWN; // Unknown modifier
     }
 
     // Check if it's a base keyword
@@ -240,31 +218,23 @@ static token_type_t classify_token(const char * const start, const size_t length
     }
 
     // Check for cipher keywords
-    if (strstr(token, "AES") != nullptr ||
-        strstr(token, "CHACHA20") != nullptr ||
-        strstr(token, "CAMELLIA") != nullptr ||
-        strstr(token, "ARCFOUR") != nullptr ||
-        strstr(token, "3DES") != nullptr ||
-        strstr(token, "NULL") != nullptr ||
+    if (strstr(token, "AES") != nullptr || strstr(token, "CHACHA20") != nullptr ||
+        strstr(token, "CAMELLIA") != nullptr || strstr(token, "ARCFOUR") != nullptr ||
+        strstr(token, "3DES") != nullptr || strstr(token, "NULL") != nullptr ||
         strstr(token, "CIPHER") != nullptr) {
         return TOKEN_CIPHER;
     }
 
     // Check for key exchange keywords
-    if (strstr(token, "ECDHE") != nullptr ||
-        strstr(token, "DHE") != nullptr ||
-        strstr(token, "RSA") != nullptr ||
-        strstr(token, "ECDSA") != nullptr ||
-        strstr(token, "PSK") != nullptr ||
-        strcmp(token, "KX-ALL") == 0) {
+    if (strstr(token, "ECDHE") != nullptr || strstr(token, "DHE") != nullptr ||
+        strstr(token, "RSA") != nullptr || strstr(token, "ECDSA") != nullptr ||
+        strstr(token, "PSK") != nullptr || strcmp(token, "KX-ALL") == 0) {
         return TOKEN_KX;
     }
 
     // Check for MAC keywords
-    if (strstr(token, "SHA") != nullptr ||
-        strstr(token, "MD5") != nullptr ||
-        strcmp(token, "AEAD") == 0 ||
-        strcmp(token, "MAC-ALL") == 0) {
+    if (strstr(token, "SHA") != nullptr || strstr(token, "MD5") != nullptr ||
+        strcmp(token, "AEAD") == 0 || strcmp(token, "MAC-ALL") == 0) {
         return TOKEN_MAC;
     }
 
@@ -279,7 +249,7 @@ int priority_tokenize(const char *priority, token_list_t *tokens)
 {
     if (priority == nullptr || tokens == nullptr) {
         set_last_error(PRIORITY_E_NULL_POINTER, 0, nullptr,
-                      "nullptr parameter to priority_tokenize");
+                       "nullptr parameter to priority_tokenize");
         return PRIORITY_E_NULL_POINTER;
     }
 
@@ -288,7 +258,7 @@ int priority_tokenize(const char *priority, token_list_t *tokens)
     tokens->input = priority;
 
     const char *p = priority;
-    bool is_addition = true;  // Default operator is implicit addition
+    bool is_addition = true; // Default operator is implicit addition
     bool is_negation = false;
 
     while (*p != '\0') {
@@ -306,7 +276,7 @@ int priority_tokenize(const char *priority, token_list_t *tokens)
             // Record operator
             if (tokens->count >= PRIORITY_MAX_TOKENS) {
                 set_last_error(PRIORITY_E_TOO_COMPLEX, p - priority, nullptr,
-                              "Too many tokens in priority string");
+                               "Too many tokens in priority string");
                 return PRIORITY_E_TOO_COMPLEX;
             }
 
@@ -324,7 +294,7 @@ int priority_tokenize(const char *priority, token_list_t *tokens)
                 is_negation = false;
             }
 
-            p++;  // Skip operator
+            p++; // Skip operator
             continue;
         }
 
@@ -337,21 +307,21 @@ int priority_tokenize(const char *priority, token_list_t *tokens)
 
         size_t token_len = (size_t)(p - token_start);
         if (token_len == 0) {
-            continue;  // Empty token, skip
+            continue; // Empty token, skip
         }
 
         if (token_len >= PRIORITY_MAX_TOKEN_LEN) {
             char long_token[64];
             snprintf(long_token, sizeof(long_token), "%.*s...", (int)40, token_start);
             set_last_error(PRIORITY_E_SYNTAX_ERROR, token_start - priority, long_token,
-                          "Token too long");
+                           "Token too long");
             return PRIORITY_E_SYNTAX_ERROR;
         }
 
         // Add token to list
         if (tokens->count >= PRIORITY_MAX_TOKENS) {
             set_last_error(PRIORITY_E_TOO_COMPLEX, token_start - priority, nullptr,
-                          "Too many tokens in priority string");
+                           "Too many tokens in priority string");
             return PRIORITY_E_TOO_COMPLEX;
         }
 
@@ -381,11 +351,11 @@ void priority_config_init(priority_config_t *config)
     }
 
     memset(config, 0, sizeof(*config));
-    config->min_security_bits = 0;  // No minimum by default
+    config->min_security_bits = 0; // No minimum by default
 
     // Initialize version range to invalid values (will be set when versions are enabled)
-    config->min_version = 0xFF;  // Max possible value (will be decreased)
-    config->max_version = 0x00;  // Min possible value (will be increased)
+    config->min_version = 0xFF; // Max possible value (will be decreased)
+    config->max_version = 0x00; // Min possible value (will be increased)
 }
 
 /**
@@ -396,8 +366,7 @@ void priority_config_init(priority_config_t *config)
  * @param config Priority configuration
  * @param version TLS version to enable
  */
-static inline void enable_tls_version(priority_config_t *config,
-                                       const tls_version_t version)
+static inline void enable_tls_version(priority_config_t *config, const tls_version_t version)
 {
     config->enabled_versions[version] = true;
     config->disabled_versions[version] = false;
@@ -417,8 +386,7 @@ static inline void enable_tls_version(priority_config_t *config,
  * @param config Priority configuration
  * @param version TLS version to disable
  */
-static inline void disable_tls_version(priority_config_t *config,
-                                        const tls_version_t version)
+static inline void disable_tls_version(priority_config_t *config, const tls_version_t version)
 {
     config->enabled_versions[version] = false;
     config->disabled_versions[version] = true;
@@ -427,9 +395,8 @@ static inline void disable_tls_version(priority_config_t *config,
 /**
  * Parse base keyword and set defaults
  */
-static int parse_base_keyword(const char * const keyword,
-                              const size_t keyword_len,
-                              priority_config_t * const config)
+static int parse_base_keyword(const char *const keyword, const size_t keyword_len,
+                              priority_config_t *const config)
 {
     char kw[PRIORITY_MAX_TOKEN_LEN];
     if (keyword_len >= sizeof(kw)) {
@@ -438,7 +405,7 @@ static int parse_base_keyword(const char * const keyword,
     memcpy(kw, keyword, keyword_len);
     kw[keyword_len] = '\0';
 
-    config->base_keyword = nullptr;  // Will be set to static string
+    config->base_keyword = nullptr; // Will be set to static string
 
     if (strcmp(kw, "NORMAL") == 0) {
         config->base_keyword = "NORMAL";
@@ -507,10 +474,8 @@ static int parse_base_keyword(const char * const keyword,
 /**
  * Parse TLS version specification
  */
-static int parse_version(const char * const version_str,
-                         const size_t version_len,
-                         const bool is_addition,
-                         priority_config_t * const config)
+static int parse_version(const char *const version_str, const size_t version_len,
+                         const bool is_addition, priority_config_t *const config)
 {
     char ver[PRIORITY_MAX_TOKEN_LEN];
     if (version_len >= sizeof(ver)) {
@@ -553,9 +518,8 @@ static int parse_version(const char * const version_str,
 /**
  * Parse modifier (% keyword)
  */
-static int parse_modifier(const char * const modifier_str,
-                          const size_t modifier_len,
-                          priority_config_t * const config)
+static int parse_modifier(const char *const modifier_str, const size_t modifier_len,
+                          priority_config_t *const config)
 {
     char mod[PRIORITY_MAX_TOKEN_LEN];
     if (modifier_len >= sizeof(mod)) {
@@ -579,7 +543,7 @@ static int parse_modifier(const char * const modifier_str,
     } else {
         // Unknown modifier - log warning but don't fail
         // Some modifiers may not have wolfSSL equivalents
-        return PRIORITY_E_SUCCESS;  // Tolerate unknown modifiers
+        return PRIORITY_E_SUCCESS; // Tolerate unknown modifiers
     }
 
     return PRIORITY_E_SUCCESS;
@@ -588,10 +552,8 @@ static int parse_modifier(const char * const modifier_str,
 /**
  * Parse cipher specification
  */
-static int parse_cipher(const char * const cipher_str,
-                        const size_t cipher_len,
-                        const bool is_addition,
-                        priority_config_t * const config)
+static int parse_cipher(const char *const cipher_str, const size_t cipher_len,
+                        const bool is_addition, priority_config_t *const config)
 {
     if (cipher_len >= PRIORITY_MAX_CIPHER_NAME) {
         return PRIORITY_E_INVALID_CIPHER;
@@ -601,16 +563,14 @@ static int parse_cipher(const char * const cipher_str,
         if (config->enabled_cipher_count >= PRIORITY_MAX_CIPHERS) {
             return PRIORITY_E_TOO_COMPLEX;
         }
-        memcpy(config->enabled_ciphers[config->enabled_cipher_count],
-               cipher_str, cipher_len);
+        memcpy(config->enabled_ciphers[config->enabled_cipher_count], cipher_str, cipher_len);
         config->enabled_ciphers[config->enabled_cipher_count][cipher_len] = '\0';
         config->enabled_cipher_count++;
     } else {
         if (config->disabled_cipher_count >= PRIORITY_MAX_CIPHERS) {
             return PRIORITY_E_TOO_COMPLEX;
         }
-        memcpy(config->disabled_ciphers[config->disabled_cipher_count],
-               cipher_str, cipher_len);
+        memcpy(config->disabled_ciphers[config->disabled_cipher_count], cipher_str, cipher_len);
         config->disabled_ciphers[config->disabled_cipher_count][cipher_len] = '\0';
         config->disabled_cipher_count++;
     }
@@ -621,8 +581,7 @@ static int parse_cipher(const char * const cipher_str,
 int priority_parse(const token_list_t *tokens, priority_config_t *config)
 {
     if (tokens == nullptr || config == nullptr) {
-        set_last_error(PRIORITY_E_NULL_POINTER, 0, nullptr,
-                      "nullptr parameter to priority_parse");
+        set_last_error(PRIORITY_E_NULL_POINTER, 0, nullptr, "nullptr parameter to priority_parse");
         return PRIORITY_E_NULL_POINTER;
     }
 
@@ -634,73 +593,61 @@ int priority_parse(const token_list_t *tokens, priority_config_t *config)
         const token_t *token = &tokens->tokens[i];
 
         switch (token->type) {
-        case TOKEN_KEYWORD:
-            {
-                int ret = parse_base_keyword(token->start, token->length, config);
-                if (ret != PRIORITY_E_SUCCESS) {
-                    char kw[PRIORITY_MAX_TOKEN_LEN];
-                    size_t copy_len = (token->length < sizeof(kw) - 1) ?
-                                      token->length : sizeof(kw) - 1;
-                    memcpy(kw, token->start, copy_len);
-                    kw[copy_len] = '\0';
-                    set_last_error(ret, token->start - tokens->input, kw,
-                                  "Unknown or invalid keyword");
-                    return ret;
-                }
+        case TOKEN_KEYWORD: {
+            int ret = parse_base_keyword(token->start, token->length, config);
+            if (ret != PRIORITY_E_SUCCESS) {
+                char kw[PRIORITY_MAX_TOKEN_LEN];
+                size_t copy_len = (token->length < sizeof(kw) - 1) ? token->length : sizeof(kw) - 1;
+                memcpy(kw, token->start, copy_len);
+                kw[copy_len] = '\0';
+                set_last_error(ret, token->start - tokens->input, kw, "Unknown or invalid keyword");
+                return ret;
             }
-            break;
+        } break;
 
-        case TOKEN_MODIFIER:
-            {
-                int ret = parse_modifier(token->start, token->length, config);
-                if (ret != PRIORITY_E_SUCCESS) {
-                    char mod[PRIORITY_MAX_TOKEN_LEN];
-                    size_t copy_len = (token->length < sizeof(mod) - 1) ?
-                                      token->length : sizeof(mod) - 1;
-                    memcpy(mod, token->start, copy_len);
-                    mod[copy_len] = '\0';
-                    set_last_error(ret, token->start - tokens->input, mod,
-                                  "Unknown or invalid modifier");
-                    return ret;
-                }
+        case TOKEN_MODIFIER: {
+            int ret = parse_modifier(token->start, token->length, config);
+            if (ret != PRIORITY_E_SUCCESS) {
+                char mod[PRIORITY_MAX_TOKEN_LEN];
+                size_t copy_len = (token->length < sizeof(mod) - 1) ? token->length
+                                                                    : sizeof(mod) - 1;
+                memcpy(mod, token->start, copy_len);
+                mod[copy_len] = '\0';
+                set_last_error(ret, token->start - tokens->input, mod,
+                               "Unknown or invalid modifier");
+                return ret;
             }
-            break;
+        } break;
 
-        case TOKEN_VERSION:
-            {
-                int ret = parse_version(token->start, token->length,
-                                       token->is_addition, config);
-                if (ret != PRIORITY_E_SUCCESS) {
-                    char ver[PRIORITY_MAX_TOKEN_LEN];
-                    size_t copy_len = (token->length < sizeof(ver) - 1) ?
-                                      token->length : sizeof(ver) - 1;
-                    memcpy(ver, token->start, copy_len);
-                    ver[copy_len] = '\0';
-                    set_last_error(ret, token->start - tokens->input, ver,
-                                  "Invalid TLS version specification");
-                    return ret;
-                }
+        case TOKEN_VERSION: {
+            int ret = parse_version(token->start, token->length, token->is_addition, config);
+            if (ret != PRIORITY_E_SUCCESS) {
+                char ver[PRIORITY_MAX_TOKEN_LEN];
+                size_t copy_len = (token->length < sizeof(ver) - 1) ? token->length
+                                                                    : sizeof(ver) - 1;
+                memcpy(ver, token->start, copy_len);
+                ver[copy_len] = '\0';
+                set_last_error(ret, token->start - tokens->input, ver,
+                               "Invalid TLS version specification");
+                return ret;
             }
-            break;
+        } break;
 
         case TOKEN_CIPHER:
         case TOKEN_KX:
-        case TOKEN_MAC:
-            {
-                int ret = parse_cipher(token->start, token->length,
-                                      token->is_addition, config);
-                if (ret != PRIORITY_E_SUCCESS) {
-                    char cipher[PRIORITY_MAX_TOKEN_LEN];
-                    size_t copy_len = (token->length < sizeof(cipher) - 1) ?
-                                      token->length : sizeof(cipher) - 1;
-                    memcpy(cipher, token->start, copy_len);
-                    cipher[copy_len] = '\0';
-                    set_last_error(ret, token->start - tokens->input, cipher,
-                                  "Invalid cipher specification");
-                    return ret;
-                }
+        case TOKEN_MAC: {
+            int ret = parse_cipher(token->start, token->length, token->is_addition, config);
+            if (ret != PRIORITY_E_SUCCESS) {
+                char cipher[PRIORITY_MAX_TOKEN_LEN];
+                size_t copy_len = (token->length < sizeof(cipher) - 1) ? token->length
+                                                                       : sizeof(cipher) - 1;
+                memcpy(cipher, token->start, copy_len);
+                cipher[copy_len] = '\0';
+                set_last_error(ret, token->start - tokens->input, cipher,
+                               "Invalid cipher specification");
+                return ret;
             }
-            break;
+        } break;
 
         case TOKEN_SIGN:
         case TOKEN_GROUP:
@@ -728,8 +675,7 @@ int priority_parse(const token_list_t *tokens, priority_config_t *config)
         }
     }
     if (has_conflict) {
-        set_last_error(PRIORITY_E_CONFLICT, 0, nullptr,
-                      "TLS version both enabled and disabled");
+        set_last_error(PRIORITY_E_CONFLICT, 0, nullptr, "TLS version both enabled and disabled");
         return PRIORITY_E_CONFLICT;
     }
 
@@ -760,14 +706,14 @@ void wolfssl_config_init(wolfssl_config_t *wolfssl_cfg)
     }
 
     memset(wolfssl_cfg, 0, sizeof(*wolfssl_cfg));
-    wolfssl_cfg->min_version = 0;  // Will be set based on config
+    wolfssl_cfg->min_version = 0; // Will be set based on config
     wolfssl_cfg->max_version = 0;
 }
 
 /**
  * Map base keyword to wolfSSL cipher list
  */
-static const char* map_base_keyword_to_ciphers(const char *keyword)
+static const char *map_base_keyword_to_ciphers(const char *keyword)
 {
     if (keyword == nullptr) {
         return "DEFAULT";
@@ -829,7 +775,7 @@ static const char* map_base_keyword_to_ciphers(const char *keyword)
 /**
  * Map base keyword to TLS 1.3 cipher suites
  */
-static const char* map_base_keyword_to_tls13_ciphers(const char *keyword)
+static const char *map_base_keyword_to_tls13_ciphers(const char *keyword)
 {
     if (keyword == nullptr) {
         return "TLS13-AES128-GCM-SHA256:"
@@ -856,36 +802,35 @@ static const char* map_base_keyword_to_tls13_ciphers(const char *keyword)
 /**
  * Determine version range from configuration
  */
-static void map_version_range(const priority_config_t *config,
-                               int *min_version, int *max_version)
+static void map_version_range(const priority_config_t *config, int *min_version, int *max_version)
 {
     *min_version = 0;
     *max_version = 0;
 
     // Determine minimum version (lowest enabled)
     if (config->enabled_versions[TLS_VERSION_SSL3]) {
-        *min_version = 0x0300;  // SSL 3.0 (not recommended!)
+        *min_version = 0x0300; // SSL 3.0 (not recommended!)
     } else if (config->enabled_versions[TLS_VERSION_TLS10]) {
-        *min_version = 0x0301;  // TLS 1.0
+        *min_version = 0x0301; // TLS 1.0
     } else if (config->enabled_versions[TLS_VERSION_TLS11]) {
-        *min_version = 0x0302;  // TLS 1.1
+        *min_version = 0x0302; // TLS 1.1
     } else if (config->enabled_versions[TLS_VERSION_TLS12]) {
-        *min_version = 0x0303;  // TLS 1.2
+        *min_version = 0x0303; // TLS 1.2
     } else if (config->enabled_versions[TLS_VERSION_TLS13]) {
-        *min_version = 0x0304;  // TLS 1.3
+        *min_version = 0x0304; // TLS 1.3
     }
 
     // Determine maximum version (highest enabled)
     if (config->enabled_versions[TLS_VERSION_TLS13]) {
-        *max_version = 0x0304;  // TLS 1.3
+        *max_version = 0x0304; // TLS 1.3
     } else if (config->enabled_versions[TLS_VERSION_TLS12]) {
-        *max_version = 0x0303;  // TLS 1.2
+        *max_version = 0x0303; // TLS 1.2
     } else if (config->enabled_versions[TLS_VERSION_TLS11]) {
-        *max_version = 0x0302;  // TLS 1.1
+        *max_version = 0x0302; // TLS 1.1
     } else if (config->enabled_versions[TLS_VERSION_TLS10]) {
-        *max_version = 0x0301;  // TLS 1.0
+        *max_version = 0x0301; // TLS 1.0
     } else if (config->enabled_versions[TLS_VERSION_SSL3]) {
-        *max_version = 0x0300;  // SSL 3.0
+        *max_version = 0x0300; // SSL 3.0
     }
 }
 
@@ -897,37 +842,36 @@ static long map_options_flags(const priority_config_t *config)
     long options = 0;
 
     if (config->server_precedence) {
-        options |= 0x00400000L;  // SSL_OP_CIPHER_SERVER_PREFERENCE
+        options |= 0x00400000L; // SSL_OP_CIPHER_SERVER_PREFERENCE
     }
 
     // Disable specific versions if excluded
     if (config->disabled_versions[TLS_VERSION_SSL3]) {
-        options |= 0x02000000L;  // SSL_OP_NO_SSLv3
+        options |= 0x02000000L; // SSL_OP_NO_SSLv3
     }
     if (config->disabled_versions[TLS_VERSION_TLS10]) {
-        options |= 0x04000000L;  // SSL_OP_NO_TLSv1
+        options |= 0x04000000L; // SSL_OP_NO_TLSv1
     }
     if (config->disabled_versions[TLS_VERSION_TLS11]) {
-        options |= 0x10000000L;  // SSL_OP_NO_TLSv1_1
+        options |= 0x10000000L; // SSL_OP_NO_TLSv1_1
     }
     if (config->disabled_versions[TLS_VERSION_TLS12]) {
-        options |= 0x08000000L;  // SSL_OP_NO_TLSv1_2
+        options |= 0x08000000L; // SSL_OP_NO_TLSv1_2
     }
 
     // Other options
     if (config->compat_mode) {
-        options |= 0x00000004L;  // SSL_OP_ALL (compatibility mode)
+        options |= 0x00000004L; // SSL_OP_ALL (compatibility mode)
     }
 
     return options;
 }
 
-int priority_map_to_wolfssl(const priority_config_t *config,
-                             wolfssl_config_t *wolfssl_cfg)
+int priority_map_to_wolfssl(const priority_config_t *config, wolfssl_config_t *wolfssl_cfg)
 {
     if (config == nullptr || wolfssl_cfg == nullptr) {
         set_last_error(PRIORITY_E_NULL_POINTER, 0, nullptr,
-                      "nullptr parameter to priority_map_to_wolfssl");
+                       "nullptr parameter to priority_map_to_wolfssl");
         return PRIORITY_E_NULL_POINTER;
     }
 
@@ -939,16 +883,14 @@ int priority_map_to_wolfssl(const priority_config_t *config,
         config->enabled_versions[TLS_VERSION_TLS11] ||
         config->enabled_versions[TLS_VERSION_TLS12]) {
         const char *base_ciphers = map_base_keyword_to_ciphers(config->base_keyword);
-        snprintf(wolfssl_cfg->cipher_list, sizeof(wolfssl_cfg->cipher_list),
-                 "%s", base_ciphers);
+        snprintf(wolfssl_cfg->cipher_list, sizeof(wolfssl_cfg->cipher_list), "%s", base_ciphers);
         wolfssl_cfg->has_cipher_list = true;
     }
 
     // Build TLS 1.3 cipher suites
     if (config->enabled_versions[TLS_VERSION_TLS13]) {
         const char *tls13_ciphers = map_base_keyword_to_tls13_ciphers(config->base_keyword);
-        snprintf(wolfssl_cfg->ciphersuites, sizeof(wolfssl_cfg->ciphersuites),
-                 "%s", tls13_ciphers);
+        snprintf(wolfssl_cfg->ciphersuites, sizeof(wolfssl_cfg->ciphersuites), "%s", tls13_ciphers);
         wolfssl_cfg->has_ciphersuites = true;
     }
 
@@ -968,12 +910,11 @@ int priority_map_to_wolfssl(const priority_config_t *config,
  * Phase 4: Application
  * ============================================================================ */
 
-int priority_apply_wolfssl_config(void *wolf_ctx,
-                                   const wolfssl_config_t *wolfssl_cfg)
+int priority_apply_wolfssl_config(void *wolf_ctx, const wolfssl_config_t *wolfssl_cfg)
 {
     if (wolf_ctx == nullptr || wolfssl_cfg == nullptr) {
         set_last_error(PRIORITY_E_NULL_POINTER, 0, nullptr,
-                      "nullptr parameter to priority_apply_wolfssl_config");
+                       "nullptr parameter to priority_apply_wolfssl_config");
         return PRIORITY_E_NULL_POINTER;
     }
 
@@ -984,21 +925,21 @@ int priority_apply_wolfssl_config(void *wolf_ctx,
         int ret = wolfSSL_CTX_set_cipher_list(ctx, wolfssl_cfg->cipher_list);
         if (ret != SSL_SUCCESS) {
             set_last_error(PRIORITY_E_MAPPER_FAILED, 0, nullptr,
-                          "Failed to set wolfSSL cipher list");
+                           "Failed to set wolfSSL cipher list");
             return PRIORITY_E_MAPPER_FAILED;
         }
     }
 
     // Apply TLS 1.3 cipher suites
     if (wolfssl_cfg->has_ciphersuites && wolfssl_cfg->ciphersuites[0] != '\0') {
-        #ifdef WOLFSSL_TLS13
+#ifdef WOLFSSL_TLS13
         int ret = wolfSSL_CTX_set_cipher_list(ctx, wolfssl_cfg->ciphersuites);
         if (ret != SSL_SUCCESS) {
             set_last_error(PRIORITY_E_MAPPER_FAILED, 0, nullptr,
-                          "Failed to set wolfSSL TLS 1.3 cipher suites");
+                           "Failed to set wolfSSL TLS 1.3 cipher suites");
             return PRIORITY_E_MAPPER_FAILED;
         }
-        #endif
+#endif
     }
 
     // Apply version range
@@ -1007,7 +948,7 @@ int priority_apply_wolfssl_config(void *wolf_ctx,
             int ret = wolfSSL_CTX_SetMinVersion(ctx, wolfssl_cfg->min_version);
             if (ret != SSL_SUCCESS) {
                 set_last_error(PRIORITY_E_MAPPER_FAILED, 0, nullptr,
-                              "Failed to set minimum TLS version");
+                               "Failed to set minimum TLS version");
                 return PRIORITY_E_MAPPER_FAILED;
             }
         }
@@ -1018,7 +959,7 @@ int priority_apply_wolfssl_config(void *wolf_ctx,
     // Apply options flags
     if (wolfssl_cfg->options != 0) {
         long result = wolfSSL_CTX_set_options(ctx, wolfssl_cfg->options);
-        (void)result;  // wolfSSL_CTX_set_options returns new options, not error code
+        (void)result; // wolfSSL_CTX_set_options returns new options, not error code
     }
 
     return PRIORITY_E_SUCCESS;
@@ -1032,7 +973,7 @@ int tls_set_priority_string(tls_context_t *ctx, const char *priority)
 {
     if (ctx == nullptr || priority == nullptr) {
         set_last_error(PRIORITY_E_NULL_POINTER, 0, nullptr,
-                      "nullptr parameter to tls_set_priority_string");
+                       "nullptr parameter to tls_set_priority_string");
         return PRIORITY_E_NULL_POINTER;
     }
 
@@ -1043,7 +984,7 @@ int tls_set_priority_string(tls_context_t *ctx, const char *priority)
     struct tls_context *ctx_internal = (struct tls_context *)ctx;
     if (ctx_internal->wolf_ctx == nullptr) {
         set_last_error(PRIORITY_E_MAPPER_FAILED, 0, nullptr,
-                      "Context does not have wolfSSL backend");
+                       "Context does not have wolfSSL backend");
         return PRIORITY_E_MAPPER_FAILED;
     }
 
@@ -1083,9 +1024,7 @@ int tls_set_priority_string(tls_context_t *ctx, const char *priority)
     return PRIORITY_E_SUCCESS;
 }
 
-int tls_validate_priority_string(const char *priority,
-                                  char *error_msg,
-                                  size_t error_msg_len)
+int tls_validate_priority_string(const char *priority, char *error_msg, size_t error_msg_len)
 {
     if (priority == nullptr) {
         if (error_msg != nullptr && error_msg_len > 0) {
@@ -1142,9 +1081,7 @@ int tls_validate_priority_string(const char *priority,
  * Utility Functions
  * ============================================================================ */
 
-size_t priority_config_dump(const priority_config_t *config,
-                             char *buffer,
-                             size_t buffer_len)
+size_t priority_config_dump(const priority_config_t *config, char *buffer, size_t buffer_len)
 {
     if (config == nullptr || buffer == nullptr || buffer_len == 0) {
         return 0;
@@ -1154,8 +1091,8 @@ size_t priority_config_dump(const priority_config_t *config,
 
     // Base keyword
     if (config->has_base_keyword && config->base_keyword != nullptr) {
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Base keyword: %s\n", config->base_keyword);
+        offset += snprintf(buffer + offset, buffer_len - offset, "Base keyword: %s\n",
+                           config->base_keyword);
     }
 
     // Enabled versions (print all enabled versions in hex format)
@@ -1167,23 +1104,27 @@ size_t priority_config_dump(const priority_config_t *config,
         }
     }
     if (has_enabled) {
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Enabled versions: ");
-        if (config->enabled_versions[TLS_VERSION_SSL3])
+        offset += snprintf(buffer + offset, buffer_len - offset, "Enabled versions: ");
+        if (config->enabled_versions[TLS_VERSION_SSL3]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "SSL3.0 ");
-        if (config->enabled_versions[TLS_VERSION_TLS10])
+        }
+        if (config->enabled_versions[TLS_VERSION_TLS10]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.0 ");
-        if (config->enabled_versions[TLS_VERSION_TLS11])
+        }
+        if (config->enabled_versions[TLS_VERSION_TLS11]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.1 ");
-        if (config->enabled_versions[TLS_VERSION_TLS12])
+        }
+        if (config->enabled_versions[TLS_VERSION_TLS12]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.2 ");
-        if (config->enabled_versions[TLS_VERSION_TLS13])
+        }
+        if (config->enabled_versions[TLS_VERSION_TLS13]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.3 ");
+        }
         offset += snprintf(buffer + offset, buffer_len - offset, "\n");
         // Also print min/max range
         offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Version range: min=0x%02x max=0x%02x\n",
-                          config->min_version, config->max_version);
+                           "Version range: min=0x%02x max=0x%02x\n", config->min_version,
+                           config->max_version);
     }
 
     // Disabled versions
@@ -1195,43 +1136,47 @@ size_t priority_config_dump(const priority_config_t *config,
         }
     }
     if (has_disabled) {
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Disabled versions: ");
-        if (config->disabled_versions[TLS_VERSION_SSL3])
+        offset += snprintf(buffer + offset, buffer_len - offset, "Disabled versions: ");
+        if (config->disabled_versions[TLS_VERSION_SSL3]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "SSL3.0 ");
-        if (config->disabled_versions[TLS_VERSION_TLS10])
+        }
+        if (config->disabled_versions[TLS_VERSION_TLS10]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.0 ");
-        if (config->disabled_versions[TLS_VERSION_TLS11])
+        }
+        if (config->disabled_versions[TLS_VERSION_TLS11]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.1 ");
-        if (config->disabled_versions[TLS_VERSION_TLS12])
+        }
+        if (config->disabled_versions[TLS_VERSION_TLS12]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.2 ");
-        if (config->disabled_versions[TLS_VERSION_TLS13])
+        }
+        if (config->disabled_versions[TLS_VERSION_TLS13]) {
             offset += snprintf(buffer + offset, buffer_len - offset, "TLS1.3 ");
+        }
         offset += snprintf(buffer + offset, buffer_len - offset, "\n");
     }
 
     // Modifiers
-    if (config->server_precedence)
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Server precedence: YES\n");
-    if (config->compat_mode)
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Compatibility mode: YES\n");
-    if (config->require_pfs)
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Perfect forward secrecy: REQUIRED\n");
+    if (config->server_precedence) {
+        offset += snprintf(buffer + offset, buffer_len - offset, "Server precedence: YES\n");
+    }
+    if (config->compat_mode) {
+        offset += snprintf(buffer + offset, buffer_len - offset, "Compatibility mode: YES\n");
+    }
+    if (config->require_pfs) {
+        offset +=
+            snprintf(buffer + offset, buffer_len - offset, "Perfect forward secrecy: REQUIRED\n");
+    }
 
     // Security level
-    if (config->min_security_bits > 0)
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Minimum security: %d bits\n", config->min_security_bits);
+    if (config->min_security_bits > 0) {
+        offset += snprintf(buffer + offset, buffer_len - offset, "Minimum security: %d bits\n",
+                           config->min_security_bits);
+    }
 
     return offset;
 }
 
-size_t wolfssl_config_dump(const wolfssl_config_t *wolfssl_cfg,
-                            char *buffer,
-                            size_t buffer_len)
+size_t wolfssl_config_dump(const wolfssl_config_t *wolfssl_cfg, char *buffer, size_t buffer_len)
 {
     if (wolfssl_cfg == nullptr || buffer == nullptr || buffer_len == 0) {
         return 0;
@@ -1241,27 +1186,27 @@ size_t wolfssl_config_dump(const wolfssl_config_t *wolfssl_cfg,
 
     // TLS 1.2 cipher list
     if (wolfssl_cfg->has_cipher_list) {
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "TLS 1.2 cipher list: %s\n", wolfssl_cfg->cipher_list);
+        offset += snprintf(buffer + offset, buffer_len - offset, "TLS 1.2 cipher list: %s\n",
+                           wolfssl_cfg->cipher_list);
     }
 
     // TLS 1.3 cipher suites
     if (wolfssl_cfg->has_ciphersuites) {
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "TLS 1.3 cipher suites: %s\n", wolfssl_cfg->ciphersuites);
+        offset += snprintf(buffer + offset, buffer_len - offset, "TLS 1.3 cipher suites: %s\n",
+                           wolfssl_cfg->ciphersuites);
     }
 
     // Version range
     if (wolfssl_cfg->has_version_range) {
         offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Version range: min=0x%04x max=0x%04x\n",
-                          wolfssl_cfg->min_version, wolfssl_cfg->max_version);
+                           "Version range: min=0x%04x max=0x%04x\n", wolfssl_cfg->min_version,
+                           wolfssl_cfg->max_version);
     }
 
     // Options
     if (wolfssl_cfg->options != 0) {
-        offset += snprintf(buffer + offset, buffer_len - offset,
-                          "Options flags: 0x%08lx\n", wolfssl_cfg->options);
+        offset += snprintf(buffer + offset, buffer_len - offset, "Options flags: 0x%08lx\n",
+                           wolfssl_cfg->options);
     }
 
     return offset;

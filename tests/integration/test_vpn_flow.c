@@ -37,8 +37,8 @@ static ssize_t mock_tls_write(void *ctx, const void *buf, size_t len)
 }
 
 /* Per-test state */
-static int tls_sv[2];   /* sv[0] = server (conn_data), sv[1] = client (test) */
-static int tun_sv[2];   /* sv[0] = server writes, sv[1] = test reads */
+static int tls_sv[2]; /* sv[0] = server (conn_data), sv[1] = client (test) */
+static int tun_sv[2]; /* sv[0] = server writes, sv[1] = test reads */
 static rw_dpd_ctx_t dpd;
 static rw_compress_ctx_t compress_ctx;
 static rw_conn_data_t conn_data;
@@ -53,8 +53,7 @@ static void on_dead_cb(uint64_t conn_id, void *user_data)
     dead_called++;
 }
 
-static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload,
-                         size_t payload_len)
+static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload, size_t payload_len)
 {
     uint8_t buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
     int encoded = rw_cstp_encode(buf, sizeof(buf), type, payload, payload_len);
@@ -70,10 +69,8 @@ static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload,
 
 void setUp(void)
 {
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK,
-                                         0, tls_sv));
-    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK,
-                                         0, tun_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, tls_sv));
+    TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, tun_sv));
     rw_dpd_init(&dpd, 30, 3);
     TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, RW_COMPRESS_NONE));
 
@@ -115,8 +112,7 @@ void test_vpn_flow_cstp_data_roundtrip(void)
 {
     /* Client sends DATA → server decodes → writes to TUN */
     const uint8_t payload[] = {0x45, 0x00, 0x00, 0x1C, 0xDE, 0xAD, 0xBE, 0xEF};
-    TEST_ASSERT_GREATER_THAN(0, inject_cstp(RW_CSTP_DATA, payload,
-                                             sizeof(payload)));
+    TEST_ASSERT_GREATER_THAN(0, inject_cstp(RW_CSTP_DATA, payload, sizeof(payload)));
 
     int ret = rw_conn_data_process_tls(&conn_data);
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -213,7 +209,8 @@ void test_vpn_flow_server_shutdown_sends_disconnect(void)
     TEST_ASSERT_EQUAL_INT(1, drained);
     TEST_ASSERT_EQUAL_UINT(0, rw_worker_connection_count(worker));
 
-    close(sv[0]); close(sv[1]);
+    close(sv[0]);
+    close(sv[1]);
 }
 
 void test_vpn_flow_multiple_clients(void)
@@ -226,10 +223,8 @@ void test_vpn_flow_multiple_clients(void)
     rw_conn_data_t cli_data[3];
 
     for (int i = 0; i < 3; i++) {
-        TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK,
-                                             0, cli_tls[i]));
-        TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK,
-                                             0, cli_tun[i]));
+        TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, cli_tls[i]));
+        TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, cli_tun[i]));
         rw_dpd_init(&cli_dpd[i], 30, 3);
         TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&cli_comp[i], RW_COMPRESS_NONE));
 
@@ -250,8 +245,8 @@ void test_vpn_flow_multiple_clients(void)
 
         /* Inject CSTP DATA via "client" end */
         uint8_t cstp_buf[RW_CSTP_HEADER_SIZE + 4];
-        int encoded = rw_cstp_encode(cstp_buf, sizeof(cstp_buf),
-                                      RW_CSTP_DATA, payload, sizeof(payload));
+        int encoded =
+            rw_cstp_encode(cstp_buf, sizeof(cstp_buf), RW_CSTP_DATA, payload, sizeof(payload));
         TEST_ASSERT_GREATER_THAN(0, encoded);
         ssize_t w = write(cli_tls[i][1], cstp_buf, (size_t)encoded);
         TEST_ASSERT_GREATER_THAN(0, (int)w);
@@ -270,8 +265,10 @@ void test_vpn_flow_multiple_clients(void)
     /* Cleanup */
     for (int i = 0; i < 3; i++) {
         rw_compress_destroy(&cli_comp[i]);
-        close(cli_tls[i][0]); close(cli_tls[i][1]);
-        close(cli_tun[i][0]); close(cli_tun[i][1]);
+        close(cli_tls[i][0]);
+        close(cli_tls[i][1]);
+        close(cli_tun[i][0]);
+        close(cli_tun[i][1]);
     }
 }
 

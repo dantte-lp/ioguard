@@ -43,14 +43,14 @@
  * - Architecture Document: docs/architecture/PRIORITY_STRING_PARSER.md
  */
 
-#include "tls_abstract.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
+#include "tls_abstract.h"
 
 // C23 standard compliance
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 /* ============================================================================
@@ -76,18 +76,18 @@ constexpr size_t PRIORITY_MAX_ERROR_MSG = 256;
  * priority-string-specific errors.
  */
 typedef enum {
-    PRIORITY_E_SUCCESS = 0,                   // Success
-    PRIORITY_E_SYNTAX_ERROR = -200,           // Invalid syntax
-    PRIORITY_E_UNKNOWN_KEYWORD = -201,        // Unknown keyword
-    PRIORITY_E_UNKNOWN_MODIFIER = -202,       // Unknown modifier
-    PRIORITY_E_CONFLICT = -203,               // Conflicting specifications
-    PRIORITY_E_UNSUPPORTED = -204,            // Unsupported feature
-    PRIORITY_E_TOO_COMPLEX = -205,            // Too many tokens
-    PRIORITY_E_BUFFER_TOO_SMALL = -206,       // Output buffer too small
-    PRIORITY_E_NULL_POINTER = -207,           // nullptr parameter
-    PRIORITY_E_INVALID_VERSION = -208,        // Invalid TLS version
-    PRIORITY_E_INVALID_CIPHER = -209,         // Invalid cipher name
-    PRIORITY_E_MAPPER_FAILED = -210,          // Mapping to wolfSSL failed
+    PRIORITY_E_SUCCESS = 0,             // Success
+    PRIORITY_E_SYNTAX_ERROR = -200,     // Invalid syntax
+    PRIORITY_E_UNKNOWN_KEYWORD = -201,  // Unknown keyword
+    PRIORITY_E_UNKNOWN_MODIFIER = -202, // Unknown modifier
+    PRIORITY_E_CONFLICT = -203,         // Conflicting specifications
+    PRIORITY_E_UNSUPPORTED = -204,      // Unsupported feature
+    PRIORITY_E_TOO_COMPLEX = -205,      // Too many tokens
+    PRIORITY_E_BUFFER_TOO_SMALL = -206, // Output buffer too small
+    PRIORITY_E_NULL_POINTER = -207,     // nullptr parameter
+    PRIORITY_E_INVALID_VERSION = -208,  // Invalid TLS version
+    PRIORITY_E_INVALID_CIPHER = -209,   // Invalid cipher name
+    PRIORITY_E_MAPPER_FAILED = -210,    // Mapping to wolfSSL failed
 } priority_error_t;
 
 /* ============================================================================
@@ -101,16 +101,16 @@ typedef enum {
  * configuration.
  */
 typedef enum {
-    TOKEN_UNKNOWN = 0,       // Unknown/unclassified token
-    TOKEN_KEYWORD,           // Base keyword (NORMAL, PERFORMANCE, etc.)
-    TOKEN_MODIFIER,          // Modifier keyword (%SERVER_PRECEDENCE, etc.)
-    TOKEN_VERSION,           // TLS version (VERS-TLS1.3, etc.)
-    TOKEN_CIPHER,            // Cipher algorithm (AES-128-GCM, etc.)
-    TOKEN_KX,                // Key exchange (ECDHE-RSA, DHE-DSS, etc.)
-    TOKEN_MAC,               // MAC algorithm (SHA256, SHA384, etc.)
-    TOKEN_SIGN,              // Signature algorithm (SIGN-RSA-SHA256, etc.)
-    TOKEN_GROUP,             // Elliptic curve group (GROUP-SECP256R1, etc.)
-    TOKEN_OPERATOR,          // Operator (+, -, !, :)
+    TOKEN_UNKNOWN = 0, // Unknown/unclassified token
+    TOKEN_KEYWORD,     // Base keyword (NORMAL, PERFORMANCE, etc.)
+    TOKEN_MODIFIER,    // Modifier keyword (%SERVER_PRECEDENCE, etc.)
+    TOKEN_VERSION,     // TLS version (VERS-TLS1.3, etc.)
+    TOKEN_CIPHER,      // Cipher algorithm (AES-128-GCM, etc.)
+    TOKEN_KX,          // Key exchange (ECDHE-RSA, DHE-DSS, etc.)
+    TOKEN_MAC,         // MAC algorithm (SHA256, SHA384, etc.)
+    TOKEN_SIGN,        // Signature algorithm (SIGN-RSA-SHA256, etc.)
+    TOKEN_GROUP,       // Elliptic curve group (GROUP-SECP256R1, etc.)
+    TOKEN_OPERATOR,    // Operator (+, -, !, :)
 } token_type_t;
 
 /**
@@ -120,11 +120,11 @@ typedef enum {
  * the original string to avoid allocations.
  */
 typedef struct {
-    token_type_t type;       // Token type
-    const char *start;       // Pointer to token start in original string
-    size_t length;           // Token length
-    bool is_addition;        // true for + operator, false for -/! operators
-    bool is_negation;        // true for - or ! operator
+    token_type_t type; // Token type
+    const char *start; // Pointer to token start in original string
+    size_t length;     // Token length
+    bool is_addition;  // true for + operator, false for -/! operators
+    bool is_negation;  // true for - or ! operator
 } token_t;
 
 /**
@@ -134,8 +134,8 @@ typedef struct {
  */
 typedef struct {
     token_t tokens[PRIORITY_MAX_TOKENS];
-    size_t count;            // Number of tokens
-    const char *input;       // Original input string (for error reporting)
+    size_t count;      // Number of tokens
+    const char *input; // Original input string (for error reporting)
 } token_list_t;
 
 /* ============================================================================
@@ -150,13 +150,13 @@ typedef struct {
  */
 typedef struct {
     // Base configuration
-    const char *base_keyword;  // "NORMAL", "PERFORMANCE", etc. (or nullptr)
+    const char *base_keyword; // "NORMAL", "PERFORMANCE", etc. (or nullptr)
 
     // TLS versions (C23 bool array - safe direct indexing by protocol value)
-    bool enabled_versions[256];   // Direct indexing: enabled_versions[TLS_VERSION_TLS12]
-    bool disabled_versions[256];  // Direct indexing: disabled_versions[TLS_VERSION_TLS12]
-    tls_version_t min_version;    // Minimum enabled version (for efficient range checking)
-    tls_version_t max_version;    // Maximum enabled version (for efficient range checking)
+    bool enabled_versions[256];  // Direct indexing: enabled_versions[TLS_VERSION_TLS12]
+    bool disabled_versions[256]; // Direct indexing: disabled_versions[TLS_VERSION_TLS12]
+    tls_version_t min_version;   // Minimum enabled version (for efficient range checking)
+    tls_version_t max_version;   // Maximum enabled version (for efficient range checking)
 
     // Ciphers
     char enabled_ciphers[PRIORITY_MAX_CIPHERS][PRIORITY_MAX_CIPHER_NAME];
@@ -177,20 +177,20 @@ typedef struct {
     size_t disabled_mac_count;
 
     // Modifiers (flags)
-    bool server_precedence;      // %SERVER_PRECEDENCE
-    bool compat_mode;            // %COMPAT
-    bool no_extensions;          // %NO_EXTENSIONS
-    bool force_session_hash;     // %FORCE_SESSION_HASH
-    bool dumb_fw_padding;        // %DUMBFW
-    bool fallback_scsv;          // %FALLBACK_SCSV
+    bool server_precedence;  // %SERVER_PRECEDENCE
+    bool compat_mode;        // %COMPAT
+    bool no_extensions;      // %NO_EXTENSIONS
+    bool force_session_hash; // %FORCE_SESSION_HASH
+    bool dumb_fw_padding;    // %DUMBFW
+    bool fallback_scsv;      // %FALLBACK_SCSV
 
     // Security requirements
-    bool require_pfs;            // Perfect forward secrecy required
-    int min_security_bits;       // 128, 192, or 256 (0 = no minimum)
+    bool require_pfs;      // Perfect forward secrecy required
+    int min_security_bits; // 128, 192, or 256 (0 = no minimum)
 
     // Parsing metadata
-    bool has_base_keyword;       // true if base keyword specified
-    bool explicit_none;          // true if "NONE" keyword used
+    bool has_base_keyword; // true if base keyword specified
+    bool explicit_none;    // true if "NONE" keyword used
 } priority_config_t;
 
 // C23 compile-time assertions for TLS version value safety
@@ -223,8 +223,7 @@ _Static_assert(TLS_VERSION_DTLS13 < 256,
  * Thread Safety: Thread-safe (read-only operation)
  * Complexity: O(1)
  */
-static inline bool is_version_enabled(const tls_version_t version,
-                                       const priority_config_t *config)
+static inline bool is_version_enabled(const tls_version_t version, const priority_config_t *config)
 {
     // Fast path: range check using min/max
     if (version < config->min_version || version > config->max_version) {
@@ -244,8 +243,7 @@ static inline bool is_version_enabled(const tls_version_t version,
  * Thread Safety: Thread-safe (read-only operation)
  * Complexity: O(1)
  */
-static inline bool is_version_disabled(const tls_version_t version,
-                                        const priority_config_t *config)
+static inline bool is_version_disabled(const tls_version_t version, const priority_config_t *config)
 {
     return config->disabled_versions[version];
 }
@@ -257,20 +255,20 @@ static inline bool is_version_disabled(const tls_version_t version,
  */
 typedef struct {
     // Cipher configuration
-    char cipher_list[PRIORITY_MAX_CIPHER_LIST];      // TLS 1.2 cipher list
-    char ciphersuites[PRIORITY_MAX_CIPHER_LIST];     // TLS 1.3 cipher suites
+    char cipher_list[PRIORITY_MAX_CIPHER_LIST];  // TLS 1.2 cipher list
+    char ciphersuites[PRIORITY_MAX_CIPHER_LIST]; // TLS 1.3 cipher suites
 
     // Version range
-    int min_version;             // Minimum TLS version (wolfSSL constant)
-    int max_version;             // Maximum TLS version (wolfSSL constant)
+    int min_version; // Minimum TLS version (wolfSSL constant)
+    int max_version; // Maximum TLS version (wolfSSL constant)
 
     // Options flags
-    long options;                // wolfSSL options (SSL_OP_* flags)
+    long options; // wolfSSL options (SSL_OP_* flags)
 
     // Metadata
-    bool has_cipher_list;        // true if cipher_list is set
-    bool has_ciphersuites;       // true if ciphersuites is set
-    bool has_version_range;      // true if version range is set
+    bool has_cipher_list;   // true if cipher_list is set
+    bool has_ciphersuites;  // true if ciphersuites is set
+    bool has_version_range; // true if version range is set
 } wolfssl_config_t;
 
 /**
@@ -279,9 +277,9 @@ typedef struct {
  * Detailed error reporting for debugging and user feedback.
  */
 typedef struct {
-    int error_code;              // priority_error_t value
-    size_t error_position;       // Position in original string
-    char error_token[PRIORITY_MAX_TOKEN_LEN]; // Token that caused error
+    int error_code;                             // priority_error_t value
+    size_t error_position;                      // Position in original string
+    char error_token[PRIORITY_MAX_TOKEN_LEN];   // Token that caused error
     char error_message[PRIORITY_MAX_ERROR_MSG]; // Human-readable message
 } priority_error_info_t;
 
@@ -319,8 +317,7 @@ typedef struct {
  *       fprintf(stderr, "Priority parsing failed: %s\n", error_info.error_message);
  *   }
  */
-[[nodiscard]] int tls_set_priority_string(tls_context_t *ctx,
-                                           const char *priority);
+[[nodiscard]] int tls_set_priority_string(tls_context_t *ctx, const char *priority);
 
 /**
  * Validate GnuTLS priority string without applying it
@@ -345,9 +342,8 @@ typedef struct {
  *       return -1;
  *   }
  */
-[[nodiscard]] int tls_validate_priority_string(const char *priority,
-                                                char *error_msg,
-                                                size_t error_msg_len);
+[[nodiscard]] int tls_validate_priority_string(const char *priority, char *error_msg,
+                                               size_t error_msg_len);
 
 /**
  * Get detailed error information for last priority parsing error
@@ -387,8 +383,7 @@ typedef struct {
  *       printf("Token count: %zu\n", tokens.count);
  *   }
  */
-[[nodiscard]] int priority_tokenize(const char *priority,
-                                     token_list_t *tokens);
+[[nodiscard]] int priority_tokenize(const char *priority, token_list_t *tokens);
 
 /**
  * Parse token list into configuration structure
@@ -412,8 +407,7 @@ typedef struct {
  *       printf("Server precedence: %d\n", config.server_precedence);
  *   }
  */
-[[nodiscard]] int priority_parse(const token_list_t *tokens,
-                                  priority_config_t *config);
+[[nodiscard]] int priority_parse(const token_list_t *tokens, priority_config_t *config);
 
 /**
  * Map priority configuration to wolfSSL configuration
@@ -438,7 +432,7 @@ typedef struct {
  *   }
  */
 [[nodiscard]] int priority_map_to_wolfssl(const priority_config_t *config,
-                                           wolfssl_config_t *wolfssl_cfg);
+                                          wolfssl_config_t *wolfssl_cfg);
 
 /**
  * Apply wolfSSL configuration to context
@@ -460,7 +454,7 @@ typedef struct {
  *   }
  */
 [[nodiscard]] int priority_apply_wolfssl_config(void *wolf_ctx,
-                                                 const wolfssl_config_t *wolfssl_cfg);
+                                                const wolfssl_config_t *wolfssl_cfg);
 
 /* ============================================================================
  * Utility Functions
@@ -474,7 +468,7 @@ typedef struct {
  *
  * Thread Safety: Thread-safe (returns static string)
  */
-[[nodiscard]] const char* priority_strerror(int error_code);
+[[nodiscard]] const char *priority_strerror(int error_code);
 
 /**
  * Get token type name
@@ -484,7 +478,7 @@ typedef struct {
  *
  * Thread Safety: Thread-safe (returns static string)
  */
-[[nodiscard]] const char* priority_token_type_name(token_type_t type);
+[[nodiscard]] const char *priority_token_type_name(token_type_t type);
 
 /**
  * Initialize priority_config_t to defaults
@@ -518,9 +512,8 @@ void wolfssl_config_init(wolfssl_config_t *wolfssl_cfg);
  *
  * Thread Safety: Thread-safe (no shared state)
  */
-[[nodiscard]] size_t priority_config_dump(const priority_config_t *config,
-                                           char *buffer,
-                                           size_t buffer_len);
+[[nodiscard]] size_t priority_config_dump(const priority_config_t *config, char *buffer,
+                                          size_t buffer_len);
 
 /**
  * Dump wolfSSL configuration to string (for debugging)
@@ -532,8 +525,7 @@ void wolfssl_config_init(wolfssl_config_t *wolfssl_cfg);
  *
  * Thread Safety: Thread-safe (no shared state)
  */
-[[nodiscard]] size_t wolfssl_config_dump(const wolfssl_config_t *wolfssl_cfg,
-                                          char *buffer,
-                                          size_t buffer_len);
+[[nodiscard]] size_t wolfssl_config_dump(const wolfssl_config_t *wolfssl_cfg, char *buffer,
+                                         size_t buffer_len);
 
 #endif // RINGWALL_PRIORITY_PARSER_H

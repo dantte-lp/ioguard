@@ -49,11 +49,9 @@ int rw_conn_timer_handle_dpd(rw_conn_timer_t *timer)
      * rw_conn_data_send_dpd_req() which redundantly calls rw_dpd_on_timeout(). */
     if (timer->dpd->need_send_request) {
         uint8_t buf[RW_CSTP_HEADER_SIZE];
-        int encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DPD_REQ,
-                                      nullptr, 0);
+        int encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DPD_REQ, nullptr, 0);
         if (encoded > 0) {
-            (void)timer->data->tls_write(timer->data->tls_ctx, buf,
-                                          (size_t)encoded);
+            (void)timer->data->tls_write(timer->data->tls_ctx, buf, (size_t)encoded);
         }
         timer->dpd->need_send_request = false;
     }

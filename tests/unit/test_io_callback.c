@@ -1,15 +1,19 @@
 #include <errno.h>
+#include <netinet/in.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <string.h>
-#include <netinet/in.h>
 #include <unity/unity.h>
 #include "io/uring.h"
 
 static bool io_uring_available = false;
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 /* Test callback context */
 typedef struct {
@@ -55,7 +59,9 @@ void test_io_prep_recv_cb_roundtrip(void)
 
 void test_io_prep_send_cb_roundtrip(void)
 {
-    if (!io_uring_available) TEST_IGNORE_MESSAGE("io_uring not available");
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available");
+    }
 
     rw_io_ctx_t *ctx = rw_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
@@ -84,7 +90,9 @@ void test_io_prep_send_cb_roundtrip(void)
 
 void test_io_prep_read_cb_fires(void)
 {
-    if (!io_uring_available) TEST_IGNORE_MESSAGE("io_uring not available");
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available");
+    }
 
     rw_io_ctx_t *ctx = rw_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
@@ -112,7 +120,9 @@ void test_io_prep_read_cb_fires(void)
 
 void test_io_prep_write_cb_fires(void)
 {
-    if (!io_uring_available) TEST_IGNORE_MESSAGE("io_uring not available");
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available");
+    }
 
     rw_io_ctx_t *ctx = rw_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
@@ -141,7 +151,9 @@ void test_io_prep_write_cb_fires(void)
 
 void test_io_prep_accept_cb(void)
 {
-    if (!io_uring_available) TEST_IGNORE_MESSAGE("io_uring not available");
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available");
+    }
 
     rw_io_ctx_t *ctx = rw_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
@@ -168,8 +180,8 @@ void test_io_prep_accept_cb(void)
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
     test_cb_ctx_t cb_ctx = {0};
-    int ret = rw_io_prep_accept_cb(ctx, lfd, (struct sockaddr *)&client_addr,
-                                    &client_len, test_cb, &cb_ctx);
+    int ret = rw_io_prep_accept_cb(ctx, lfd, (struct sockaddr *)&client_addr, &client_len, test_cb,
+                                   &cb_ctx);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Connect */
@@ -190,7 +202,9 @@ void test_io_prep_accept_cb(void)
 
 void test_io_add_timeout_cb_fires(void)
 {
-    if (!io_uring_available) TEST_IGNORE_MESSAGE("io_uring not available");
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available");
+    }
 
     rw_io_ctx_t *ctx = rw_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
@@ -209,7 +223,9 @@ void test_io_add_timeout_cb_fires(void)
 
 void test_io_cancel_operation(void)
 {
-    if (!io_uring_available) TEST_IGNORE_MESSAGE("io_uring not available");
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available");
+    }
 
     rw_io_ctx_t *ctx = rw_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
@@ -247,7 +263,9 @@ void test_io_cancel_operation(void)
 
 void test_io_multiple_callbacks_concurrent(void)
 {
-    if (!io_uring_available) TEST_IGNORE_MESSAGE("io_uring not available");
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available");
+    }
 
     rw_io_ctx_t *ctx = rw_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
@@ -265,12 +283,9 @@ void test_io_multiple_callbacks_concurrent(void)
     char buf1[8] = {0}, buf2[8] = {0}, buf3[8] = {0};
     test_cb_ctx_t ctx1 = {0}, ctx2 = {0}, ctx3 = {0};
 
-    TEST_ASSERT_EQUAL_INT(0,
-        rw_io_prep_read_cb(ctx, pfd1[0], buf1, sizeof(buf1), test_cb, &ctx1));
-    TEST_ASSERT_EQUAL_INT(0,
-        rw_io_prep_read_cb(ctx, pfd2[0], buf2, sizeof(buf2), test_cb, &ctx2));
-    TEST_ASSERT_EQUAL_INT(0,
-        rw_io_prep_read_cb(ctx, pfd3[0], buf3, sizeof(buf3), test_cb, &ctx3));
+    TEST_ASSERT_EQUAL_INT(0, rw_io_prep_read_cb(ctx, pfd1[0], buf1, sizeof(buf1), test_cb, &ctx1));
+    TEST_ASSERT_EQUAL_INT(0, rw_io_prep_read_cb(ctx, pfd2[0], buf2, sizeof(buf2), test_cb, &ctx2));
+    TEST_ASSERT_EQUAL_INT(0, rw_io_prep_read_cb(ctx, pfd3[0], buf3, sizeof(buf3), test_cb, &ctx3));
 
     /* May need multiple run_once calls to get all CQEs */
     for (int i = 0; i < 3; i++) {
@@ -284,9 +299,12 @@ void test_io_multiple_callbacks_concurrent(void)
     TEST_ASSERT_EQUAL_INT(2, ctx2.result);
     TEST_ASSERT_EQUAL_INT(3, ctx3.result);
 
-    close(pfd1[0]); close(pfd1[1]);
-    close(pfd2[0]); close(pfd2[1]);
-    close(pfd3[0]); close(pfd3[1]);
+    close(pfd1[0]);
+    close(pfd1[1]);
+    close(pfd2[0]);
+    close(pfd2[1]);
+    close(pfd3[0]);
+    close(pfd3[1]);
     rw_io_destroy(ctx);
 }
 

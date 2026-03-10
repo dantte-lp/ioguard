@@ -34,8 +34,8 @@ typedef struct {
 typedef struct {
     const char *cert_file;
     const char *key_file;
-    const char *ca_file;   /* may be nullptr (no client cert verification) */
-    const char *ciphers;   /* GnuTLS priority string, nullptr for defaults */
+    const char *ca_file; /* may be nullptr (no client cert verification) */
+    const char *ciphers; /* GnuTLS priority string, nullptr for defaults */
 } rw_tls_server_config_t;
 
 /**
@@ -48,8 +48,7 @@ typedef struct {
  * @param cfg  TLS configuration (cert_file and key_file required).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_tls_server_init(rw_tls_server_t *srv,
-                                      const rw_tls_server_config_t *cfg);
+[[nodiscard]] int rw_tls_server_init(rw_tls_server_t *srv, const rw_tls_server_config_t *cfg);
 
 /**
  * @brief Destroy per-worker TLS server context.
@@ -67,8 +66,7 @@ void rw_tls_server_destroy(rw_tls_server_t *srv);
  * @param fd    Client socket fd.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_tls_conn_init(rw_tls_conn_t *conn,
-                                    rw_tls_server_t *srv, int fd);
+[[nodiscard]] int rw_tls_conn_init(rw_tls_conn_t *conn, rw_tls_server_t *srv, int fd);
 
 /**
  * @brief Destroy per-connection TLS state.
@@ -96,8 +94,7 @@ void rw_tls_conn_destroy(rw_tls_conn_t *conn);
  * @param len   Buffer size.
  * @return Bytes read (>0), -EAGAIN if would block, negative errno on error.
  */
-[[nodiscard]] ssize_t rw_tls_conn_read(rw_tls_conn_t *conn, void *buf,
-                                        size_t len);
+[[nodiscard]] ssize_t rw_tls_conn_read(rw_tls_conn_t *conn, void *buf, size_t len);
 
 /**
  * @brief Write data to TLS connection (encrypted on wire).
@@ -107,7 +104,6 @@ void rw_tls_conn_destroy(rw_tls_conn_t *conn);
  * @param len   Data length.
  * @return Bytes written (>0), -EAGAIN if would block, negative errno on error.
  */
-[[nodiscard]] ssize_t rw_tls_conn_write(rw_tls_conn_t *conn, const void *buf,
-                                         size_t len);
+[[nodiscard]] ssize_t rw_tls_conn_write(rw_tls_conn_t *conn, const void *buf, size_t len);
 
 #endif /* RINGWALL_CORE_CONN_TLS_H */

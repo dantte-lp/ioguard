@@ -57,8 +57,7 @@ typedef struct {
  * @param cfg    Configuration with intervals and callbacks.
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int rw_conn_timer_init(rw_conn_timer_t *timer,
-                                      const rw_conn_timer_config_t *cfg);
+[[nodiscard]] int rw_conn_timer_init(rw_conn_timer_t *timer, const rw_conn_timer_config_t *cfg);
 
 /**
  * @brief Handle DPD timer tick.

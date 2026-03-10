@@ -133,7 +133,6 @@ pkg_check_modules(LZ4 REQUIRED liblz4)
 pkg_check_modules(LIBNL3 REQUIRED libnl-3.0)
 
 # --- Network & I/O ---
-pkg_check_modules(LIBUV libuv>=1.44.0)
 pkg_check_modules(LIBURING REQUIRED liburing>=2.7)
 
 # --- Data & Configuration ---
@@ -743,6 +742,18 @@ if(BUILD_TESTING)
                 rw_mdbx rw_sqlite rw_migrate)
         endif()
 
+        # Sprint 6 — IPAM (IP address pool management)
+        add_library(rw_ipam STATIC src/network/ipam.c)
+        target_include_directories(rw_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_ipam PRIVATE _GNU_SOURCE)
+        rw_add_test(test_ipam tests/unit/test_ipam.c rw_ipam)
+
+        # Sprint 6 — Split DNS configuration
+        add_library(rw_dns STATIC src/network/dns.c)
+        target_include_directories(rw_dns PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_dns PRIVATE _GNU_SOURCE)
+        rw_add_test(test_dns tests/unit/test_dns.c rw_dns)
+
         message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
@@ -916,7 +927,6 @@ message(STATUS "Install prefix:    ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "")
 message(STATUS "Dependencies:")
 message(STATUS "  liburing:        ${LIBURING_FOUND}")
-message(STATUS "  libuv:           ${LIBUV_FOUND}")
 message(STATUS "  tomlc99:         ${TOML_FOUND}")
 message(STATUS "  protobuf-c:      ${PROTOBUF_C_FOUND}")
 message(STATUS "  yyjson:          ${YYJSON_FOUND}")

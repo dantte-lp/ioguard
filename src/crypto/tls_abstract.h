@@ -39,15 +39,15 @@
  * - Explicit lifetimes and ownership
  */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 // C23 standard compliance (accept C2x/C20 from GCC 14 as it provides C23 features)
 #if __STDC_VERSION__ < 202000L
-#error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
+#    error "This code requires C23 standard (ISO/IEC 9899:2024) or C2x support (GCC 14+)"
 #endif
 
 // C23 provides nullptr as a keyword — no macro needed
@@ -68,14 +68,14 @@ constexpr size_t TLS_MAX_ERROR_STRING = 256;
 // TLS/DTLS versions (using C23 binary literals)
 typedef enum {
     TLS_VERSION_UNKNOWN = 0,
-    TLS_VERSION_SSL3    = 0b0011'0000, // 0x30 (deprecated)
-    TLS_VERSION_TLS10   = 0b0011'0001, // 0x31
-    TLS_VERSION_TLS11   = 0b0011'0010, // 0x32
-    TLS_VERSION_TLS12   = 0b0011'0011, // 0x33
-    TLS_VERSION_TLS13   = 0b0011'0100, // 0x34
-    TLS_VERSION_DTLS10  = 0b0001'0001, // DTLS 1.0 (based on TLS 1.1)
-    TLS_VERSION_DTLS12  = 0b0001'0011, // DTLS 1.2 (based on TLS 1.2)
-    TLS_VERSION_DTLS13  = 0b0001'0100, // DTLS 1.3 (based on TLS 1.3)
+    TLS_VERSION_SSL3 = 0b0011'0000,   // 0x30 (deprecated)
+    TLS_VERSION_TLS10 = 0b0011'0001,  // 0x31
+    TLS_VERSION_TLS11 = 0b0011'0010,  // 0x32
+    TLS_VERSION_TLS12 = 0b0011'0011,  // 0x33
+    TLS_VERSION_TLS13 = 0b0011'0100,  // 0x34
+    TLS_VERSION_DTLS10 = 0b0001'0001, // DTLS 1.0 (based on TLS 1.1)
+    TLS_VERSION_DTLS12 = 0b0001'0011, // DTLS 1.2 (based on TLS 1.2)
+    TLS_VERSION_DTLS13 = 0b0001'0100, // DTLS 1.3 (based on TLS 1.3)
 } tls_version_t;
 
 /* ============================================================================
@@ -217,40 +217,27 @@ typedef ssize_t (*tls_pull_func_t)(void *userdata, void *data, size_t len);
 typedef int (*tls_pull_timeout_func_t)(void *userdata, unsigned int ms);
 
 // Certificate verification callback
-typedef int (*tls_cert_verify_func_t)(tls_session_t *session,
-                                       const tls_certificate_t *cert_chain,
-                                       size_t chain_length,
-                                       void *userdata);
+typedef int (*tls_cert_verify_func_t)(tls_session_t *session, const tls_certificate_t *cert_chain,
+                                      size_t chain_length, void *userdata);
 
 // PSK callback (server side)
-typedef int (*tls_psk_server_func_t)(tls_session_t *session,
-                                      const char *username,
-                                      uint8_t *key,
-                                      size_t *key_size,
-                                      void *userdata);
+typedef int (*tls_psk_server_func_t)(tls_session_t *session, const char *username, uint8_t *key,
+                                     size_t *key_size, void *userdata);
 
 // PSK callback (client side)
-typedef int (*tls_psk_client_func_t)(tls_session_t *session,
-                                      char **username,
-                                      uint8_t *key,
-                                      size_t *key_size,
-                                      void *userdata);
+typedef int (*tls_psk_client_func_t)(tls_session_t *session, char **username, uint8_t *key,
+                                     size_t *key_size, void *userdata);
 
 // Session cache callbacks
-typedef int (*tls_db_store_func_t)(void *userdata,
-                                    const tls_session_cache_entry_t *entry);
-typedef int (*tls_db_retrieve_func_t)(void *userdata,
-                                       const uint8_t *session_id,
-                                       size_t session_id_size,
-                                       tls_session_cache_entry_t *entry);
-typedef int (*tls_db_remove_func_t)(void *userdata,
-                                     const uint8_t *session_id,
-                                     size_t session_id_size);
+typedef int (*tls_db_store_func_t)(void *userdata, const tls_session_cache_entry_t *entry);
+typedef int (*tls_db_retrieve_func_t)(void *userdata, const uint8_t *session_id,
+                                      size_t session_id_size, tls_session_cache_entry_t *entry);
+typedef int (*tls_db_remove_func_t)(void *userdata, const uint8_t *session_id,
+                                    size_t session_id_size);
 
 // OCSP status request callback
-typedef int (*tls_ocsp_status_func_t)(tls_session_t *session,
-                                       tls_datum_t *response,
-                                       void *userdata);
+typedef int (*tls_ocsp_status_func_t)(tls_session_t *session, tls_datum_t *response,
+                                      void *userdata);
 
 /* ============================================================================
  * Library Initialization and Global State
@@ -286,7 +273,7 @@ void tls_global_deinit(void);
  *
  * @return Version string (e.g., "wolfSSL 5.8.2" or "GnuTLS 3.8.0")
  */
-[[nodiscard]] const char* tls_get_version_string(void);
+[[nodiscard]] const char *tls_get_version_string(void);
 
 /* ============================================================================
  * Context Management (Server/Client Configuration)
@@ -303,7 +290,7 @@ void tls_global_deinit(void);
  *       cipher suites, and verification settings. One context can be used
  *       for multiple sessions.
  */
-[[nodiscard]] tls_context_t* tls_context_new(bool is_server, bool is_dtls);
+[[nodiscard]] tls_context_t *tls_context_new(bool is_server, bool is_dtls);
 
 /**
  * Free TLS context
@@ -321,8 +308,7 @@ void tls_context_free(tls_context_t *ctx);
  * @param cert_file Path to certificate file (PEM or DER format)
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_context_set_cert_file(tls_context_t *ctx,
-                                              const char *cert_file);
+[[nodiscard]] int tls_context_set_cert_file(tls_context_t *ctx, const char *cert_file);
 
 /**
  * Set private key file for context
@@ -331,8 +317,7 @@ void tls_context_free(tls_context_t *ctx);
  * @param key_file Path to private key file (PEM or DER format)
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_context_set_key_file(tls_context_t *ctx,
-                                             const char *key_file);
+[[nodiscard]] int tls_context_set_key_file(tls_context_t *ctx, const char *key_file);
 
 /**
  * Set CA certificate file for verification
@@ -341,8 +326,7 @@ void tls_context_free(tls_context_t *ctx);
  * @param ca_file Path to CA certificate file or bundle
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_context_set_ca_file(tls_context_t *ctx,
-                                            const char *ca_file);
+[[nodiscard]] int tls_context_set_ca_file(tls_context_t *ctx, const char *ca_file);
 
 /**
  * Set cipher priority string
@@ -357,8 +341,7 @@ void tls_context_free(tls_context_t *ctx);
  *       will parse GnuTLS priority strings and map them to appropriate
  *       wolfSSL cipher list configurations.
  */
-[[nodiscard]] int tls_context_set_priority(tls_context_t *ctx,
-                                             const char *priority);
+[[nodiscard]] int tls_context_set_priority(tls_context_t *ctx, const char *priority);
 
 /**
  * Set DH parameters file
@@ -367,8 +350,7 @@ void tls_context_free(tls_context_t *ctx);
  * @param dh_file Path to DH parameters file
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_context_set_dh_params_file(tls_context_t *ctx,
-                                                   const char *dh_file);
+[[nodiscard]] int tls_context_set_dh_params_file(tls_context_t *ctx, const char *dh_file);
 
 /**
  * Enable/disable certificate verification
@@ -379,10 +361,8 @@ void tls_context_free(tls_context_t *ctx);
  * @param userdata User data passed to callback
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_context_set_verify(tls_context_t *ctx,
-                                           bool verify,
-                                           tls_cert_verify_func_t callback,
-                                           void *userdata);
+[[nodiscard]] int tls_context_set_verify(tls_context_t *ctx, bool verify,
+                                         tls_cert_verify_func_t callback, void *userdata);
 
 /**
  * Set PSK credentials (server)
@@ -393,8 +373,8 @@ void tls_context_free(tls_context_t *ctx);
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
 [[nodiscard]] int tls_context_set_psk_server_callback(tls_context_t *ctx,
-                                                        tls_psk_server_func_t callback,
-                                                        void *userdata);
+                                                      tls_psk_server_func_t callback,
+                                                      void *userdata);
 
 /**
  * Set session cache callbacks
@@ -406,11 +386,9 @@ void tls_context_free(tls_context_t *ctx);
  * @param userdata User data passed to callbacks
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_context_set_session_cache(tls_context_t *ctx,
-                                                  tls_db_store_func_t store_func,
-                                                  tls_db_retrieve_func_t retrieve_func,
-                                                  tls_db_remove_func_t remove_func,
-                                                  void *userdata);
+[[nodiscard]] int tls_context_set_session_cache(tls_context_t *ctx, tls_db_store_func_t store_func,
+                                                tls_db_retrieve_func_t retrieve_func,
+                                                tls_db_remove_func_t remove_func, void *userdata);
 
 /**
  * Set session cache timeout
@@ -419,8 +397,7 @@ void tls_context_free(tls_context_t *ctx);
  * @param timeout_secs Timeout in seconds
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_context_set_session_timeout(tls_context_t *ctx,
-                                                    unsigned int timeout_secs);
+[[nodiscard]] int tls_context_set_session_timeout(tls_context_t *ctx, unsigned int timeout_secs);
 
 /* ============================================================================
  * Session Management (Individual TLS/DTLS Connections)
@@ -432,7 +409,7 @@ void tls_context_free(tls_context_t *ctx);
  * @param ctx Context to use
  * @return Session pointer on success, nullptr on failure
  */
-[[nodiscard]] tls_session_t* tls_session_new(tls_context_t *ctx);
+[[nodiscard]] tls_session_t *tls_session_new(tls_context_t *ctx);
 
 /**
  * Free TLS session
@@ -462,11 +439,10 @@ void tls_session_free(tls_session_t *session);
  * @param userdata User data passed to I/O functions
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_session_set_io_functions(tls_session_t *session,
-                                                 tls_push_func_t push_func,
-                                                 tls_pull_func_t pull_func,
-                                                 tls_pull_timeout_func_t pull_timeout_func,
-                                                 void *userdata);
+[[nodiscard]] int tls_session_set_io_functions(tls_session_t *session, tls_push_func_t push_func,
+                                               tls_pull_func_t pull_func,
+                                               tls_pull_timeout_func_t pull_timeout_func,
+                                               void *userdata);
 
 /**
  * Set user pointer for session
@@ -482,7 +458,7 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr);
  * @param session Session
  * @return User pointer
  */
-[[nodiscard]] void* tls_session_get_ptr(tls_session_t *session);
+[[nodiscard]] void *tls_session_get_ptr(tls_session_t *session);
 
 /**
  * Set handshake timeout
@@ -491,8 +467,7 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr);
  * @param timeout_ms Timeout in milliseconds
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_session_set_timeout(tls_session_t *session,
-                                            unsigned int timeout_ms);
+[[nodiscard]] int tls_session_set_timeout(tls_session_t *session, unsigned int timeout_ms);
 
 /* ============================================================================
  * DTLS-Specific Functions
@@ -523,9 +498,8 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr);
  * @param total_timeout_ms Total handshake timeout in milliseconds
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_dtls_set_timeouts(tls_session_t *session,
-                                          unsigned int retrans_timeout_ms,
-                                          unsigned int total_timeout_ms);
+[[nodiscard]] int tls_dtls_set_timeouts(tls_session_t *session, unsigned int retrans_timeout_ms,
+                                        unsigned int total_timeout_ms);
 
 /* ============================================================================
  * Handshake Operations
@@ -565,9 +539,7 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr);
  *
  * Note: May return TLS_E_AGAIN for non-blocking I/O.
  */
-[[nodiscard]] ssize_t tls_send(tls_session_t *session,
-                                 const void *data,
-                                 size_t len);
+[[nodiscard]] ssize_t tls_send(tls_session_t *session, const void *data, size_t len);
 
 /**
  * Receive data over TLS/DTLS
@@ -579,9 +551,7 @@ void tls_session_set_ptr(tls_session_t *session, void *ptr);
  *
  * Note: May return TLS_E_AGAIN for non-blocking I/O.
  */
-[[nodiscard]] ssize_t tls_recv(tls_session_t *session,
-                                 void *data,
-                                 size_t len);
+[[nodiscard]] ssize_t tls_recv(tls_session_t *session, void *data, size_t len);
 
 /**
  * Check if data is pending in TLS buffer
@@ -638,8 +608,7 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert);
  * @param info Output structure
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_get_connection_info(tls_session_t *session,
-                                            tls_connection_info_t *info);
+[[nodiscard]] int tls_get_connection_info(tls_session_t *session, tls_connection_info_t *info);
 
 /**
  * Get session description string
@@ -648,7 +617,7 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert);
  * @return Description string (e.g., "TLS1.3-CHACHA20-POLY1305")
  *         Caller must free with tls_free()
  */
-[[nodiscard]] char* tls_get_session_desc(tls_session_t *session);
+[[nodiscard]] char *tls_get_session_desc(tls_session_t *session);
 
 /**
  * Get peer certificate
@@ -657,7 +626,7 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert);
  * @return Certificate pointer on success, nullptr if no certificate
  *         Certificate is valid until session is freed
  */
-[[nodiscard]] const tls_certificate_t* tls_get_peer_certificate(tls_session_t *session);
+[[nodiscard]] const tls_certificate_t *tls_get_peer_certificate(tls_session_t *session);
 
 /* ============================================================================
  * Error Handling
@@ -669,7 +638,7 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert);
  * @param error_code Error code
  * @return Error string (static buffer, do not free)
  */
-[[nodiscard]] const char* tls_strerror(int error_code);
+[[nodiscard]] const char *tls_strerror(int error_code);
 
 /**
  * Check if error is fatal
@@ -696,7 +665,7 @@ void tls_alert_send(tls_session_t *session, tls_alert_t alert);
  * @param size Size to allocate
  * @return Pointer on success, nullptr on failure
  */
-[[nodiscard]] void* tls_malloc(size_t size);
+[[nodiscard]] void *tls_malloc(size_t size);
 
 /**
  * Free memory allocated by TLS library
@@ -714,10 +683,7 @@ void tls_free(void *ptr);
  * @param output Output buffer (must be large enough for hash)
  * @return TLS_E_SUCCESS on success, negative error code on failure
  */
-[[nodiscard]] int tls_hash_fast(int algo,
-                                  const void *data,
-                                  size_t data_len,
-                                  uint8_t *output);
+[[nodiscard]] int tls_hash_fast(int algo, const void *data, size_t data_len, uint8_t *output);
 
 /**
  * Generate random bytes
@@ -739,7 +705,8 @@ void tls_free(void *ptr);
  *   __attribute__((cleanup(tls_session_cleanup)))
  *   tls_session_t *session = tls_session_new(ctx);
  */
-static inline void tls_session_cleanup(tls_session_t **session_ptr) {
+static inline void tls_session_cleanup(tls_session_t **session_ptr)
+{
     if (session_ptr != nullptr && *session_ptr != nullptr) {
         tls_session_free(*session_ptr);
         *session_ptr = nullptr;
@@ -753,7 +720,8 @@ static inline void tls_session_cleanup(tls_session_t **session_ptr) {
  *   __attribute__((cleanup(tls_context_cleanup)))
  *   tls_context_t *ctx = tls_context_new(true, false);
  */
-static inline void tls_context_cleanup(tls_context_t **ctx_ptr) {
+static inline void tls_context_cleanup(tls_context_t **ctx_ptr)
+{
     if (ctx_ptr != nullptr && *ctx_ptr != nullptr) {
         tls_context_free(*ctx_ptr);
         *ctx_ptr = nullptr;
