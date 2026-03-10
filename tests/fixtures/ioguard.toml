@@ -9,7 +9,7 @@ worker-count = 4
 method = "pam"
 cookie-timeout = 300
 cookie-rekey = 14400
-totp-issuer = "ringwall-test"
+totp-issuer = "ioguard-test"
 totp-digits = 6
 totp-window = 2
 
@@ -20,15 +20,15 @@ default-domain = "corp.example.com"
 mtu = 1400
 
 [tls]
-cert-file = "/etc/ringwall/server.pem"
-key-file = "/etc/ringwall/server.key"
+cert-file = "/etc/ioguard/server.pem"
+key-file = "/etc/ioguard/server.key"
 min-version = "1.2"
 ciphers = "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256"
 
 [security]
 seccomp = true
 landlock = true
-wolfsentry-config = "/etc/ringwall/wolfsentry.json"
+wolfsentry-config = "/etc/ioguard/wolfsentry.json"
 
 [storage]
-vault-key-path = "/etc/ringwall/vault.key"
+vault-key-path = "/etc/ioguard/vault.key"

@@ -9,7 +9,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-IMAGE_NAME="${IMAGE_NAME:-localhost/ringwall-build}"
+IMAGE_NAME="${IMAGE_NAME:-localhost/ioguard-build}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 # Library versions (verified 2025-10-29)
@@ -62,11 +62,11 @@ container=$(buildah from "$BASE_IMAGE")
 
 # Configure container metadata
 buildah config \
-    --label "io.ringwall.version=2.0.0-alpha.1" \
-    --label "io.ringwall.environment=build" \
+    --label "io.ioguard.version=2.0.0-alpha.1" \
+    --label "io.ioguard.environment=build" \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
-    --label "org.opencontainers.image.title=ringwall-build" \
+    --label "org.opencontainers.image.title=ioguard-build" \
     --label "org.opencontainers.image.description=Build environment for ioguard release artifacts" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \

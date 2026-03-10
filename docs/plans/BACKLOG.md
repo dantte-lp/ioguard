@@ -60,4 +60,4 @@ Items to investigate or implement, not yet assigned to a sprint.
 | IDPS | wolfSentry 1.6.3+ | S5 | Rate limiting, dynamic firewall, nftables |
 | Sandbox | seccomp BPF + Landlock | S5 | Kernel 6.7+, stateless workers |
 | Logging | stumpless (RFC 5424) | S7 | Structured, no zlog |
-| CLI | rwctl (Juniper-style) | S7 | Interactive + non-interactive |
+| CLI | iogctl (Juniper-style) | S7 | Interactive + non-interactive |

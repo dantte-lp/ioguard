@@ -235,7 +235,7 @@ void test_main_signal_loop_sigterm_exits(void);      /* send SIGTERM, loop retur
 #include <sys/socket.h>
 #include <unistd.h>
 
-constexpr char RW_DEFAULT_CONFIG_PATH[] = "/etc/ringwall/ringwall.toml";
+constexpr char RW_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
 
 int rw_main_parse_args(int argc, char *argv[], const char **config_path)
 {
@@ -1154,7 +1154,7 @@ ctest --preset clang-debug -N | tail -1
 ```bash
 podman run --rm --security-opt seccomp=unconfined \
   -v /opt/projects/repositories/ioguard:/workspace:Z \
-  localhost/ringwall-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
+  localhost/ioguard-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
 ```
 
 **Step 6: Commit**

@@ -6,7 +6,7 @@
 
 **Architecture:** Global find-and-replace with ordered pattern matching (longest patterns first to avoid partial replacements), followed by file renames, build verification, and GitHub API calls.
 
-**Tech Stack:** sed, git mv, gh api graphql, cmake, ctest (inside ringwall-dev container).
+**Tech Stack:** sed, git mv, gh api graphql, cmake, ctest (inside ioguard-dev container).
 
 **Build/test:**
 ```bash
@@ -230,10 +230,10 @@ grep -n "rw_\|ioguard" CMakeLists.txt
 find deploy/ -type f \( -name "*.sh" -o -name "*.yml" -o -name "*.yaml" -o -name "Makefile" \
     -o -name "Dockerfile*" -o -name "Containerfile" -o -name "*.md" -o -name "*.conf" -o -name "*.py" \) \
     -exec sed -i \
-    -e 's/ringwall-dev/ringwall-dev/g' \
-    -e 's/ringwall-build/ringwall-build/g' \
-    -e 's/ringwall-test/ringwall-test/g' \
-    -e 's/ringwall-ci/ringwall-ci/g' \
+    -e 's/ioguard-dev/ioguard-dev/g' \
+    -e 's/ioguard-build/ioguard-build/g' \
+    -e 's/ioguard-test/ioguard-test/g' \
+    -e 's/ioguard-ci/ioguard-ci/g' \
     -e 's/ringwall/ringwall/g' \
     -e 's/RINGWALL/RINGWALL/g' \
     {} +
@@ -260,7 +260,7 @@ grep -rn "ioguard\|IOGUARD" deploy/
 
 ```bash
 # Top-level md files
-sed -i 's/ringwall/ringwall/g; s/RINGWALL/RINGWALL/g; s/rw_/rw_/g; s/RW_/RW_/g; s/rwctl/rwctl/g' \
+sed -i 's/ringwall/ringwall/g; s/RINGWALL/RINGWALL/g; s/rw_/rw_/g; s/RW_/RW_/g; s/iogctl/iogctl/g' \
     README.md CLAUDE.md REBRAND.md
 
 # docs/ (excluding tmp/)
@@ -269,7 +269,7 @@ find docs/ -path "docs/tmp" -prune -o -name "*.md" -print -exec sed -i \
     -e 's/RINGWALL/RINGWALL/g' \
     -e 's/rw_/rw_/g' \
     -e 's/RW_/RW_/g' \
-    -e 's/rwctl/rwctl/g' \
+    -e 's/iogctl/iogctl/g' \
     {} +
 
 # .claude/skills/
@@ -278,7 +278,7 @@ find .claude/skills/ -name "*.md" -exec sed -i \
     -e 's/RINGWALL/RINGWALL/g' \
     -e 's/rw_/rw_/g' \
     -e 's/RW_/RW_/g' \
-    -e 's/rwctl/rwctl/g' \
+    -e 's/iogctl/iogctl/g' \
     {} +
 ```
 
@@ -326,7 +326,7 @@ rm -rf build/
 **Step 2: Configure, build, and test**
 
 ```bash
-podman exec -it ringwall-dev bash -c "cd /opt/projects/repositories/ioguard && \
+podman exec -it ioguard-dev bash -c "cd /opt/projects/repositories/ioguard && \
     cmake --preset clang-debug && \
     cmake --build --preset clang-debug && \
     ctest --preset clang-debug --output-on-failure"
@@ -368,11 +368,11 @@ wolfGuard product (FIPS 140-3 WireGuard VPN).
 
 Naming convention:
 - Server: ioguard (ring = io_uring, wall = security)
-- CLI: rwctl
+- CLI: iogctl
 - DB tool: rwdb
 - Function prefix: rw_ (replaces rw_)
 - Include guards: RINGWALL_* (replaces RINGWALL_*)
-- Config: ringwall.toml, /etc/ringwall/
+- Config: ioguard.toml, /etc/ioguard/
 
 See https://github.com/dantte-lp/ioguard/issues/11
 

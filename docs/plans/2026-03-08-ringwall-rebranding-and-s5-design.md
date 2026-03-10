@@ -23,9 +23,9 @@
 | `rw_` | `rw_` | Function/variable prefixes |
 | `RW_` | `RW_` | Enum values, macros, constexpr |
 | `RINGWALL_` | `RINGWALL_` | Include guards |
-| `rwctl` | `rwctl` | CLI binary |
-| `ringwall.toml` | `ringwall.toml` | Config files |
-| `/etc/ringwall/` | `/etc/ringwall/` | System paths |
+| `iogctl` | `iogctl` | CLI binary |
+| `ioguard.toml` | `ioguard.toml` | Config files |
+| `/etc/ioguard/` | `/etc/ioguard/` | System paths |
 | `localhost/ringwall-*` | `localhost/ringwall-*` | Container images |
 
 ### 2.2 Scope
@@ -70,7 +70,7 @@ Add persistent storage (libmdbx + SQLite), IDPS (wolfSentry), kernel sandboxing 
 DATA PLANE (per-packet, nanoseconds)     CONTROL PLANE (per-connection, milliseconds)
 +--------------------------+             +-------------------+
 |  libmdbx                 |             |  SQLite (WAL)     |
-|  /var/lib/ringwall/      |             |  /var/lib/        |
+|  /var/lib/ioguard/      |             |  /var/lib/        |
 |    sessions.mdbx         |             |    ringwall/      |
 |                          |             |    control.db     |
 |  sub-db: sessions        |             |                   |

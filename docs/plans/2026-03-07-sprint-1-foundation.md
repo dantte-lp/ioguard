@@ -1607,11 +1607,11 @@ git commit -m "feat: add protobuf-c IPC message pack/unpack with arena allocator
 - Create: `src/config/config.h`
 - Create: `src/config/config.c`
 - Create: `tests/unit/test_config_toml.c`
-- Create: `tests/fixtures/ringwall.toml` (test config file)
+- Create: `tests/fixtures/ioguard.toml` (test config file)
 
 **Step 1: Create test fixture**
 
-`tests/fixtures/ringwall.toml`:
+`tests/fixtures/ioguard.toml`:
 ```toml
 [server]
 listen-address = "0.0.0.0"
@@ -1632,15 +1632,15 @@ default-domain = "corp.example.com"
 mtu = 1400
 
 [tls]
-cert-file = "/etc/ringwall/server.pem"
-key-file = "/etc/ringwall/server.key"
+cert-file = "/etc/ioguard/server.pem"
+key-file = "/etc/ioguard/server.key"
 min-version = "1.2"
 ciphers = "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256"
 
 [security]
 seccomp = true
 landlock = true
-wolfsentry-config = "/etc/ringwall/wolfsentry.json"
+wolfsentry-config = "/etc/ioguard/wolfsentry.json"
 ```
 
 **Step 2: Write the failing test**
@@ -1650,7 +1650,7 @@ wolfsentry-config = "/etc/ringwall/wolfsentry.json"
 #include <unity/unity.h>
 #include "config/config.h"
 
-static const char *TEST_CONFIG = "tests/fixtures/ringwall.toml";
+static const char *TEST_CONFIG = "tests/fixtures/ioguard.toml";
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -1716,8 +1716,8 @@ void test_config_tls_values(void)
     int ret = rw_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    TEST_ASSERT_EQUAL_STRING("/etc/ringwall/server.pem", cfg.tls.cert_file);
-    TEST_ASSERT_EQUAL_STRING("/etc/ringwall/server.key", cfg.tls.key_file);
+    TEST_ASSERT_EQUAL_STRING("/etc/ioguard/server.pem", cfg.tls.cert_file);
+    TEST_ASSERT_EQUAL_STRING("/etc/ioguard/server.key", cfg.tls.key_file);
 
     rw_config_free(&cfg);
 }
@@ -2028,7 +2028,7 @@ Expected: All 7 tests PASS.
 
 ```bash
 git add src/config/config.h src/config/config.c tests/unit/test_config_toml.c \
-        tests/fixtures/ringwall.toml
+        tests/fixtures/ioguard.toml
 git commit -m "feat: add TOML configuration parser with defaults and validation"
 ```
 

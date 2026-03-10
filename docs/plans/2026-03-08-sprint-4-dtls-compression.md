@@ -1143,7 +1143,7 @@ git commit -m "chore: Sprint 4 complete — DTLS, channel switching, LZ4/LZS com
 - `src/network/dtls_headers.h/c` — DTLS HTTP header builder
 
 **Reference:**
-- `docs/ringwall-docs/ringwall/protocol/cisco-compatibility.md` — DTLS headers, cipher suites
-- `docs/ringwall-docs/openconnect-protocol/protocol/crypto.md` — Crypto protocol details
+- `docs/ioguard-docs/ringwall/protocol/cisco-compatibility.md` — DTLS headers, cipher suites
+- `docs/ioguard-docs/openconnect-protocol/protocol/crypto.md` — Crypto protocol details
 - `.claude/skills/wolfssl-api/SKILL.md` — wolfSSL DTLS API patterns
 - `.claude/skills/ocprotocol/SKILL.md` — OpenConnect protocol, compression negotiation

@@ -43,7 +43,7 @@ body:
         - Storage (libmdbx/SQLite)
         - Build/CI
         - Documentation
-        - CLI (rwctl)
+        - CLI (iogctl)
         - Configuration
         - Other
     validations:

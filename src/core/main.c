@@ -15,7 +15,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-constexpr char RW_DEFAULT_CONFIG_PATH[] = "/etc/ringwall/ringwall.toml";
+constexpr char RW_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
 
 int rw_main_parse_args(int argc, char *argv[], const char **config_path)
 {

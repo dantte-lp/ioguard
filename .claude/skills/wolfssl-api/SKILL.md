@@ -220,7 +220,7 @@ if (ret != WOLFSSL_SUCCESS) {
 ## Cisco-Compatible Cipher Configuration
 
 wolfSSL cipher strings must match Cisco Secure Client expectations.
-See `/opt/projects/repositories/ringwall-docs/docs/openconnect-protocol/protocol/crypto.md`
+See `/opt/projects/repositories/ioguard-docs/docs/openconnect-protocol/protocol/crypto.md`
 
 ```c
 // TLS 1.3 ciphers (Cisco priority order)
@@ -267,7 +267,7 @@ Cisco Secure Client does NOT support DTLS 1.3. Use DTLS 1.2 for Cisco compat:
 // For Cisco clients: DTLS 1.2
 WOLFSSL_METHOD *dtls_method = wolfDTLSv1_2_server_method();
 
-// For own client (ringwall-connect): DTLS 1.3
+// For own client (ioguard-connect): DTLS 1.3
 WOLFSSL_METHOD *dtls13_method = wolfDTLSv1_3_server_method();
 ```
 
@@ -324,5 +324,5 @@ wolfSSL_UseKeyShare(ssl, WOLFSSL_ML_KEM_512);
 - [ ] Set ALPN with `wolfSSL_UseALPN()`
 - [ ] Zero DTLS master secret after session setup
 - [ ] Configure Cisco-compatible cipher suites
-- [ ] Use DTLS 1.2 for Cisco, DTLS 1.3 for ringwall-connect
+- [ ] Use DTLS 1.2 for Cisco, DTLS 1.3 for ioguard-connect
 - [ ] Implement wolfSentry AcceptFilter integration

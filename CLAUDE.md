@@ -205,7 +205,7 @@ After completing each sprint, run the **full quality pipeline** inside the conta
 ```bash
 podman run --rm --security-opt seccomp=unconfined \
   -v /opt/projects/repositories/ioguard:/workspace:Z \
-  localhost/ringwall-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
+  localhost/ioguard-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
 ```
 
 **Rules:**

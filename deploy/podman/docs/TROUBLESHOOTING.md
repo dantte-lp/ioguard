@@ -192,12 +192,12 @@ podman logs <container-id>
 
 2. Run interactively:
 ```bash
-podman run -it --rm localhost/ringwall-dev:latest /bin/bash
+podman run -it --rm localhost/ioguard-dev:latest /bin/bash
 ```
 
 3. Check command:
 ```bash
-podman inspect localhost/ringwall-dev:latest | jq '.[0].Config.Cmd'
+podman inspect localhost/ioguard-dev:latest | jq '.[0].Config.Cmd'
 ```
 
 4. Override command:
@@ -559,7 +559,7 @@ buildah commit --rm --squash $container
 
 4. Pre-pull images:
 ```bash
-podman pull localhost/ringwall-dev:latest
+podman pull localhost/ioguard-dev:latest
 ```
 
 ## Advanced Debugging
@@ -607,7 +607,7 @@ buildah rm $container
 
 ```bash
 # Show image layers
-podman history localhost/ringwall-dev:latest
+podman history localhost/ioguard-dev:latest
 
 # Export image filesystem
 podman export <container-name> > filesystem.tar

@@ -6,7 +6,7 @@ description: Use when implementing OpenConnect protocol features — DTLS/TCP tu
 # OpenConnect Protocol for ioguard
 
 ## Full Documentation
-See `/opt/projects/repositories/ringwall-docs/docs/openconnect-protocol/` for complete specs.
+See `/opt/projects/repositories/ioguard-docs/docs/openconnect-protocol/` for complete specs.
 
 ## Protocol Overview
 
@@ -121,10 +121,10 @@ Server can challenge with secondary password (TOTP code):
 
 | Method | Library | Config |
 |--------|---------|--------|
-| Local password | built-in | `auth = plain[passwd=/etc/ringwall/passwd]` |
+| Local password | built-in | `auth = plain[passwd=/etc/ioguard/passwd]` |
 | PAM | libpam | `auth = pam` |
-| RADIUS | radcli | `auth = radius[config=/etc/ringwall/radius.conf]` |
-| LDAP | libldap | `auth = ldap[config=/etc/ringwall/ldap.conf]` |
+| RADIUS | radcli | `auth = radius[config=/etc/ioguard/radius.conf]` |
+| LDAP | libldap | `auth = ldap[config=/etc/ioguard/ldap.conf]` |
 | TOTP/HOTP | liboath | Secondary password, RFC 6238/4226 |
 | Certificate | wolfSSL | `auth = certificate` |
 

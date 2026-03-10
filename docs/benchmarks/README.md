@@ -297,7 +297,7 @@ cd tests/poc
 podman run --rm \
   -v /opt/projects/repositories/ioguard:/workspace:Z \
   -w /workspace \
-  localhost/ringwall-dev:latest \
+  localhost/ioguard-dev:latest \
   bash -c "cd tests/poc && ./benchmark.sh"
 ```
 

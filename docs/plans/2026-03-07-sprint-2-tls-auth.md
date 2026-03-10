@@ -59,8 +59,8 @@ Common issues to expect:
 **Step 4: Build and run inside container**
 
 ```bash
-podman exec ringwall-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug 2>&1"
-podman exec ringwall-dev bash -c "cd /workspace && ctest --preset clang-debug"
+podman exec ioguard-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug 2>&1"
+podman exec ioguard-dev bash -c "cd /workspace && ctest --preset clang-debug"
 ```
 
 Expected: All existing tests pass (or identify specific failures to fix).
@@ -196,7 +196,7 @@ Add `rw_http` static library, link llhttp. Add test target.
 **Step 4: Build and test in container**
 
 ```bash
-podman exec ringwall-dev bash -c "cd /workspace && cmake --preset clang-debug && cmake --build --preset clang-debug --target test_http && ctest --preset clang-debug -R test_http"
+podman exec ioguard-dev bash -c "cd /workspace && cmake --preset clang-debug && cmake --build --preset clang-debug --target test_http && ctest --preset clang-debug -R test_http"
 ```
 
 **Step 5: Commit**
@@ -218,7 +218,7 @@ git commit -m "feat(network): HTTP parser wrapper around llhttp for POST /auth a
 
 **Context:**
 
-Cisco AnyConnect uses AggAuth XML protocol for authentication. No libxml2 — hand-rolled parser for the limited XML subset used by AggAuth. Reference: `/opt/projects/repositories/ringwall-docs/docs/openconnect-protocol/protocol/authentication.md`
+Cisco AnyConnect uses AggAuth XML protocol for authentication. No libxml2 — hand-rolled parser for the limited XML subset used by AggAuth. Reference: `/opt/projects/repositories/ioguard-docs/docs/openconnect-protocol/protocol/authentication.md`
 
 **XML we must parse (client → server):**
 
@@ -554,7 +554,7 @@ Link `pam` library. Add `_GNU_SOURCE` for `explicit_bzero`.
 **Step 4: Build and test**
 
 ```bash
-podman exec ringwall-dev bash -c "cd /workspace && cmake --build --preset clang-debug --target test_auth_pam && ctest --preset clang-debug -R test_auth_pam"
+podman exec ioguard-dev bash -c "cd /workspace && cmake --build --preset clang-debug --target test_auth_pam && ctest --preset clang-debug -R test_auth_pam"
 ```
 
 **Step 5: Commit**
@@ -759,7 +759,7 @@ git commit -m "feat(ipc): extend auth messages with password, OTP, VPN config fi
 **Step 1: Run full test suite**
 
 ```bash
-podman exec ringwall-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
+podman exec ioguard-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
 ```
 
 All tests must pass.
@@ -767,7 +767,7 @@ All tests must pass.
 **Step 2: Run with ASan+UBSan**
 
 ```bash
-podman exec ringwall-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
+podman exec ioguard-dev bash -c "cd /workspace && rm -rf build/clang-debug && cmake --preset clang-debug -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' && cmake --build --preset clang-debug && ctest --preset clang-debug --output-on-failure"
 ```
 
 Zero errors.

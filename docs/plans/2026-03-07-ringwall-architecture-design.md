@@ -107,7 +107,7 @@ src/
 ├── utils/                 # Utilities
 │   └── memory.c/h        # mimalloc setup, arena allocator
 └── occtl/                 # Control utility
-    ├── rwctl.c           # CLI entry point
+    ├── iogctl.c           # CLI entry point
     ├── cli_parser.c/h    # Juniper-style command parser (linenoise)
     └── pki.c/h           # Mini CA (wolfCrypt)
 ```
@@ -297,7 +297,7 @@ typedef struct {
 | S4 | DTLS & Compression: DTLS 1.2, channel switch, LZ4/LZS | 7-8 |
 | S5 | Security: wolfSentry, seccomp, Landlock, nftables | 9-10 |
 | S6 | Auth Expansion: RADIUS, LDAP, TOTP, plugin API | 11-12 |
-| S7 | Management: rwctl CLI, REST API, metrics, logging | 13-14 |
+| S7 | Management: iogctl CLI, REST API, metrics, logging | 13-14 |
 | S8 | PKI & Polish: mini CA, split tunnel/DNS, E2E, docs | 15-16 |
 
 ### S1 — Foundation (weeks 1-2)
@@ -354,7 +354,7 @@ typedef struct {
 
 ### S7 — Management (weeks 13-14)
 
-- `src/occtl/rwctl.c` — Juniper-style CLI (operational + config mode)
+- `src/occtl/iogctl.c` — Juniper-style CLI (operational + config mode)
 - `src/occtl/cli_parser.c` — Command parser with linenoise
 - `src/network/rest.c` — REST API (llhttp + io_uring + wolfSSL)
 - `src/metrics/prometheus.c` — Custom Prometheus text exposition
@@ -435,7 +435,7 @@ typedef struct {
 
 ## 9. Future Considerations (not in scope)
 
-- **ringwall-connect** client (own VPN client, DTLS 1.3)
+- **ioguard-connect** client (own VPN client, DTLS 1.3)
 - **Cluster mode** (multi-server, session sync)
 - **XDP** fast path (line-rate packet filtering)
 - **WireGuard protocol** support (alternative to CSTP)

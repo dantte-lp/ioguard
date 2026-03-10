@@ -175,7 +175,7 @@ Client                    Worker                     sec-mod
 
 - Preferred channel for VPN data (lower overhead, UDP, no head-of-line blocking).
 - DTLS 1.2 with master secret bootstrap for Cisco Secure Client compatibility.
-- DTLS 1.3 reserved for future ringwall-connect client.
+- DTLS 1.3 reserved for future ioguard-connect client.
 - Session bootstrapped from CSTP via `X-DTLS-Master-Secret` header.
 
 ### DPD State Machine
@@ -302,7 +302,7 @@ Static configuration loaded at startup, reloaded on `SIGHUP`:
 
 ## Management
 
-### rwctl CLI
+### iogctl CLI
 
 Juniper-style CLI with two modes:
 
@@ -334,9 +334,9 @@ stumpless library providing RFC 5424 structured logging. Key fields:
 - Severity, facility, timestamp, process ID
 - Structured data elements for session ID, client IP, username, event type
 
-### Mini CA (rwctl pki)
+### Mini CA (iogctl pki)
 
-`rwctl pki` subcommands using wolfCrypt:
+`iogctl pki` subcommands using wolfCrypt:
 - Key generation (RSA, ECC)
 - CSR creation and signing
 - Certificate revocation list (CRL) management
@@ -394,7 +394,7 @@ stumpless library providing RFC 5424 structured logging. Key fields:
 | Library | Version | Role |
 |---------|---------|------|
 | stumpless | latest | Structured logging (RFC 5424) |
-| linenoise | latest | CLI line editing (rwctl) |
+| linenoise | latest | CLI line editing (iogctl) |
 
 ---
 

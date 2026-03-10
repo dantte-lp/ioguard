@@ -88,15 +88,15 @@ We use a **multi-environment** approach instead of a single monolithic container
 ```
 registry.access.redhat.com/ubi9/ubi:latest
     │
-    ├─> ringwall-dev:latest (500MB)
+    ├─> ioguard-dev:latest (500MB)
     │       │
-    │       └─> ringwall-test:latest (500MB)
+    │       └─> ioguard-test:latest (500MB)
     │
     └─> registry.access.redhat.com/ubi9/ubi-minimal:latest
             │
-            └─> ringwall-build:latest (200MB)
+            └─> ioguard-build:latest (200MB)
                     │
-                    └─> ringwall-ci:latest (200MB)
+                    └─> ioguard-ci:latest (200MB)
 ```
 
 **Rationale**:

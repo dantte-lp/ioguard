@@ -312,7 +312,7 @@ podman login ghcr.io
 make push-all
 
 # Push specific image
-./scripts/push-image.sh localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:latest
+./scripts/push-image.sh localhost/ioguard-dev:latest ghcr.io/dantte-lp/ioguard-dev:latest
 ```
 
 ### Inspect Images
@@ -322,7 +322,7 @@ make push-all
 make inspect-all
 
 # Inspect specific
-skopeo inspect containers-storage:localhost/ringwall-dev:latest
+skopeo inspect containers-storage:localhost/ioguard-dev:latest
 ```
 
 ## Troubleshooting
@@ -688,7 +688,7 @@ make test-unit BACKEND=wolfssl | tee test-output.log
 
 ```bash
 # Verify all tools are installed correctly
-podman run --rm localhost/ringwall-dev:latest bash -c "
+podman run --rm localhost/ioguard-dev:latest bash -c "
   echo '=== Build Tools ===' &&
   cmake --version | head -1 &&
   gcc --version | head -1 &&

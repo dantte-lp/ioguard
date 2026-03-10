@@ -8,9 +8,9 @@ set -euo pipefail
 #   ./push-image.sh <source-image> <dest-image> [--sign]
 #
 # Examples:
-#   ./push-image.sh localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:latest
-#   ./push-image.sh localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:v2.0.0
-#   ./push-image.sh localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:latest --sign
+#   ./push-image.sh localhost/ioguard-dev:latest ghcr.io/dantte-lp/ioguard-dev:latest
+#   ./push-image.sh localhost/ioguard-dev:latest ghcr.io/dantte-lp/ioguard-dev:v2.0.0
+#   ./push-image.sh localhost/ioguard-dev:latest ghcr.io/dantte-lp/ioguard-dev:latest --sign
 
 # Color output
 RED='\033[0;31m'
@@ -34,7 +34,7 @@ log_error() {
 # Check arguments
 if [ $# -lt 2 ]; then
     log_error "Usage: $0 <source-image> <dest-image> [--sign]"
-    log_error "Example: $0 localhost/ringwall-dev:latest ghcr.io/dantte-lp/ringwall-dev:latest"
+    log_error "Example: $0 localhost/ioguard-dev:latest ghcr.io/dantte-lp/ioguard-dev:latest"
     exit 1
 fi
 
