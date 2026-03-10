@@ -4,6 +4,8 @@
 #include "auth/pam.h"
 #include "config/config.h"
 #include "core/session.h"
+#include "storage/mdbx.h"
+#include "storage/sqlite.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -15,11 +17,18 @@
  * sec-mod is a dedicated child process that handles all authentication.
  * It receives auth requests via SOCK_SEQPACKET IPC from worker processes,
  * dispatches to PAM, manages session cookies, and returns responses.
+ *
+ * Storage:
+ * - rw_session_store_t: in-memory session cache (always available)
+ * - rw_mdbx_ctx_t: persistent session store (if mdbx_path configured)
+ * - rw_sqlite_ctx_t: audit log + user management (if sqlite_path configured)
  */
 typedef struct {
     int ipc_fd;
     rw_pam_config_t pam_cfg;
     rw_session_store_t *sessions;
+    rw_mdbx_ctx_t *mdbx;           /* persistent sessions (nullable) */
+    rw_sqlite_ctx_t *sqlite;       /* audit + users (nullable) */
     const rw_config_t *config;
     bool running;
 } rw_secmod_ctx_t;

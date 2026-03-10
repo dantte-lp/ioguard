@@ -44,11 +44,17 @@ typedef struct {
 } rw_config_security_t;
 
 typedef struct {
+    char mdbx_path[RW_CONFIG_MAX_STR];
+    char sqlite_path[RW_CONFIG_MAX_STR];
+} rw_config_storage_t;
+
+typedef struct {
     rw_config_server_t server;
     rw_config_auth_t auth;
     rw_config_network_t network;
     rw_config_tls_t tls;
     rw_config_security_t security;
+    rw_config_storage_t storage;
 } rw_config_t;
 
 void rw_config_set_defaults(rw_config_t *cfg);

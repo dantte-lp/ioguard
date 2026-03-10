@@ -335,12 +335,51 @@ if(PAM_LIBRARY)
     message(STATUS "rw_pam (PAM authentication backend) configured")
 endif()
 
+# --- Storage libraries (needed by sec-mod) ---
+
+# libmdbx session store
+find_path(MDBX_INCLUDE_DIR mdbx.h PATHS /usr/local/include)
+find_library(MDBX_LIBRARY mdbx PATHS /usr/local/lib /usr/local/lib64)
+
+if(MDBX_INCLUDE_DIR AND MDBX_LIBRARY)
+    add_library(rw_mdbx STATIC src/storage/mdbx.c)
+    target_include_directories(rw_mdbx PUBLIC ${CMAKE_SOURCE_DIR}/src ${MDBX_INCLUDE_DIR})
+    target_link_libraries(rw_mdbx PUBLIC ${MDBX_LIBRARY})
+    target_compile_definitions(rw_mdbx PUBLIC _GNU_SOURCE)
+    message(STATUS "Found libmdbx: ${MDBX_LIBRARY}")
+else()
+    message(WARNING "libmdbx not found — skipping storage/mdbx")
+endif()
+
+# SQLite control plane
+find_path(SQLITE3_INCLUDE_DIR sqlite3.h
+    PATHS /usr/local/include /usr/include)
+find_library(SQLITE3_LIBRARY sqlite3
+    PATHS /usr/local/lib /usr/local/lib64 /usr/lib64)
+
+if(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
+    add_library(rw_sqlite STATIC src/storage/sqlite.c)
+    target_include_directories(rw_sqlite PUBLIC
+        ${CMAKE_SOURCE_DIR}/src ${SQLITE3_INCLUDE_DIR})
+    target_link_libraries(rw_sqlite PUBLIC ${SQLITE3_LIBRARY})
+    target_compile_definitions(rw_sqlite PUBLIC _GNU_SOURCE)
+    message(STATUS "Found SQLite3: ${SQLITE3_LIBRARY}")
+else()
+    message(WARNING "SQLite3 not found — skipping storage/sqlite")
+endif()
+
 # --- sec-mod authentication process ---
 if(TARGET rw_pam)
     add_library(rw_secmod STATIC src/core/secmod.c)
     target_include_directories(rw_secmod PUBLIC ${CMAKE_SOURCE_DIR}/src)
     target_compile_definitions(rw_secmod PRIVATE _GNU_SOURCE)
     target_link_libraries(rw_secmod PUBLIC rw_ipc rw_session rw_pam rw_config)
+    if(TARGET rw_mdbx)
+        target_link_libraries(rw_secmod PUBLIC rw_mdbx)
+    endif()
+    if(TARGET rw_sqlite)
+        target_link_libraries(rw_secmod PUBLIC rw_sqlite)
+    endif()
     message(STATUS "rw_secmod (sec-mod authentication process) configured")
 endif()
 
@@ -419,6 +458,16 @@ if(BUILD_TESTING)
         # Sprint 2 sec-mod authentication process tests
         if(TARGET rw_secmod)
             rw_add_test(test_secmod tests/unit/test_secmod.c rw_secmod)
+
+            # Sprint 6 — secmod storage integration
+            if(TARGET rw_mdbx AND TARGET rw_sqlite)
+                rw_add_test(test_secmod_storage tests/unit/test_secmod_storage.c
+                    rw_secmod rw_mdbx rw_sqlite)
+                target_link_libraries(test_secmod_storage PRIVATE
+                    ${MDBX_LIBRARY} ${SQLITE3_LIBRARY})
+                target_include_directories(test_secmod_storage PRIVATE
+                    ${MDBX_INCLUDE_DIR} ${SQLITE3_INCLUDE_DIR})
+            endif()
         endif()
 
         # Sprint 3 — CSTP framing
@@ -526,44 +575,20 @@ if(BUILD_TESTING)
         rw_add_test(test_dtls_channel tests/integration/test_dtls_channel.c
             rw_channel rw_compress rw_cstp rw_dpd rw_dtls_headers rw_dtls_keying rw_worker)
 
-        # Sprint 5 — libmdbx session store
-        find_path(MDBX_INCLUDE_DIR mdbx.h PATHS /usr/local/include)
-        find_library(MDBX_LIBRARY mdbx PATHS /usr/local/lib /usr/local/lib64)
-
-        if(MDBX_INCLUDE_DIR AND MDBX_LIBRARY)
-            add_library(rw_mdbx STATIC src/storage/mdbx.c)
-            target_include_directories(rw_mdbx PUBLIC ${CMAKE_SOURCE_DIR}/src ${MDBX_INCLUDE_DIR})
-            target_link_libraries(rw_mdbx PUBLIC ${MDBX_LIBRARY})
-            target_compile_definitions(rw_mdbx PUBLIC _GNU_SOURCE)
-
+        # Sprint 5 — libmdbx session store tests
+        if(TARGET rw_mdbx)
             rw_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c rw_mdbx)
             target_link_libraries(test_storage_mdbx PRIVATE ${MDBX_LIBRARY})
             target_include_directories(test_storage_mdbx PRIVATE ${MDBX_INCLUDE_DIR})
-        else()
-            message(WARNING "libmdbx not found — skipping storage/mdbx")
         endif()
 
-        # Sprint 5 — SQLite control plane
-        find_path(SQLITE3_INCLUDE_DIR sqlite3.h
-            PATHS /usr/local/include /usr/include)
-        find_library(SQLITE3_LIBRARY sqlite3
-            PATHS /usr/local/lib /usr/local/lib64 /usr/lib64)
-
-        if(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
-            add_library(rw_sqlite STATIC src/storage/sqlite.c)
-            target_include_directories(rw_sqlite PUBLIC
-                ${CMAKE_SOURCE_DIR}/src ${SQLITE3_INCLUDE_DIR})
-            target_link_libraries(rw_sqlite PUBLIC ${SQLITE3_LIBRARY})
-            target_compile_definitions(rw_sqlite PUBLIC _GNU_SOURCE)
-
+        # Sprint 5 — SQLite control plane tests
+        if(TARGET rw_sqlite)
             rw_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c
                 rw_sqlite)
             target_link_libraries(test_storage_sqlite PRIVATE ${SQLITE3_LIBRARY})
             target_include_directories(test_storage_sqlite PRIVATE
                 ${SQLITE3_INCLUDE_DIR})
-            message(STATUS "Found SQLite3: ${SQLITE3_LIBRARY}")
-        else()
-            message(WARNING "SQLite3 not found — skipping storage/sqlite")
         endif()
 
         # Sprint 5 — wolfSentry IDPS

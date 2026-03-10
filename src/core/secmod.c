@@ -4,16 +4,67 @@
 
 #include <errno.h>
 #include <poll.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-/* ------------------------------------------------------------------ */
-/* Internal helpers                                                    */
-/* ------------------------------------------------------------------ */
+/* ============================================================================
+ * Internal helpers
+ * ============================================================================ */
 
-/**
- * Build and send an auth response over IPC.
- */
+/* Write an audit entry to SQLite (best-effort, non-fatal) */
+static void secmod_audit_log(rw_secmod_ctx_t *ctx, const char *event_type,
+                              const char *username, const char *source_ip,
+                              const char *result)
+{
+    if (ctx->sqlite == nullptr) {
+        return;
+    }
+
+    rw_audit_entry_t entry;
+    memset(&entry, 0, sizeof(entry));
+    snprintf(entry.event_type, sizeof(entry.event_type), "%s", event_type);
+    if (username != nullptr) {
+        snprintf(entry.username, sizeof(entry.username), "%s", username);
+    }
+    if (source_ip != nullptr) {
+        snprintf(entry.source_ip, sizeof(entry.source_ip), "%s", source_ip);
+    }
+    snprintf(entry.result, sizeof(entry.result), "%s", result);
+
+    (void)rw_sqlite_audit_insert(ctx->sqlite, &entry);
+}
+
+/* Persist session to mdbx (if available) */
+static int secmod_persist_session(rw_secmod_ctx_t *ctx, const rw_session_t *session)
+{
+    if (ctx->mdbx == nullptr) {
+        return 0;
+    }
+
+    rw_session_record_t record;
+    memset(&record, 0, sizeof(record));
+    memcpy(record.session_id, session->cookie, RW_SESSION_ID_LEN);
+    snprintf(record.username, sizeof(record.username), "%s", session->username);
+    snprintf(record.groupname, sizeof(record.groupname), "%s", session->group);
+    record.created_at = session->created;
+    record.expires_at = session->created + (time_t)session->ttl_seconds;
+
+    return rw_mdbx_session_create(ctx->mdbx, &record);
+}
+
+/* Delete session from mdbx (if available) — used during disconnect handling */
+[[maybe_unused]] static int secmod_delete_session(rw_secmod_ctx_t *ctx,
+                                                    const uint8_t *cookie)
+{
+    if (ctx->mdbx == nullptr) {
+        return 0;
+    }
+    return rw_mdbx_session_delete(ctx->mdbx, cookie);
+}
+
+/* Build and send an auth response over IPC. */
 static int secmod_send_auth_response(int fd, const rw_ipc_auth_response_t *resp)
 {
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
@@ -25,15 +76,26 @@ static int secmod_send_auth_response(int fd, const rw_ipc_auth_response_t *resp)
     return rw_ipc_send(fd, buf, (size_t)packed);
 }
 
-/**
- * Handle an authentication request (username + password).
- */
+/* Handle an authentication request (username + password). */
 static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
 {
     rw_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
-    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
+    /* Check ban list before attempting auth */
+    if (ctx->sqlite != nullptr && req->source_ip != nullptr) {
+        bool banned = false;
+        int bret = rw_sqlite_ban_check(ctx->sqlite, req->source_ip, &banned);
+        if (bret == 0 && banned) {
+            resp.success = false;
+            resp.error_msg = "IP address is banned";
+            secmod_audit_log(ctx, "AUTH", req->username, req->source_ip, "BANNED");
+            return secmod_send_auth_response(ctx->ipc_fd, &resp);
+        }
+    }
+
+    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username,
+                                                   req->password);
     if (result == RW_AUTH_SUCCESS) {
         rw_session_t *session = nullptr;
         int ret = rw_session_create(ctx->sessions, req->username, req->group,
@@ -44,9 +106,16 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
             resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
             resp.session_ttl = session->ttl_seconds;
             resp.assigned_ip = session->assigned_ip;
-            resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
-                                                                   : nullptr;
+            resp.dns_server = (ctx->config->network.dns_count > 0)
+                                  ? ctx->config->network.dns[0]
+                                  : nullptr;
             resp.default_domain = ctx->config->network.default_domain;
+
+            /* Persist to mdbx */
+            (void)secmod_persist_session(ctx, session);
+
+            /* Audit success */
+            secmod_audit_log(ctx, "AUTH", req->username, req->source_ip, "OK");
         } else {
             resp.success = false;
             resp.error_msg = "session creation failed";
@@ -54,21 +123,24 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
     } else {
         resp.success = false;
         resp.error_msg = "authentication failed";
+
+        /* Audit failure */
+        secmod_audit_log(ctx, "AUTH", req->username, req->source_ip, "FAIL");
     }
 
     return secmod_send_auth_response(ctx->ipc_fd, &resp);
 }
 
-/**
- * Handle a session validation request (cookie lookup).
- */
-static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_validate_t *req)
+/* Handle a session validation request (cookie lookup). */
+static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx,
+                                           rw_ipc_session_validate_t *req)
 {
     rw_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
     rw_session_t *session = nullptr;
-    int ret = rw_session_validate(ctx->sessions, req->cookie, req->cookie_len, &session);
+    int ret = rw_session_validate(ctx->sessions, req->cookie, req->cookie_len,
+                                  &session);
 
     if (ret == 0 && session != nullptr) {
         resp.success = true;
@@ -76,8 +148,9 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_v
         resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
         resp.session_ttl = session->ttl_seconds;
         resp.assigned_ip = session->assigned_ip;
-        resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
-                                                               : nullptr;
+        resp.dns_server = (ctx->config->network.dns_count > 0)
+                              ? ctx->config->network.dns[0]
+                              : nullptr;
         resp.default_domain = ctx->config->network.default_domain;
     } else {
         resp.success = false;
@@ -87,9 +160,49 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_v
     return secmod_send_auth_response(ctx->ipc_fd, &resp);
 }
 
-/* ------------------------------------------------------------------ */
-/* Public API                                                          */
-/* ------------------------------------------------------------------ */
+/* Two-pass expired session cleanup: collect IDs during read txn, delete after */
+constexpr size_t SECMOD_CLEANUP_BATCH = 64;
+
+typedef struct {
+    uint8_t ids[SECMOD_CLEANUP_BATCH][RW_SESSION_ID_LEN];
+    size_t count;
+} secmod_expired_batch_t;
+
+static int expired_session_collect(const rw_session_record_t *session, void *userdata)
+{
+    secmod_expired_batch_t *batch = userdata;
+    time_t now = time(nullptr);
+
+    if (session->expires_at > 0 && session->expires_at < now) {
+        if (batch->count < SECMOD_CLEANUP_BATCH) {
+            memcpy(batch->ids[batch->count], session->session_id, RW_SESSION_ID_LEN);
+            batch->count++;
+        }
+    }
+    return 0;
+}
+
+static void secmod_cleanup_expired_mdbx(rw_secmod_ctx_t *ctx)
+{
+    if (ctx->mdbx == nullptr) {
+        return;
+    }
+
+    secmod_expired_batch_t batch;
+    memset(&batch, 0, sizeof(batch));
+
+    /* Pass 1: collect expired IDs (read-only txn inside iterate) */
+    (void)rw_mdbx_session_iterate(ctx->mdbx, expired_session_collect, &batch);
+
+    /* Pass 2: delete collected sessions (separate write txns) */
+    for (size_t i = 0; i < batch.count; i++) {
+        (void)rw_mdbx_session_delete(ctx->mdbx, batch.ids[i]);
+    }
+}
+
+/* ============================================================================
+ * Public API
+ * ============================================================================ */
 
 int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
 {
@@ -103,22 +216,62 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
     ctx->running = false;
 
     /* Initialise PAM with the configured auth method (service name) */
-    const char *service = (config->auth.method[0] != '\0') ? config->auth.method : nullptr;
+    const char *service = (config->auth.method[0] != '\0')
+                              ? config->auth.method
+                              : nullptr;
     int ret = rw_pam_init(&ctx->pam_cfg, service);
-
     if (ret != 0) {
         return ret;
     }
 
-    /* Create session store sized for max_clients */
+    /* Create in-memory session store */
     uint32_t max = config->server.max_clients;
-
     if (max == 0) {
         max = RW_SESSION_MAX_SESSIONS;
     }
     ctx->sessions = rw_session_store_create(max);
     if (ctx->sessions == nullptr) {
         return -ENOMEM;
+    }
+
+    /* Initialize persistent session store (mdbx) if configured */
+    if (config->storage.mdbx_path[0] != '\0') {
+        ctx->mdbx = calloc(1, sizeof(*ctx->mdbx));
+        if (ctx->mdbx == nullptr) {
+            rw_session_store_destroy(ctx->sessions);
+            return -ENOMEM;
+        }
+        ret = rw_mdbx_init(ctx->mdbx, config->storage.mdbx_path);
+        if (ret < 0) {
+            free(ctx->mdbx);
+            ctx->mdbx = nullptr;
+            rw_session_store_destroy(ctx->sessions);
+            return ret;
+        }
+    }
+
+    /* Initialize SQLite control plane if configured */
+    if (config->storage.sqlite_path[0] != '\0') {
+        ctx->sqlite = calloc(1, sizeof(*ctx->sqlite));
+        if (ctx->sqlite == nullptr) {
+            if (ctx->mdbx != nullptr) {
+                rw_mdbx_close(ctx->mdbx);
+                free(ctx->mdbx);
+            }
+            rw_session_store_destroy(ctx->sessions);
+            return -ENOMEM;
+        }
+        ret = rw_sqlite_init(ctx->sqlite, config->storage.sqlite_path);
+        if (ret < 0) {
+            free(ctx->sqlite);
+            ctx->sqlite = nullptr;
+            if (ctx->mdbx != nullptr) {
+                rw_mdbx_close(ctx->mdbx);
+                free(ctx->mdbx);
+            }
+            rw_session_store_destroy(ctx->sessions);
+            return ret;
+        }
     }
 
     return 0;
@@ -130,11 +283,6 @@ int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t l
         return -EINVAL;
     }
 
-    /*
-     * Try unpacking as auth_request first.  If it has a password field
-     * (non-null), treat it as a login attempt.  Otherwise fall through
-     * and try session_validate.
-     */
     rw_ipc_auth_request_t auth_req;
     memset(&auth_req, 0, sizeof(auth_req));
 
@@ -146,7 +294,6 @@ int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t l
         return ret;
     }
 
-    /* Not a password-based auth request — clean up and try session_validate */
     if (ret == 0) {
         rw_ipc_free_auth_request(&auth_req);
     }
@@ -198,6 +345,7 @@ int rw_secmod_run(rw_secmod_ctx_t *ctx)
 
         /* Periodic cleanup of expired sessions */
         rw_session_cleanup_expired(ctx->sessions);
+        secmod_cleanup_expired_mdbx(ctx);
     }
 
     return 0;
@@ -218,6 +366,16 @@ void rw_secmod_destroy(rw_secmod_ctx_t *ctx)
 
     if (ctx->sessions != nullptr) {
         rw_session_store_destroy(ctx->sessions);
+    }
+
+    if (ctx->mdbx != nullptr) {
+        rw_mdbx_close(ctx->mdbx);
+        free(ctx->mdbx);
+    }
+
+    if (ctx->sqlite != nullptr) {
+        rw_sqlite_close(ctx->sqlite);
+        free(ctx->sqlite);
     }
 
     explicit_bzero(ctx, sizeof(*ctx));
