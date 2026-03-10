@@ -506,6 +506,18 @@ if(BUILD_TESTING)
         rw_add_test(test_worker_loop tests/unit/test_worker_loop.c
             rw_worker_loop rw_io rw_fdpass rw_cstp rw_dpd rw_worker)
 
+        # Sprint 6 — Per-connection TLS handshake
+        if(WOLFSSL_FOUND)
+            add_library(rw_conn_tls STATIC src/core/conn_tls.c)
+            target_include_directories(rw_conn_tls PUBLIC ${CMAKE_SOURCE_DIR}/src)
+            target_compile_definitions(rw_conn_tls PRIVATE _GNU_SOURCE)
+            target_link_libraries(rw_conn_tls PUBLIC rw_crypto)
+
+            rw_add_test(test_conn_tls tests/unit/test_conn_tls.c
+                rw_conn_tls rw_crypto)
+            target_link_libraries(test_conn_tls PRIVATE pthread)
+        endif()
+
         # Sprint 3 — Data path integration test
         rw_add_test(test_data_path tests/integration/test_data_path.c rw_cstp rw_dpd rw_worker rw_io)
 
