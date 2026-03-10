@@ -699,6 +699,15 @@ if(BUILD_TESTING)
             message(WARNING "libmnl/libnftnl not found — skipping security/firewall")
         endif()
 
+        # Sprint 6 — Graceful shutdown
+        add_library(rw_shutdown STATIC src/core/shutdown.c)
+        target_include_directories(rw_shutdown PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_shutdown PRIVATE _GNU_SOURCE)
+        target_link_libraries(rw_shutdown PUBLIC rw_worker rw_cstp)
+
+        rw_add_test(test_shutdown tests/unit/test_shutdown.c
+            rw_shutdown rw_worker rw_cstp rw_dpd rw_compress)
+
         # Sprint 6 — Security activation hooks
         if(TARGET rw_sandbox AND TARGET rw_landlock AND TARGET rw_firewall)
             add_library(rw_security_hooks STATIC src/core/security_hooks.c)
