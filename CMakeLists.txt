@@ -296,6 +296,8 @@ if(WOLFSSL_FOUND)
         src/crypto/session_cache.c
     )
     target_compile_definitions(rw_crypto PUBLIC _GNU_SOURCE USE_WOLFSSL)
+    target_compile_definitions(rw_crypto PRIVATE
+        CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     target_include_directories(rw_crypto PUBLIC
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/crypto
