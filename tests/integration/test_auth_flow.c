@@ -140,12 +140,12 @@ void test_auth_flow_response_format(void)
 void test_auth_flow_session_validate_bogus(void)
 {
     /* Fabricate a random 32-byte cookie */
-    uint8_t bogus_cookie[RW_SESSION_COOKIE_SIZE];
+    uint8_t bogus_cookie[IOG_SESSION_COOKIE_SIZE];
     memset(bogus_cookie, 0xAB, sizeof(bogus_cookie));
 
     iog_ipc_session_validate_t sv_req = {
         .cookie = bogus_cookie,
-        .cookie_len = RW_SESSION_COOKIE_SIZE,
+        .cookie_len = IOG_SESSION_COOKIE_SIZE,
     };
 
     uint8_t send_buf[RW_IPC_MAX_MSG_SIZE];

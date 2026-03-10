@@ -214,7 +214,7 @@ void test_mfa_flow_totp_second_factor(void)
     /* TOTP valid — session created */
     TEST_ASSERT_TRUE(resp.success);
     TEST_ASSERT_NOT_NULL(resp.session_cookie);
-    TEST_ASSERT_EQUAL_size_t(RW_SESSION_COOKIE_SIZE, resp.session_cookie_len);
+    TEST_ASSERT_EQUAL_size_t(IOG_SESSION_COOKIE_SIZE, resp.session_cookie_len);
     TEST_ASSERT_GREATER_THAN(0, resp.session_ttl);
 
     iog_ipc_free_auth_response(&resp);

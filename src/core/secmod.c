@@ -38,7 +38,7 @@ static void secmod_audit_log(rw_secmod_ctx_t *ctx, const char *event_type, const
 }
 
 /* Persist session to mdbx (if available) */
-static int secmod_persist_session(rw_secmod_ctx_t *ctx, const rw_session_t *session)
+static int secmod_persist_session(rw_secmod_ctx_t *ctx, const iog_session_t *session)
 {
     if (ctx->mdbx == nullptr) {
         return 0;
@@ -80,13 +80,13 @@ static int secmod_send_auth_response(int fd, const iog_ipc_auth_response_t *resp
 static int secmod_create_session_response(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req,
                                           iog_ipc_auth_response_t *resp)
 {
-    rw_session_t *session = nullptr;
-    int ret = rw_session_create(ctx->sessions, req->username, req->group,
+    iog_session_t *session = nullptr;
+    int ret = iog_session_create(ctx->sessions, req->username, req->group,
                                 ctx->config->auth.cookie_timeout, &session);
     if (ret == 0 && session != nullptr) {
         resp->success = true;
         resp->session_cookie = session->cookie;
-        resp->session_cookie_len = RW_SESSION_COOKIE_SIZE;
+        resp->session_cookie_len = IOG_SESSION_COOKIE_SIZE;
         resp->session_ttl = session->ttl_seconds;
         resp->assigned_ip = session->assigned_ip;
         resp->dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
@@ -242,13 +242,13 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, iog_ipc_session_
     iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
-    rw_session_t *session = nullptr;
-    int ret = rw_session_validate(ctx->sessions, req->cookie, req->cookie_len, &session);
+    iog_session_t *session = nullptr;
+    int ret = iog_session_validate(ctx->sessions, req->cookie, req->cookie_len, &session);
 
     if (ret == 0 && session != nullptr) {
         resp.success = true;
         resp.session_cookie = session->cookie;
-        resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
+        resp.session_cookie_len = IOG_SESSION_COOKIE_SIZE;
         resp.session_ttl = session->ttl_seconds;
         resp.assigned_ip = session->assigned_ip;
         resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
@@ -327,9 +327,9 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
     /* Create in-memory session store */
     uint32_t max = config->server.max_clients;
     if (max == 0) {
-        max = RW_SESSION_MAX_SESSIONS;
+        max = IOG_SESSION_MAX_SESSIONS;
     }
-    ctx->sessions = rw_session_store_create(max);
+    ctx->sessions = iog_session_store_create(max);
     if (ctx->sessions == nullptr) {
         return -ENOMEM;
     }
@@ -338,14 +338,14 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
     if (config->storage.mdbx_path[0] != '\0') {
         ctx->mdbx = calloc(1, sizeof(*ctx->mdbx));
         if (ctx->mdbx == nullptr) {
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return -ENOMEM;
         }
         ret = rw_mdbx_init(ctx->mdbx, config->storage.mdbx_path);
         if (ret < 0) {
             free(ctx->mdbx);
             ctx->mdbx = nullptr;
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return ret;
         }
     }
@@ -358,7 +358,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
                 rw_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return -ENOMEM;
         }
         ret = rw_sqlite_init(ctx->sqlite, config->storage.sqlite_path);
@@ -369,7 +369,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
                 rw_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return ret;
         }
     }
@@ -386,7 +386,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
                 rw_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return ret;
         }
     }
@@ -461,7 +461,7 @@ int rw_secmod_run(rw_secmod_ctx_t *ctx)
         }
 
         /* Periodic cleanup of expired sessions */
-        rw_session_cleanup_expired(ctx->sessions);
+        iog_session_cleanup_expired(ctx->sessions);
         secmod_cleanup_expired_mdbx(ctx);
     }
 
@@ -482,7 +482,7 @@ void rw_secmod_destroy(rw_secmod_ctx_t *ctx)
     }
 
     if (ctx->sessions != nullptr) {
-        rw_session_store_destroy(ctx->sessions);
+        iog_session_store_destroy(ctx->sessions);
     }
 
     if (ctx->mdbx != nullptr) {

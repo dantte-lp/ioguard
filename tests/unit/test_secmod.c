@@ -132,7 +132,7 @@ void test_secmod_auth_request_sends_response(void)
 void test_secmod_session_validate_invalid(void)
 {
     /* Send a session_validate with a bogus cookie */
-    uint8_t bogus_cookie[RW_SESSION_COOKIE_SIZE];
+    uint8_t bogus_cookie[IOG_SESSION_COOKIE_SIZE];
     memset(bogus_cookie, 0xBB, sizeof(bogus_cookie));
 
     iog_ipc_session_validate_t sv;
