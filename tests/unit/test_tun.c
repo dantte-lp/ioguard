@@ -1,7 +1,9 @@
 #include <errno.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <unity/unity.h>
+
 #include "network/tun.h"
 
 void setUp(void)
@@ -61,13 +63,25 @@ void test_tun_config_validate_mtu_too_small(void)
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 }
 
-void test_tun_mtu_calculation(void)
+void test_tun_calc_mtu_ipv4(void)
 {
-    /* 1500 - 81 (IP+TCP+TLS+CSTP) = 1419 */
-    TEST_ASSERT_EQUAL_UINT32(1419, rw_tun_calc_mtu(1500));
+    /* 1500 - 20(IP) - 20(TCP) - 37(TLS) - 4(CSTP) = 1419 */
+    TEST_ASSERT_EQUAL_UINT32(1419, rw_tun_calc_mtu(1500, AF_INET));
 
-    /* 100 - 81 = 19, but clamped to RW_TUN_MIN_MTU (68) */
-    TEST_ASSERT_EQUAL_UINT32(RW_TUN_MIN_MTU, rw_tun_calc_mtu(100));
+    /* Small MTU clamped to minimum */
+    TEST_ASSERT_EQUAL_UINT32(RW_TUN_MIN_MTU, rw_tun_calc_mtu(100, AF_INET));
+}
+
+void test_tun_calc_mtu_ipv6(void)
+{
+    /* 1500 - 40(IPv6) - 20(TCP) - 37(TLS) - 4(CSTP) = 1399 */
+    TEST_ASSERT_EQUAL_UINT32(1399, rw_tun_calc_mtu(1500, AF_INET6));
+}
+
+void test_tun_calc_mtu_ipv6_clamp(void)
+{
+    /* Small base MTU with IPv6 overhead → clamped to minimum */
+    TEST_ASSERT_EQUAL_UINT32(RW_TUN_MIN_MTU, rw_tun_calc_mtu(100, AF_INET6));
 }
 
 void test_tun_alloc_not_root(void)
@@ -105,7 +119,9 @@ int main(void)
     RUN_TEST(test_tun_config_validate_zero_mtu);
     RUN_TEST(test_tun_config_validate_mtu_too_large);
     RUN_TEST(test_tun_config_validate_mtu_too_small);
-    RUN_TEST(test_tun_mtu_calculation);
+    RUN_TEST(test_tun_calc_mtu_ipv4);
+    RUN_TEST(test_tun_calc_mtu_ipv6);
+    RUN_TEST(test_tun_calc_mtu_ipv6_clamp);
     RUN_TEST(test_tun_alloc_not_root);
     return UNITY_END();
 }

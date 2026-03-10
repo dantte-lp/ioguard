@@ -86,11 +86,15 @@ void rw_tun_close(rw_tun_t *tun)
     }
 }
 
-uint32_t rw_tun_calc_mtu(uint32_t base_mtu)
+uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af)
 {
-    constexpr uint32_t overhead = 20 + 20 + 37 + 4; /* IP + TCP + TLS + CSTP */
-    if (base_mtu <= overhead + RW_TUN_MIN_MTU) {
+    /* IP header: 20 (IPv4) or 40 (IPv6) */
+    uint32_t ip_overhead = (af == AF_INET6) ? 40 : 20;
+    /* TCP: 20, TLS record: 37, CSTP header: 4 */
+    uint32_t total_overhead = ip_overhead + 20 + 37 + 4;
+
+    if (base_mtu <= total_overhead + RW_TUN_MIN_MTU) {
         return RW_TUN_MIN_MTU;
     }
-    return base_mtu - overhead;
+    return base_mtu - total_overhead;
 }

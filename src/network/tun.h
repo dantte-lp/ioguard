@@ -69,10 +69,13 @@ void rw_tun_close(rw_tun_t *tun);
 /**
  * @brief Calculate effective VPN MTU from base network MTU.
  *
- * Subtracts IP(20) + TCP(20) + TLS(37) + CSTP(4) = 81 bytes overhead.
+ * Subtracts IP + TCP(20) + TLS(37) + CSTP(4) overhead.
+ * IP header size depends on address family: 20 (IPv4) or 40 (IPv6).
+ *
  * @param base_mtu Base network MTU (e.g., 1500).
+ * @param af       Address family (AF_INET or AF_INET6).
  * @return Effective VPN MTU, clamped to RW_TUN_MIN_MTU minimum.
  */
-[[nodiscard]] uint32_t rw_tun_calc_mtu(uint32_t base_mtu);
+[[nodiscard]] uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af);
 
 #endif /* RINGWALL_NETWORK_TUN_H */
