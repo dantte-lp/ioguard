@@ -10,8 +10,8 @@ description: Use when writing ANY C code in ioguard — enforces file structure,
 ### Header files (.h)
 
 ```c
-#ifndef RINGWALL_MODULE_FILE_H
-#define RINGWALL_MODULE_FILE_H
+#ifndef IOGUARD_MODULE_FILE_H
+#define IOGUARD_MODULE_FILE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -20,11 +20,11 @@ description: Use when writing ANY C code in ioguard — enforces file structure,
 /* Public types, constants, function declarations only */
 /* NO implementations except static inline cleanup functions */
 
-#endif /* RINGWALL_MODULE_FILE_H */
+#endif /* IOGUARD_MODULE_FILE_H */
 ```
 
 Rules:
-- Include guard: `RINGWALL_MODULE_FILE_H` (e.g., `RINGWALL_CORE_SESSION_H`)
+- Include guard: `IOGUARD_MODULE_FILE_H` (e.g., `IOGUARD_CORE_SESSION_H`)
 - NO `#pragma once` — use traditional include guards
 - Headers contain: typedefs, enums, constexpr constants, function declarations, `_Static_assert`
 - Headers do NOT contain: function bodies (except `static inline` cleanup helpers), global variables, `#define _GNU_SOURCE`
@@ -52,17 +52,17 @@ Rules:
 
 | Element | Convention | Example |
 |---------|-----------|---------|
-| Functions (public) | `rw_module_verb_noun` | `rw_session_create`, `rw_io_prep_recv` |
+| Functions (public) | `iog_module_verb_noun` | `iog_session_create`, `iog_io_prep_recv` |
 | Functions (TLS layer) | `tls_noun_verb` | `tls_context_new`, `tls_session_free` |
 | Functions (static) | `verb_noun` (no prefix) | `nop_complete_cb`, `timeout_cb` |
-| Types (struct/enum) | `rw_module_name_t` | `rw_session_t`, `rw_io_ctx_t` |
-| Enum values | `RW_MODULE_VALUE` | `RW_IPC_MSG_AUTH_REQUEST` |
-| Constants (constexpr) | `RW_MODULE_NAME` | `RW_SESSION_COOKIE_SIZE` |
-| Macros | `RW_MODULE_NAME` | `RW_HTTP_MAX_HEADERS` |
+| Types (struct/enum) | `iog_module_name_t` | `iog_session_t`, `iog_io_ctx_t` |
+| Enum values | `IOG_MODULE_VALUE` | `IOG_IPC_MSG_AUTH_REQUEST` |
+| Constants (constexpr) | `IOG_MODULE_NAME` | `IOG_SESSION_COOKIE_SIZE` |
+| Macros | `IOG_MODULE_NAME` | `IOG_HTTP_MAX_HEADERS` |
 | Variables (local) | `snake_case` | `timeout_ms`, `queue_depth` |
 | Variables (struct members) | `snake_case` | `listen_port`, `cert_file` |
 | Variables (global static) | `g_name` | `g_initialized`, `g_init_count` |
-| Callback types | `rw_module_cb` or `_func_t` | `rw_io_cb`, `tls_push_func_t` |
+| Callback types | `iog_module_cb` or `_func_t` | `iog_io_cb`, `tls_push_func_t` |
 
 ---
 
@@ -80,16 +80,16 @@ Rules:
  * Validate session cookie with constant-time comparison
  *
  * @param store  Session store to search
- * @param cookie Cookie bytes (must be RW_SESSION_COOKIE_SIZE)
+ * @param cookie Cookie bytes (must be IOG_SESSION_COOKIE_SIZE)
  * @param len    Cookie length
  * @param out    Output session pointer (valid until delete/cleanup)
  * @return 0 on success, -ENOENT if not found, -ETIMEDOUT if expired
  *
  * Note: Uses wolfSSL_ConstantCompare — safe against timing attacks.
  */
-[[nodiscard]] int rw_session_validate(rw_session_store_t *store,
+[[nodiscard]] int iog_session_validate(iog_session_store_t *store,
                                        const uint8_t *cookie, size_t len,
-                                       rw_session_t **out);
+                                       iog_session_t **out);
 ```
 
 Rules:
@@ -128,24 +128,24 @@ io_uring_prep_timeout(sqe, &td->ts, 0, 0);  /* prepare timeout */
 | `ssize_t` | bytes count (>= 0) | negative errno |
 | `void *` | valid pointer | `nullptr` |
 | `struct *` | valid pointer | `nullptr` |
-| Custom enum | `RW_*_SUCCESS = 0` | negative enum values |
+| Custom enum | `IOG_*_SUCCESS = 0` | negative enum values |
 
 ### Error propagation pattern
 
 ```c
-[[nodiscard]] int rw_foo_create(rw_foo_t **out)
+[[nodiscard]] int iog_foo_create(iog_foo_t **out)
 {
-    rw_foo_t *foo = calloc(1, sizeof(*foo));
+    iog_foo_t *foo = calloc(1, sizeof(*foo));
     if (foo == nullptr) {
         return -ENOMEM;
     }
 
-    int ret = rw_bar_init(&foo->bar);
+    int ret = iog_bar_init(&foo->bar);
     if (ret < 0) {
         goto cleanup;
     }
 
-    ret = rw_baz_init(&foo->baz);
+    ret = iog_baz_init(&foo->baz);
     if (ret < 0) {
         goto cleanup;
     }
@@ -154,7 +154,7 @@ io_uring_prep_timeout(sqe, &td->ts, 0, 0);  /* prepare timeout */
     return 0;
 
 cleanup:
-    rw_foo_destroy(foo);
+    iog_foo_destroy(foo);
     return ret;
 }
 ```
@@ -173,17 +173,17 @@ Rules:
 
 ```c
 /* CORRECT: sizeof(*ptr) — type-safe, survives refactoring */
-rw_foo_t *foo = calloc(1, sizeof(*foo));
+iog_foo_t *foo = calloc(1, sizeof(*foo));
 
 /* WRONG: sizeof(type) — can diverge from actual variable type */
-rw_foo_t *foo = calloc(1, sizeof(rw_foo_t));
+iog_foo_t *foo = calloc(1, sizeof(iog_foo_t));
 ```
 
 ### Free
 
 ```c
 /* All free functions MUST be null-safe */
-void rw_foo_destroy(rw_foo_t *foo)
+void iog_foo_destroy(iog_foo_t *foo)
 {
     if (foo == nullptr) {
         return;
@@ -197,7 +197,7 @@ void rw_foo_destroy(rw_foo_t *foo)
 
 ```c
 /* Passwords, cookies, keys — zero before free */
-explicit_bzero(session->cookie, RW_SESSION_COOKIE_SIZE);
+explicit_bzero(session->cookie, IOG_SESSION_COOKIE_SIZE);
 explicit_bzero(password_buf, password_len);
 free(session);
 ```
@@ -238,7 +238,7 @@ struct msghdr msg = {0};
 | `[[maybe_unused]]` | Callback params | `[[maybe_unused]] void *ctx` |
 | `_Atomic` | Lock-free counters | `_Atomic uint64_t bytes_rx;` |
 | `<stdckdint.h>` | Overflow-safe arithmetic | `if (ckd_add(&total, a, b)) ...` |
-| Empty initializer `{}` | Zero-init structs | `rw_foo_t foo = {};` |
+| Empty initializer `{}` | Zero-init structs | `iog_foo_t foo = {};` |
 | `unreachable()` | Exhaustive switch default | `default: unreachable();` |
 
 ### Avoid
@@ -258,9 +258,9 @@ struct msghdr msg = {0};
 
 ```c
 /* Return type on same line, parameters aligned */
-[[nodiscard]] int rw_session_validate(rw_session_store_t *store,
+[[nodiscard]] int iog_session_validate(iog_session_store_t *store,
                                        const uint8_t *cookie, size_t len,
-                                       rw_session_t **out);
+                                       iog_session_t **out);
 
 /* Short signatures on one line */
 [[nodiscard]] int rw_mem_init(void);
@@ -298,7 +298,7 @@ void tearDown(void) {}
 void test_module_action_expected_result(void)
 {
     /* Arrange */
-    rw_foo_t *foo = rw_foo_create();
+    iog_foo_t *foo = iog_foo_create();
     TEST_ASSERT_NOT_NULL(foo);
 
     /* Act */
@@ -308,7 +308,7 @@ void test_module_action_expected_result(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Cleanup */
-    rw_foo_destroy(foo);
+    iog_foo_destroy(foo);
 }
 
 int main(void)
@@ -380,7 +380,7 @@ int ret = rw_session_create(store, user, group, 300, &session);
 if (ret < 0) { return ret; }
 
 /* WRONG: sizeof(type) */
-malloc(sizeof(rw_session_t));
+malloc(sizeof(iog_session_t));
 
 /* CORRECT: sizeof(*ptr) */
 malloc(sizeof(*session));

@@ -235,11 +235,11 @@ void test_main_signal_loop_sigterm_exits(void);      /* send SIGTERM, loop retur
 #include <sys/socket.h>
 #include <unistd.h>
 
-constexpr char RW_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
+constexpr char IOG_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
 
 int rw_main_parse_args(int argc, char *argv[], const char **config_path)
 {
-    *config_path = RW_DEFAULT_CONFIG_PATH;
+    *config_path = IOG_DEFAULT_CONFIG_PATH;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
             *config_path = argv[++i];
