@@ -448,6 +448,15 @@ if(BUILD_TESTING)
 
         rw_add_test(test_worker tests/unit/test_worker.c rw_worker rw_cstp rw_dpd)
 
+        # Sprint 6 — Worker event loop
+        add_library(rw_worker_loop STATIC src/core/worker_loop.c)
+        target_include_directories(rw_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_worker_loop PUBLIC _GNU_SOURCE)
+        target_link_libraries(rw_worker_loop PUBLIC rw_worker rw_io rw_fdpass rw_cstp rw_dpd)
+
+        rw_add_test(test_worker_loop tests/unit/test_worker_loop.c
+            rw_worker_loop rw_io rw_fdpass rw_cstp rw_dpd rw_worker)
+
         # Sprint 3 — Data path integration test
         rw_add_test(test_data_path tests/integration/test_data_path.c rw_cstp rw_dpd rw_worker rw_io)
 
