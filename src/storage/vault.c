@@ -1,6 +1,7 @@
 #include "storage/vault.h"
 
 #include <errno.h>
+#include <stdckdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,7 +129,9 @@ int rw_vault_encrypt(rw_vault_t *vault,
 	    out == nullptr || out_len == nullptr)
 		return -EINVAL;
 
-	size_t needed = plain_len + RW_VAULT_OVERHEAD;
+	size_t needed;
+	if (ckd_add(&needed, plain_len, RW_VAULT_OVERHEAD))
+		return -EOVERFLOW;
 	if (out_size < needed)
 		return -ENOSPC;
 
@@ -148,15 +151,15 @@ int rw_vault_encrypt(rw_vault_t *vault,
 		return -EIO;
 
 	ret = wc_AesGcmSetKey(&aes, vault->key, RW_VAULT_KEY_SIZE);
-	if (ret != 0) {
-		wc_AesFree(&aes);
-		return -EIO;
-	}
+	if (ret != 0)
+		goto encrypt_cleanup;
 
 	ret = wc_AesGcmEncrypt(&aes, ct, plaintext, (word32)plain_len,
 	                        iv, RW_VAULT_IV_SIZE,
 	                        tag, RW_VAULT_TAG_SIZE,
 	                        nullptr, 0);
+
+encrypt_cleanup:
 	wc_AesFree(&aes);
 
 	if (ret != 0)
@@ -196,19 +199,21 @@ int rw_vault_decrypt(rw_vault_t *vault,
 		return -EIO;
 
 	ret = wc_AesGcmSetKey(&aes, vault->key, RW_VAULT_KEY_SIZE);
-	if (ret != 0) {
-		wc_AesFree(&aes);
-		return -EIO;
-	}
+	if (ret != 0)
+		goto decrypt_cleanup;
 
 	ret = wc_AesGcmDecrypt(&aes, out, ct, (word32)plain_len,
 	                        iv, RW_VAULT_IV_SIZE,
 	                        tag, RW_VAULT_TAG_SIZE,
 	                        nullptr, 0);
+
+decrypt_cleanup:
 	wc_AesFree(&aes);
 
-	if (ret != 0)
+	if (ret != 0) {
+		explicit_bzero(out, plain_len); /* never expose partial plaintext */
 		return -EACCES;
+	}
 
 	*out_len = plain_len;
 	return 0;
