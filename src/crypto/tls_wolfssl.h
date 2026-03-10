@@ -46,9 +46,13 @@
  * - --enable-quic          (QUIC protocol support)
  */
 
-#include <wolfssl/error-ssl.h>
+// clang-format off
+/* options.h MUST come first before any other wolfSSL header */
 #include <wolfssl/options.h>
+#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/error-ssl.h>
 #include <wolfssl/ssl.h>
+// clang-format on
 #include <stdatomic.h>
 #include "tls_abstract.h"
 

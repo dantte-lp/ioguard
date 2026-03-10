@@ -68,7 +68,10 @@ void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req)
         explicit_bzero((void *)req->password, strlen(req->password));
         free((void *)req->password);
     }
-    free((void *)req->otp);
+    if (req->otp != nullptr) {
+        explicit_bzero((void *)req->otp, strlen(req->otp));
+        free((void *)req->otp);
+    }
     free((void *)req->cookie);
     memset(req, 0, sizeof(*req));
 }
@@ -148,7 +151,10 @@ void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp)
         free((void *)resp->routes[i]);
     }
     free((void *)resp->routes);
-    free((void *)resp->session_cookie);
+    if (resp->session_cookie != nullptr) {
+        explicit_bzero((void *)resp->session_cookie, resp->session_cookie_len);
+        free((void *)resp->session_cookie);
+    }
     memset(resp, 0, sizeof(*resp));
 }
 

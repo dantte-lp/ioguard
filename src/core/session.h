@@ -32,7 +32,8 @@ void rw_session_store_destroy(rw_session_store_t *store);
 [[nodiscard]] int rw_session_validate(rw_session_store_t *store, const uint8_t *cookie,
                                       size_t cookie_len, rw_session_t **out);
 
-int rw_session_delete(rw_session_store_t *store, const uint8_t *cookie, size_t cookie_len);
+[[nodiscard]] int rw_session_delete(rw_session_store_t *store, const uint8_t *cookie,
+                                    size_t cookie_len);
 
 uint32_t rw_session_cleanup_expired(rw_session_store_t *store);
 

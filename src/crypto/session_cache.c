@@ -123,7 +123,11 @@ static inline bool session_id_equal(const uint8_t *id1, size_t len1, const uint8
     if (len1 != len2) {
         return false;
     }
-    return memcmp(id1, id2, len1) == 0;
+    volatile uint8_t diff = 0;
+    for (size_t i = 0; i < len1; i++) {
+        diff |= id1[i] ^ id2[i];
+    }
+    return diff == 0;
 }
 
 /* ============================================================================

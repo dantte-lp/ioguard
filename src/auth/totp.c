@@ -1,6 +1,7 @@
 #include "auth/totp.h"
 
 #include <errno.h>
+#include <stdckdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -47,7 +48,10 @@ ssize_t rw_base32_decode(const char *encoded, uint8_t *out, size_t out_size)
 
     /* Calculate decoded size: every 8 base32 chars produce 5 bytes.
      * For partial groups: bits = len * 5, bytes = bits / 8 */
-    size_t total_bits = len * 5;
+    size_t total_bits;
+    if (ckd_mul(&total_bits, len, 5)) {
+        return -EOVERFLOW;
+    }
     size_t decoded_len = total_bits / 8;
 
     if (decoded_len > out_size) {
@@ -183,7 +187,11 @@ static ssize_t base32_encode(const uint8_t *data, size_t data_len, char *out, si
         return -EINVAL;
     }
 
-    size_t needed = ((data_len * 8 + 4) / 5) + 1;
+    size_t total_bits;
+    if (ckd_mul(&total_bits, data_len, 8)) {
+        return -EOVERFLOW;
+    }
+    size_t needed = (total_bits + 4) / 5 + 1;
     if (needed > out_size) {
         return -ENOSPC;
     }
@@ -246,12 +254,15 @@ ssize_t rw_totp_build_uri(const uint8_t *secret, size_t secret_len, const char *
     char b32[RW_TOTP_SECRET_B32_MAX];
     ssize_t b32_len = base32_encode(secret, secret_len, b32, sizeof(b32));
     if (b32_len < 0) {
+        explicit_bzero(b32, sizeof(b32));
         return b32_len;
     }
 
     int written = snprintf(uri_out, uri_size,
                            "otpauth://totp/%s:%s?secret=%s&issuer=%s&digits=6&period=30", issuer,
                            account, b32, issuer);
+
+    explicit_bzero(b32, sizeof(b32));
 
     if (written < 0) {
         return -EIO;
