@@ -1,7 +1,7 @@
 FROM oraclelinux:10
 
-LABEL maintainer="ringwall development team"
-LABEL description="Development environment for ringwall with wolfSSL and modern C libraries"
+LABEL maintainer="ioguard development team"
+LABEL description="Development environment for ioguard with wolfSSL and modern C libraries"
 
 # Build arguments for tool versions
 ARG CMAKE_VERSION=4.2.3

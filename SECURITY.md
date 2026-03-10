@@ -2,10 +2,10 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in ringwall, please report it
+If you discover a security vulnerability in ioguard, please report it
 responsibly. **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please use [GitHub Security Advisories](https://github.com/dantte-lp/ringwall/security/advisories/new)
+Instead, please use [GitHub Security Advisories](https://github.com/dantte-lp/ioguard/security/advisories/new)
 to report the vulnerability privately.
 
 When reporting, please include:
@@ -17,7 +17,7 @@ When reporting, please include:
 
 ## Scope
 
-ringwall is a VPN server that processes untrusted network input. Security-relevant
+ioguard is a VPN server that processes untrusted network input. Security-relevant
 areas include:
 
 - **CSTP/DTLS packet parsing** (`src/network/cstp.c`, `src/network/dtls.c`):

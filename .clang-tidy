@@ -1,4 +1,4 @@
-# clang-tidy configuration for ringwall
+# clang-tidy configuration for ioguard
 # Security-critical static analysis for C23 VPN server code
 # Dual-compiler strategy: clang-tidy (primary) + GCC -fanalyzer (validation)
 

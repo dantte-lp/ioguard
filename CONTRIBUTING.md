@@ -1,4 +1,4 @@
-# Contributing to ringwall
+# Contributing to ioguard
 
 Thank you for your interest in contributing to ringwall. This document explains
 the process for contributing changes and the standards we follow.
@@ -94,5 +94,5 @@ See `.claude/skills/coding-standards/SKILL.md` for the full reference.
 
 ## License
 
-By contributing to ringwall, you agree that your contributions will be licensed
+By contributing to ioguard, you agree that your contributions will be licensed
 under the [GNU General Public License v3.0](LICENSE).

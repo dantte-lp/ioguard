@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2025 ringwall Contributors
+ * Copyright (C) 2025 ioguard Contributors
  *
  * This file is part of ringwall.
  *
- * ringwall is free software: you can redistribute it and/or modify it
+ * ioguard is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
  *
- * ringwall is distributed in the hope that it will be useful, but
+ * ioguard is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.

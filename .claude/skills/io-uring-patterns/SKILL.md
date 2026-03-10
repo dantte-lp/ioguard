@@ -1,9 +1,9 @@
 ---
 name: io-uring-patterns
-description: Use when writing io_uring code in ringwall — SQE/CQE patterns, provided buffers, multishot ops, error handling, send serialization, fd lifecycle, backpressure, memory domains, anti-patterns. MANDATORY for all src/io/ and src/network/ code.
+description: Use when writing io_uring code in ioguard — SQE/CQE patterns, provided buffers, multishot ops, error handling, send serialization, fd lifecycle, backpressure, memory domains, anti-patterns. MANDATORY for all src/io/ and src/network/ code.
 ---
 
-# io_uring Development Patterns for ringwall
+# io_uring Development Patterns for ioguard
 
 ## Core Rule
 

@@ -7,7 +7,7 @@ description: Use when implementing storage operations — libmdbx for sessions (
 
 ## Architecture Overview
 
-Ringwall uses a hybrid storage model:
+Ioguard uses a hybrid storage model:
 
 - **libmdbx** — VPN session store (hot path). Nanosecond read latency, memory-mapped,
   zero-copy reads within a transaction. Keyed by 32-byte session ID.

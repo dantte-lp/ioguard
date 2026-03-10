@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
     const char *config_path;
     int rc = rw_main_parse_args(argc, argv, &config_path);
     if (rc == 1) { /* --help */
-        fprintf(stdout, "Usage: ringwall [--config path]\n");
+        fprintf(stdout, "Usage: ioguard [--config path]\n");
         return EXIT_SUCCESS;
     }
 
@@ -1153,7 +1153,7 @@ ctest --preset clang-debug -N | tail -1
 
 ```bash
 podman run --rm --security-opt seccomp=unconfined \
-  -v /opt/projects/repositories/ringwall:/workspace:Z \
+  -v /opt/projects/repositories/ioguard:/workspace:Z \
   localhost/ringwall-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
 ```
 

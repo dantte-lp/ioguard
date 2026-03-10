@@ -1,4 +1,4 @@
-name: ringwall CI
+name: ioguard CI
 
 on:
   push:

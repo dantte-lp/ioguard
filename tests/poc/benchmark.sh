@@ -2,7 +2,7 @@
 #
 # TLS Performance Benchmarking Script
 #
-# Copyright (C) 2025 ringwall Contributors
+# Copyright (C) 2025 ioguard Contributors
 #
 # Purpose: Automated benchmarking of GnuTLS vs wolfSSL performance
 

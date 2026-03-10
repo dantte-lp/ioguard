@@ -1,7 +1,7 @@
 FROM oraclelinux:10
 
-LABEL maintainer="ringwall development team"
-LABEL description="Build environment for release builds of ringwall"
+LABEL maintainer="ioguard development team"
+LABEL description="Build environment for release builds of ioguard"
 
 # Install build tools
 RUN dnf install -y \

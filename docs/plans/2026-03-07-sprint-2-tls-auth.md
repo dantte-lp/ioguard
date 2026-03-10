@@ -84,7 +84,7 @@ git commit -m "build: wire existing crypto module (wolfSSL, GnuTLS, priority par
 
 **Context:**
 
-ringwall uses llhttp to parse HTTP requests from Cisco/OpenConnect clients. Two critical request types:
+ioguard uses llhttp to parse HTTP requests from Cisco/OpenConnect clients. Two critical request types:
 1. `POST /auth` — authentication (XML body with credentials)
 2. `CONNECT /CSCOSSLC/tunnel` — tunnel establishment (returns `HPE_PAUSED_UPGRADE`)
 
@@ -482,7 +482,7 @@ PAM auth runs in sec-mod process (blocking calls are OK — sec-mod is dedicated
 #include <stdbool.h>
 #include <stddef.h>
 
-#define RW_PAM_DEFAULT_SERVICE "ringwall"
+#define RW_PAM_DEFAULT_SERVICE "ioguard"
 
 typedef enum {
     RW_AUTH_SUCCESS = 0,
@@ -509,7 +509,7 @@ typedef struct {
 
 Note: Real PAM tests require PAM configuration. Tests should:
 1. `test_pam_init` — init with service name, verify stored
-2. `test_pam_init_default` — init with NULL uses "ringwall"
+2. `test_pam_init_default` — init with NULL uses "ioguard"
 3. `test_pam_authenticate_invalid_user` — authenticate nonexistent user, returns FAILURE
 4. `test_pam_password_zeroing` — verify password buffer is zeroed after auth call (pass a mutable buffer, check it's zeroed after)
 

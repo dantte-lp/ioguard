@@ -117,7 +117,7 @@ pkg_check_modules(PROTOBUF_C REQUIRED libprotobuf-c>=1.5.0)
 
 Add library targets:
 ```cmake
-# ringwall core libraries
+# ioguard core libraries
 add_library(rw_io STATIC src/io/uring.c)
 target_link_libraries(rw_io PUBLIC ${LIBURING_LIBRARIES})
 target_include_directories(rw_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})

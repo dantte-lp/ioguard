@@ -35,7 +35,7 @@ body:
     id: area
     attributes:
       label: Area
-      description: Which part of ringwall does this affect?
+      description: Which part of ioguard does this affect?
       options:
         - Core VPN (CSTP/DTLS/TUN)
         - Authentication (PAM/RADIUS/LDAP)

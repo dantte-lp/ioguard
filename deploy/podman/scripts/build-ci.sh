@@ -63,7 +63,7 @@ buildah config \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
     --label "org.opencontainers.image.title=ringwall-ci" \
-    --label "org.opencontainers.image.description=CI/CD environment for ringwall" \
+    --label "org.opencontainers.image.description=CI/CD environment for ioguard" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \
     "$container"
@@ -83,12 +83,12 @@ buildah run "$container" -- bash -c "
 #!/bin/bash
 set -euo pipefail
 
-# CI/CD runner for ringwall
+# CI/CD runner for ioguard
 WORKSPACE=\${WORKSPACE:-/workspace}
 CI_REPORTS=\${CI_REPORTS:-/workspace/ci-reports}
 
 echo '================================================'
-echo 'ringwall CI/CD Runner'
+echo 'ioguard CI/CD Runner'
 echo '================================================'
 
 mkdir -p \$CI_REPORTS
@@ -244,7 +244,7 @@ log_info "  quick-validate  - Fast validation for quick feedback"
 log_info "  run-lint        - Code quality and linting checks"
 log_info ""
 log_info "To run CI pipeline:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ioguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_info "To run quick validation:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG quick-validate"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ioguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG quick-validate"

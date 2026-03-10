@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     const char *config_path;
     int rc = rw_main_parse_args(argc, argv, &config_path);
     if (rc == 1) {
-        fprintf(stdout, "Usage: ringwall [--config path]\n");
+        fprintf(stdout, "Usage: ioguard [--config path]\n");
         return EXIT_SUCCESS;
     }
 

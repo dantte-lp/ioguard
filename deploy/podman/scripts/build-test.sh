@@ -3,7 +3,7 @@ set -euo pipefail
 
 # build-test.sh - Test Container Build Script
 # Creates a runtime testing environment with test frameworks and coverage tools
-# for ringwall
+# for ioguard
 
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,7 +63,7 @@ buildah config \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
     --label "org.opencontainers.image.title=ringwall-test" \
-    --label "org.opencontainers.image.description=Test environment for ringwall" \
+    --label "org.opencontainers.image.description=Test environment for ioguard" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \
     "$container"
@@ -124,13 +124,13 @@ buildah run "$container" -- bash -c "
 #!/bin/bash
 set -euo pipefail
 
-# Test runner for ringwall
+# Test runner for ioguard
 WORKSPACE=\${WORKSPACE:-/workspace}
 TEST_RESULTS=\${TEST_RESULTS:-\$WORKSPACE/test-results}
 COVERAGE_REPORTS=\${COVERAGE_REPORTS:-\$WORKSPACE/coverage-reports}
 
 echo '================================================'
-echo 'ringwall Test Runner'
+echo 'ioguard Test Runner'
 echo '================================================'
 
 # Run meson tests
@@ -173,11 +173,11 @@ buildah run "$container" -- bash -c "
 #!/bin/bash
 set -euo pipefail
 
-# Benchmark runner for ringwall
+# Benchmark runner for ioguard
 WORKSPACE=\${WORKSPACE:-/workspace}
 
 echo '================================================'
-echo 'ringwall Benchmark Runner'
+echo 'ioguard Benchmark Runner'
 echo '================================================'
 
 if [ -d \$WORKSPACE/tests/bench ]; then
@@ -235,7 +235,7 @@ log_info "Test container build completed successfully!"
 log_info "Image: $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_info "To run tests:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ioguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_info "To run interactively:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z $IMAGE_NAME:$IMAGE_TAG /bin/bash"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ioguard:/workspace:Z $IMAGE_NAME:$IMAGE_TAG /bin/bash"

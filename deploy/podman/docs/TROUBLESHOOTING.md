@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for the ringwall Podman container infrastructure.
+Common issues and solutions for the ioguard Podman container infrastructure.
 
 ## Table of Contents
 
@@ -32,7 +32,7 @@ make info
 podman ps -a
 
 # Check images
-podman images | grep ringwall
+podman images | grep ioguard
 
 # Check logs
 podman logs <container-name>
@@ -253,18 +253,18 @@ podman inspect <container-name> | jq '.[0].Mounts'
 
 2. Verify SELinux context:
 ```bash
-ls -Zd /opt/projects/repositories/ringwall
+ls -Zd /opt/projects/repositories/ioguard
 ```
 
 3. Fix ownership:
 ```bash
 # On host
-sudo chown -R $USER:$USER /opt/projects/repositories/ringwall
+sudo chown -R $USER:$USER /opt/projects/repositories/ioguard
 ```
 
 4. Relabel for SELinux:
 ```bash
-chcon -R -t container_file_t /opt/projects/repositories/ringwall
+chcon -R -t container_file_t /opt/projects/repositories/ioguard
 ```
 
 5. Check container user:
@@ -333,7 +333,7 @@ volumes:
 
 4. Relabel directory:
 ```bash
-chcon -R -t container_file_t /opt/projects/repositories/ringwall
+chcon -R -t container_file_t /opt/projects/repositories/ioguard
 ```
 
 5. Generate policy (last resort):
@@ -370,7 +370,7 @@ sudo dnf reinstall container-selinux
 
 4. Reset file contexts:
 ```bash
-sudo restorecon -R /opt/projects/repositories/ringwall
+sudo restorecon -R /opt/projects/repositories/ioguard
 ```
 
 ## Network Issues

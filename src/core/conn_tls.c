@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <string.h>
 
-/* Map tls_abstract error codes to negative errno for the rest of ringwall */
+/* Map tls_abstract error codes to negative errno for the rest of ioguard */
 static int tls_err_to_errno(int tls_err)
 {
     switch (tls_err) {

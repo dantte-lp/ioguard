@@ -3,7 +3,7 @@ set -euo pipefail
 
 # build-build.sh - Build Container Build Script
 # Creates a release-optimized build environment for producing production artifacts
-# for ringwall
+# for ioguard
 
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -67,7 +67,7 @@ buildah config \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
     --label "org.opencontainers.image.title=ringwall-build" \
-    --label "org.opencontainers.image.description=Build environment for ringwall release artifacts" \
+    --label "org.opencontainers.image.description=Build environment for ioguard release artifacts" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \
     "$container"
@@ -333,12 +333,12 @@ buildah run "$container" -- bash -c "
 #!/bin/bash
 set -euo pipefail
 
-# Release build script for ringwall
+# Release build script for ioguard
 WORKSPACE=\${WORKSPACE:-/workspace}
 ARTIFACTS=\${ARTIFACTS:-/artifacts}
 
 echo '================================================'
-echo 'ringwall Release Build'
+echo 'ioguard Release Build'
 echo '================================================'
 
 cd \$WORKSPACE
@@ -408,4 +408,4 @@ log_info "Build container build completed successfully!"
 log_info "Image: $IMAGE_NAME:$IMAGE_TAG"
 log_info ""
 log_info "To build release artifacts:"
-log_info "  podman run -it --rm -v /opt/projects/repositories/ringwall:/workspace:Z -v ./artifacts:/artifacts:Z $IMAGE_NAME:$IMAGE_TAG"
+log_info "  podman run -it --rm -v /opt/projects/repositories/ioguard:/workspace:Z -v ./artifacts:/artifacts:Z $IMAGE_NAME:$IMAGE_TAG"

@@ -1,15 +1,15 @@
 ---
 name: rfc-reference
-description: Use when implementing TLS/DTLS features, cipher suites, extensions, or security policies. Provides RFC numbers, locations, and key sections for ringwall protocol implementation.
+description: Use when implementing TLS/DTLS features, cipher suites, extensions, or security policies. Provides RFC numbers, locations, and key sections for ioguard protocol implementation.
 ---
 
-# RFC Reference for ringwall
+# RFC Reference for ioguard
 
 Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not exhaustive.
 
 ## 1. TLS / DTLS
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 8446 | TLS 1.3 | §4 Handshake, §5 Record, §7 Crypto | Primary protocol, wolfSSL native API |
 | 9147 | DTLS 1.3 | §3 Overview, §4 Record, §5 Handshake | UDP tunnel transport, anti-replay |
@@ -25,7 +25,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 2. TLS Extensions
 
-| RFC | Extension | ringwall Relevance |
+| RFC | Extension | ioguard Relevance |
 |-----|-----------|-------------------|
 | 7366 | Encrypt-then-MAC | Enable for TLS 1.2 connections |
 | 7905 | ChaCha20-Poly1305 | Preferred cipher for mobile/ARM clients |
@@ -44,7 +44,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 4. Authentication
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 2865 | RADIUS | §3 Packet, §5 Attributes | `rw_auth_radius_*()` via radcli |
 | 2866 | RADIUS Accounting | §4 Packet types | Session accounting (Start/Stop/Interim) |
@@ -62,7 +62,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 5. Certificates & PKI
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 5280 | X.509 PKI | §4 Cert format, §6 Validation | `rw_tls_verify_peer()`, CRL checks |
 | 6960 | OCSP | §2 Protocol, §4 Response | Real-time certificate revocation |
@@ -74,7 +74,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 6. Crypto Primitives
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 5116 | AEAD Interface | §2 Interface | `rw_crypto_aead_*()` abstraction |
 | 8439 | ChaCha20-Poly1305 | §2 Algorithm | CSTP/DTLS cipher (wolfCrypt) |
@@ -88,7 +88,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 7. HTTP (Control Channel)
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 9110 | HTTP Semantics | §8 Methods, §15 Status | REST API + VPN control (llhttp) |
 | 9112 | HTTP/1.1 | §6 Message body, §9 Connection | CSTP tunnel upgrade base |
@@ -98,7 +98,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 8. DNS
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 1035 | DNS Implementation | §3 Names, §4 Messages | `rw_dns_*()` via c-ares |
 | 7858 | DNS over TLS (DoT) | §3 Connection | Encrypted upstream resolution |
@@ -107,7 +107,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 9. IP & Transport
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 791 | IPv4 | §3 Specification | TUN device, IP header parsing |
 | 8200 | IPv6 | §3 Format, §8 Upper-layer | Dual-stack VPN support |
@@ -119,7 +119,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 ## 10. Compression
 
-| RFC | Title | ringwall Relevance |
+| RFC | Title | ioguard Relevance |
 |-----|-------|-------------------|
 | 1951 | DEFLATE | Reference only (LZ4/LZS preferred for VPN) |
 | 1952 | gzip | HTTP response compression for REST API |
@@ -128,7 +128,7 @@ Note: LZ4 and LZS (Cisco) are the primary VPN data compression — no RFCs, see 
 
 ## 11. NAT Traversal
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 8489 | STUN | §6 Message structure | NAT type detection for DTLS |
 | 9443 | DTLS/QUIC Demux | §3 Demultiplexing | Port-sharing DTLS + future QUIC |
@@ -136,7 +136,7 @@ Note: LZ4 and LZS (Cisco) are the primary VPN data compression — no RFCs, see 
 
 ## 12. Security & Operations
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 2827 | BCP38 Ingress Filtering | §2 Method | `rw_nft_*()` — anti-spoofing rules |
 | 5424 | Syslog Protocol | §6 Message format | `rw_log_*()` via stumpless (RFC 5424) |
@@ -145,7 +145,7 @@ Note: LZ4 and LZS (Cisco) are the primary VPN data compression — no RFCs, see 
 
 ## 13. Data Formats
 
-| RFC | Title | Key Sections | ringwall Relevance |
+| RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
 | 8259 | JSON | §2 Grammar | REST API, wolfSentry config (yyjson) |
 | 4648 | Base64 | §4 Encoding | Cookie encoding, cert PEM data |
@@ -153,7 +153,7 @@ Note: LZ4 and LZS (Cisco) are the primary VPN data compression — no RFCs, see 
 
 ## 14. Post-Quantum (Future)
 
-| RFC/Draft | Title | ringwall Relevance |
+| RFC/Draft | Title | ioguard Relevance |
 |-----------|-------|-------------------|
 | draft-ietf-tls-ecdhe-mlkem | ML-KEM Hybrid Key Exchange | Future: PQ key exchange in TLS 1.3 |
 | 9180 | HPKE | Hybrid Public Key Encryption primitive |

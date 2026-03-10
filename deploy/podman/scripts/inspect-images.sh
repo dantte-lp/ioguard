@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# inspect-images.sh - Inspect all ringwall images using Skopeo
+# inspect-images.sh - Inspect all ioguard images using Skopeo
 # Provides detailed information about built images
 
 # Color output
@@ -29,7 +29,7 @@ IMAGES=(
     "localhost/ringwall-ci:latest"
 )
 
-log_section "Inspecting ringwall Container Images"
+log_section "Inspecting ioguard Container Images"
 
 for IMAGE in "${IMAGES[@]}"; do
     log_section "Image: $IMAGE"

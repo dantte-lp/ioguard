@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# backup-volumes.sh - Backup all named volumes for ringwall
+# backup-volumes.sh - Backup all named volumes for ioguard
 # Creates compressed archives of volume data for disaster recovery
 #
 # Usage:

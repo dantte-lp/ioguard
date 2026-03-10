@@ -1,13 +1,13 @@
 ---
 name: c23-standards
-description: Use when writing new C code or reviewing code for C23 compliance — proper usage of C23 features, cross-compiler compatibility (Clang 22 + GCC 15), ringwall coding conventions
+description: Use when writing new C code or reviewing code for C23 compliance — proper usage of C23 features, cross-compiler compatibility (Clang 22 + GCC 15), ioguard coding conventions
 ---
 
-# C23 Standards for ringwall
+# C23 Standards for ioguard
 
 ## Compiler Compatibility Matrix
 
-| Feature | Clang 22+ | GCC 15+ | Use in ringwall |
+| Feature | Clang 22+ | GCC 15+ | Use in ioguard |
 |---------|-----------|---------|------------------|
 | `[[nodiscard]]` | Yes | Yes | ALL error-returning functions |
 | `nullptr` | Yes | Yes | Replace all NULL |

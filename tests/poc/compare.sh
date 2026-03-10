@@ -2,7 +2,7 @@
 #
 # TLS Performance Comparison Script
 #
-# Copyright (C) 2025 ringwall Contributors
+# Copyright (C) 2025 ioguard Contributors
 #
 # Purpose: Compare GnuTLS vs wolfSSL benchmark results
 

@@ -1,4 +1,4 @@
-# ringwall Server Architecture Design
+# ioguard Server Architecture Design
 
 **Date**: 2026-03-07
 **Status**: Approved

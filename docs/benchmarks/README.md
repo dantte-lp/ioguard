@@ -1,8 +1,8 @@
-# Benchmarking Infrastructure - ringwall
+# Benchmarking Infrastructure - ioguard
 
 ## Overview
 
-This document describes the benchmarking infrastructure for measuring and comparing TLS performance between GnuTLS and wolfSSL backends in the ringwall project.
+This document describes the benchmarking infrastructure for measuring and comparing TLS performance between GnuTLS and wolfSSL backends in the ioguard project.
 
 ## Purpose
 
@@ -18,7 +18,7 @@ The benchmarking infrastructure serves several critical purposes:
 
 ### 1. benchmark.sh
 
-**Location**: `/opt/projects/repositories/ringwall/tests/poc/benchmark.sh`
+**Location**: `/opt/projects/repositories/ioguard/tests/poc/benchmark.sh`
 
 **Purpose**: Automated benchmark execution script
 
@@ -62,7 +62,7 @@ The benchmarking infrastructure serves several critical purposes:
 
 ### 2. compare.sh
 
-**Location**: `/opt/projects/repositories/ringwall/tests/poc/compare.sh`
+**Location**: `/opt/projects/repositories/ioguard/tests/poc/compare.sh`
 
 **Purpose**: Compare benchmark results between backends
 
@@ -127,7 +127,7 @@ GO/NO-GO Decision Criteria: Performance within ±10%
 
 ### 3. PoC Server
 
-**Location**: `/opt/projects/repositories/ringwall/poc-server-{gnutls,wolfssl}`
+**Location**: `/opt/projects/repositories/ioguard/poc-server-{gnutls,wolfssl}`
 
 **Purpose**: TLS echo server for benchmarking
 
@@ -142,7 +142,7 @@ GO/NO-GO Decision Criteria: Performance within ±10%
 
 ### 4. PoC Client
 
-**Location**: `/opt/projects/repositories/ringwall/poc-client-{gnutls,wolfssl}`
+**Location**: `/opt/projects/repositories/ioguard/poc-client-{gnutls,wolfssl}`
 
 **Purpose**: TLS client for benchmarking
 
@@ -258,7 +258,7 @@ This creates:
 - `poc-server-wolfssl` + `poc-client-wolfssl`
 
 2. **Ensure certificates exist**:
-The benchmark script automatically generates self-signed certificates if they don't exist. Located in `/opt/projects/repositories/ringwall/tests/certs/`.
+The benchmark script automatically generates self-signed certificates if they don't exist. Located in `/opt/projects/repositories/ioguard/tests/certs/`.
 
 ### Quick Start
 
@@ -295,7 +295,7 @@ cd tests/poc
 **Benchmark in container**:
 ```bash
 podman run --rm \
-  -v /opt/projects/repositories/ringwall:/workspace:Z \
+  -v /opt/projects/repositories/ioguard:/workspace:Z \
   -w /workspace \
   localhost/ringwall-dev:latest \
   bash -c "cd tests/poc && ./benchmark.sh"
@@ -440,17 +440,17 @@ Latency (1KB):
 
 ## References
 
-- **User Stories**: [US-008, US-009, US-010](/opt/projects/repositories/ringwall/docs/agile/USER_STORIES.md)
-- **PoC README**: [tests/poc/README.md](/opt/projects/repositories/ringwall/tests/poc/README.md)
-- **Sprint 1 Plan**: [docs/sprints/sprint-1/SPRINT_PLAN.md](/opt/projects/repositories/ringwall/docs/sprints/sprint-1/SPRINT_PLAN.md)
-- **TLS Abstraction**: [docs/architecture/TLS_ABSTRACTION.md](/opt/projects/repositories/ringwall/docs/architecture/TLS_ABSTRACTION.md)
+- **User Stories**: [US-008, US-009, US-010](/opt/projects/repositories/ioguard/docs/agile/USER_STORIES.md)
+- **PoC README**: [tests/poc/README.md](/opt/projects/repositories/ioguard/tests/poc/README.md)
+- **Sprint 1 Plan**: [docs/sprints/sprint-1/SPRINT_PLAN.md](/opt/projects/repositories/ioguard/docs/sprints/sprint-1/SPRINT_PLAN.md)
+- **TLS Abstraction**: [docs/architecture/TLS_ABSTRACTION.md](/opt/projects/repositories/ioguard/docs/architecture/TLS_ABSTRACTION.md)
 
 ## License
 
-Copyright (C) 2025 ringwall Contributors
+Copyright (C) 2025 ioguard Contributors
 
 This file is part of ringwall.
 
-ringwall is free software: you can redistribute it and/or modify it
+ioguard is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.

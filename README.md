@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">ringwall</h1>
+  <h1 align="center">ioguard</h1>
   <p align="center">Modern OpenConnect VPN server — wolfSSL, io_uring, C23</p>
 </p>
 
@@ -21,7 +21,7 @@ Clean-room implementation of the OpenConnect VPN protocol, built from scratch in
 ## Quick Start
 
 ```bash
-git clone https://github.com/dantte-lp/ringwall.git && cd ringwall
+git clone https://github.com/dantte-lp/ioguard.git && cd ioguard
 cmake --preset clang-debug
 cmake --build --preset clang-debug
 ctest --preset clang-debug
@@ -31,7 +31,7 @@ ctest --preset clang-debug
 
 ```mermaid
 graph TB
-    subgraph "ringwall"
+    subgraph "ioguard"
         MAIN["Main Process<br/>pidfd_spawn · signalfd"]
         SECMOD["sec-mod<br/>PAM · RADIUS · LDAP · TOTP"]
         WORKER["Worker ×N<br/>io_uring · wolfSSL"]

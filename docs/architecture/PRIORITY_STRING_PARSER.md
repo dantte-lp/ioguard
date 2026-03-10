@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document defines the architecture for parsing GnuTLS priority strings and translating them to wolfSSL cipher configuration. This is a critical compatibility component enabling ringwall to support legacy GnuTLS priority string configurations while using the wolfSSL backend.
+This document defines the architecture for parsing GnuTLS priority strings and translating them to wolfSSL cipher configuration. This is a critical compatibility component enabling ioguard to support legacy GnuTLS priority string configurations while using the wolfSSL backend.
 
 **Core Objective**: Maintain 100% backward compatibility with existing ocserv configurations using GnuTLS priority strings.
 

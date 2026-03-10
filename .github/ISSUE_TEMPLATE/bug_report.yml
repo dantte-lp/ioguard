@@ -1,12 +1,12 @@
 name: Bug Report
-description: Report a bug in ringwall
+description: Report a bug in ioguard
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
         Thank you for reporting a bug. Please fill out the form below.
-        For security vulnerabilities, use [Security Advisories](https://github.com/dantte-lp/ringwall/security/advisories/new) instead.
+        For security vulnerabilities, use [Security Advisories](https://github.com/dantte-lp/ioguard/security/advisories/new) instead.
 
   - type: textarea
     id: description
@@ -22,7 +22,7 @@ body:
       label: Steps to Reproduce
       description: Minimal steps to reproduce the behavior
       placeholder: |
-        1. Configure ringwall with '...'
+        1. Configure ioguard with '...'
         2. Start the server
         3. Connect with '...'
         4. See error

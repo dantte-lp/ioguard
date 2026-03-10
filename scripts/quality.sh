@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Full quality pipeline for ringwall
+# Full quality pipeline for ioguard
 # Run inside the dev container: cd /workspace && ./scripts/quality.sh
 # Or from host: podman run --rm --security-opt seccomp=unconfined \
-#   -v /opt/projects/repositories/ringwall:/workspace:Z \
+#   -v /opt/projects/repositories/ioguard:/workspace:Z \
 #   localhost/ringwall-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
 set -euo pipefail
 

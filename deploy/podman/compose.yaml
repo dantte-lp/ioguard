@@ -1,4 +1,4 @@
-# Podman Compose configuration for ringwall
+# Podman Compose configuration for ioguard
 # Production-grade multi-environment container setup
 #
 # Usage:

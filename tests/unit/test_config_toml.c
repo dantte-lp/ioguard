@@ -109,7 +109,7 @@ void test_config_totp_defaults(void)
     rw_config_t cfg;
     rw_config_set_defaults(&cfg);
 
-    TEST_ASSERT_EQUAL_STRING("ringwall", cfg.auth.totp_issuer);
+    TEST_ASSERT_EQUAL_STRING("ioguard", cfg.auth.totp_issuer);
     TEST_ASSERT_EQUAL_UINT32(6, cfg.auth.totp_digits);
     TEST_ASSERT_EQUAL_UINT32(1, cfg.auth.totp_window);
 

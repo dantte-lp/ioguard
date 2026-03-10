@@ -3,7 +3,7 @@ name: wolfsentry-idps
 description: Use when implementing firewall rules, rate limiting, connection tracking, DDoS mitigation, IP blocking, geographic filtering, or integrating wolfSentry IDPS into ringwall. Also use for per-user/per-group firewall and nftables integration.
 ---
 
-# wolfSentry IDPS Integration for ringwall
+# wolfSentry IDPS Integration for ioguard
 
 ## Context7 Reference
 Always fetch latest docs: library ID `/wolfssl/wolfsentry`
@@ -24,7 +24,7 @@ wolfSentry 1.6.3 — embedded IDPS/firewall engine from wolfSSL. Pure C, GPLv2, 
 - Transactional policy updates (atomic, no downtime)
 - Native wolfSSL TLS/DTLS integration
 
-## Architecture: wolfSentry in ringwall
+## Architecture: wolfSentry in ioguard
 
 ```
 Client → libuv → wolfSentry → wolfSSL → Worker → TUN → Kernel

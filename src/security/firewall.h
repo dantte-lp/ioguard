@@ -2,7 +2,7 @@
  * @file firewall.h
  * @brief nftables per-user firewall chains via libmnl + libnftnl.
  *
- * Creates and destroys per-session nftables chains in the "ringwall" table
+ * Creates and destroys per-session nftables chains in the "ioguard" table
  * to enforce source-IP filtering for VPN users.  Requires CAP_NET_ADMIN.
  */
 
@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 constexpr size_t RW_FW_CHAIN_NAME_MAX = 64;
-constexpr char RW_FW_TABLE_NAME[] = "ringwall";
+constexpr char RW_FW_TABLE_NAME[] = "ioguard";
 
 /** Batch buffer size for netlink messages (page-aligned). */
 constexpr size_t RW_FW_BATCH_BUF_SIZE = 16384;

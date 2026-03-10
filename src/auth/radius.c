@@ -169,20 +169,20 @@ int rw_radius_init(const void *config)
         goto radcli_err;
     }
 
-    if (rc_add_config(g_rh, "authserver", authserver, "ringwall", 0) != 0) {
+    if (rc_add_config(g_rh, "authserver", authserver, "ioguard", 0) != 0) {
         goto radcli_err;
     }
 
     /* Timeout in seconds (radcli uses seconds) */
     char timeout_str[16];
     snprintf(timeout_str, sizeof(timeout_str), "%u", g_cfg.timeout_ms / 1000);
-    if (rc_add_config(g_rh, "radius_timeout", timeout_str, "ringwall", 0) != 0) {
+    if (rc_add_config(g_rh, "radius_timeout", timeout_str, "ioguard", 0) != 0) {
         goto radcli_err;
     }
 
     char retries_str[16];
     snprintf(retries_str, sizeof(retries_str), "%u", g_cfg.retries);
-    if (rc_add_config(g_rh, "radius_retries", retries_str, "ringwall", 0) != 0) {
+    if (rc_add_config(g_rh, "radius_retries", retries_str, "ioguard", 0) != 0) {
         goto radcli_err;
     }
 

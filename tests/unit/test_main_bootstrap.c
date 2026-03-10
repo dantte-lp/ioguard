@@ -18,7 +18,7 @@ void tearDown(void)
 
 void test_main_parse_args_default_config(void)
 {
-    char *argv[] = {"ringwall"};
+    char *argv[] = {"ioguard"};
     const char *path = nullptr;
     int ret = rw_main_parse_args(1, argv, &path);
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -28,7 +28,7 @@ void test_main_parse_args_default_config(void)
 
 void test_main_parse_args_custom_config(void)
 {
-    char *argv[] = {"ringwall", "--config", "/tmp/test.toml"};
+    char *argv[] = {"ioguard", "--config", "/tmp/test.toml"};
     const char *path = nullptr;
     int ret = rw_main_parse_args(3, argv, &path);
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -37,7 +37,7 @@ void test_main_parse_args_custom_config(void)
 
 void test_main_parse_args_help_flag(void)
 {
-    char *argv[] = {"ringwall", "--help"};
+    char *argv[] = {"ioguard", "--help"};
     const char *path = nullptr;
     int ret = rw_main_parse_args(2, argv, &path);
     TEST_ASSERT_EQUAL_INT(1, ret);

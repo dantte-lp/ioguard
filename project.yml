@@ -1,9 +1,9 @@
-# Ceedling project configuration for ringwall
+# Ceedling project configuration for ioguard
 # Unity/CMock-based unit testing framework
 
 ---
 :project:
-  :name: ringwall
+  :name: ioguard
   :build_root: build/ceedling
   :use_exceptions: FALSE
   :use_test_preprocessor: TRUE

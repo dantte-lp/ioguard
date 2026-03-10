@@ -3,19 +3,19 @@ name: ocprotocol
 description: Use when implementing OpenConnect protocol features — DTLS/TCP tunneling, XML configuration exchange, cookie-based authentication, Cisco Secure Client compatibility, CSTP/DTLS headers, DPD timers, split DNS, NVM telemetry
 ---
 
-# OpenConnect Protocol for ringwall
+# OpenConnect Protocol for ioguard
 
 ## Full Documentation
 See `/opt/projects/repositories/ringwall-docs/docs/openconnect-protocol/` for complete specs.
 
 ## Protocol Overview
 
-ringwall implements OpenConnect VPN Protocol v1.2, compatible with Cisco Secure Client 5.x+.
+ioguard implements OpenConnect VPN Protocol v1.2, compatible with Cisco Secure Client 5.x+.
 
 ### Connection Flow
 
 ```
-Client                              Server (ringwall)
+Client                              Server (ioguard)
   |                                    |
   |--- TLS Handshake (port 443) ------>|
   |<-- TLS Handshake Complete ---------|
@@ -117,7 +117,7 @@ Server can challenge with secondary password (TOTP code):
 </config-auth>
 ```
 
-### Authentication Methods (ringwall)
+### Authentication Methods (ioguard)
 
 | Method | Library | Config |
 |--------|---------|--------|

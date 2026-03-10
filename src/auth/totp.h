@@ -69,7 +69,7 @@ constexpr size_t RW_TOTP_SECRET_B32_MAX = 64;
  *
  * @param secret     Raw secret bytes.
  * @param secret_len Length of the secret in bytes.
- * @param issuer     Issuer name (e.g., "ringwall").
+ * @param issuer     Issuer name (e.g., "ioguard").
  * @param account    Account identifier (e.g., username or email).
  * @param uri_out    Output buffer for the URI string.
  * @param uri_size   Size of the URI output buffer.

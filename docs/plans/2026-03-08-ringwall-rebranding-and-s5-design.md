@@ -1,4 +1,4 @@
-# Rebranding (ringwall -> ringwall) + S5 Storage & Security Design
+# Rebranding (ioguard -> ioguard) + S5 Storage & Security Design
 
 **Date**: 2026-03-08
 **Status**: Approved
@@ -8,7 +8,7 @@
 
 ## 1. Execution Order
 
-1. **Rebrand** — single atomic commit renaming ringwall -> ringwall across entire codebase
+1. **Rebrand** — single atomic commit renaming ioguard -> ioguard across entire codebase
 2. **S5** — Storage & Security Hardening (all new code uses `rw_*` prefix)
 
 ---
@@ -19,7 +19,7 @@
 
 | Old | New | Scope |
 |-----|-----|-------|
-| `ringwall` | `ringwall` | Binary, strings, paths, comments, filenames |
+| `ioguard` | `ioguard` | Binary, strings, paths, comments, filenames |
 | `rw_` | `rw_` | Function/variable prefixes |
 | `RW_` | `RW_` | Enum values, macros, constexpr |
 | `RINGWALL_` | `RINGWALL_` | Include guards |
@@ -30,7 +30,7 @@
 
 ### 2.2 Scope
 
-- ~55 source files (`.c`, `.h`) with ~572 occurrences of `rw_`/`ringwall`
+- ~55 source files (`.c`, `.h`) with ~572 occurrences of `rw_`/`ioguard`
 - ~32 test files with ~739 occurrences
 - CMakeLists.txt, CMakePresets.json
 - deploy/podman/ (Dockerfiles, scripts, Makefile)
@@ -39,18 +39,18 @@
 
 ### 2.3 Execution
 
-Single atomic commit: `rebrand: ringwall -> ringwall`
+Single atomic commit: `rebrand: ioguard -> ioguard`
 
 Approach:
 1. `find + sed` for pattern replacement across all files
 2. `git mv` for file/directory renames
 3. Verify build: `cmake --preset clang-debug && cmake --build --preset clang-debug`
 4. Verify tests: `ctest --preset clang-debug`
-5. Verify no remnants: `grep -r "ringwall\|RINGWALL\|rw_" --include="*.c" --include="*.h" src/ tests/`
+5. Verify no remnants: `grep -r "ioguard\|IOGUARD\|rw_" --include="*.c" --include="*.h" src/ tests/`
 
 ### 2.4 GitHub Operations (gh api graphql)
 
-- Rename repository: `dantte-lp/ringwall` -> `dantte-lp/ringwall`
+- Rename repository: `dantte-lp/ioguard` -> `dantte-lp/ioguard`
 - Update description, topics, homepage URL
 - Close issue #11 with completion comment
 
@@ -166,7 +166,7 @@ Add to Containerfile:
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| New name | ringwall | ring=io_uring, wall=security; no conflicts |
+| New name | ioguard | ring=io_uring, wall=security; no conflicts |
 | Function prefix | `rw_` | Avoids WireGuard `wg` conflict |
 | Rename strategy | Single atomic commit | Pre-release, no external users |
 | Rename timing | Before S5 | Avoid double-renaming new S5 code |
@@ -176,5 +176,5 @@ Add to Containerfile:
 
 ---
 
-**Author**: ringwall architecture team
+**Author**: ioguard architecture team
 **Next step**: Implementation plan (writing-plans skill)

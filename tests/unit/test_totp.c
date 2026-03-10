@@ -189,7 +189,7 @@ void test_totp_generate_secret_roundtrip(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     char uri[512];
-    ssize_t ulen = rw_totp_build_uri(secret, sizeof(secret), "ringwall", "alice", uri, sizeof(uri));
+    ssize_t ulen = rw_totp_build_uri(secret, sizeof(secret), "ioguard", "alice", uri, sizeof(uri));
     TEST_ASSERT_GREATER_THAN(0, (int)ulen);
     TEST_ASSERT_NOT_NULL(strstr(uri, "otpauth://totp/ringwall:alice"));
     TEST_ASSERT_NOT_NULL(strstr(uri, "digits=6"));
@@ -200,7 +200,7 @@ void test_totp_build_uri_buffer_too_small(void)
 {
     uint8_t secret[RW_TOTP_SECRET_SIZE] = {0x01};
     char uri[10];
-    ssize_t ret = rw_totp_build_uri(secret, sizeof(secret), "ringwall", "alice", uri, sizeof(uri));
+    ssize_t ret = rw_totp_build_uri(secret, sizeof(secret), "ioguard", "alice", uri, sizeof(uri));
     TEST_ASSERT_LESS_THAN_INT(0, (int)ret);
 }
 

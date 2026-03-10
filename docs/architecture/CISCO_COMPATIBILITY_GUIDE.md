@@ -3,7 +3,7 @@
 **Document Version**: 1.0
 **Last Updated**: 2025-10-29
 **Based on**: Reverse engineering analysis of Cisco Secure Client 5.1.2.42
-**Project**: ringwall v2.0.0
+**Project**: ioguard v2.0.0
 
 ---
 
@@ -1184,7 +1184,7 @@ CONNECT /tunnel        # Tunnel establishment
 
 ---
 
-**Document Maintainer**: ringwall protocol team
+**Document Maintainer**: ioguard protocol team
 **Review Schedule**: Bi-weekly during implementation
 **Next Review**: 2025-11-12
 **Status**: Active Development Guide
@@ -1891,7 +1891,7 @@ The **Network Visibility Module (NVM)** provides enterprise-grade network teleme
                          │ or DTLS (encrypted)
                          ↓
 ┌─────────────────────────────────────────────────────────┐
-│            ringwall (with NVM Collector)            │
+│            ioguard (with NVM Collector)            │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │  NVM Collector Module (src/nvm/)                   │ │
 │  │  - IPFIX protocol decoder                          │ │

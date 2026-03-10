@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# TLS Backend Benchmark Script - ringwall
+# TLS Backend Benchmark Script - ioguard
 #
-# Copyright (C) 2025 ringwall Contributors
+# Copyright (C) 2025 ioguard Contributors
 #
 # This script benchmarks the TLS abstraction layer with different backends
 # and collects comprehensive performance metrics for comparison.

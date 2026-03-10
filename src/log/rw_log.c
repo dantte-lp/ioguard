@@ -72,7 +72,7 @@ static enum stumpless_severity level_to_stumpless(rw_log_level_t level)
     logger->min_level = RW_LOG_DEBUG;
 
     logger->target =
-        stumpless_open_buffer_target("ringwall", logger->buffer, buffer_size);
+        stumpless_open_buffer_target("ioguard", logger->buffer, buffer_size);
     if (logger->target == nullptr) {
         free(logger->buffer);
         free(logger);

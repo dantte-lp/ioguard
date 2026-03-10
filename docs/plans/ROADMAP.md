@@ -145,9 +145,9 @@ All work is `[Unreleased]` until first tag.
 
 ## Cisco AnyConnect Compatibility
 
-Ringwall implements the OpenConnect/AnyConnect protocol for interoperability with Cisco Secure Client.
+Ioguard implements the OpenConnect/AnyConnect protocol for interoperability with Cisco Secure Client.
 
-| Feature | Cisco ASA/FTD | ringwall | Sprint |
+| Feature | Cisco ASA/FTD | ioguard | Sprint |
 |---------|---------------|----------|--------|
 | SSL/TLS tunnel (CSTP) | Yes | Yes | S3 |
 | DTLS tunnel | Yes | Yes (DTLS 1.2) | S4 |
@@ -177,9 +177,9 @@ The `iohttp` library (separate project, S1-S9 done) provides:
 - Radix-trie router with per-method trees
 - Middleware pipeline (auth, CORS, rate-limit)
 - wolfSSL native TLS + mTLS
-- io_uring core runtime (same as ringwall)
+- io_uring core runtime (same as ioguard)
 
-Instead of building a hand-rolled REST API with llhttp, ringwall links iohttp as a library for the admin interface (port 8443). This avoids duplicating HTTP/2 support, routing, middleware, and TLS termination.
+Instead of building a hand-rolled REST API with llhttp, ioguard links iohttp as a library for the admin interface (port 8443). This avoids duplicating HTTP/2 support, routing, middleware, and TLS termination.
 
 ## Architecture Invariants
 

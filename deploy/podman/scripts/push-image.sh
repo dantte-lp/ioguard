@@ -51,7 +51,7 @@ log_info "Checking if source image exists: $SOURCE_IMAGE"
 if ! skopeo inspect "containers-storage:$SOURCE_IMAGE" >/dev/null 2>&1; then
     log_error "Source image not found: $SOURCE_IMAGE"
     log_error "Available images:"
-    podman images | grep ringwall || echo "  No ringwall images found"
+    podman images | grep ioguard || echo "  No ioguard images found"
     exit 1
 fi
 

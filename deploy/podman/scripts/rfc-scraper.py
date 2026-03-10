@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RFC scraper for the ringwall VPN project.
+"""RFC scraper for the ioguard VPN project.
 
 Searches datatracker.ietf.org API for RFCs and active Internet-Drafts
 relevant to TLS, DTLS, QUIC, VPN, authentication, and cryptography.
@@ -1215,7 +1215,7 @@ def collect_rfcs(
 
 
 def relevance_score(entry: RfcEntry) -> int:
-    """Score an RFC's relevance to the ringwall project."""
+    """Score an RFC's relevance to the ioguard project."""
     score = 0
     title_lower = entry.title.lower()
 
@@ -1257,7 +1257,7 @@ def generate_markdown(rfcs: dict[int, RfcEntry], drafts: dict[str, DraftEntry]) 
     lines: list[str] = []
     w = lines.append
 
-    w("# ringwall VPN — RFC Registry\n")
+    w("# ioguard VPN — RFC Registry\n")
     w(f"**Generated**: {now}")
     w(f"**RFCs found**: {len(rfcs)}")
     w(f"**Active Internet-Drafts found**: {len(drafts)}")
@@ -1360,7 +1360,7 @@ def generate_markdown(rfcs: dict[int, RfcEntry], drafts: dict[str, DraftEntry]) 
 
     # Protocol matrix
     w("\n---\n")
-    w("## Protocol-to-RFC matrix for ringwall\n")
+    w("## Protocol-to-RFC matrix for ioguard\n")
     for component, rfc_refs in PROTOCOL_MATRIX.items():
         w(f"\n### {component}\n")
         for ref in rfc_refs:
@@ -1402,7 +1402,7 @@ def generate_json(rfcs: dict[int, RfcEntry], drafts: dict[str, DraftEntry]) -> s
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="RFC scraper for the ringwall VPN project",
+        description="RFC scraper for the ioguard VPN project",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(

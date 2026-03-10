@@ -3,7 +3,7 @@ name: security-coding
 description: Use when writing any security-sensitive code — crypto operations, input validation, memory handling, privilege management, seccomp filters, network parsing. MANDATORY for all VPN data path code.
 ---
 
-# Security-Critical Coding for ringwall
+# Security-Critical Coding for ioguard
 
 ## This is a VPN server handling untrusted network data. Every function is attack surface.
 

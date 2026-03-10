@@ -14,7 +14,7 @@ void test_pam_init_default(void)
     rw_pam_config_t cfg;
     int ret = rw_pam_init(&cfg, nullptr);
     TEST_ASSERT_EQUAL_INT(0, ret);
-    TEST_ASSERT_EQUAL_STRING("ringwall", cfg.service);
+    TEST_ASSERT_EQUAL_STRING("ioguard", cfg.service);
 }
 
 void test_pam_init_custom(void)

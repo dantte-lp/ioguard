@@ -885,13 +885,13 @@ Key stumpless API calls:
 ```c
 /* Init: */
 struct stumpless_buffer_target *bt =
-    stumpless_open_buffer_target("ringwall", buf, buf_size);
-struct stumpless_target *target = stumpless_get_target_by_name("ringwall");
+    stumpless_open_buffer_target("ioguard", buf, buf_size);
+struct stumpless_target *target = stumpless_get_target_by_name("ioguard");
 
 /* Write entry: */
 struct stumpless_entry *entry =
     stumpless_new_entry(STUMPLESS_FACILITY_DAEMON, severity,
-                        "ringwall", component, msg);
+                        "ioguard", component, msg);
 /* Add structured data: */
 struct stumpless_element *elem = stumpless_new_element(sd_id);
 struct stumpless_param *param = stumpless_new_param(key, value);

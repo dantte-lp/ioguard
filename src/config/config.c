@@ -33,7 +33,7 @@ void rw_config_set_defaults(rw_config_t *cfg)
     safe_copy(cfg->auth.method, "pam", sizeof(cfg->auth.method));
     cfg->auth.cookie_timeout = 300;
     cfg->auth.cookie_rekey = 14400;
-    snprintf(cfg->auth.totp_issuer, sizeof(cfg->auth.totp_issuer), "ringwall");
+    snprintf(cfg->auth.totp_issuer, sizeof(cfg->auth.totp_issuer), "ioguard");
     cfg->auth.totp_digits = 6;
     cfg->auth.totp_window = 1;
     cfg->network.mtu = 1400;

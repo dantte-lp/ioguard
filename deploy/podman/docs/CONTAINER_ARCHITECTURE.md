@@ -1,6 +1,6 @@
 # Container Architecture
 
-This document describes the design decisions, architecture, and rationale behind the ringwall Podman container infrastructure.
+This document describes the design decisions, architecture, and rationale behind the ioguard Podman container infrastructure.
 
 ## Table of Contents
 
@@ -577,7 +577,7 @@ networks:
     external: true
 ```
 
-**When**: If ringwall web UI is added
+**When**: If ioguard web UI is added
 **Why**: Automatic HTTPS, service discovery
 
 ## Future Enhancements

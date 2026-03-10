@@ -1,9 +1,9 @@
-# CMakeLists.txt for ringwall
+# CMakeLists.txt for ioguard
 # Modern C23 VPN server with io_uring event loop
 # Dual-compiler: Clang 22+ (dev) / GCC 15+ (release)
 cmake_minimum_required(VERSION 3.25)
 
-project(ringwall
+project(ioguard
     VERSION 0.1.0
     DESCRIPTION "Modern C23 VPN server with io_uring event loop"
     LANGUAGES C
@@ -205,7 +205,7 @@ include_directories(
 )
 
 # ============================================================================
-# ringwall core libraries
+# ioguard core libraries
 # ============================================================================
 
 add_library(rw_io STATIC src/io/uring.c)
@@ -1100,7 +1100,7 @@ add_custom_target(analyze
 # ============================================================================
 
 message(STATUS "")
-message(STATUS "ringwall Configuration Summary")
+message(STATUS "ioguard Configuration Summary")
 message(STATUS "===================================")
 message(STATUS "Version:           ${PROJECT_VERSION}")
 message(STATUS "Build type:        ${CMAKE_BUILD_TYPE}")

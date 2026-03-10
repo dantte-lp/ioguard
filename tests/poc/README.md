@@ -1,4 +1,4 @@
-# TLS Proof of Concept - ringwall
+# TLS Proof of Concept - ioguard
 
 This directory contains the Proof of Concept (PoC) implementation for validating the TLS abstraction layer and comparing GnuTLS vs wolfSSL performance.
 
@@ -411,7 +411,7 @@ After successful PoC validation:
 4. **US-014**: Certificate verification
 5. **US-017**: Test with Cisco Secure Client
 
-See `/opt/projects/repositories/ringwall/docs/agile/USER_STORIES.md` for full roadmap.
+See `/opt/projects/repositories/ioguard/docs/agile/USER_STORIES.md` for full roadmap.
 
 ## References
 
@@ -436,10 +436,10 @@ When modifying PoC code:
 
 ## License
 
-Copyright (C) 2025 ringwall Contributors
+Copyright (C) 2025 ioguard Contributors
 
 This file is part of ringwall.
 
-ringwall is free software: you can redistribute it and/or modify it
+ioguard is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.

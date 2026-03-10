@@ -1,4 +1,4 @@
-# RFC Reference for ringwall
+# RFC Reference for ioguard
 
 Local copies of RFCs relevant to TLS, DTLS, and VPN protocol implementation.
 

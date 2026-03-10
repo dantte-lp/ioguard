@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Certificate Generation Script - ringwall
+# Certificate Generation Script - ioguard
 #
-# Copyright (C) 2025 ringwall Contributors
+# Copyright (C) 2025 ioguard Contributors
 #
 # Generates test certificates for TLS PoC server and client
 #

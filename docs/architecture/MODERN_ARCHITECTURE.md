@@ -1,16 +1,16 @@
-# ringwall: Modern VPN Architecture Design
+# ioguard: Modern VPN Architecture Design
 
 **Document Version**: 2.0
 **Date**: 2026-03-07
 **Status**: Approved
-**Target**: ringwall v2.0.0 (C23, ISO/IEC 9899:2024)
+**Target**: ioguard v2.0.0 (C23, ISO/IEC 9899:2024)
 **Platform**: Linux only (kernel 6.7+, glibc 2.39+)
 
 ---
 
 ## Executive Summary
 
-ringwall is a high-performance VPN server implementing the AnyConnect/OpenConnect protocol, built entirely in C23. The architecture is designed around three core decisions: io_uring as the single I/O subsystem (no libuv), a three-process privilege-separated model (Main, sec-mod, Workers), and Linux-only deployment targeting kernel 6.7+ with glibc 2.39+.
+ioguard is a high-performance VPN server implementing the AnyConnect/OpenConnect protocol, built entirely in C23. The architecture is designed around three core decisions: io_uring as the single I/O subsystem (no libuv), a three-process privilege-separated model (Main, sec-mod, Workers), and Linux-only deployment targeting kernel 6.7+ with glibc 2.39+.
 
 All network I/O, TUN I/O, timers, and signal handling flow through liburing. Workers are stateless and sandboxed with seccomp BPF and Landlock. Session state lives in sec-mod, enabling transparent worker crash recovery via cookie-based reconnection. The cryptographic layer uses wolfSSL's native API exclusively (not the OpenSSL compatibility shim), with wolfSentry providing pre-TLS intrusion detection.
 
@@ -85,7 +85,7 @@ All network I/O, TUN I/O, timers, and signal handling flow through liburing. Wor
 
 ### io_uring as the Universal I/O Layer
 
-Every I/O operation in ringwall goes through io_uring. There is no libuv, no epoll fallback, no abstraction layer that hides the ring.
+Every I/O operation in ioguard goes through io_uring. There is no libuv, no epoll fallback, no abstraction layer that hides the ring.
 
 | Operation | io_uring Op | Notes |
 |-----------|-------------|-------|
@@ -418,6 +418,6 @@ stumpless library providing RFC 5424 structured logging. Key fields:
 ---
 
 **Document Status**: Architecture Reference
-**Maintainer**: ringwall architecture team
+**Maintainer**: ioguard architecture team
 **Review Schedule**: Quarterly
 **Next Review**: 2026-06-07

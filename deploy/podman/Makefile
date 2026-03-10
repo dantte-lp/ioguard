@@ -1,4 +1,4 @@
-# Makefile for ringwall Podman Container Management
+# Makefile for ioguard Podman Container Management
 # Production-grade container operations using Podman, Buildah, and Skopeo
 #
 # Quick Start:
@@ -21,7 +21,7 @@
         up down logs ps stats
 
 # Configuration
-PROJECT_NAME := ringwall
+PROJECT_NAME := ioguard
 PROJECT_VERSION := 2.0.0-alpha.1
 REGISTRY := ghcr.io/dantte-lp
 IMAGE_PREFIX := $(PROJECT_NAME)
@@ -51,7 +51,7 @@ NC := \033[0m # No Color
 ##@ General
 
 help: ## Display this help message
-	@echo "$(GREEN)ringwall Container Management$(NC)"
+	@echo "$(GREEN)ioguard Container Management$(NC)"
 	@echo "$(BLUE)Version: $(PROJECT_VERSION)$(NC)"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(BLUE)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

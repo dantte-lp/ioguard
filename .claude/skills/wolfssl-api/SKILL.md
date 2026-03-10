@@ -3,7 +3,7 @@ name: wolfssl-api
 description: Use when writing or modifying code that interacts with wolfSSL/wolfCrypt APIs — TLS/DTLS handshakes, certificate management, session caching, FIPS 140-3 constraints, buffer-based I/O integration with io_uring
 ---
 
-# wolfSSL API Patterns for ringwall
+# wolfSSL API Patterns for ioguard
 
 ## Context7 Reference
 Always fetch latest docs: library ID `/wolfssl/wolfssl`

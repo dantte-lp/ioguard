@@ -1,4 +1,4 @@
-# clang-format configuration for ringwall
+# clang-format configuration for ioguard
 # Linux kernel style with C23 enhancements and security hardening
 # Dual-compiler: Clang 22+ / GCC 15+
 

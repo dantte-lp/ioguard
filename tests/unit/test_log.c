@@ -50,7 +50,7 @@ void test_log_write_with_structured_data(void)
     };
 
     ret = rw_log_write_sd(logger, RW_LOG_NOTICE, "auth",
-                          "login successful", "auth@ringwall", params, 2);
+                          "login successful", "auth@ioguard", params, 2);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     char buf[4096];

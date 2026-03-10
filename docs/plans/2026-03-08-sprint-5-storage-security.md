@@ -8,7 +8,7 @@
 
 **Tech Stack:** C23, liburing 2.14+, wolfSSL 5.8+, wolfSentry 1.6+, libmdbx 0.14+, SQLite 3.40+, libseccomp 2.5+, libmnl, libnftnl, Unity tests, Linux kernel 6.7+.
 
-**IMPORTANT:** This plan assumes the rebranding (ringwall -> ringwall) has been completed. All new code uses `rw_` prefix, `RW_` macros, `RINGWALL_` include guards.
+**IMPORTANT:** This plan assumes the rebranding (ioguard -> ioguard) has been completed. All new code uses `rw_` prefix, `RW_` macros, `RINGWALL_` include guards.
 
 **Build/test:**
 ```bash
@@ -583,7 +583,7 @@ Note: Actual nftables operations require CAP_NET_ADMIN. Tests that need root use
 #include <netinet/in.h>
 
 constexpr size_t RW_FW_CHAIN_NAME_MAX = 64;
-constexpr char RW_FW_TABLE_NAME[] = "ringwall";
+constexpr char RW_FW_TABLE_NAME[] = "ioguard";
 
 typedef struct {
     char     chain_name[RW_FW_CHAIN_NAME_MAX];
@@ -603,7 +603,7 @@ typedef struct {
 **Step 3: Write firewall.c**
 
 Use libmnl + libnftnl:
-- Build nftnl_chain for per-user chain in `ringwall` table
+- Build nftnl_chain for per-user chain in `ioguard` table
 - Add nftnl_rule for source IP filtering
 - Batch via `mnl_nlmsg_batch_start()` / `mnl_socket_sendto()`
 - Chain naming: `rw_<username>_<ipv4hex>` (max 64 chars)

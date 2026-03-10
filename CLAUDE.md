@@ -1,4 +1,4 @@
-# ringwall - Project Instructions for Claude Code
+# ioguard - Project Instructions for Claude Code
 
 ## Quick Facts
 
@@ -204,7 +204,7 @@ After completing each sprint, run the **full quality pipeline** inside the conta
 
 ```bash
 podman run --rm --security-opt seccomp=unconfined \
-  -v /opt/projects/repositories/ringwall:/workspace:Z \
+  -v /opt/projects/repositories/ioguard:/workspace:Z \
   localhost/ringwall-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
 ```
 

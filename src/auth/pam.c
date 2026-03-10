@@ -56,7 +56,7 @@ int rw_pam_init(rw_pam_config_t *cfg, const char *service)
 
     memset(cfg, 0, sizeof(*cfg));
 
-    const char *svc = (service != nullptr) ? service : "ringwall";
+    const char *svc = (service != nullptr) ? service : "ioguard";
     int ret = snprintf(cfg->service, sizeof(cfg->service), "%s", svc);
     if (ret < 0 || (size_t)ret >= sizeof(cfg->service)) {
         return -ENAMETOOLONG;

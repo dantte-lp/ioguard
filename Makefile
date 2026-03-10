@@ -1,5 +1,5 @@
-# Makefile for ringwall
-# Copyright (C) 2025 ringwall Contributors
+# Makefile for ioguard
+# Copyright (C) 2025 ioguard Contributors
 #
 # Build system for TLS abstraction layer with dual backend support
 
@@ -188,7 +188,7 @@ clean:
 	@rm -f poc-client-gnutls poc-client-wolfssl
 
 help:
-	@echo "ringwall Build System"
+	@echo "ioguard Build System"
 	@echo ""
 	@echo "Targets:"
 	@echo "  all              Build backend library (default: gnutls)"

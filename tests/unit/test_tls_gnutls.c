@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 ringwall Contributors
+ * Copyright (C) 2025 ioguard Contributors
  *
  * This file is part of ringwall.
  *

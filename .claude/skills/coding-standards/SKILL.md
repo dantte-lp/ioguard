@@ -1,9 +1,9 @@
 ---
 name: coding-standards
-description: Use when writing ANY C code in ringwall — enforces file structure, naming, comments, error handling, memory, includes, tests. MANDATORY for all new and modified code.
+description: Use when writing ANY C code in ioguard — enforces file structure, naming, comments, error handling, memory, includes, tests. MANDATORY for all new and modified code.
 ---
 
-# ringwall Coding Standards
+# ioguard Coding Standards
 
 ## File Structure
 
@@ -246,7 +246,7 @@ struct msghdr msg = {0};
 | Feature | Why |
 |---------|-----|
 | `auto` type inference | Harms readability in security code — always spell out the type |
-| `_BitInt(N)` | Not needed in ringwall — standard `uint*_t` sufficient |
+| `_BitInt(N)` | Not needed in ioguard — standard `uint*_t` sufficient |
 | `#embed` | Not yet stable across compilers |
 | `[[deprecated]]` | Use only during planned API migration, not routinely |
 

@@ -1,6 +1,6 @@
-# ringwall Podman Container Infrastructure
+# ioguard Podman Container Infrastructure
 
-Production-grade containerized development environment for ringwall using **Podman**, **Buildah**, **Skopeo**, and **crun**.
+Production-grade containerized development environment for ioguard using **Podman**, **Buildah**, **Skopeo**, and **crun**.
 
 ## Quick Start
 
@@ -87,7 +87,7 @@ sudo dnf install fuse-overlayfs slirp4netns container-selinux
 ## Installation
 
 ```bash
-cd /opt/projects/repositories/ringwall/deploy/podman
+cd /opt/projects/repositories/ioguard/deploy/podman
 
 # Build all containers (8-12 minutes)
 make build-all
@@ -339,7 +339,7 @@ grep "^$USER:" /etc/subuid /etc/subgid
 ```bash
 ./scripts/verify-selinux.sh
 sudo ausearch -m avc -ts recent | grep container
-chcon -R -t container_file_t /opt/projects/repositories/ringwall
+chcon -R -t container_file_t /opt/projects/repositories/ioguard
 ```
 
 ### Build Failures
