@@ -35,19 +35,16 @@ int rw_shutdown_drain(rw_shutdown_ctx_t *ctx)
 
     ctx->drain_started = true;
 
-    /* Remove connections by scanning conn_ids.
-     * Worker API is opaque — use connection_count + remove until empty. */
+    /* Iterate over all connection slots — safe regardless of conn_id range */
     uint32_t drained = 0;
-    uint32_t count = rw_worker_connection_count(ctx->worker);
+    uint32_t max_slots = rw_worker_max_connections(ctx->worker);
 
-    /* Remove connections by trying known conn_ids (0..N).
-     * conn_ids are assigned sequentially starting from 0. */
-    for (uint64_t id = 0; drained < count && id < 1024; id++) {
-        rw_connection_t *conn = rw_worker_find_connection(ctx->worker, id);
+    for (uint32_t i = 0; i < max_slots; i++) {
+        rw_connection_t *conn = rw_worker_connection_at(ctx->worker, i);
         if (conn == nullptr) {
             continue;
         }
-        (void)rw_worker_remove_connection(ctx->worker, id);
+        (void)rw_worker_remove_connection(ctx->worker, conn->conn_id);
         drained++;
     }
 
