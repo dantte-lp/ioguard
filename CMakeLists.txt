@@ -699,6 +699,18 @@ if(BUILD_TESTING)
             message(WARNING "libmnl/libnftnl not found — skipping security/firewall")
         endif()
 
+        # Sprint 6 — Security activation hooks
+        if(TARGET rw_sandbox AND TARGET rw_landlock AND TARGET rw_firewall)
+            add_library(rw_security_hooks STATIC src/core/security_hooks.c)
+            target_include_directories(rw_security_hooks PUBLIC ${CMAKE_SOURCE_DIR}/src)
+            target_compile_definitions(rw_security_hooks PRIVATE _GNU_SOURCE)
+            target_link_libraries(rw_security_hooks PUBLIC
+                rw_sandbox rw_landlock rw_firewall rw_config)
+
+            rw_add_test(test_security_hooks tests/unit/test_security_hooks.c
+                rw_security_hooks rw_sandbox rw_landlock rw_firewall rw_config)
+        endif()
+
         # Sprint 5 — Schema migration
         if(TARGET rw_sqlite AND TARGET rw_mdbx)
             add_library(rw_migrate STATIC src/storage/migrate.c)
