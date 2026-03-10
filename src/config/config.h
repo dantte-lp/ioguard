@@ -51,6 +51,7 @@ typedef struct {
 typedef struct {
     char mdbx_path[RW_CONFIG_MAX_STR];
     char sqlite_path[RW_CONFIG_MAX_STR];
+    char vault_key_path[RW_CONFIG_MAX_STR];
 } rw_config_storage_t;
 
 typedef struct {

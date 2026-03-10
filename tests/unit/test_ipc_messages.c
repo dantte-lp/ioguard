@@ -115,6 +115,50 @@ void test_pack_unpack_session_validate(void)
     TEST_ASSERT_NULL(decoded.cookie);
 }
 
+void test_pack_unpack_auth_response_requires_totp(void)
+{
+    rw_ipc_auth_response_t resp = {
+        .success = false,
+        .error_msg = "TOTP required",
+        .requires_totp = true,
+    };
+
+    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    ssize_t packed = rw_ipc_pack_auth_response(&resp, buf, sizeof(buf));
+    TEST_ASSERT_GREATER_THAN(0, packed);
+
+    rw_ipc_auth_response_t decoded;
+    int ret = rw_ipc_unpack_auth_response(buf, packed, &decoded);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    TEST_ASSERT_FALSE(decoded.success);
+    TEST_ASSERT_TRUE(decoded.requires_totp);
+    TEST_ASSERT_EQUAL_STRING("TOTP required", decoded.error_msg);
+
+    rw_ipc_free_auth_response(&decoded);
+}
+
+void test_pack_unpack_auth_response_no_totp(void)
+{
+    rw_ipc_auth_response_t resp = {
+        .success = true,
+        .assigned_ip = "10.0.1.50",
+        .session_ttl = 1800,
+        .requires_totp = false,
+    };
+
+    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    ssize_t packed = rw_ipc_pack_auth_response(&resp, buf, sizeof(buf));
+    TEST_ASSERT_GREATER_THAN(0, packed);
+
+    rw_ipc_auth_response_t decoded;
+    int ret = rw_ipc_unpack_auth_response(buf, packed, &decoded);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    TEST_ASSERT_TRUE(decoded.success);
+    TEST_ASSERT_FALSE(decoded.requires_totp);
+
+    rw_ipc_free_auth_response(&decoded);
+}
+
 void test_unpack_truncated_data_fails(void)
 {
     uint8_t garbage[] = {0xFF, 0x00};
@@ -128,6 +172,8 @@ int main(void)
     UNITY_BEGIN();
     RUN_TEST(test_pack_unpack_auth_request);
     RUN_TEST(test_pack_unpack_auth_response);
+    RUN_TEST(test_pack_unpack_auth_response_requires_totp);
+    RUN_TEST(test_pack_unpack_auth_response_no_totp);
     RUN_TEST(test_pack_unpack_worker_status);
     RUN_TEST(test_pack_unpack_session_validate);
     RUN_TEST(test_unpack_truncated_data_fails);

@@ -92,6 +92,7 @@ ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp, uint8_t *b
         pb.session_cookie.data = (uint8_t *)resp->session_cookie;
         pb.session_cookie.len = resp->session_cookie_len;
     }
+    pb.requires_totp = resp->requires_totp;
 
     size_t packed_size = rw_ipc__auth_response__get_packed_size(&pb);
     if (packed_size > buf_size) {
@@ -132,6 +133,7 @@ int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len, rw_ipc_auth_res
             out->session_cookie_len = pb->session_cookie.len;
         }
     }
+    out->requires_totp = pb->requires_totp;
     rw_ipc__auth_response__free_unpacked(pb, nullptr);
     return 0;
 }

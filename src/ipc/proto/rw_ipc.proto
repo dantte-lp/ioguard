@@ -38,6 +38,7 @@ message AuthResponse {
     string dns_server = 7;
     string default_domain = 8;
     repeated string routes = 9;
+    bool requires_totp = 10;
 }
 
 message SessionValidate {
