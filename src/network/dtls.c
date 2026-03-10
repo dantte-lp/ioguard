@@ -21,9 +21,9 @@ struct rw_dtls_ctx {
 void rw_dtls_config_init(rw_dtls_config_t *cfg)
 {
     *cfg = (rw_dtls_config_t){
-        .mtu = RW_DTLS_DEFAULT_MTU,
-        .timeout_init_s = RW_DTLS_DEFAULT_TIMEOUT_S,
-        .rekey_interval_s = RW_DTLS_DEFAULT_REKEY_S,
+        .mtu = IOG_DTLS_DEFAULT_MTU,
+        .timeout_init_s = IOG_DTLS_DEFAULT_TIMEOUT_S,
+        .rekey_interval_s = IOG_DTLS_DEFAULT_REKEY_S,
         .cert_file = nullptr,
         .key_file = nullptr,
         .ca_file = nullptr,

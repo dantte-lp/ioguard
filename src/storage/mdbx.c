@@ -131,7 +131,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx)
     ctx->env = nullptr;
 }
 
-int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx, const rw_session_record_t *session)
+int iog_mdbx_session_create(rw_mdbx_ctx_t *ctx, const iog_session_record_t *session)
 {
     if (ctx == nullptr || ctx->env == nullptr || session == nullptr) {
         return -EINVAL;
@@ -143,7 +143,7 @@ int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx, const rw_session_record_t *sessio
         return mdbx_rc_to_errno(rc);
     }
 
-    MDBX_val key = {.iov_base = (void *)session->session_id, .iov_len = RW_SESSION_ID_LEN};
+    MDBX_val key = {.iov_base = (void *)session->session_id, .iov_len = IOG_SESSION_ID_LEN};
     MDBX_val data = {.iov_base = (void *)session, .iov_len = sizeof(*session)};
 
     rc = mdbx_put(txn, ctx->dbi_sessions, &key, &data, MDBX_NOOVERWRITE);
@@ -156,8 +156,8 @@ int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx, const rw_session_record_t *sessio
     return mdbx_rc_to_errno(rc);
 }
 
-int rw_mdbx_session_lookup(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN],
-                           rw_session_record_t *out)
+int iog_mdbx_session_lookup(rw_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN],
+                           iog_session_record_t *out)
 {
     if (ctx == nullptr || ctx->env == nullptr || session_id == nullptr || out == nullptr) {
         return -EINVAL;
@@ -169,7 +169,7 @@ int rw_mdbx_session_lookup(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSI
         return mdbx_rc_to_errno(rc);
     }
 
-    MDBX_val key = {.iov_base = (void *)session_id, .iov_len = RW_SESSION_ID_LEN};
+    MDBX_val key = {.iov_base = (void *)session_id, .iov_len = IOG_SESSION_ID_LEN};
     MDBX_val data = {0};
 
     rc = mdbx_get(txn, ctx->dbi_sessions, &key, &data);
@@ -182,7 +182,7 @@ int rw_mdbx_session_lookup(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSI
     return err;
 }
 
-int rw_mdbx_session_delete(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN])
+int iog_mdbx_session_delete(rw_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN])
 {
     if (ctx == nullptr || ctx->env == nullptr || session_id == nullptr) {
         return -EINVAL;
@@ -194,7 +194,7 @@ int rw_mdbx_session_delete(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSI
         return mdbx_rc_to_errno(rc);
     }
 
-    MDBX_val key = {.iov_base = (void *)session_id, .iov_len = RW_SESSION_ID_LEN};
+    MDBX_val key = {.iov_base = (void *)session_id, .iov_len = IOG_SESSION_ID_LEN};
 
     rc = mdbx_del(txn, ctx->dbi_sessions, &key, nullptr);
     if (rc != MDBX_SUCCESS) {
@@ -206,7 +206,7 @@ int rw_mdbx_session_delete(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSI
     return mdbx_rc_to_errno(rc);
 }
 
-int rw_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count)
+int iog_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count)
 {
     if (ctx == nullptr || ctx->env == nullptr || count == nullptr) {
         return -EINVAL;
@@ -229,7 +229,7 @@ int rw_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count)
     return err;
 }
 
-int rw_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, rw_mdbx_session_iter_fn fn, void *userdata)
+int iog_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn, void *userdata)
 {
     if (ctx == nullptr || ctx->env == nullptr || fn == nullptr) {
         return -EINVAL;
@@ -252,7 +252,7 @@ int rw_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, rw_mdbx_session_iter_fn fn, void
     int ret = 0;
     rc = mdbx_cursor_get(cursor, &key, &data, MDBX_FIRST);
     while (rc == MDBX_SUCCESS) {
-        rw_session_record_t record;
+        iog_session_record_t record;
         memcpy(&record, data.iov_base, sizeof(record));
 
         ret = fn(&record, userdata);

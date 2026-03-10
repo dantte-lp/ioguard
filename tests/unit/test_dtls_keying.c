@@ -36,14 +36,14 @@ void test_hex_decode_basic(void)
 
 void test_hex_roundtrip(void)
 {
-    const uint8_t original[RW_DTLS_MASTER_SECRET_LEN] = {
+    const uint8_t original[IOG_DTLS_MASTER_SECRET_LEN] = {
         0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFE, 0xDC, 0xBA, 0x98,
         0x76, 0x54, 0x32, 0x10, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
         0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x0A, 0x0B, 0x0C, 0x0D,
         0x0E, 0x0F, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x2A, 0x2B, 0x2C, 0x2D,
     };
-    char hex[RW_DTLS_MASTER_SECRET_HEX_LEN + 1];
-    uint8_t decoded[RW_DTLS_MASTER_SECRET_LEN];
+    char hex[IOG_DTLS_MASTER_SECRET_HEX_LEN + 1];
+    uint8_t decoded[IOG_DTLS_MASTER_SECRET_LEN];
 
     int ret = rw_dtls_hex_encode(original, sizeof(original), hex, sizeof(hex));
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -74,7 +74,7 @@ void test_master_secret_clear(void)
 
     rw_dtls_master_secret_clear(&ms);
 
-    uint8_t zero[RW_DTLS_MASTER_SECRET_LEN] = {0};
+    uint8_t zero[IOG_DTLS_MASTER_SECRET_LEN] = {0};
     TEST_ASSERT_EQUAL_MEMORY(zero, ms.secret, sizeof(zero));
     TEST_ASSERT_FALSE(ms.valid);
 }

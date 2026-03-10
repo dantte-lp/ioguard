@@ -30,15 +30,15 @@ void test_cstp_encode_decode_roundtrip(void)
         0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
         0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
     };
-    uint8_t buf[RW_CSTP_HEADER_SIZE + 20];
+    uint8_t buf[IOG_CSTP_HEADER_SIZE + 20];
 
-    int encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DATA, payload, sizeof(payload));
-    TEST_ASSERT_EQUAL_INT((int)(RW_CSTP_HEADER_SIZE + sizeof(payload)), encoded);
+    int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DATA, payload, sizeof(payload));
+    TEST_ASSERT_EQUAL_INT((int)(IOG_CSTP_HEADER_SIZE + sizeof(payload)), encoded);
 
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(buf, (size_t)encoded, &pkt);
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DATA, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DATA, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(sizeof(payload), pkt.payload_len);
     TEST_ASSERT_EQUAL_MEMORY(payload, pkt.payload, sizeof(payload));
 }
@@ -59,18 +59,18 @@ void test_cstp_multiple_packets_stream(void)
     size_t offset = 0;
 
     /* Packet 1: DATA with 8-byte payload */
-    int n = rw_cstp_encode(buf + offset, sizeof(buf) - offset, RW_CSTP_DATA, data_payload,
+    int n = rw_cstp_encode(buf + offset, sizeof(buf) - offset, IOG_CSTP_DATA, data_payload,
                            sizeof(data_payload));
     TEST_ASSERT_GREATER_THAN(0, n);
     offset += (size_t)n;
 
     /* Packet 2: DPD_REQ with zero payload */
-    n = rw_cstp_encode(buf + offset, sizeof(buf) - offset, RW_CSTP_DPD_REQ, nullptr, 0);
+    n = rw_cstp_encode(buf + offset, sizeof(buf) - offset, IOG_CSTP_DPD_REQ, nullptr, 0);
     TEST_ASSERT_GREATER_THAN(0, n);
     offset += (size_t)n;
 
     /* Packet 3: KEEPALIVE with zero payload */
-    n = rw_cstp_encode(buf + offset, sizeof(buf) - offset, RW_CSTP_KEEPALIVE, nullptr, 0);
+    n = rw_cstp_encode(buf + offset, sizeof(buf) - offset, IOG_CSTP_KEEPALIVE, nullptr, 0);
     TEST_ASSERT_GREATER_THAN(0, n);
     offset += (size_t)n;
 
@@ -80,7 +80,7 @@ void test_cstp_multiple_packets_stream(void)
 
     int consumed = rw_cstp_decode(buf + read_offset, offset - read_offset, &pkt);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DATA, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DATA, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(sizeof(data_payload), pkt.payload_len);
     TEST_ASSERT_EQUAL_MEMORY(data_payload, pkt.payload, sizeof(data_payload));
     read_offset += (size_t)consumed;
@@ -88,14 +88,14 @@ void test_cstp_multiple_packets_stream(void)
     /* Decode packet 2 */
     consumed = rw_cstp_decode(buf + read_offset, offset - read_offset, &pkt);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DPD_REQ, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DPD_REQ, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(0, pkt.payload_len);
     read_offset += (size_t)consumed;
 
     /* Decode packet 3 */
     consumed = rw_cstp_decode(buf + read_offset, offset - read_offset, &pkt);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_KEEPALIVE, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_KEEPALIVE, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(0, pkt.payload_len);
     read_offset += (size_t)consumed;
 
@@ -123,10 +123,10 @@ void test_data_path_socketpair_roundtrip(void)
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
         0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14,
     };
-    uint8_t send_buf[RW_CSTP_HEADER_SIZE + 20];
+    uint8_t send_buf[IOG_CSTP_HEADER_SIZE + 20];
     int encoded =
-        rw_cstp_encode(send_buf, sizeof(send_buf), RW_CSTP_DATA, payload, sizeof(payload));
-    TEST_ASSERT_EQUAL_INT((int)(RW_CSTP_HEADER_SIZE + sizeof(payload)), encoded);
+        rw_cstp_encode(send_buf, sizeof(send_buf), IOG_CSTP_DATA, payload, sizeof(payload));
+    TEST_ASSERT_EQUAL_INT((int)(IOG_CSTP_HEADER_SIZE + sizeof(payload)), encoded);
 
     /* 3. Create io_uring context */
     rw_io_ctx_t *ctx = rw_io_init(8, 0);
@@ -138,7 +138,7 @@ void test_data_path_socketpair_roundtrip(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* 5. Submit recv from sv[1] */
-    uint8_t recv_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     int recv_done = 0;
     ret = rw_io_prep_recv(ctx, sv[1], recv_buf, sizeof(recv_buf), &recv_done);
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -155,7 +155,7 @@ void test_data_path_socketpair_roundtrip(void)
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(recv_buf, (size_t)encoded, &pkt);
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DATA, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DATA, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(sizeof(payload), pkt.payload_len);
     TEST_ASSERT_EQUAL_MEMORY(payload, pkt.payload, sizeof(payload));
 
@@ -174,16 +174,16 @@ void test_dpd_probe_response_roundtrip(void)
     /* 1. Init DPD, trigger timeout -> PENDING */
     rw_dpd_ctx_t dpd;
     rw_dpd_init(&dpd, 30, 3);
-    TEST_ASSERT_EQUAL_UINT8(RW_DPD_IDLE, dpd.state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_DPD_IDLE, dpd.state);
 
     rw_dpd_state_t state = rw_dpd_on_timeout(&dpd);
-    TEST_ASSERT_EQUAL_UINT8(RW_DPD_PENDING, state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_DPD_PENDING, state);
     TEST_ASSERT_TRUE(dpd.need_send_request);
 
     /* 2. CSTP-encode a DPD_REQ packet (zero payload) */
-    uint8_t buf[RW_CSTP_HEADER_SIZE];
-    int encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DPD_REQ, nullptr, 0);
-    TEST_ASSERT_EQUAL_INT((int)RW_CSTP_HEADER_SIZE, encoded);
+    uint8_t buf[IOG_CSTP_HEADER_SIZE];
+    int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_REQ, nullptr, 0);
+    TEST_ASSERT_EQUAL_INT((int)IOG_CSTP_HEADER_SIZE, encoded);
 
     /* 3. CSTP-decode it back */
     rw_cstp_packet_t pkt;
@@ -191,21 +191,21 @@ void test_dpd_probe_response_roundtrip(void)
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
 
     /* 4. Verify decoded type is DPD_REQ */
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DPD_REQ, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DPD_REQ, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(0, pkt.payload_len);
 
     /* 5. DPD on_response -> state back to IDLE */
     state = rw_dpd_on_response(&dpd, dpd.sequence);
-    TEST_ASSERT_EQUAL_UINT8(RW_DPD_IDLE, state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_DPD_IDLE, state);
 
     /* 6. CSTP-encode DPD_RESP */
-    encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DPD_RESP, nullptr, 0);
-    TEST_ASSERT_EQUAL_INT((int)RW_CSTP_HEADER_SIZE, encoded);
+    encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_RESP, nullptr, 0);
+    TEST_ASSERT_EQUAL_INT((int)IOG_CSTP_HEADER_SIZE, encoded);
 
     /* 7. CSTP-decode, verify type DPD_RESP */
     consumed = rw_cstp_decode(buf, (size_t)encoded, &pkt);
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DPD_RESP, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DPD_RESP, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(0, pkt.payload_len);
 }
 

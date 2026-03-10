@@ -14,9 +14,9 @@ void test_dtls_config_init_defaults(void)
 {
     rw_dtls_config_t cfg;
     rw_dtls_config_init(&cfg);
-    TEST_ASSERT_EQUAL_UINT32(RW_DTLS_DEFAULT_MTU, cfg.mtu);
-    TEST_ASSERT_EQUAL_UINT32(RW_DTLS_DEFAULT_TIMEOUT_S, cfg.timeout_init_s);
-    TEST_ASSERT_EQUAL_UINT32(RW_DTLS_DEFAULT_REKEY_S, cfg.rekey_interval_s);
+    TEST_ASSERT_EQUAL_UINT32(IOG_DTLS_DEFAULT_MTU, cfg.mtu);
+    TEST_ASSERT_EQUAL_UINT32(IOG_DTLS_DEFAULT_TIMEOUT_S, cfg.timeout_init_s);
+    TEST_ASSERT_EQUAL_UINT32(IOG_DTLS_DEFAULT_REKEY_S, cfg.rekey_interval_s);
     TEST_ASSERT_NULL(cfg.cert_file);
     TEST_ASSERT_NULL(cfg.key_file);
     TEST_ASSERT_TRUE(cfg.enable_cookies);
@@ -65,7 +65,7 @@ void test_dtls_create_destroy(void)
     rw_dtls_ctx_t *ctx = rw_dtls_create(&cfg);
     /* May be nullptr if wolfSSL not initialized — that's OK for unit test */
     if (ctx) {
-        TEST_ASSERT_EQUAL_UINT32(RW_DTLS_DEFAULT_MTU, rw_dtls_get_mtu(ctx));
+        TEST_ASSERT_EQUAL_UINT32(IOG_DTLS_DEFAULT_MTU, rw_dtls_get_mtu(ctx));
         rw_dtls_destroy(ctx);
     } else {
         TEST_IGNORE_MESSAGE("wolfSSL DTLS context creation requires initialization");

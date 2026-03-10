@@ -17,10 +17,10 @@ static rw_mdbx_ctx_t mdbx_ctx;
 static rw_sqlite_ctx_t sql_ctx;
 static char mdbx_path[256];
 
-static void make_session(rw_session_record_t *s, uint8_t id_byte)
+static void make_session(iog_session_record_t *s, uint8_t id_byte)
 {
     memset(s, 0, sizeof(*s));
-    memset(s->session_id, id_byte, RW_SESSION_ID_LEN);
+    memset(s->session_id, id_byte, IOG_SESSION_ID_LEN);
     memset(s->cookie_hmac, 0xAA, sizeof(s->cookie_hmac));
     s->assigned_ipv4 = 0x0A0A0001 + id_byte;
     s->created_at = 1000000;
@@ -87,10 +87,10 @@ void tearDown(void)
  */
 void test_session_create_mdbx_audit_sqlite(void)
 {
-    rw_session_record_t sess;
+    iog_session_record_t sess;
     make_session(&sess, 0x01);
 
-    int rc = rw_mdbx_session_create(&mdbx_ctx, &sess);
+    int rc = iog_mdbx_session_create(&mdbx_ctx, &sess);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     rw_audit_entry_t audit;
@@ -105,19 +105,19 @@ void test_session_create_mdbx_audit_sqlite(void)
  */
 void test_session_lookup_after_create(void)
 {
-    rw_session_record_t sess;
+    iog_session_record_t sess;
     make_session(&sess, 0x42);
 
-    int rc = rw_mdbx_session_create(&mdbx_ctx, &sess);
+    int rc = iog_mdbx_session_create(&mdbx_ctx, &sess);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rw_session_record_t out;
+    iog_session_record_t out;
     memset(&out, 0, sizeof(out));
 
-    rc = rw_mdbx_session_lookup(&mdbx_ctx, sess.session_id, &out);
+    rc = iog_mdbx_session_lookup(&mdbx_ctx, sess.session_id, &out);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    TEST_ASSERT_EQUAL_MEMORY(sess.session_id, out.session_id, RW_SESSION_ID_LEN);
+    TEST_ASSERT_EQUAL_MEMORY(sess.session_id, out.session_id, IOG_SESSION_ID_LEN);
     TEST_ASSERT_EQUAL_MEMORY(sess.cookie_hmac, out.cookie_hmac, sizeof(sess.cookie_hmac));
     TEST_ASSERT_EQUAL_UINT32(sess.assigned_ipv4, out.assigned_ipv4);
     TEST_ASSERT_EQUAL_INT64(sess.created_at, out.created_at);
@@ -134,10 +134,10 @@ void test_session_lookup_after_create(void)
  */
 void test_session_delete_and_verify(void)
 {
-    rw_session_record_t sess;
+    iog_session_record_t sess;
     make_session(&sess, 0x77);
 
-    int rc = rw_mdbx_session_create(&mdbx_ctx, &sess);
+    int rc = iog_mdbx_session_create(&mdbx_ctx, &sess);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     rw_audit_entry_t audit;
@@ -147,12 +147,12 @@ void test_session_delete_and_verify(void)
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     /* Delete session from mdbx */
-    rc = rw_mdbx_session_delete(&mdbx_ctx, sess.session_id);
+    rc = iog_mdbx_session_delete(&mdbx_ctx, sess.session_id);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     /* Verify session is gone */
-    rw_session_record_t out;
-    rc = rw_mdbx_session_lookup(&mdbx_ctx, sess.session_id, &out);
+    iog_session_record_t out;
+    rc = iog_mdbx_session_lookup(&mdbx_ctx, sess.session_id, &out);
     TEST_ASSERT_EQUAL_INT(-ENOENT, rc);
 
     /* Verify audit entry still exists in sqlite */
@@ -180,15 +180,15 @@ void test_ban_flow_mdbx_to_sqlite(void)
     TEST_ASSERT_TRUE(banned);
 
     /* Create session in mdbx despite ban (policy layer, not storage layer) */
-    rw_session_record_t sess;
+    iog_session_record_t sess;
     make_session(&sess, 0xBB);
 
-    rc = rw_mdbx_session_create(&mdbx_ctx, &sess);
+    rc = iog_mdbx_session_create(&mdbx_ctx, &sess);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     /* Verify session exists in mdbx */
-    rw_session_record_t out;
-    rc = rw_mdbx_session_lookup(&mdbx_ctx, sess.session_id, &out);
+    iog_session_record_t out;
+    rc = iog_mdbx_session_lookup(&mdbx_ctx, sess.session_id, &out);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_EQUAL_STRING("user187", out.username);
 }
@@ -216,10 +216,10 @@ void test_crash_recovery_mdbx(void)
             _exit(99);
         }
 
-        rw_session_record_t sess;
+        iog_session_record_t sess;
         make_session(&sess, crash_id);
 
-        rc = rw_mdbx_session_create(&child_ctx, &sess);
+        rc = iog_mdbx_session_create(&child_ctx, &sess);
         if (rc != 0) {
             rw_mdbx_close(&child_ctx);
             _exit(98);
@@ -244,13 +244,13 @@ void test_crash_recovery_mdbx(void)
     int rc = rw_mdbx_init(&mdbx_ctx, mdbx_path);
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_mdbx_init failed after crash recovery");
 
-    rw_session_record_t out;
+    iog_session_record_t out;
     memset(&out, 0, sizeof(out));
 
-    uint8_t lookup_id[RW_SESSION_ID_LEN];
-    memset(lookup_id, crash_id, RW_SESSION_ID_LEN);
+    uint8_t lookup_id[IOG_SESSION_ID_LEN];
+    memset(lookup_id, crash_id, IOG_SESSION_ID_LEN);
 
-    rc = rw_mdbx_session_lookup(&mdbx_ctx, lookup_id, &out);
+    rc = iog_mdbx_session_lookup(&mdbx_ctx, lookup_id, &out);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_EQUAL_STRING("user204", out.username);
     TEST_ASSERT_EQUAL_UINT32(0x0A0A0001 + crash_id, out.assigned_ipv4);

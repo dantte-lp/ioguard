@@ -13,20 +13,20 @@
 #include <stdint.h>
 
 /** Maximum TUN device name length (IFNAMSIZ). */
-constexpr size_t RW_TUN_NAME_MAX = 16;
+constexpr size_t IOG_TUN_NAME_MAX = 16;
 
 /** Default VPN MTU (conservative for TLS overhead). */
-constexpr uint32_t RW_TUN_DEFAULT_MTU = 1406;
+constexpr uint32_t IOG_TUN_DEFAULT_MTU = 1406;
 
 /** Minimum allowed MTU (RFC 791 minimum). */
-constexpr uint32_t RW_TUN_MIN_MTU = 68;
+constexpr uint32_t IOG_TUN_MIN_MTU = 68;
 
 /** Maximum allowed MTU. */
-constexpr uint32_t RW_TUN_MAX_MTU = 65535;
+constexpr uint32_t IOG_TUN_MAX_MTU = 65535;
 
 /** TUN device configuration. */
 typedef struct {
-    char dev_name[RW_TUN_NAME_MAX];
+    char dev_name[IOG_TUN_NAME_MAX];
     uint32_t mtu;
     bool set_nonblock;
 } rw_tun_config_t;
@@ -34,7 +34,7 @@ typedef struct {
 /** Allocated TUN device state. */
 typedef struct {
     int fd;
-    char dev_name[RW_TUN_NAME_MAX];
+    char dev_name[IOG_TUN_NAME_MAX];
     uint32_t mtu;
 } rw_tun_t;
 
@@ -73,7 +73,7 @@ void rw_tun_close(rw_tun_t *tun);
  *
  * @param base_mtu Base network MTU (e.g., 1500).
  * @param af       Address family (AF_INET or AF_INET6).
- * @return Effective VPN MTU, clamped to RW_TUN_MIN_MTU minimum.
+ * @return Effective VPN MTU, clamped to IOG_TUN_MIN_MTU minimum.
  */
 [[nodiscard]] uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af);
 

@@ -11,9 +11,9 @@
 
 #include <stdint.h>
 
-constexpr uint32_t RW_DTLS_DEFAULT_MTU = 1400;
-constexpr uint32_t RW_DTLS_DEFAULT_TIMEOUT_S = 5;
-constexpr uint32_t RW_DTLS_DEFAULT_REKEY_S = 3600;
+constexpr uint32_t IOG_DTLS_DEFAULT_MTU = 1400;
+constexpr uint32_t IOG_DTLS_DEFAULT_TIMEOUT_S = 5;
+constexpr uint32_t IOG_DTLS_DEFAULT_REKEY_S = 3600;
 
 typedef struct {
     uint32_t mtu;

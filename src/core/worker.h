@@ -42,7 +42,7 @@ typedef struct {
     rw_dpd_ctx_t dpd;
     rw_compress_ctx_t compress;
     bool active;
-    uint8_t recv_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     size_t recv_len;
 } rw_connection_t;
 

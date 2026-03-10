@@ -11,12 +11,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t RW_DTLS_MASTER_SECRET_LEN = 48;
-constexpr size_t RW_DTLS_MASTER_SECRET_HEX_LEN = 96; /* 48 * 2 */
+constexpr size_t IOG_DTLS_MASTER_SECRET_LEN = 48;
+constexpr size_t IOG_DTLS_MASTER_SECRET_HEX_LEN = 96; /* 48 * 2 */
 
 typedef struct {
-    uint8_t secret[RW_DTLS_MASTER_SECRET_LEN];
-    char hex[RW_DTLS_MASTER_SECRET_HEX_LEN + 1];
+    uint8_t secret[IOG_DTLS_MASTER_SECRET_LEN];
+    char hex[IOG_DTLS_MASTER_SECRET_HEX_LEN + 1];
     bool valid;
 } rw_dtls_master_secret_t;
 

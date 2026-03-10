@@ -19,7 +19,7 @@
 
 /**
  * Parse X-CSTP-Accept-Encoding header value.
- * Returns best compression type or RW_COMPRESS_NONE.
+ * Returns best compression type or IOG_COMPRESS_NONE.
  */
 [[nodiscard]] rw_compress_type_t rw_dtls_parse_accept_encoding(const char *header);
 

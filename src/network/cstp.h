@@ -13,19 +13,19 @@
 #include <stdint.h>
 
 /** CSTP frame header size in bytes. */
-constexpr size_t RW_CSTP_HEADER_SIZE = 4;
+constexpr size_t IOG_CSTP_HEADER_SIZE = 4;
 
 /** Maximum CSTP payload size. */
-constexpr size_t RW_CSTP_MAX_PAYLOAD = 16384;
+constexpr size_t IOG_CSTP_MAX_PAYLOAD = 16384;
 
 /** CSTP packet types per OpenConnect protocol. */
 typedef enum : uint8_t {
-    RW_CSTP_DATA = 0x00,
-    RW_CSTP_DPD_REQ = 0x03,
-    RW_CSTP_DPD_RESP = 0x04,
-    RW_CSTP_DISCONNECT = 0x05,
-    RW_CSTP_KEEPALIVE = 0x07,
-    RW_CSTP_COMPRESSED = 0x08,
+    IOG_CSTP_DATA = 0x00,
+    IOG_CSTP_DPD_REQ = 0x03,
+    IOG_CSTP_DPD_RESP = 0x04,
+    IOG_CSTP_DISCONNECT = 0x05,
+    IOG_CSTP_KEEPALIVE = 0x07,
+    IOG_CSTP_COMPRESSED = 0x08,
 } rw_cstp_type_t;
 
 /** Decoded CSTP packet (zero-copy: payload points into decode buffer). */

@@ -12,13 +12,13 @@
 void rw_tun_config_init(rw_tun_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
-    cfg->mtu = RW_TUN_DEFAULT_MTU;
+    cfg->mtu = IOG_TUN_DEFAULT_MTU;
     cfg->set_nonblock = true;
 }
 
 int rw_tun_config_validate(const rw_tun_config_t *cfg)
 {
-    if (cfg->mtu < RW_TUN_MIN_MTU || cfg->mtu > RW_TUN_MAX_MTU) {
+    if (cfg->mtu < IOG_TUN_MIN_MTU || cfg->mtu > IOG_TUN_MAX_MTU) {
         return -EINVAL;
     }
     return 0;
@@ -71,8 +71,8 @@ int rw_tun_alloc(const rw_tun_config_t *cfg, rw_tun_t *tun)
     }
 
     tun->fd = fd;
-    strncpy(tun->dev_name, ifr.ifr_name, RW_TUN_NAME_MAX - 1);
-    tun->dev_name[RW_TUN_NAME_MAX - 1] = '\0';
+    strncpy(tun->dev_name, ifr.ifr_name, IOG_TUN_NAME_MAX - 1);
+    tun->dev_name[IOG_TUN_NAME_MAX - 1] = '\0';
     tun->mtu = cfg->mtu;
 
     return 0;
@@ -93,8 +93,8 @@ uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af)
     /* TCP: 20, TLS record: 37, CSTP header: 4 */
     uint32_t total_overhead = ip_overhead + 20 + 37 + 4;
 
-    if (base_mtu <= total_overhead + RW_TUN_MIN_MTU) {
-        return RW_TUN_MIN_MTU;
+    if (base_mtu <= total_overhead + IOG_TUN_MIN_MTU) {
+        return IOG_TUN_MIN_MTU;
     }
     return base_mtu - total_overhead;
 }

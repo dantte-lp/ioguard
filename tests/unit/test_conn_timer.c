@@ -56,7 +56,7 @@ void setUp(void)
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, tls_sv));
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, tun_sv));
     rw_dpd_init(&dpd, 30, 3);
-    TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, RW_COMPRESS_NONE));
+    TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, IOG_COMPRESS_NONE));
 
     rw_conn_data_config_t data_cfg = {
         .tls_read = mock_tls_read,
@@ -135,7 +135,7 @@ void test_timer_dpd_probe_fires(void)
     /* First DPD tick: IDLE → PENDING, sends DPD request */
     int ret = rw_conn_timer_handle_dpd(&timer);
     TEST_ASSERT_EQUAL_INT(0, ret);
-    TEST_ASSERT_EQUAL_INT(RW_DPD_PENDING, dpd.state);
+    TEST_ASSERT_EQUAL_INT(IOG_DPD_PENDING, dpd.state);
 
     /* Verify DPD request was sent via TLS */
     uint8_t buf[64];
@@ -145,7 +145,7 @@ void test_timer_dpd_probe_fires(void)
     rw_cstp_packet_t decoded;
     int consumed = rw_cstp_decode(buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_INT(RW_CSTP_DPD_REQ, decoded.type);
+    TEST_ASSERT_EQUAL_INT(IOG_CSTP_DPD_REQ, decoded.type);
 }
 
 void test_timer_dpd_response_resets(void)
@@ -155,7 +155,7 @@ void test_timer_dpd_response_resets(void)
 
     /* Trigger DPD probe */
     (void)rw_conn_timer_handle_dpd(&timer);
-    TEST_ASSERT_EQUAL_INT(RW_DPD_PENDING, dpd.state);
+    TEST_ASSERT_EQUAL_INT(IOG_DPD_PENDING, dpd.state);
 
     /* Drain TLS output */
     uint8_t drain[64];
@@ -163,7 +163,7 @@ void test_timer_dpd_response_resets(void)
 
     /* Simulate activity (peer responded) */
     rw_conn_timer_on_activity(&timer);
-    TEST_ASSERT_EQUAL_INT(RW_DPD_IDLE, dpd.state);
+    TEST_ASSERT_EQUAL_INT(IOG_DPD_IDLE, dpd.state);
     TEST_ASSERT_EQUAL_INT(0, dead_called);
 }
 
@@ -211,7 +211,7 @@ void test_timer_keepalive_fires(void)
     rw_cstp_packet_t decoded;
     int consumed = rw_cstp_decode(buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_INT(RW_CSTP_KEEPALIVE, decoded.type);
+    TEST_ASSERT_EQUAL_INT(IOG_CSTP_KEEPALIVE, decoded.type);
 }
 
 void test_timer_connection_idle_timeout(void)

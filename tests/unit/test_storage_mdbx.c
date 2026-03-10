@@ -10,10 +10,10 @@
 static rw_mdbx_ctx_t ctx;
 static char db_path[256];
 
-static void make_session(rw_session_record_t *s, uint8_t id_byte)
+static void make_session(iog_session_record_t *s, uint8_t id_byte)
 {
     memset(s, 0, sizeof(*s));
-    memset(s->session_id, id_byte, RW_SESSION_ID_LEN);
+    memset(s->session_id, id_byte, IOG_SESSION_ID_LEN);
     memset(s->cookie_hmac, 0xAA, sizeof(s->cookie_hmac));
     s->assigned_ipv4 = 0x0A0A0001 + id_byte;
     s->created_at = 1000000;
@@ -64,24 +64,24 @@ void test_mdbx_env_create_and_close(void)
 
 void test_mdbx_session_create(void)
 {
-    rw_session_record_t s;
+    iog_session_record_t s;
     make_session(&s, 1);
-    int rc = rw_mdbx_session_create(&ctx, &s);
+    int rc = iog_mdbx_session_create(&ctx, &s);
     TEST_ASSERT_EQUAL_INT(0, rc);
 }
 
 void test_mdbx_session_lookup_found(void)
 {
-    rw_session_record_t s;
+    iog_session_record_t s;
     make_session(&s, 2);
-    int rc = rw_mdbx_session_create(&ctx, &s);
+    int rc = iog_mdbx_session_create(&ctx, &s);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rw_session_record_t out;
+    iog_session_record_t out;
     memset(&out, 0, sizeof(out));
-    rc = rw_mdbx_session_lookup(&ctx, s.session_id, &out);
+    rc = iog_mdbx_session_lookup(&ctx, s.session_id, &out);
     TEST_ASSERT_EQUAL_INT(0, rc);
-    TEST_ASSERT_EQUAL_MEMORY(s.session_id, out.session_id, RW_SESSION_ID_LEN);
+    TEST_ASSERT_EQUAL_MEMORY(s.session_id, out.session_id, IOG_SESSION_ID_LEN);
     TEST_ASSERT_EQUAL_UINT32(s.assigned_ipv4, out.assigned_ipv4);
     TEST_ASSERT_EQUAL_STRING(s.username, out.username);
     TEST_ASSERT_EQUAL_STRING(s.groupname, out.groupname);
@@ -91,56 +91,56 @@ void test_mdbx_session_lookup_found(void)
 
 void test_mdbx_session_lookup_not_found(void)
 {
-    uint8_t missing_id[RW_SESSION_ID_LEN];
-    memset(missing_id, 0xFF, RW_SESSION_ID_LEN);
+    uint8_t missing_id[IOG_SESSION_ID_LEN];
+    memset(missing_id, 0xFF, IOG_SESSION_ID_LEN);
 
-    rw_session_record_t out;
-    int rc = rw_mdbx_session_lookup(&ctx, missing_id, &out);
+    iog_session_record_t out;
+    int rc = iog_mdbx_session_lookup(&ctx, missing_id, &out);
     TEST_ASSERT_EQUAL_INT(-ENOENT, rc);
 }
 
 void test_mdbx_session_delete(void)
 {
-    rw_session_record_t s;
+    iog_session_record_t s;
     make_session(&s, 3);
-    int rc = rw_mdbx_session_create(&ctx, &s);
+    int rc = iog_mdbx_session_create(&ctx, &s);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rc = rw_mdbx_session_delete(&ctx, s.session_id);
+    rc = iog_mdbx_session_delete(&ctx, s.session_id);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rw_session_record_t out;
-    rc = rw_mdbx_session_lookup(&ctx, s.session_id, &out);
+    iog_session_record_t out;
+    rc = iog_mdbx_session_lookup(&ctx, s.session_id, &out);
     TEST_ASSERT_EQUAL_INT(-ENOENT, rc);
 }
 
 void test_mdbx_session_duplicate(void)
 {
-    rw_session_record_t s;
+    iog_session_record_t s;
     make_session(&s, 4);
-    int rc = rw_mdbx_session_create(&ctx, &s);
+    int rc = iog_mdbx_session_create(&ctx, &s);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rc = rw_mdbx_session_create(&ctx, &s);
+    rc = iog_mdbx_session_create(&ctx, &s);
     TEST_ASSERT_EQUAL_INT(-EEXIST, rc);
 }
 
 void test_mdbx_session_count(void)
 {
-    rw_session_record_t s;
+    iog_session_record_t s;
     for (uint8_t i = 10; i < 13; i++) {
         make_session(&s, i);
-        int rc = rw_mdbx_session_create(&ctx, &s);
+        int rc = iog_mdbx_session_create(&ctx, &s);
         TEST_ASSERT_EQUAL_INT(0, rc);
     }
 
     uint32_t count = 0;
-    int rc = rw_mdbx_session_count(&ctx, &count);
+    int rc = iog_mdbx_session_count(&ctx, &count);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_EQUAL_UINT32(3, count);
 }
 
-static int count_callback(const rw_session_record_t *session, void *userdata)
+static int count_callback(const iog_session_record_t *session, void *userdata)
 {
     (void)session;
     uint32_t *counter = (uint32_t *)userdata;
@@ -150,15 +150,15 @@ static int count_callback(const rw_session_record_t *session, void *userdata)
 
 void test_mdbx_session_iterate(void)
 {
-    rw_session_record_t s;
+    iog_session_record_t s;
     for (uint8_t i = 20; i < 25; i++) {
         make_session(&s, i);
-        int rc = rw_mdbx_session_create(&ctx, &s);
+        int rc = iog_mdbx_session_create(&ctx, &s);
         TEST_ASSERT_EQUAL_INT(0, rc);
     }
 
     uint32_t visited = 0;
-    int rc = rw_mdbx_session_iterate(&ctx, count_callback, &visited);
+    int rc = iog_mdbx_session_iterate(&ctx, count_callback, &visited);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_EQUAL_UINT32(5, visited);
 }

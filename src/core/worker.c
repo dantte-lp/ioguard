@@ -17,8 +17,8 @@ void rw_worker_config_init(rw_worker_config_t *cfg)
     *cfg = (rw_worker_config_t){
         .max_connections = RW_WORKER_DEFAULT_MAX_CONNS,
         .queue_depth = RW_WORKER_DEFAULT_QUEUE_DEPTH,
-        .dpd_interval_s = RW_DPD_DEFAULT_INTERVAL_S,
-        .dpd_max_retries = RW_DPD_DEFAULT_MAX_RETRIES,
+        .dpd_interval_s = IOG_DPD_DEFAULT_INTERVAL_S,
+        .dpd_max_retries = IOG_DPD_DEFAULT_MAX_RETRIES,
         .tun_mtu = RW_WORKER_DEFAULT_TUN_MTU,
     };
 }
@@ -100,7 +100,7 @@ int64_t rw_worker_add_connection(rw_worker_t *w, int tls_fd, int tun_fd)
             c->active = true;
             c->recv_len = 0;
             rw_dpd_init(&c->dpd, w->config.dpd_interval_s, w->config.dpd_max_retries);
-            (void)rw_compress_init(&c->compress, RW_COMPRESS_NONE);
+            (void)rw_compress_init(&c->compress, IOG_COMPRESS_NONE);
             w->conn_count++;
             return (int64_t)c->conn_id;
         }

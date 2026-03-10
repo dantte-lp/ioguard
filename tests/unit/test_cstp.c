@@ -12,7 +12,7 @@ void tearDown(void)
 
 void test_cstp_header_size_constant(void)
 {
-    TEST_ASSERT_EQUAL_UINT(4, RW_CSTP_HEADER_SIZE);
+    TEST_ASSERT_EQUAL_UINT(4, IOG_CSTP_HEADER_SIZE);
 }
 
 void test_cstp_encode_data_packet(void)
@@ -20,7 +20,7 @@ void test_cstp_encode_data_packet(void)
     uint8_t buf[64];
     const uint8_t payload[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x42};
 
-    int ret = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DATA, payload, sizeof(payload));
+    int ret = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DATA, payload, sizeof(payload));
     TEST_ASSERT_EQUAL_INT(9, ret); /* 4 header + 5 payload */
 
     /* verify header */
@@ -37,7 +37,7 @@ void test_cstp_encode_dpd_request(void)
 {
     uint8_t buf[16];
 
-    int ret = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DPD_REQ, nullptr, 0);
+    int ret = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_REQ, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(4, ret);
     TEST_ASSERT_EQUAL_UINT8(0x03, buf[0]);
     TEST_ASSERT_EQUAL_UINT8(0x00, buf[1]);
@@ -49,7 +49,7 @@ void test_cstp_encode_dpd_response(void)
 {
     uint8_t buf[16];
 
-    int ret = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DPD_RESP, nullptr, 0);
+    int ret = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_RESP, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(4, ret);
     TEST_ASSERT_EQUAL_UINT8(0x04, buf[0]);
 }
@@ -58,7 +58,7 @@ void test_cstp_encode_keepalive(void)
 {
     uint8_t buf[16];
 
-    int ret = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_KEEPALIVE, nullptr, 0);
+    int ret = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_KEEPALIVE, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(4, ret);
     TEST_ASSERT_EQUAL_UINT8(0x07, buf[0]);
 }
@@ -67,7 +67,7 @@ void test_cstp_encode_disconnect(void)
 {
     uint8_t buf[16];
 
-    int ret = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DISCONNECT, nullptr, 0);
+    int ret = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DISCONNECT, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(4, ret);
     TEST_ASSERT_EQUAL_UINT8(0x05, buf[0]);
 }
@@ -80,7 +80,7 @@ void test_cstp_decode_data_packet(void)
 
     int ret = rw_cstp_decode(wire, sizeof(wire), &pkt);
     TEST_ASSERT_EQUAL_INT(7, ret);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DATA, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DATA, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(3, pkt.payload_len);
     TEST_ASSERT_NOT_NULL(pkt.payload);
 
@@ -115,7 +115,7 @@ void test_cstp_encode_buffer_too_small(void)
     uint8_t buf[2]; /* way too small for even a header-only packet */
     const uint8_t payload[] = {0x01};
 
-    int ret = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DATA, payload, sizeof(payload));
+    int ret = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DATA, payload, sizeof(payload));
     TEST_ASSERT_EQUAL_INT(-ENOSPC, ret);
 }
 

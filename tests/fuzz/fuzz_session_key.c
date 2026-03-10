@@ -3,7 +3,7 @@
  * @brief LibFuzzer target for MDBX session lookup with arbitrary keys.
  *
  * Initialises a temporary MDBX environment, feeds fuzzed bytes as a
- * session ID to rw_mdbx_session_lookup(), and tears down. Tests the
+ * session ID to iog_mdbx_session_lookup(), and tears down. Tests the
  * lookup path with arbitrary 32-byte (or shorter) input.
  */
 
@@ -32,14 +32,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         initialised = true;
     }
 
-    /* Pad or truncate input to exactly RW_SESSION_ID_LEN bytes */
-    uint8_t session_id[RW_SESSION_ID_LEN];
+    /* Pad or truncate input to exactly IOG_SESSION_ID_LEN bytes */
+    uint8_t session_id[IOG_SESSION_ID_LEN];
     memset(session_id, 0, sizeof(session_id));
-    size_t copy_len = size < RW_SESSION_ID_LEN ? size : RW_SESSION_ID_LEN;
+    size_t copy_len = size < IOG_SESSION_ID_LEN ? size : IOG_SESSION_ID_LEN;
     memcpy(session_id, data, copy_len);
 
-    rw_session_record_t record;
-    (void)rw_mdbx_session_lookup(&ctx, session_id, &record);
+    iog_session_record_t record;
+    (void)iog_mdbx_session_lookup(&ctx, session_id, &record);
 
     return 0;
 }

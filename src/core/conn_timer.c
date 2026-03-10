@@ -36,7 +36,7 @@ int rw_conn_timer_handle_dpd(rw_conn_timer_t *timer)
 
     rw_dpd_state_t state = rw_dpd_on_timeout(timer->dpd);
 
-    if (state == RW_DPD_DEAD) {
+    if (state == IOG_DPD_DEAD) {
         if (timer->on_dead != nullptr) {
             timer->on_dead(timer->conn_id, timer->on_dead_user_data);
         }
@@ -48,8 +48,8 @@ int rw_conn_timer_handle_dpd(rw_conn_timer_t *timer)
      * Send directly via conn_data keepalive-style path — do NOT use
      * rw_conn_data_send_dpd_req() which redundantly calls rw_dpd_on_timeout(). */
     if (timer->dpd->need_send_request) {
-        uint8_t buf[RW_CSTP_HEADER_SIZE];
-        int encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DPD_REQ, nullptr, 0);
+        uint8_t buf[IOG_CSTP_HEADER_SIZE];
+        int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_REQ, nullptr, 0);
         if (encoded > 0) {
             (void)timer->data->tls_write(timer->data->tls_ctx, buf, (size_t)encoded);
         }
@@ -87,7 +87,7 @@ void rw_conn_timer_on_activity(rw_conn_timer_t *timer)
     timer->last_activity = time(nullptr);
 
     /* Reset DPD state on activity — peer is alive */
-    if (timer->dpd != nullptr && timer->dpd->state == RW_DPD_PENDING) {
+    if (timer->dpd != nullptr && timer->dpd->state == IOG_DPD_PENDING) {
         (void)rw_dpd_on_response(timer->dpd, timer->dpd->sequence);
     }
 }

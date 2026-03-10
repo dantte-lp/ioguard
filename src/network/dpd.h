@@ -14,23 +14,23 @@
 #include <time.h>
 
 /** Default DPD probe interval in seconds. */
-constexpr uint32_t RW_DPD_DEFAULT_INTERVAL_S = 30;
+constexpr uint32_t IOG_DPD_DEFAULT_INTERVAL_S = 30;
 
 /** Default maximum retry count before declaring peer dead. */
-constexpr uint32_t RW_DPD_DEFAULT_MAX_RETRIES = 3;
+constexpr uint32_t IOG_DPD_DEFAULT_MAX_RETRIES = 3;
 
 /** DPD probe state. */
 typedef enum : uint8_t {
-    RW_DPD_IDLE,
-    RW_DPD_PENDING,
-    RW_DPD_DEAD,
+    IOG_DPD_IDLE,
+    IOG_DPD_PENDING,
+    IOG_DPD_DEAD,
 } rw_dpd_state_t;
 
 /** VPN channel state (CSTP vs DTLS). */
 typedef enum : uint8_t {
-    RW_CHANNEL_CSTP_ONLY,
-    RW_CHANNEL_DTLS_PRIMARY,
-    RW_CHANNEL_DTLS_FALLBACK,
+    IOG_CHANNEL_CSTP_ONLY,
+    IOG_CHANNEL_DTLS_PRIMARY,
+    IOG_CHANNEL_DTLS_FALLBACK,
 } rw_channel_state_t;
 
 /** DPD context — pure state machine, no I/O. */

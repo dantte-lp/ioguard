@@ -20,11 +20,11 @@ int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker, uint32_t timeo
 
 int rw_shutdown_encode_disconnect(uint8_t *buf, size_t buf_len)
 {
-    if (buf == nullptr || buf_len < RW_CSTP_HEADER_SIZE) {
+    if (buf == nullptr || buf_len < IOG_CSTP_HEADER_SIZE) {
         return -EINVAL;
     }
 
-    return rw_cstp_encode(buf, buf_len, RW_CSTP_DISCONNECT, nullptr, 0);
+    return rw_cstp_encode(buf, buf_len, IOG_CSTP_DISCONNECT, nullptr, 0);
 }
 
 int rw_shutdown_drain(rw_shutdown_ctx_t *ctx)

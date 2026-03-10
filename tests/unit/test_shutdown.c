@@ -54,7 +54,7 @@ void test_shutdown_init_null_params(void)
 
 void test_shutdown_encode_disconnect(void)
 {
-    uint8_t buf[RW_CSTP_HEADER_SIZE + 16];
+    uint8_t buf[IOG_CSTP_HEADER_SIZE + 16];
     int len = rw_shutdown_encode_disconnect(buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, len);
 
@@ -62,7 +62,7 @@ void test_shutdown_encode_disconnect(void)
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(buf, (size_t)len, &pkt);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_INT(RW_CSTP_DISCONNECT, pkt.type);
+    TEST_ASSERT_EQUAL_INT(IOG_CSTP_DISCONNECT, pkt.type);
     TEST_ASSERT_EQUAL_UINT(0, pkt.payload_len);
 }
 

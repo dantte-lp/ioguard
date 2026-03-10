@@ -44,15 +44,15 @@ static int secmod_persist_session(rw_secmod_ctx_t *ctx, const iog_session_t *ses
         return 0;
     }
 
-    rw_session_record_t record;
+    iog_session_record_t record;
     memset(&record, 0, sizeof(record));
-    memcpy(record.session_id, session->cookie, RW_SESSION_ID_LEN);
+    memcpy(record.session_id, session->cookie, IOG_SESSION_ID_LEN);
     snprintf(record.username, sizeof(record.username), "%s", session->username);
     snprintf(record.groupname, sizeof(record.groupname), "%s", session->group);
     record.created_at = session->created;
     record.expires_at = session->created + (time_t)session->ttl_seconds;
 
-    return rw_mdbx_session_create(ctx->mdbx, &record);
+    return iog_mdbx_session_create(ctx->mdbx, &record);
 }
 
 /* Delete session from mdbx (if available) — used during disconnect handling */
@@ -61,7 +61,7 @@ static int secmod_persist_session(rw_secmod_ctx_t *ctx, const iog_session_t *ses
     if (ctx->mdbx == nullptr) {
         return 0;
     }
-    return rw_mdbx_session_delete(ctx->mdbx, cookie);
+    return iog_mdbx_session_delete(ctx->mdbx, cookie);
 }
 
 /* Build and send an auth response over IPC. */
@@ -266,18 +266,18 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, iog_ipc_session_
 constexpr size_t SECMOD_CLEANUP_BATCH = 64;
 
 typedef struct {
-    uint8_t ids[SECMOD_CLEANUP_BATCH][RW_SESSION_ID_LEN];
+    uint8_t ids[SECMOD_CLEANUP_BATCH][IOG_SESSION_ID_LEN];
     size_t count;
 } secmod_expired_batch_t;
 
-static int expired_session_collect(const rw_session_record_t *session, void *userdata)
+static int expired_session_collect(const iog_session_record_t *session, void *userdata)
 {
     secmod_expired_batch_t *batch = userdata;
     time_t now = time(nullptr);
 
     if (session->expires_at > 0 && session->expires_at < now) {
         if (batch->count < SECMOD_CLEANUP_BATCH) {
-            memcpy(batch->ids[batch->count], session->session_id, RW_SESSION_ID_LEN);
+            memcpy(batch->ids[batch->count], session->session_id, IOG_SESSION_ID_LEN);
             batch->count++;
         }
     }
@@ -294,11 +294,11 @@ static void secmod_cleanup_expired_mdbx(rw_secmod_ctx_t *ctx)
     memset(&batch, 0, sizeof(batch));
 
     /* Pass 1: collect expired IDs (read-only txn inside iterate) */
-    (void)rw_mdbx_session_iterate(ctx->mdbx, expired_session_collect, &batch);
+    (void)iog_mdbx_session_iterate(ctx->mdbx, expired_session_collect, &batch);
 
     /* Pass 2: delete collected sessions (separate write txns) */
     for (size_t i = 0; i < batch.count; i++) {
-        (void)rw_mdbx_session_delete(ctx->mdbx, batch.ids[i]);
+        (void)iog_mdbx_session_delete(ctx->mdbx, batch.ids[i]);
     }
 }
 

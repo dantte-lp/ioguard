@@ -12,13 +12,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t RW_COMPRESS_MAX_INPUT = 16384;
-constexpr size_t RW_COMPRESS_MAX_OUTPUT = 16384 + 256;
+constexpr size_t IOG_COMPRESS_MAX_INPUT = 16384;
+constexpr size_t IOG_COMPRESS_MAX_OUTPUT = 16384 + 256;
 
 typedef enum : uint8_t {
-    RW_COMPRESS_NONE,
-    RW_COMPRESS_LZ4,
-    RW_COMPRESS_LZS,
+    IOG_COMPRESS_NONE,
+    IOG_COMPRESS_LZ4,
+    IOG_COMPRESS_LZS,
 } rw_compress_type_t;
 
 typedef struct {

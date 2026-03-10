@@ -18,7 +18,7 @@ void test_tun_config_init_defaults(void)
     rw_tun_config_t cfg;
     rw_tun_config_init(&cfg);
 
-    TEST_ASSERT_EQUAL_UINT32(RW_TUN_DEFAULT_MTU, cfg.mtu);
+    TEST_ASSERT_EQUAL_UINT32(IOG_TUN_DEFAULT_MTU, cfg.mtu);
     TEST_ASSERT_EQUAL_UINT32(1406, cfg.mtu);
     TEST_ASSERT_TRUE(cfg.set_nonblock);
     TEST_ASSERT_EQUAL_CHAR('\0', cfg.dev_name[0]);
@@ -69,7 +69,7 @@ void test_tun_calc_mtu_ipv4(void)
     TEST_ASSERT_EQUAL_UINT32(1419, rw_tun_calc_mtu(1500, AF_INET));
 
     /* Small MTU clamped to minimum */
-    TEST_ASSERT_EQUAL_UINT32(RW_TUN_MIN_MTU, rw_tun_calc_mtu(100, AF_INET));
+    TEST_ASSERT_EQUAL_UINT32(IOG_TUN_MIN_MTU, rw_tun_calc_mtu(100, AF_INET));
 }
 
 void test_tun_calc_mtu_ipv6(void)
@@ -81,7 +81,7 @@ void test_tun_calc_mtu_ipv6(void)
 void test_tun_calc_mtu_ipv6_clamp(void)
 {
     /* Small base MTU with IPv6 overhead → clamped to minimum */
-    TEST_ASSERT_EQUAL_UINT32(RW_TUN_MIN_MTU, rw_tun_calc_mtu(100, AF_INET6));
+    TEST_ASSERT_EQUAL_UINT32(IOG_TUN_MIN_MTU, rw_tun_calc_mtu(100, AF_INET6));
 }
 
 void test_tun_alloc_not_root(void)
@@ -104,7 +104,7 @@ void test_tun_alloc_not_root(void)
     int ret = rw_tun_alloc(&cfg, &tun);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(tun.fd >= 0);
-    TEST_ASSERT_EQUAL_UINT32(RW_TUN_DEFAULT_MTU, tun.mtu);
+    TEST_ASSERT_EQUAL_UINT32(IOG_TUN_DEFAULT_MTU, tun.mtu);
     TEST_ASSERT_TRUE(tun.dev_name[0] != '\0');
 
     rw_tun_close(&tun);

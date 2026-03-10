@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <time.h>
 
-constexpr size_t RW_SESSION_ID_LEN = 32;
+constexpr size_t IOG_SESSION_ID_LEN = 32;
 constexpr size_t RW_MDBX_MAX_READERS = 128;
 constexpr size_t RW_MDBX_MAX_DBS = 8;
 constexpr size_t RW_MDBX_SIZE_LOWER = 1 * 1024 * 1024;
@@ -24,7 +24,7 @@ constexpr size_t RW_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024;
 
 /** VPN session record stored in libmdbx. */
 typedef struct {
-    uint8_t session_id[RW_SESSION_ID_LEN];
+    uint8_t session_id[IOG_SESSION_ID_LEN];
     uint8_t cookie_hmac[32];
     uint8_t dtls_master_secret[48];
     uint32_t assigned_ipv4;
@@ -35,7 +35,7 @@ typedef struct {
     uint32_t source_ip;
     uint16_t source_port;
     bool deny_roaming;
-} rw_session_record_t;
+} iog_session_record_t;
 
 /** Opaque context owning an MDBX environment and session table handle. */
 typedef struct {
@@ -63,7 +63,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param session Session record to store (session_id is the key).
  * @return 0 on success, -EEXIST if key exists, other negative errno on error.
  */
-[[nodiscard]] int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx, const rw_session_record_t *session);
+[[nodiscard]] int iog_mdbx_session_create(rw_mdbx_ctx_t *ctx, const iog_session_record_t *session);
 
 /**
  * @brief Look up a session by its 32-byte ID.
@@ -72,9 +72,9 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param out        Output record (copied before txn ends).
  * @return 0 on success, -ENOENT if not found, other negative errno on error.
  */
-[[nodiscard]] int rw_mdbx_session_lookup(rw_mdbx_ctx_t *ctx,
-                                         const uint8_t session_id[RW_SESSION_ID_LEN],
-                                         rw_session_record_t *out);
+[[nodiscard]] int iog_mdbx_session_lookup(rw_mdbx_ctx_t *ctx,
+                                         const uint8_t session_id[IOG_SESSION_ID_LEN],
+                                         iog_session_record_t *out);
 
 /**
  * @brief Delete a session by its 32-byte ID.
@@ -82,8 +82,8 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param session_id 32-byte session identifier.
  * @return 0 on success, -ENOENT if not found, other negative errno on error.
  */
-[[nodiscard]] int rw_mdbx_session_delete(rw_mdbx_ctx_t *ctx,
-                                         const uint8_t session_id[RW_SESSION_ID_LEN]);
+[[nodiscard]] int iog_mdbx_session_delete(rw_mdbx_ctx_t *ctx,
+                                         const uint8_t session_id[IOG_SESSION_ID_LEN]);
 
 /**
  * @brief Count the number of session records in the store.
@@ -91,10 +91,10 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param count Output count.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count);
+[[nodiscard]] int iog_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count);
 
-/** Per-session callback for rw_mdbx_session_iterate(). Return non-zero to stop. */
-typedef int (*rw_mdbx_session_iter_fn)(const rw_session_record_t *session, void *userdata);
+/** Per-session callback for iog_mdbx_session_iterate(). Return non-zero to stop. */
+typedef int (*iog_mdbx_session_iter_fn)(const iog_session_record_t *session, void *userdata);
 
 /**
  * @brief Iterate over every session record, calling fn for each.
@@ -104,7 +104,7 @@ typedef int (*rw_mdbx_session_iter_fn)(const rw_session_record_t *session, void 
  * @return 0 on success (all records visited), negative errno on error,
  *         or the non-zero value returned by fn if iteration was stopped.
  */
-[[nodiscard]] int rw_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, rw_mdbx_session_iter_fn fn,
+[[nodiscard]] int iog_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn,
                                           void *userdata);
 
 #endif /* RINGWALL_STORAGE_MDBX_H */

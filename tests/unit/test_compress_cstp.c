@@ -15,15 +15,15 @@ void tearDown(void)
 void test_cstp_encode_compressed_type(void)
 {
     const uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
-    uint8_t buf[RW_CSTP_HEADER_SIZE + 4];
+    uint8_t buf[IOG_CSTP_HEADER_SIZE + 4];
 
-    int encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_COMPRESSED, data, sizeof(data));
-    TEST_ASSERT_EQUAL_INT((int)(RW_CSTP_HEADER_SIZE + 4), encoded);
+    int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_COMPRESSED, data, sizeof(data));
+    TEST_ASSERT_EQUAL_INT((int)(IOG_CSTP_HEADER_SIZE + 4), encoded);
 
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(buf, (size_t)encoded, &pkt);
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_COMPRESSED, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_COMPRESSED, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(4, pkt.payload_len);
 }
 
@@ -31,7 +31,7 @@ void test_compress_none_cstp_roundtrip(void)
 {
     /* Compress with NONE, wrap in CSTP COMPRESSED, decode, decompress */
     rw_compress_ctx_t comp;
-    (void)rw_compress_init(&comp, RW_COMPRESS_NONE);
+    (void)rw_compress_init(&comp, IOG_COMPRESS_NONE);
 
     const uint8_t payload[] = "Hello, VPN!";
     uint8_t compressed[64];
@@ -40,15 +40,15 @@ void test_compress_none_cstp_roundtrip(void)
     TEST_ASSERT_GREATER_THAN(0, clen);
 
     /* Wrap compressed data in CSTP COMPRESSED frame */
-    uint8_t frame[RW_CSTP_HEADER_SIZE + 64];
-    int flen = rw_cstp_encode(frame, sizeof(frame), RW_CSTP_COMPRESSED, compressed, (size_t)clen);
+    uint8_t frame[IOG_CSTP_HEADER_SIZE + 64];
+    int flen = rw_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
     TEST_ASSERT_GREATER_THAN(0, flen);
 
     /* Decode CSTP frame */
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(frame, (size_t)flen, &pkt);
     TEST_ASSERT_EQUAL_INT(flen, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_COMPRESSED, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_COMPRESSED, pkt.type);
 
     /* Decompress */
     uint8_t decompressed[64];
@@ -63,7 +63,7 @@ void test_compress_none_cstp_roundtrip(void)
 void test_compress_lzs_cstp_roundtrip(void)
 {
     rw_compress_ctx_t comp;
-    int ret = rw_compress_init(&comp, RW_COMPRESS_LZS);
+    int ret = rw_compress_init(&comp, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     const uint8_t payload[] = "AAAAAAAAAAAAAAAA"; /* repeated for compression */
@@ -73,13 +73,13 @@ void test_compress_lzs_cstp_roundtrip(void)
     TEST_ASSERT_GREATER_THAN(0, clen);
 
     /* Wrap in CSTP frame */
-    uint8_t frame[RW_CSTP_HEADER_SIZE + 128];
-    int flen = rw_cstp_encode(frame, sizeof(frame), RW_CSTP_COMPRESSED, compressed, (size_t)clen);
+    uint8_t frame[IOG_CSTP_HEADER_SIZE + 128];
+    int flen = rw_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
     TEST_ASSERT_GREATER_THAN(0, flen);
 
     /* Decode CSTP + decompress with fresh context */
     rw_compress_ctx_t decomp;
-    ret = rw_compress_init(&decomp, RW_COMPRESS_LZS);
+    ret = rw_compress_init(&decomp, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     rw_cstp_packet_t pkt;
@@ -109,7 +109,7 @@ void test_worker_connection_has_compress(void)
 
     rw_connection_t *conn = rw_worker_find_connection(w, (uint64_t)conn_id);
     TEST_ASSERT_NOT_NULL(conn);
-    TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, conn->compress.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, conn->compress.type);
 
     (void)rw_worker_remove_connection(w, (uint64_t)conn_id);
     rw_worker_destroy(w);
@@ -119,15 +119,15 @@ void test_data_cstp_not_compressed(void)
 {
     /* DATA type should not be treated as compressed */
     const uint8_t data[] = {0xDE, 0xAD};
-    uint8_t buf[RW_CSTP_HEADER_SIZE + 2];
+    uint8_t buf[IOG_CSTP_HEADER_SIZE + 2];
 
-    int encoded = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DATA, data, sizeof(data));
+    int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DATA, data, sizeof(data));
     TEST_ASSERT_GREATER_THAN(0, encoded);
 
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(buf, (size_t)encoded, &pkt);
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_DATA, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DATA, pkt.type);
     /* DATA payload is raw, not compressed */
     TEST_ASSERT_EQUAL_MEMORY(data, pkt.payload, sizeof(data));
 }
@@ -146,13 +146,13 @@ void test_compress_type_in_connection(void)
     TEST_ASSERT_NOT_NULL(conn);
 
     /* Default is NONE */
-    TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, conn->compress.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, conn->compress.type);
 
     /* Can reinit to LZS */
     rw_compress_destroy(&conn->compress);
-    int ret = rw_compress_init(&conn->compress, RW_COMPRESS_LZS);
+    int ret = rw_compress_init(&conn->compress, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
-    TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZS, conn->compress.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, conn->compress.type);
 
     (void)rw_worker_remove_connection(w, (uint64_t)cid);
     rw_worker_destroy(w);

@@ -35,7 +35,7 @@ typedef struct {
  *
  * Helper for sending disconnect to each connection's TLS write path.
  *
- * @param buf      Output buffer (must be >= RW_CSTP_HEADER_SIZE).
+ * @param buf      Output buffer (must be >= IOG_CSTP_HEADER_SIZE).
  * @param buf_len  Buffer size.
  * @return Encoded length on success, negative errno on error.
  */

@@ -35,11 +35,11 @@ typedef struct {
     rw_compress_ctx_t *compress;
 
     /* Receive buffer (accumulates partial CSTP frames from TLS) */
-    uint8_t recv_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     size_t recv_len;
 
     /* Send buffer (CSTP-encoded frame for TLS write) */
-    uint8_t send_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    uint8_t send_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
 
     /* State */
     bool disconnected;

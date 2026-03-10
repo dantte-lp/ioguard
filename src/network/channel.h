@@ -13,7 +13,7 @@
 #include "network/compress.h"
 #include "network/dpd.h"
 
-constexpr uint32_t RW_CHANNEL_DEFAULT_MAX_FAILS = 3;
+constexpr uint32_t IOG_CHANNEL_DEFAULT_MAX_FAILS = 3;
 
 typedef struct {
     rw_channel_state_t state;

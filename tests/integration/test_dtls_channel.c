@@ -28,29 +28,29 @@ void test_channel_lifecycle(void)
     rw_channel_init(&ch);
 
     /* Start CSTP_ONLY */
-    TEST_ASSERT_EQUAL_UINT8(RW_CHANNEL_CSTP_ONLY, ch.state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_CSTP_ONLY, ch.state);
     TEST_ASSERT_FALSE(rw_channel_use_dtls(&ch));
 
     /* DTLS comes up */
     (void)rw_channel_on_dtls_up(&ch);
-    TEST_ASSERT_EQUAL_UINT8(RW_CHANNEL_DTLS_PRIMARY, ch.state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_DTLS_PRIMARY, ch.state);
     TEST_ASSERT_TRUE(rw_channel_use_dtls(&ch));
 
     /* DTLS fails → fallback */
     (void)rw_channel_on_dtls_down(&ch);
-    TEST_ASSERT_EQUAL_UINT8(RW_CHANNEL_DTLS_FALLBACK, ch.state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_DTLS_FALLBACK, ch.state);
     TEST_ASSERT_FALSE(rw_channel_use_dtls(&ch));
 
     /* Recovery */
     (void)rw_channel_on_dtls_recovery(&ch);
-    TEST_ASSERT_EQUAL_UINT8(RW_CHANNEL_DTLS_PRIMARY, ch.state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_DTLS_PRIMARY, ch.state);
     TEST_ASSERT_TRUE(rw_channel_use_dtls(&ch));
 
     /* Multiple failures → CSTP_ONLY */
     (void)rw_channel_on_dtls_down(&ch);
     (void)rw_channel_on_dtls_down(&ch);
     (void)rw_channel_on_dtls_down(&ch);
-    TEST_ASSERT_EQUAL_UINT8(RW_CHANNEL_CSTP_ONLY, ch.state);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_CSTP_ONLY, ch.state);
     TEST_ASSERT_FALSE(rw_channel_use_dtls(&ch));
 }
 
@@ -61,7 +61,7 @@ void test_compress_lzs_cstp_integration(void)
 {
     /* Negotiate LZS */
     rw_compress_type_t ct = rw_compress_negotiate("lzs,deflate");
-    TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZS, ct);
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, ct);
 
     /* Init compressor */
     rw_compress_ctx_t comp;
@@ -75,19 +75,19 @@ void test_compress_lzs_cstp_integration(void)
     TEST_ASSERT_GREATER_THAN(0, clen);
 
     /* Wrap in CSTP COMPRESSED frame */
-    uint8_t frame[RW_CSTP_HEADER_SIZE + 128];
-    int flen = rw_cstp_encode(frame, sizeof(frame), RW_CSTP_COMPRESSED, compressed, (size_t)clen);
+    uint8_t frame[IOG_CSTP_HEADER_SIZE + 128];
+    int flen = rw_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
     TEST_ASSERT_GREATER_THAN(0, flen);
 
     /* Decode CSTP */
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(frame, (size_t)flen, &pkt);
     TEST_ASSERT_EQUAL_INT(flen, consumed);
-    TEST_ASSERT_EQUAL_UINT8(RW_CSTP_COMPRESSED, pkt.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_COMPRESSED, pkt.type);
 
     /* Decompress with fresh context */
     rw_compress_ctx_t decomp;
-    ret = rw_compress_init(&decomp, RW_COMPRESS_LZS);
+    ret = rw_compress_init(&decomp, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     uint8_t decompressed[64];
@@ -105,17 +105,17 @@ void test_compress_lzs_cstp_integration(void)
  */
 void test_master_secret_hex_roundtrip(void)
 {
-    uint8_t secret[RW_DTLS_MASTER_SECRET_LEN];
+    uint8_t secret[IOG_DTLS_MASTER_SECRET_LEN];
     for (size_t i = 0; i < sizeof(secret); i++) {
         secret[i] = (uint8_t)(i * 5 + 3);
     }
 
-    char hex[RW_DTLS_MASTER_SECRET_HEX_LEN + 1];
+    char hex[IOG_DTLS_MASTER_SECRET_HEX_LEN + 1];
     int ret = rw_dtls_hex_encode(secret, sizeof(secret), hex, sizeof(hex));
     TEST_ASSERT_EQUAL_INT(0, ret);
-    TEST_ASSERT_EQUAL_size_t(RW_DTLS_MASTER_SECRET_HEX_LEN, strlen(hex));
+    TEST_ASSERT_EQUAL_size_t(IOG_DTLS_MASTER_SECRET_HEX_LEN, strlen(hex));
 
-    uint8_t decoded[RW_DTLS_MASTER_SECRET_LEN];
+    uint8_t decoded[IOG_DTLS_MASTER_SECRET_LEN];
     ret = rw_dtls_hex_decode(hex, strlen(hex), decoded, sizeof(decoded));
     TEST_ASSERT_EQUAL_INT((int)sizeof(secret), ret);
     TEST_ASSERT_EQUAL_MEMORY(secret, decoded, sizeof(secret));
@@ -138,7 +138,7 @@ void test_dtls_headers_roundtrip(void)
 
     /* Parse encoding back */
     rw_compress_type_t ct = rw_dtls_parse_accept_encoding("lzs");
-    TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZS, ct);
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, ct);
 }
 
 /**
@@ -159,13 +159,13 @@ void test_worker_compress_lifecycle(void)
 
     rw_connection_t *conn = rw_worker_find_connection(w, (uint64_t)cid);
     TEST_ASSERT_NOT_NULL(conn);
-    TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, conn->compress.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, conn->compress.type);
 
     /* Switch to LZS */
     rw_compress_destroy(&conn->compress);
-    int ret = rw_compress_init(&conn->compress, RW_COMPRESS_LZS);
+    int ret = rw_compress_init(&conn->compress, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
-    TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZS, conn->compress.type);
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, conn->compress.type);
 
     /* Remove — should clean up compress context */
     (void)rw_worker_remove_connection(w, (uint64_t)cid);

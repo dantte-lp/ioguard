@@ -15,8 +15,8 @@ static int handle_data_packet(rw_conn_data_t *data, const rw_cstp_packet_t *pkt)
     size_t payload_len = pkt->payload_len;
 
     /* Decompress if COMPRESSED type and compressor available */
-    uint8_t decomp_buf[RW_CSTP_MAX_PAYLOAD];
-    if (pkt->type == RW_CSTP_COMPRESSED && data->compress != nullptr) {
+    uint8_t decomp_buf[IOG_CSTP_MAX_PAYLOAD];
+    if (pkt->type == IOG_CSTP_COMPRESSED && data->compress != nullptr) {
         int dlen =
             rw_decompress(data->compress, payload, payload_len, decomp_buf, sizeof(decomp_buf));
         if (dlen < 0) {
@@ -56,7 +56,7 @@ static int send_cstp_packet(rw_conn_data_t *data, rw_cstp_type_t type, const uin
 /* Send DPD response */
 static int send_dpd_response(rw_conn_data_t *data)
 {
-    return send_cstp_packet(data, RW_CSTP_DPD_RESP, nullptr, 0);
+    return send_cstp_packet(data, IOG_CSTP_DPD_RESP, nullptr, 0);
 }
 
 /* ============================================================================
@@ -106,7 +106,7 @@ int rw_conn_data_process_tls(rw_conn_data_t *data)
     data->recv_len += (size_t)n;
 
     /* Decode CSTP packets (may be multiple in buffer) */
-    while (data->recv_len >= RW_CSTP_HEADER_SIZE) {
+    while (data->recv_len >= IOG_CSTP_HEADER_SIZE) {
         rw_cstp_packet_t pkt;
         int consumed = rw_cstp_decode(data->recv_buf, data->recv_len, &pkt);
         if (consumed == -EAGAIN) {
@@ -119,24 +119,24 @@ int rw_conn_data_process_tls(rw_conn_data_t *data)
         /* Route by packet type */
         int rc = 0;
         switch (pkt.type) {
-        case RW_CSTP_DATA:
-        case RW_CSTP_COMPRESSED:
+        case IOG_CSTP_DATA:
+        case IOG_CSTP_COMPRESSED:
             rc = handle_data_packet(data, &pkt);
             break;
-        case RW_CSTP_DPD_REQ:
+        case IOG_CSTP_DPD_REQ:
             if (data->dpd != nullptr) {
                 (void)rw_dpd_on_request(data->dpd, 0);
             }
             rc = send_dpd_response(data);
             break;
-        case RW_CSTP_DPD_RESP:
+        case IOG_CSTP_DPD_RESP:
             if (data->dpd != nullptr) {
                 (void)rw_dpd_on_response(data->dpd, 0);
             }
             break;
-        case RW_CSTP_KEEPALIVE:
+        case IOG_CSTP_KEEPALIVE:
             break; /* no-op */
-        case RW_CSTP_DISCONNECT:
+        case IOG_CSTP_DISCONNECT:
             data->disconnected = true;
             return -ECONNRESET;
         default:
@@ -162,23 +162,23 @@ int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt, size_t pk
     if (data == nullptr || pkt == nullptr || pkt_len == 0) {
         return -EINVAL;
     }
-    if (pkt_len > RW_CSTP_MAX_PAYLOAD) {
+    if (pkt_len > IOG_CSTP_MAX_PAYLOAD) {
         return -EMSGSIZE;
     }
 
     /* Compress if compressor available and not NONE */
-    rw_cstp_type_t type = RW_CSTP_DATA;
+    rw_cstp_type_t type = IOG_CSTP_DATA;
     const uint8_t *payload = pkt;
     size_t payload_len = pkt_len;
-    uint8_t comp_buf[RW_CSTP_MAX_PAYLOAD];
+    uint8_t comp_buf[IOG_CSTP_MAX_PAYLOAD];
 
-    if (data->compress != nullptr && data->compress->type != RW_COMPRESS_NONE) {
+    if (data->compress != nullptr && data->compress->type != IOG_COMPRESS_NONE) {
         int clen = rw_compress(data->compress, pkt, pkt_len, comp_buf, sizeof(comp_buf));
         if (clen > 0 && (size_t)clen < pkt_len) {
             /* Only use compressed version if it's actually smaller */
             payload = comp_buf;
             payload_len = (size_t)clen;
-            type = RW_CSTP_COMPRESSED;
+            type = IOG_CSTP_COMPRESSED;
         }
     }
 
@@ -206,7 +206,7 @@ int rw_conn_data_send_dpd_req(rw_conn_data_t *data)
     if (data->dpd != nullptr) {
         (void)rw_dpd_on_timeout(data->dpd);
     }
-    return send_cstp_packet(data, RW_CSTP_DPD_REQ, nullptr, 0);
+    return send_cstp_packet(data, IOG_CSTP_DPD_REQ, nullptr, 0);
 }
 
 int rw_conn_data_send_keepalive(rw_conn_data_t *data)
@@ -214,5 +214,5 @@ int rw_conn_data_send_keepalive(rw_conn_data_t *data)
     if (data == nullptr) {
         return -EINVAL;
     }
-    return send_cstp_packet(data, RW_CSTP_KEEPALIVE, nullptr, 0);
+    return send_cstp_packet(data, IOG_CSTP_KEEPALIVE, nullptr, 0);
 }

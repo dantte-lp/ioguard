@@ -55,7 +55,7 @@ static void on_dead_cb(uint64_t conn_id, void *user_data)
 
 static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload, size_t payload_len)
 {
-    uint8_t buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    uint8_t buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     int encoded = rw_cstp_encode(buf, sizeof(buf), type, payload, payload_len);
     if (encoded < 0) {
         return encoded;
@@ -72,7 +72,7 @@ void setUp(void)
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, tls_sv));
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, tun_sv));
     rw_dpd_init(&dpd, 30, 3);
-    TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, RW_COMPRESS_NONE));
+    TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, IOG_COMPRESS_NONE));
 
     rw_conn_data_config_t data_cfg = {
         .tls_read = mock_tls_read,
@@ -112,7 +112,7 @@ void test_vpn_flow_cstp_data_roundtrip(void)
 {
     /* Client sends DATA → server decodes → writes to TUN */
     const uint8_t payload[] = {0x45, 0x00, 0x00, 0x1C, 0xDE, 0xAD, 0xBE, 0xEF};
-    TEST_ASSERT_GREATER_THAN(0, inject_cstp(RW_CSTP_DATA, payload, sizeof(payload)));
+    TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_DATA, payload, sizeof(payload)));
 
     int ret = rw_conn_data_process_tls(&conn_data);
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -135,7 +135,7 @@ void test_vpn_flow_cstp_data_roundtrip(void)
     rw_cstp_packet_t decoded;
     int consumed = rw_cstp_decode(tls_buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_INT(RW_CSTP_DATA, decoded.type);
+    TEST_ASSERT_EQUAL_INT(IOG_CSTP_DATA, decoded.type);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(reply, decoded.payload, sizeof(reply));
 }
 
@@ -166,23 +166,23 @@ void test_vpn_flow_dpd_probe_response(void)
     rw_cstp_packet_t pkt;
     int consumed = rw_cstp_decode(buf, (size_t)n, &pkt);
     TEST_ASSERT_GREATER_THAN(0, consumed);
-    TEST_ASSERT_EQUAL_INT(RW_CSTP_DPD_REQ, pkt.type);
+    TEST_ASSERT_EQUAL_INT(IOG_CSTP_DPD_REQ, pkt.type);
 
     /* Client sends DPD_RESP */
-    TEST_ASSERT_GREATER_THAN(0, inject_cstp(RW_CSTP_DPD_RESP, nullptr, 0));
+    TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_DPD_RESP, nullptr, 0));
 
     /* Server processes response */
     ret = rw_conn_data_process_tls(&conn_data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* DPD should be back to IDLE */
-    TEST_ASSERT_EQUAL_INT(RW_DPD_IDLE, dpd.state);
+    TEST_ASSERT_EQUAL_INT(IOG_DPD_IDLE, dpd.state);
 }
 
 void test_vpn_flow_client_disconnect(void)
 {
     /* Client sends DISCONNECT → server detects it */
-    TEST_ASSERT_GREATER_THAN(0, inject_cstp(RW_CSTP_DISCONNECT, nullptr, 0));
+    TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_DISCONNECT, nullptr, 0));
 
     int ret = rw_conn_data_process_tls(&conn_data);
     TEST_ASSERT_EQUAL_INT(-ECONNRESET, ret);
@@ -198,7 +198,7 @@ void test_vpn_flow_server_shutdown_sends_disconnect(void)
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, (int)id);
 
     /* Shutdown encodes DISCONNECT frame */
-    uint8_t disc_buf[RW_CSTP_HEADER_SIZE + 4];
+    uint8_t disc_buf[IOG_CSTP_HEADER_SIZE + 4];
     int len = rw_shutdown_encode_disconnect(disc_buf, sizeof(disc_buf));
     TEST_ASSERT_GREATER_THAN(0, len);
 
@@ -226,7 +226,7 @@ void test_vpn_flow_multiple_clients(void)
         TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, cli_tls[i]));
         TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, cli_tun[i]));
         rw_dpd_init(&cli_dpd[i], 30, 3);
-        TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&cli_comp[i], RW_COMPRESS_NONE));
+        TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&cli_comp[i], IOG_COMPRESS_NONE));
 
         rw_conn_data_config_t cfg = {
             .tls_read = mock_tls_read,
@@ -244,9 +244,9 @@ void test_vpn_flow_multiple_clients(void)
         uint8_t payload[4] = {0x45, 0x00, (uint8_t)(i + 1), 0x00};
 
         /* Inject CSTP DATA via "client" end */
-        uint8_t cstp_buf[RW_CSTP_HEADER_SIZE + 4];
+        uint8_t cstp_buf[IOG_CSTP_HEADER_SIZE + 4];
         int encoded =
-            rw_cstp_encode(cstp_buf, sizeof(cstp_buf), RW_CSTP_DATA, payload, sizeof(payload));
+            rw_cstp_encode(cstp_buf, sizeof(cstp_buf), IOG_CSTP_DATA, payload, sizeof(payload));
         TEST_ASSERT_GREATER_THAN(0, encoded);
         ssize_t w = write(cli_tls[i][1], cstp_buf, (size_t)encoded);
         TEST_ASSERT_GREATER_THAN(0, (int)w);

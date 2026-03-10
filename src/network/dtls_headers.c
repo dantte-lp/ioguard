@@ -27,7 +27,7 @@ int rw_dtls_build_headers(char *buf, size_t buf_size, const char *master_secret_
     /* Append compression if negotiated */
     if (accept_encoding && strlen(accept_encoding) > 0) {
         rw_compress_type_t ct = rw_compress_negotiate(accept_encoding);
-        if (ct != RW_COMPRESS_NONE) {
+        if (ct != IOG_COMPRESS_NONE) {
             int extra = snprintf(buf + n, buf_size - (size_t)n, "X-DTLS-Accept-Encoding: %s\r\n",
                                  rw_compress_type_name(ct));
             if (extra < 0) {
