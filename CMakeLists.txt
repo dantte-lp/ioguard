@@ -518,6 +518,24 @@ if(BUILD_TESTING)
             target_link_libraries(test_conn_tls PRIVATE pthread)
         endif()
 
+        # Sprint 6 — CSTP data path (conn_data)
+        add_library(rw_conn_data STATIC src/core/conn_data.c)
+        target_include_directories(rw_conn_data PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_conn_data PRIVATE _GNU_SOURCE)
+        target_link_libraries(rw_conn_data PUBLIC rw_cstp rw_dpd rw_compress)
+
+        rw_add_test(test_conn_data tests/unit/test_conn_data.c
+            rw_conn_data rw_cstp rw_dpd rw_compress)
+
+        # Sprint 6 — DPD/keepalive timer integration
+        add_library(rw_conn_timer STATIC src/core/conn_timer.c)
+        target_include_directories(rw_conn_timer PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(rw_conn_timer PRIVATE _GNU_SOURCE)
+        target_link_libraries(rw_conn_timer PUBLIC rw_conn_data rw_dpd rw_cstp)
+
+        rw_add_test(test_conn_timer tests/unit/test_conn_timer.c
+            rw_conn_timer rw_conn_data rw_cstp rw_dpd rw_compress)
+
         # Sprint 3 — Data path integration test
         rw_add_test(test_data_path tests/integration/test_data_path.c rw_cstp rw_dpd rw_worker rw_io)
 
