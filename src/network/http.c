@@ -5,15 +5,6 @@
 #include <string.h>
 #include <strings.h>
 
-/* Forward declarations for llhttp callbacks */
-static int on_url(llhttp_t *parser, const char *at, size_t length);
-static int on_header_field(llhttp_t *parser, const char *at, size_t length);
-static int on_header_value(llhttp_t *parser, const char *at, size_t length);
-static int on_header_value_complete(llhttp_t *parser);
-static int on_body(llhttp_t *parser, const char *at, size_t length);
-static int on_headers_complete(llhttp_t *parser);
-static int on_message_complete(llhttp_t *parser);
-
 static const char *status_phrase(int code)
 {
     switch (code) {
@@ -44,6 +35,36 @@ static const char *status_phrase(int code)
     }
 }
 
+/**
+ * Copy up to (dst_size - 1) bytes from src (not NUL-terminated, length src_len)
+ * into dst and NUL-terminate.
+ */
+static void copy_str(char *dst, size_t dst_size, const char *src, size_t src_len)
+{
+    size_t copy = src_len < dst_size - 1 ? src_len : dst_size - 1;
+    memcpy(dst, src, copy);
+    dst[copy] = '\0';
+}
+
+/**
+ * Extract parsed headers from ihtp_request_t into rw_http_request_t.
+ * Copies pointer+length pairs into NUL-terminated fixed buffers.
+ */
+static void extract_headers(rw_http_request_t *dst, const ihtp_request_t *src)
+{
+    uint32_t count = src->num_headers < RW_HTTP_MAX_HEADERS
+                         ? (uint32_t)src->num_headers
+                         : RW_HTTP_MAX_HEADERS;
+
+    for (uint32_t i = 0; i < count; i++) {
+        copy_str(dst->headers[i].name, RW_HTTP_MAX_HEADER_NAME,
+                 src->headers[i].name, src->headers[i].name_len);
+        copy_str(dst->headers[i].value, RW_HTTP_MAX_HEADER_VALUE,
+                 src->headers[i].value, src->headers[i].value_len);
+    }
+    dst->header_count = count;
+}
+
 int rw_http_parser_init(rw_http_parser_t *p)
 {
     if (p == nullptr) {
@@ -51,19 +72,6 @@ int rw_http_parser_init(rw_http_parser_t *p)
     }
 
     memset(p, 0, sizeof(*p));
-
-    llhttp_settings_init(&p->settings);
-    p->settings.on_url = on_url;
-    p->settings.on_header_field = on_header_field;
-    p->settings.on_header_value = on_header_value;
-    p->settings.on_header_value_complete = on_header_value_complete;
-    p->settings.on_body = on_body;
-    p->settings.on_headers_complete = on_headers_complete;
-    p->settings.on_message_complete = on_message_complete;
-
-    llhttp_init(&p->parser, HTTP_REQUEST, &p->settings);
-    p->parser.data = p;
-
     return 0;
 }
 
@@ -73,10 +81,7 @@ void rw_http_parser_reset(rw_http_parser_t *p)
         return;
     }
 
-    memset(&p->request, 0, sizeof(p->request));
-    llhttp_reset(&p->parser);
-    llhttp_init(&p->parser, HTTP_REQUEST, &p->settings);
-    p->parser.data = p;
+    memset(p, 0, sizeof(*p));
 }
 
 int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
@@ -85,18 +90,87 @@ int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
         return -EINVAL;
     }
 
-    llhttp_errno_t err = llhttp_execute(&p->parser, data, len);
-
-    if (err == HPE_OK) {
+    /* If message already complete, nothing to do */
+    if (p->request.message_complete) {
         return 0;
     }
 
-    if (err == HPE_PAUSED_UPGRADE) {
-        p->request.is_upgrade = true;
-        return 0;
+    /* Accumulate incoming data into the internal buffer */
+    size_t avail = RW_HTTP_BUF_SIZE - p->buf_len;
+    size_t copy = len < avail ? len : avail;
+    if (copy > 0) {
+        memcpy(p->buf + p->buf_len, data, copy);
+        p->buf_len += copy;
     }
 
-    return -EPROTO;
+    /* Phase 1: parse headers if not yet done */
+    if (!p->headers_parsed) {
+        ihtp_request_t req;
+        memset(&req, 0, sizeof(req));
+        size_t consumed = 0;
+        ihtp_policy_t policy = IHTP_POLICY_STRICT;
+
+        ihtp_status_t st =
+            ihtp_parse_request(p->buf, p->buf_len, &req, &policy, &consumed);
+
+        if (st == IHTP_INCOMPLETE) {
+            return 0; /* need more data */
+        }
+
+        if (st != IHTP_OK) {
+            return -EPROTO;
+        }
+
+        /* Headers parsed successfully — extract results */
+        p->headers_parsed = true;
+        p->header_bytes = consumed;
+        p->request.headers_complete = true;
+        p->request.method = (uint8_t)req.method;
+
+        /* Copy URL (path) — NUL-terminate */
+        copy_str(p->request.url, RW_HTTP_MAX_URL, req.path, req.path_len);
+        p->request.url_len = req.path_len < RW_HTTP_MAX_URL - 1
+                                 ? req.path_len
+                                 : RW_HTTP_MAX_URL - 1;
+
+        extract_headers(&p->request, &req);
+
+        /* Determine body expectations */
+        if (req.method == IHTP_METHOD_CONNECT) {
+            p->request.is_upgrade = true;
+            p->request.message_complete = true;
+            p->content_length = 0;
+            return 0;
+        }
+
+        if (req.body_mode == IHTP_BODY_FIXED && req.content_length > 0) {
+            p->content_length = req.content_length;
+        } else {
+            /* No body expected */
+            p->content_length = 0;
+            p->request.message_complete = true;
+            return 0;
+        }
+    }
+
+    /* Phase 2: accumulate body bytes */
+    size_t body_in_buf = p->buf_len - p->header_bytes;
+    size_t body_want = (uint64_t)RW_HTTP_MAX_BODY < p->content_length
+                           ? RW_HTTP_MAX_BODY
+                           : (size_t)p->content_length;
+    size_t body_copy = body_in_buf < body_want ? body_in_buf : body_want;
+
+    if (body_copy > 0) {
+        memcpy(p->request.body, p->buf + p->header_bytes, body_copy);
+        p->request.body_len = body_copy;
+    }
+
+    /* Check if we have received the full body (or truncated to max) */
+    if (body_in_buf >= p->content_length || body_in_buf >= RW_HTTP_MAX_BODY) {
+        p->request.message_complete = true;
+    }
+
+    return 0;
 }
 
 const char *rw_http_get_header(const rw_http_request_t *req, const char *name)
@@ -156,121 +230,4 @@ int rw_http_format_response(char *buf, size_t buf_size, int status_code,
     }
 
     return (int)pos;
-}
-
-/* ---- llhttp callbacks ---- */
-
-static int on_url(llhttp_t *parser, const char *at, size_t length)
-{
-    rw_http_parser_t *p = parser->data;
-    rw_http_request_t *req = &p->request;
-
-    size_t avail = RW_HTTP_MAX_URL - 1 - req->url_len;
-    size_t copy = length < avail ? length : avail;
-
-    memcpy(req->url + req->url_len, at, copy);
-    req->url_len += copy;
-    req->url[req->url_len] = '\0';
-
-    return 0;
-}
-
-static int on_header_field(llhttp_t *parser, const char *at, size_t length)
-{
-    rw_http_parser_t *p = parser->data;
-    rw_http_request_t *req = &p->request;
-
-    /* If we were accumulating a value, we've moved to a new field */
-    if (req->_parsing_value) {
-        req->_cur_field_len = 0;
-        req->_cur_value_len = 0;
-        req->_parsing_value = false;
-    }
-
-    size_t avail = RW_HTTP_MAX_HEADER_NAME - 1 - req->_cur_field_len;
-    size_t copy = length < avail ? length : avail;
-
-    memcpy(req->_cur_header_field + req->_cur_field_len, at, copy);
-    req->_cur_field_len += copy;
-    req->_cur_header_field[req->_cur_field_len] = '\0';
-
-    return 0;
-}
-
-static int on_header_value(llhttp_t *parser, const char *at, size_t length)
-{
-    rw_http_parser_t *p = parser->data;
-    rw_http_request_t *req = &p->request;
-
-    req->_parsing_value = true;
-
-    size_t avail = RW_HTTP_MAX_HEADER_VALUE - 1 - req->_cur_value_len;
-    size_t copy = length < avail ? length : avail;
-
-    memcpy(req->_cur_header_value + req->_cur_value_len, at, copy);
-    req->_cur_value_len += copy;
-    req->_cur_header_value[req->_cur_value_len] = '\0';
-
-    return 0;
-}
-
-static int on_header_value_complete(llhttp_t *parser)
-{
-    rw_http_parser_t *p = parser->data;
-    rw_http_request_t *req = &p->request;
-
-    if (req->header_count >= RW_HTTP_MAX_HEADERS) {
-        return 0;
-    }
-
-    snprintf(req->headers[req->header_count].name, RW_HTTP_MAX_HEADER_NAME, "%s",
-             req->_cur_header_field);
-    snprintf(req->headers[req->header_count].value, RW_HTTP_MAX_HEADER_VALUE, "%s",
-             req->_cur_header_value);
-
-    req->header_count++;
-    req->_cur_field_len = 0;
-    req->_cur_value_len = 0;
-    req->_parsing_value = false;
-
-    return 0;
-}
-
-static int on_body(llhttp_t *parser, const char *at, size_t length)
-{
-    rw_http_parser_t *p = parser->data;
-    rw_http_request_t *req = &p->request;
-
-    size_t avail = RW_HTTP_MAX_BODY - req->body_len;
-    size_t copy = length < avail ? length : avail;
-
-    if (copy > 0) {
-        memcpy(req->body + req->body_len, at, copy);
-        req->body_len += copy;
-    }
-
-    return 0;
-}
-
-static int on_headers_complete(llhttp_t *parser)
-{
-    rw_http_parser_t *p = parser->data;
-    rw_http_request_t *req = &p->request;
-
-    req->headers_complete = true;
-    req->method = llhttp_get_method(parser);
-
-    /* For CONNECT requests, signal upgrade so llhttp returns HPE_PAUSED_UPGRADE */
-    if (req->method == HTTP_CONNECT) {
-        return 2;
-    }
-
-    return 0;
-}
-
-static int on_message_complete(llhttp_t *parser)
-{
-    rw_http_parser_t *p = parser->data;
-    p->request.message_complete = true;
-    return 0;
 }

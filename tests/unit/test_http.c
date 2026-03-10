@@ -29,7 +29,7 @@ void test_http_parse_post_auth(void)
     TEST_ASSERT_TRUE(parser.request.message_complete);
     TEST_ASSERT_TRUE(parser.request.headers_complete);
     TEST_ASSERT_FALSE(parser.request.is_upgrade);
-    TEST_ASSERT_EQUAL_UINT8(HTTP_POST, parser.request.method);
+    TEST_ASSERT_EQUAL_UINT8(IHTP_METHOD_POST, parser.request.method);
     TEST_ASSERT_EQUAL_STRING("/auth", parser.request.url);
     TEST_ASSERT_EQUAL_size_t(5, parser.request.url_len);
     TEST_ASSERT_EQUAL_size_t(44, parser.request.body_len);
@@ -50,7 +50,7 @@ void test_http_parse_connect_tunnel(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(parser.request.is_upgrade);
     TEST_ASSERT_TRUE(parser.request.headers_complete);
-    TEST_ASSERT_EQUAL_UINT8(HTTP_CONNECT, parser.request.method);
+    TEST_ASSERT_EQUAL_UINT8(IHTP_METHOD_CONNECT, parser.request.method);
     TEST_ASSERT_EQUAL_STRING("/CSCOSSLC/tunnel", parser.request.url);
 }
 

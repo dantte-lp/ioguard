@@ -1,6 +1,6 @@
 /**
  * @file http.h
- * @brief HTTP request parser wrapper around llhttp for OpenConnect protocol.
+ * @brief HTTP request parser wrapper around iohttpparser for OpenConnect protocol.
  *
  * Parses POST /auth (authentication) and CONNECT /CSCOSSLC/tunnel (tunnel
  * establishment) requests from Cisco AnyConnect / OpenConnect clients.
@@ -9,7 +9,8 @@
 #ifndef RINGWALL_NETWORK_HTTP_H
 #define RINGWALL_NETWORK_HTTP_H
 
-#include <llhttp.h>
+#include <iohttpparser/ihtp_body.h>
+#include <iohttpparser/ihtp_parser.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -19,13 +20,16 @@ constexpr size_t RW_HTTP_MAX_HEADER_NAME = 128;
 constexpr size_t RW_HTTP_MAX_HEADER_VALUE = 1024;
 constexpr size_t RW_HTTP_MAX_BODY = 8192;
 
+/* Accumulation buffer: headers + max body + margin */
+constexpr size_t RW_HTTP_BUF_SIZE = 32768;
+
 typedef struct {
     char name[RW_HTTP_MAX_HEADER_NAME];
     char value[RW_HTTP_MAX_HEADER_VALUE];
 } rw_http_header_t;
 
 typedef struct {
-    uint8_t method; /* llhttp_method_t */
+    uint8_t method; /* ihtp_method_t */
     char url[RW_HTTP_MAX_URL];
     size_t url_len;
     rw_http_header_t headers[RW_HTTP_MAX_HEADERS];
@@ -35,18 +39,15 @@ typedef struct {
     bool headers_complete;
     bool message_complete;
     bool is_upgrade;
-    /* internal parsing state */
-    char _cur_header_field[RW_HTTP_MAX_HEADER_NAME];
-    size_t _cur_field_len;
-    char _cur_header_value[RW_HTTP_MAX_HEADER_VALUE];
-    size_t _cur_value_len;
-    bool _parsing_value;
 } rw_http_request_t;
 
 typedef struct {
-    llhttp_t parser;
-    llhttp_settings_t settings;
+    char buf[RW_HTTP_BUF_SIZE];
+    size_t buf_len;
     rw_http_request_t request;
+    bool headers_parsed;
+    size_t header_bytes;     /* bytes consumed by header section */
+    uint64_t content_length; /* expected body length (0 = no body) */
 } rw_http_parser_t;
 
 /**
