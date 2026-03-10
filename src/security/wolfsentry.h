@@ -6,8 +6,8 @@
  * and connection tracking in front of TLS handshake.
  */
 
-#ifndef RINGWALL_SECURITY_WOLFSENTRY_H
-#define RINGWALL_SECURITY_WOLFSENTRY_H
+#ifndef IOGUARD_SECURITY_WOLFSENTRY_H
+#define IOGUARD_SECURITY_WOLFSENTRY_H
 
 #include <netinet/in.h>
 #include <stdint.h>
@@ -20,9 +20,9 @@ typedef struct {
 
 /** Result of a connection check. */
 typedef enum : uint8_t {
-    RW_WS_ACCEPT = 0,
-    RW_WS_REJECT = 1,
-    RW_WS_ERROR = 2,
+    IOG_WS_ACCEPT = 0,
+    IOG_WS_REJECT = 1,
+    IOG_WS_ERROR = 2,
 } rw_ws_result_t;
 
 /**
@@ -57,7 +57,7 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param local_addr  Pointer to binary local address (4 or 16 bytes).
  * @param local_port  Local port in host byte order.
  * @param protocol    IP protocol number (e.g. IPPROTO_TCP).
- * @return RW_WS_ACCEPT, RW_WS_REJECT, or RW_WS_ERROR.
+ * @return IOG_WS_ACCEPT, IOG_WS_REJECT, or IOG_WS_ERROR.
  */
 [[nodiscard]] rw_ws_result_t rw_wolfsentry_check_connection(rw_wolfsentry_ctx_t *ctx, int af,
                                                             const void *remote_addr,
@@ -83,4 +83,4 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  */
 [[nodiscard]] int rw_wolfsentry_unban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr);
 
-#endif /* RINGWALL_SECURITY_WOLFSENTRY_H */
+#endif /* IOGUARD_SECURITY_WOLFSENTRY_H */

@@ -289,7 +289,7 @@ target_include_directories(rw_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 # Main process bootstrap helpers (testable, excludes main() entry point)
 add_library(rw_main_helpers STATIC src/core/main.c)
 target_include_directories(rw_main_helpers PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_compile_definitions(rw_main_helpers PUBLIC _GNU_SOURCE PRIVATE RW_TESTING)
+target_compile_definitions(rw_main_helpers PUBLIC _GNU_SOURCE PRIVATE IOG_TESTING)
 
 add_library(rw_session STATIC src/core/session.c)
 target_include_directories(rw_session PUBLIC ${CMAKE_SOURCE_DIR}/src)

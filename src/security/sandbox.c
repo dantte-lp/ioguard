@@ -108,7 +108,7 @@ static int build_filter(rw_sandbox_profile_t profile, scmp_filter_ctx *out_ctx, 
     }
     total += ARRAY_LEN(worker_syscalls);
 
-    if (profile >= RW_SANDBOX_AUTHMOD) {
+    if (profile >= IOG_SANDBOX_AUTHMOD) {
         rc = add_syscalls(ctx, authmod_extra_syscalls, ARRAY_LEN(authmod_extra_syscalls));
         if (rc < 0) {
             goto fail;
@@ -116,7 +116,7 @@ static int build_filter(rw_sandbox_profile_t profile, scmp_filter_ctx *out_ctx, 
         total += ARRAY_LEN(authmod_extra_syscalls);
     }
 
-    if (profile >= RW_SANDBOX_MAIN) {
+    if (profile >= IOG_SANDBOX_MAIN) {
         rc = add_syscalls(ctx, main_extra_syscalls, ARRAY_LEN(main_extra_syscalls));
         if (rc < 0) {
             goto fail;

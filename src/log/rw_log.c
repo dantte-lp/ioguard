@@ -24,28 +24,28 @@ struct rw_logger {
     size_t read_pos;   /* tracks read position (stumpless path) */
 };
 
-constexpr size_t RW_LOG_MIN_BUFFER = 512;
+constexpr size_t IOG_LOG_MIN_BUFFER = 512;
 
 #ifdef USE_STUMPLESS
 
 static enum stumpless_severity level_to_stumpless(rw_log_level_t level)
 {
     switch (level) {
-    case RW_LOG_EMERG:
+    case IOG_LOG_EMERG:
         return STUMPLESS_SEVERITY_EMERG;
-    case RW_LOG_ALERT:
+    case IOG_LOG_ALERT:
         return STUMPLESS_SEVERITY_ALERT;
-    case RW_LOG_CRIT:
+    case IOG_LOG_CRIT:
         return STUMPLESS_SEVERITY_CRIT;
-    case RW_LOG_ERR:
+    case IOG_LOG_ERR:
         return STUMPLESS_SEVERITY_ERR;
-    case RW_LOG_WARN:
+    case IOG_LOG_WARN:
         return STUMPLESS_SEVERITY_WARNING;
-    case RW_LOG_NOTICE:
+    case IOG_LOG_NOTICE:
         return STUMPLESS_SEVERITY_NOTICE;
-    case RW_LOG_INFO:
+    case IOG_LOG_INFO:
         return STUMPLESS_SEVERITY_INFO;
-    case RW_LOG_DEBUG:
+    case IOG_LOG_DEBUG:
         return STUMPLESS_SEVERITY_DEBUG;
     }
     return STUMPLESS_SEVERITY_INFO;
@@ -53,7 +53,7 @@ static enum stumpless_severity level_to_stumpless(rw_log_level_t level)
 
 [[nodiscard]] int rw_log_init(rw_logger_t **out, size_t buffer_size)
 {
-    if (out == nullptr || buffer_size < RW_LOG_MIN_BUFFER) {
+    if (out == nullptr || buffer_size < IOG_LOG_MIN_BUFFER) {
         return -EINVAL;
     }
 
@@ -69,7 +69,7 @@ static enum stumpless_severity level_to_stumpless(rw_log_level_t level)
     }
 
     logger->buffer_size = buffer_size;
-    logger->min_level = RW_LOG_DEBUG;
+    logger->min_level = IOG_LOG_DEBUG;
 
     logger->target =
         stumpless_open_buffer_target("ioguard", logger->buffer, buffer_size);
@@ -221,7 +221,7 @@ static const char *level_name(rw_log_level_t level)
     static const char *names[] = {
         "EMERG", "ALERT", "CRIT", "ERR", "WARN", "NOTICE", "INFO", "DEBUG",
     };
-    if (level > RW_LOG_DEBUG) {
+    if (level > IOG_LOG_DEBUG) {
         return "UNKNOWN";
     }
     return names[level];
@@ -229,7 +229,7 @@ static const char *level_name(rw_log_level_t level)
 
 [[nodiscard]] int rw_log_init(rw_logger_t **out, size_t buffer_size)
 {
-    if (out == nullptr || buffer_size < RW_LOG_MIN_BUFFER) {
+    if (out == nullptr || buffer_size < IOG_LOG_MIN_BUFFER) {
         return -EINVAL;
     }
 
@@ -245,7 +245,7 @@ static const char *level_name(rw_log_level_t level)
     }
 
     logger->buffer_size = buffer_size;
-    logger->min_level = RW_LOG_DEBUG;
+    logger->min_level = IOG_LOG_DEBUG;
     logger->write_pos = 0;
 
     *out = logger;

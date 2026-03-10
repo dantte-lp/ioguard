@@ -6,20 +6,20 @@
  * to enforce source-IP filtering for VPN users.  Requires CAP_NET_ADMIN.
  */
 
-#ifndef RINGWALL_SECURITY_FIREWALL_H
-#define RINGWALL_SECURITY_FIREWALL_H
+#ifndef IOGUARD_SECURITY_FIREWALL_H
+#define IOGUARD_SECURITY_FIREWALL_H
 
 #include <netinet/in.h>
 #include <stdint.h>
 
-constexpr size_t RW_FW_CHAIN_NAME_MAX = 64;
-constexpr char RW_FW_TABLE_NAME[] = "ioguard";
+constexpr size_t IOG_FW_CHAIN_NAME_MAX = 64;
+constexpr char IOG_FW_TABLE_NAME[] = "ioguard";
 
 /** Batch buffer size for netlink messages (page-aligned). */
-constexpr size_t RW_FW_BATCH_BUF_SIZE = 16384;
+constexpr size_t IOG_FW_BATCH_BUF_SIZE = 16384;
 
 typedef struct {
-    char chain_name[RW_FW_CHAIN_NAME_MAX];
+    char chain_name[IOG_FW_CHAIN_NAME_MAX];
     int af;                 /**< AF_INET or AF_INET6 */
     uint32_t assigned_ipv4; /**< network byte order */
     struct in6_addr assigned_ipv6;
@@ -33,7 +33,7 @@ typedef struct {
  * @param out_size Size of @p out buffer.
  * @return 0 on success, negative errno on failure.
  *
- * Format: "rw_<username>_<iphex>" truncated to RW_FW_CHAIN_NAME_MAX-1.
+ * Format: "rw_<username>_<iphex>" truncated to IOG_FW_CHAIN_NAME_MAX-1.
  */
 [[nodiscard]] int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size);
 
@@ -71,4 +71,4 @@ typedef struct {
  */
 [[nodiscard]] int rw_fw_session_destroy(const rw_fw_session_t *session);
 
-#endif /* RINGWALL_SECURITY_FIREWALL_H */
+#endif /* IOGUARD_SECURITY_FIREWALL_H */

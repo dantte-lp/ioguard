@@ -65,20 +65,20 @@ static int secmod_persist_session(rw_secmod_ctx_t *ctx, const rw_session_t *sess
 }
 
 /* Build and send an auth response over IPC. */
-static int secmod_send_auth_response(int fd, const rw_ipc_auth_response_t *resp)
+static int secmod_send_auth_response(int fd, const iog_ipc_auth_response_t *resp)
 {
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_response(resp, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_auth_response(resp, buf, sizeof(buf));
 
     if (packed < 0) {
         return (int)packed;
     }
-    return rw_ipc_send(fd, buf, (size_t)packed);
+    return iog_ipc_send(fd, buf, (size_t)packed);
 }
 
 /* Create a session and populate the response fields. */
-static int secmod_create_session_response(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
-                                          rw_ipc_auth_response_t *resp)
+static int secmod_create_session_response(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req,
+                                          iog_ipc_auth_response_t *resp)
 {
     rw_session_t *session = nullptr;
     int ret = rw_session_create(ctx->sessions, req->username, req->group,
@@ -107,8 +107,8 @@ static int secmod_create_session_response(rw_secmod_ctx_t *ctx, rw_ipc_auth_requ
 }
 
 /* Handle TOTP second-factor validation. Returns 0 on success, <0 on failure. */
-static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
-                              rw_ipc_auth_response_t *resp)
+static int secmod_handle_totp(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req,
+                              iog_ipc_auth_response_t *resp)
 {
     rw_user_record_t user;
     memset(&user, 0, sizeof(user));
@@ -178,9 +178,9 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
 }
 
 /* Handle an authentication request (username + password, or OTP second factor). */
-static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
+static int secmod_handle_auth(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req)
 {
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
     /* Check ban list before attempting auth */
@@ -237,9 +237,9 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
 }
 
 /* Handle a session validation request (cookie lookup). */
-static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_validate_t *req)
+static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, iog_ipc_session_validate_t *req)
 {
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
     rw_session_t *session = nullptr;
@@ -400,33 +400,33 @@ int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t l
         return -EINVAL;
     }
 
-    rw_ipc_auth_request_t auth_req;
+    iog_ipc_auth_request_t auth_req;
     memset(&auth_req, 0, sizeof(auth_req));
 
-    int ret = rw_ipc_unpack_auth_request(data, len, &auth_req);
+    int ret = iog_ipc_unpack_auth_request(data, len, &auth_req);
 
     if (ret == 0 && auth_req.username != nullptr) {
         ret = secmod_handle_auth(ctx, &auth_req);
-        rw_ipc_free_auth_request(&auth_req);
+        iog_ipc_free_auth_request(&auth_req);
         return ret;
     }
 
     if (ret == 0) {
-        rw_ipc_free_auth_request(&auth_req);
+        iog_ipc_free_auth_request(&auth_req);
     }
 
-    rw_ipc_session_validate_t sv_req;
+    iog_ipc_session_validate_t sv_req;
     memset(&sv_req, 0, sizeof(sv_req));
 
-    ret = rw_ipc_unpack_session_validate(data, len, &sv_req);
+    ret = iog_ipc_unpack_session_validate(data, len, &sv_req);
     if (ret == 0 && sv_req.cookie != nullptr && sv_req.cookie_len > 0) {
         ret = secmod_handle_session_validate(ctx, &sv_req);
-        rw_ipc_free_session_validate(&sv_req);
+        iog_ipc_free_session_validate(&sv_req);
         return ret;
     }
 
     if (ret == 0) {
-        rw_ipc_free_session_validate(&sv_req);
+        iog_ipc_free_session_validate(&sv_req);
     }
 
     return -EPROTO;
@@ -453,7 +453,7 @@ int rw_secmod_run(rw_secmod_ctx_t *ctx)
 
         if (ret > 0 && (pfd.revents & POLLIN)) {
             uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-            ssize_t n = rw_ipc_recv(ctx->ipc_fd, buf, sizeof(buf));
+            ssize_t n = iog_ipc_recv(ctx->ipc_fd, buf, sizeof(buf));
 
             if (n > 0) {
                 (void)rw_secmod_handle_message(ctx, buf, (size_t)n);

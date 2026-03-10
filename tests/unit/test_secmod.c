@@ -10,7 +10,7 @@
 #include "ipc/transport.h"
 
 /* Shared test fixtures */
-static rw_ipc_channel_t ch;
+static iog_ipc_channel_t ch;
 static rw_secmod_ctx_t ctx;
 static rw_config_t config;
 
@@ -21,7 +21,7 @@ void setUp(void)
 
     rw_config_set_defaults(&config);
 
-    int ret = rw_ipc_create_pair(&ch);
+    int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     ret = rw_secmod_init(&ctx, ch.parent_fd, &config);
@@ -31,7 +31,7 @@ void setUp(void)
 void tearDown(void)
 {
     rw_secmod_destroy(&ctx);
-    rw_ipc_close(&ch);
+    iog_ipc_close(&ch);
 }
 
 /* ------------------------------------------------------------------ */
@@ -63,13 +63,13 @@ void test_secmod_init_null_config(void)
 void test_secmod_auth_request_failure(void)
 {
     /* Pack an auth request with bad credentials */
-    rw_ipc_auth_request_t req;
+    iog_ipc_auth_request_t req;
     memset(&req, 0, sizeof(req));
     req.username = "testuser";
     req.password = "wrongpass";
 
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_request(&req, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
     /* Feed the raw bytes to handle_message (sends response on ipc_fd) */
@@ -78,30 +78,30 @@ void test_secmod_auth_request_failure(void)
 
     /* Read response from child_fd */
     uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t n = rw_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
+    ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    ret = rw_ipc_unpack_auth_response(recv_buf, (size_t)n, &resp);
+    ret = iog_ipc_unpack_auth_response(recv_buf, (size_t)n, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_FALSE(resp.success);
     TEST_ASSERT_NOT_NULL(resp.error_msg);
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 }
 
 void test_secmod_auth_request_sends_response(void)
 {
     /* Send a well-formed auth request and verify we get a response back */
-    rw_ipc_auth_request_t req;
+    iog_ipc_auth_request_t req;
     memset(&req, 0, sizeof(req));
     req.username = "alice";
     req.password = "somepassword";
     req.source_ip = "192.168.1.100";
 
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_request(&req, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
     int ret = rw_secmod_handle_message(&ctx, buf, (size_t)packed);
@@ -109,12 +109,12 @@ void test_secmod_auth_request_sends_response(void)
 
     /* Read the response */
     uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t n = rw_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
+    ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    ret = rw_ipc_unpack_auth_response(recv_buf, (size_t)n, &resp);
+    ret = iog_ipc_unpack_auth_response(recv_buf, (size_t)n, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* We got a well-formed response (PAM result may vary by environment) */
@@ -126,7 +126,7 @@ void test_secmod_auth_request_sends_response(void)
         TEST_ASSERT_NOT_NULL(resp.error_msg);
     }
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 }
 
 void test_secmod_session_validate_invalid(void)
@@ -135,13 +135,13 @@ void test_secmod_session_validate_invalid(void)
     uint8_t bogus_cookie[RW_SESSION_COOKIE_SIZE];
     memset(bogus_cookie, 0xBB, sizeof(bogus_cookie));
 
-    rw_ipc_session_validate_t sv;
+    iog_ipc_session_validate_t sv;
     memset(&sv, 0, sizeof(sv));
     sv.cookie = bogus_cookie;
     sv.cookie_len = sizeof(bogus_cookie);
 
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_session_validate(&sv, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_session_validate(&sv, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
     int ret = rw_secmod_handle_message(&ctx, buf, (size_t)packed);
@@ -149,17 +149,17 @@ void test_secmod_session_validate_invalid(void)
 
     /* Read the response */
     uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t n = rw_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
+    ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    ret = rw_ipc_unpack_auth_response(recv_buf, (size_t)n, &resp);
+    ret = iog_ipc_unpack_auth_response(recv_buf, (size_t)n, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_FALSE(resp.success);
     TEST_ASSERT_NOT_NULL(resp.error_msg);
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 }
 
 void test_secmod_stop(void)

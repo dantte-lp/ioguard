@@ -34,13 +34,13 @@
  * Shared fixtures
  * ============================================================================ */
 
-static rw_ipc_channel_t ch;
+static iog_ipc_channel_t ch;
 static rw_secmod_ctx_t ctx;
 static rw_config_t config;
 static char vault_key_path[PATH_MAX];
 
 /* Fixed 32-byte test key (hex-encoded in file) */
-static const uint8_t test_key[RW_VAULT_KEY_SIZE] = {
+static const uint8_t test_key[IOG_VAULT_KEY_SIZE] = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
     0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
 };
@@ -91,7 +91,7 @@ static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault, const cha
     }
 
     /* Encrypt the TOTP secret via vault */
-    uint8_t encrypted[RW_TOTP_SECRET_SIZE + RW_VAULT_OVERHEAD];
+    uint8_t encrypted[RW_TOTP_SECRET_SIZE + IOG_VAULT_OVERHEAD];
     size_t enc_len = 0;
     ret = rw_vault_encrypt(vault, test_totp_secret, RW_TOTP_SECRET_SIZE, encrypted,
                            sizeof(encrypted), &enc_len);
@@ -107,10 +107,10 @@ static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault, const cha
 /**
  * Helper: pack an auth request, feed to secmod, read and unpack response.
  */
-static int do_auth_roundtrip(const rw_ipc_auth_request_t *req, rw_ipc_auth_response_t *resp)
+static int do_auth_roundtrip(const iog_ipc_auth_request_t *req, iog_ipc_auth_response_t *resp)
 {
     uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_request(req, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_auth_request(req, buf, sizeof(buf));
     if (packed <= 0) {
         return -EINVAL;
     }
@@ -122,13 +122,13 @@ static int do_auth_roundtrip(const rw_ipc_auth_request_t *req, rw_ipc_auth_respo
 
     /* Read response from child_fd */
     uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t n = rw_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
+    ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     if (n <= 0) {
         return -EIO;
     }
 
     memset(resp, 0, sizeof(*resp));
-    return rw_ipc_unpack_auth_response(recv_buf, (size_t)n, resp);
+    return iog_ipc_unpack_auth_response(recv_buf, (size_t)n, resp);
 }
 
 void setUp(void)
@@ -141,7 +141,7 @@ void setUp(void)
     int fd = mkstemp(vault_key_path);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
     close(fd);
-    TEST_ASSERT_EQUAL_INT(0, write_hex_key_file(vault_key_path, test_key, RW_VAULT_KEY_SIZE));
+    TEST_ASSERT_EQUAL_INT(0, write_hex_key_file(vault_key_path, test_key, IOG_VAULT_KEY_SIZE));
 
     /* Configure: in-memory SQLite, vault key, no mdbx */
     rw_config_set_defaults(&config);
@@ -152,7 +152,7 @@ void setUp(void)
     config.storage.mdbx_path[0] = '\0';
 
     /* Create IPC channel */
-    int ret = rw_ipc_create_pair(&ch);
+    int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Init secmod with parent_fd as its IPC fd */
@@ -200,14 +200,14 @@ void test_mfa_flow_totp_second_factor(void)
     snprintf(otp_str, sizeof(otp_str), "%06u", code);
 
     /* Send OTP-only request (no password = TOTP second factor) */
-    rw_ipc_auth_request_t req = {
+    iog_ipc_auth_request_t req = {
         .username = "alice",
         .password = nullptr,
         .otp = otp_str,
         .source_ip = "10.0.0.1",
     };
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     ret = do_auth_roundtrip(&req, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
@@ -217,7 +217,7 @@ void test_mfa_flow_totp_second_factor(void)
     TEST_ASSERT_EQUAL_size_t(RW_SESSION_COOKIE_SIZE, resp.session_cookie_len);
     TEST_ASSERT_GREATER_THAN(0, resp.session_ttl);
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 }
 
 /**
@@ -230,14 +230,14 @@ void test_mfa_flow_wrong_otp(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Use a deliberately wrong OTP */
-    rw_ipc_auth_request_t req = {
+    iog_ipc_auth_request_t req = {
         .username = "bob",
         .password = nullptr,
         .otp = "000000",
         .source_ip = "10.0.0.2",
     };
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     ret = do_auth_roundtrip(&req, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
@@ -245,7 +245,7 @@ void test_mfa_flow_wrong_otp(void)
     TEST_ASSERT_NOT_NULL(resp.error_msg);
     TEST_ASSERT_EQUAL_size_t(0, resp.session_cookie_len);
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 }
 
 /**
@@ -258,14 +258,14 @@ void test_mfa_flow_no_totp_user(void)
     int ret = setup_totp_user(ctx.sqlite, ctx.vault, "charlie", false);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    rw_ipc_auth_request_t req = {
+    iog_ipc_auth_request_t req = {
         .username = "charlie",
         .password = nullptr,
         .otp = "123456",
         .source_ip = "10.0.0.3",
     };
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     ret = do_auth_roundtrip(&req, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
@@ -273,7 +273,7 @@ void test_mfa_flow_no_totp_user(void)
     TEST_ASSERT_FALSE(resp.success);
     TEST_ASSERT_NOT_NULL(resp.error_msg);
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 }
 
 /**
@@ -282,13 +282,13 @@ void test_mfa_flow_no_totp_user(void)
  */
 void test_mfa_flow_pam_failure_no_totp_challenge(void)
 {
-    rw_ipc_auth_request_t req = {
+    iog_ipc_auth_request_t req = {
         .username = "rw_nonexistent_mfa_user",
         .password = "wrongpass",
         .source_ip = "10.0.0.4",
     };
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     int ret = do_auth_roundtrip(&req, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
@@ -298,7 +298,7 @@ void test_mfa_flow_pam_failure_no_totp_challenge(void)
     TEST_ASSERT_NOT_NULL(resp.error_msg);
     TEST_ASSERT_EQUAL_size_t(0, resp.session_cookie_len);
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 }
 
 /**
@@ -311,18 +311,18 @@ void test_mfa_flow_audit_trail(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* First: wrong OTP */
-    rw_ipc_auth_request_t req = {
+    iog_ipc_auth_request_t req = {
         .username = "dave",
         .password = nullptr,
         .otp = "999999",
         .source_ip = "10.0.0.5",
     };
 
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     ret = do_auth_roundtrip(&req, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_FALSE(resp.success);
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 
     /* Second: correct OTP */
     uint64_t time_step = (uint64_t)time(nullptr) / RW_TOTP_TIME_STEP;
@@ -333,7 +333,7 @@ void test_mfa_flow_audit_trail(void)
     char otp_str[16];
     snprintf(otp_str, sizeof(otp_str), "%06u", code);
 
-    rw_ipc_auth_request_t req2 = {
+    iog_ipc_auth_request_t req2 = {
         .username = "dave",
         .password = nullptr,
         .otp = otp_str,
@@ -343,7 +343,7 @@ void test_mfa_flow_audit_trail(void)
     ret = do_auth_roundtrip(&req2, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(resp.success);
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
 
     /* Verify audit entries exist for dave */
     rw_audit_entry_t entries[8];

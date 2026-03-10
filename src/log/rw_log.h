@@ -1,5 +1,5 @@
-#ifndef RINGWALL_LOG_H
-#define RINGWALL_LOG_H
+#ifndef IOGUARD_LOG_H
+#define IOGUARD_LOG_H
 
 #include <stddef.h>
 #include <sys/types.h>
@@ -8,14 +8,14 @@
  * @brief Log severity levels (RFC 5424).
  */
 typedef enum {
-    RW_LOG_EMERG = 0,
-    RW_LOG_ALERT = 1,
-    RW_LOG_CRIT = 2,
-    RW_LOG_ERR = 3,
-    RW_LOG_WARN = 4,
-    RW_LOG_NOTICE = 5,
-    RW_LOG_INFO = 6,
-    RW_LOG_DEBUG = 7,
+    IOG_LOG_EMERG = 0,
+    IOG_LOG_ALERT = 1,
+    IOG_LOG_CRIT = 2,
+    IOG_LOG_ERR = 3,
+    IOG_LOG_WARN = 4,
+    IOG_LOG_NOTICE = 5,
+    IOG_LOG_INFO = 6,
+    IOG_LOG_DEBUG = 7,
 } rw_log_level_t;
 
 typedef struct rw_logger rw_logger_t;
@@ -79,4 +79,4 @@ void rw_log_destroy(rw_logger_t *logger);
  */
 void rw_log_set_level(rw_logger_t *logger, rw_log_level_t min_level);
 
-#endif /* RINGWALL_LOG_H */
+#endif /* IOGUARD_LOG_H */

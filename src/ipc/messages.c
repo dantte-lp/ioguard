@@ -5,13 +5,13 @@
 #include <string.h>
 #include "rw_ipc.pb-c.h"
 
-void rw_ipc_msg_init(rw_ipc_msg_t *msg, rw_ipc_msg_type_t type)
+void iog_ipc_msg_init(iog_ipc_msg_t *msg, iog_ipc_msg_type_t type)
 {
     msg->type = type;
     msg->seq = 0;
 }
 
-ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req, uint8_t *buf, size_t buf_size)
+ssize_t iog_ipc_pack_auth_request(const iog_ipc_auth_request_t *req, uint8_t *buf, size_t buf_size)
 {
     RwIpc__AuthRequest pb = RW_IPC__AUTH_REQUEST__INIT;
     RwIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
@@ -35,7 +35,7 @@ ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req, uint8_t *buf,
     return (ssize_t)rw_ipc__auth_request__pack(&pb, buf);
 }
 
-int rw_ipc_unpack_auth_request(const uint8_t *data, size_t len, rw_ipc_auth_request_t *out)
+int iog_ipc_unpack_auth_request(const uint8_t *data, size_t len, iog_ipc_auth_request_t *out)
 {
     RwIpc__AuthRequest *pb = rw_ipc__auth_request__unpack(nullptr, len, data);
     if (pb == nullptr) {
@@ -59,7 +59,7 @@ int rw_ipc_unpack_auth_request(const uint8_t *data, size_t len, rw_ipc_auth_requ
     return 0;
 }
 
-void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req)
+void iog_ipc_free_auth_request(iog_ipc_auth_request_t *req)
 {
     free((void *)req->username);
     free((void *)req->group);
@@ -76,7 +76,7 @@ void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req)
     memset(req, 0, sizeof(*req));
 }
 
-ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp, uint8_t *buf, size_t buf_size)
+ssize_t iog_ipc_pack_auth_response(const iog_ipc_auth_response_t *resp, uint8_t *buf, size_t buf_size)
 {
     RwIpc__AuthResponse pb = RW_IPC__AUTH_RESPONSE__INIT;
     RwIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
@@ -104,7 +104,7 @@ ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp, uint8_t *b
     return (ssize_t)rw_ipc__auth_response__pack(&pb, buf);
 }
 
-int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len, rw_ipc_auth_response_t *out)
+int iog_ipc_unpack_auth_response(const uint8_t *data, size_t len, iog_ipc_auth_response_t *out)
 {
     RwIpc__AuthResponse *pb = rw_ipc__auth_response__unpack(nullptr, len, data);
     if (pb == nullptr) {
@@ -141,7 +141,7 @@ int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len, rw_ipc_auth_res
     return 0;
 }
 
-void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp)
+void iog_ipc_free_auth_response(iog_ipc_auth_response_t *resp)
 {
     free((void *)resp->error_msg);
     free((void *)resp->assigned_ip);
@@ -158,7 +158,7 @@ void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp)
     memset(resp, 0, sizeof(*resp));
 }
 
-ssize_t rw_ipc_pack_session_validate(const rw_ipc_session_validate_t *req, uint8_t *buf,
+ssize_t iog_ipc_pack_session_validate(const iog_ipc_session_validate_t *req, uint8_t *buf,
                                      size_t buf_size)
 {
     RwIpc__SessionValidate pb = RW_IPC__SESSION_VALIDATE__INIT;
@@ -178,7 +178,7 @@ ssize_t rw_ipc_pack_session_validate(const rw_ipc_session_validate_t *req, uint8
     return (ssize_t)rw_ipc__session_validate__pack(&pb, buf);
 }
 
-int rw_ipc_unpack_session_validate(const uint8_t *data, size_t len, rw_ipc_session_validate_t *out)
+int iog_ipc_unpack_session_validate(const uint8_t *data, size_t len, iog_ipc_session_validate_t *out)
 {
     RwIpc__SessionValidate *pb = rw_ipc__session_validate__unpack(nullptr, len, data);
     if (pb == nullptr) {
@@ -197,13 +197,13 @@ int rw_ipc_unpack_session_validate(const uint8_t *data, size_t len, rw_ipc_sessi
     return 0;
 }
 
-void rw_ipc_free_session_validate(rw_ipc_session_validate_t *req)
+void iog_ipc_free_session_validate(iog_ipc_session_validate_t *req)
 {
     free((void *)req->cookie);
     memset(req, 0, sizeof(*req));
 }
 
-ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status, uint8_t *buf,
+ssize_t iog_ipc_pack_worker_status(const iog_ipc_worker_status_t *status, uint8_t *buf,
                                   size_t buf_size)
 {
     RwIpc__WorkerStatus pb = RW_IPC__WORKER_STATUS__INIT;
@@ -223,7 +223,7 @@ ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status, uint8_t 
     return (ssize_t)rw_ipc__worker_status__pack(&pb, buf);
 }
 
-int rw_ipc_unpack_worker_status(const uint8_t *data, size_t len, rw_ipc_worker_status_t *out)
+int iog_ipc_unpack_worker_status(const uint8_t *data, size_t len, iog_ipc_worker_status_t *out)
 {
     RwIpc__WorkerStatus *pb = rw_ipc__worker_status__unpack(nullptr, len, data);
     if (pb == nullptr) {

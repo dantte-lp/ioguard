@@ -141,7 +141,7 @@ static struct nftnl_rule *build_accept_rule(const rw_fw_session_t *session, cons
     }
 
     nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, family);
-    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, RW_FW_TABLE_NAME);
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, IOG_FW_TABLE_NAME);
     nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, chain_name);
 
     int ret = rule_add_src_match(rule, session);
@@ -167,7 +167,7 @@ static struct nftnl_chain *build_chain(const rw_fw_session_t *session, const cha
     }
 
     nftnl_chain_set_u32(chain, NFTNL_CHAIN_FAMILY, family);
-    nftnl_chain_set_str(chain, NFTNL_CHAIN_TABLE, RW_FW_TABLE_NAME);
+    nftnl_chain_set_str(chain, NFTNL_CHAIN_TABLE, IOG_FW_TABLE_NAME);
     nftnl_chain_set_str(chain, NFTNL_CHAIN_NAME, chain_name);
 
     return chain;
@@ -188,18 +188,18 @@ int rw_fw_build_create_batch(const rw_fw_session_t *session, void **batch_buf, s
         return -EINVAL;
     }
 
-    char chain_name[RW_FW_CHAIN_NAME_MAX];
+    char chain_name[IOG_FW_CHAIN_NAME_MAX];
     int ret = rw_fw_chain_name(session, chain_name, sizeof(chain_name));
     if (ret < 0) {
         return ret;
     }
 
-    char *buf = calloc(1, RW_FW_BATCH_BUF_SIZE);
+    char *buf = calloc(1, IOG_FW_BATCH_BUF_SIZE);
     if (buf == nullptr) {
         return -ENOMEM;
     }
 
-    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, RW_FW_BATCH_BUF_SIZE);
+    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, IOG_FW_BATCH_BUF_SIZE);
     if (batch == nullptr) {
         free(buf);
         return -ENOMEM;
@@ -260,18 +260,18 @@ int rw_fw_build_destroy_batch(const rw_fw_session_t *session, void **batch_buf, 
         return -EINVAL;
     }
 
-    char chain_name[RW_FW_CHAIN_NAME_MAX];
+    char chain_name[IOG_FW_CHAIN_NAME_MAX];
     int ret = rw_fw_chain_name(session, chain_name, sizeof(chain_name));
     if (ret < 0) {
         return ret;
     }
 
-    char *buf = calloc(1, RW_FW_BATCH_BUF_SIZE);
+    char *buf = calloc(1, IOG_FW_BATCH_BUF_SIZE);
     if (buf == nullptr) {
         return -ENOMEM;
     }
 
-    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, RW_FW_BATCH_BUF_SIZE);
+    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, IOG_FW_BATCH_BUF_SIZE);
     if (batch == nullptr) {
         free(buf);
         return -ENOMEM;
@@ -292,7 +292,7 @@ int rw_fw_build_destroy_batch(const rw_fw_session_t *session, void **batch_buf, 
     }
 
     nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, family);
-    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, RW_FW_TABLE_NAME);
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, IOG_FW_TABLE_NAME);
     nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, chain_name);
 
     struct nlmsghdr *nlh = nftnl_nlmsg_build_hdr(

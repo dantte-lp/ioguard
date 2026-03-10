@@ -63,7 +63,7 @@ int rw_main_create_signalfd(void)
     return fd;
 }
 
-#ifndef RW_TESTING
+#ifndef IOG_TESTING
 int main(int argc, char *argv[])
 {
     const char *config_path;
@@ -188,4 +188,4 @@ cleanup_config:
     rw_config_free(&config);
     return rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
-#endif /* RW_TESTING */
+#endif /* IOG_TESTING */

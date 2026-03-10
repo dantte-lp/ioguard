@@ -124,18 +124,18 @@ rw_ws_result_t rw_wolfsentry_check_connection(rw_wolfsentry_ctx_t *ctx, int af,
                                               int protocol)
 {
     if (ctx == nullptr || ctx->ws_ctx == nullptr) {
-        return RW_WS_ERROR;
+        return IOG_WS_ERROR;
     }
 
     int addr_bits = addr_bits_for_af(af);
     int addr_bytes = addr_bytes_for_af(af);
     if (addr_bits < 0) {
-        return RW_WS_ERROR;
+        return IOG_WS_ERROR;
     }
 
     WOLFSENTRY_THREAD_HEADER(WOLFSENTRY_THREAD_FLAG_NONE);
     if (_thread_context_ret < 0) {
-        return RW_WS_ERROR;
+        return IOG_WS_ERROR;
     }
 
     WOLFSENTRY_SOCKADDR(128) remote_sa;
@@ -178,14 +178,14 @@ rw_ws_result_t rw_wolfsentry_check_connection(rw_wolfsentry_ctx_t *ctx, int af,
          * policy is set, we get an error. Treat as ACCEPT (permissive
          * default).
          */
-        return RW_WS_ACCEPT;
+        return IOG_WS_ACCEPT;
     }
 
     if (WOLFSENTRY_MASKIN_BITS(action_results, WOLFSENTRY_ACTION_RES_REJECT)) {
-        return RW_WS_REJECT;
+        return IOG_WS_REJECT;
     }
 
-    return RW_WS_ACCEPT;
+    return IOG_WS_ACCEPT;
 }
 
 int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr)

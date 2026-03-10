@@ -14,11 +14,11 @@
 #include <string.h>
 
 struct rw_prom_registry {
-    rw_prom_counter_t *counters[RW_PROM_MAX_METRICS];
+    rw_prom_counter_t *counters[IOG_PROM_MAX_METRICS];
     size_t counter_count;
-    rw_prom_gauge_t *gauges[RW_PROM_MAX_METRICS];
+    rw_prom_gauge_t *gauges[IOG_PROM_MAX_METRICS];
     size_t gauge_count;
-    rw_prom_histogram_t *histograms[RW_PROM_MAX_METRICS];
+    rw_prom_histogram_t *histograms[IOG_PROM_MAX_METRICS];
     size_t histogram_count;
 };
 
@@ -44,7 +44,7 @@ int rw_prom_register_counter(rw_prom_registry_t *reg, rw_prom_counter_t *counter
 {
     if (reg == nullptr || counter == nullptr)
         return -EINVAL;
-    if (reg->counter_count >= RW_PROM_MAX_METRICS)
+    if (reg->counter_count >= IOG_PROM_MAX_METRICS)
         return -ENOSPC;
 
     reg->counters[reg->counter_count++] = counter;
@@ -55,7 +55,7 @@ int rw_prom_register_gauge(rw_prom_registry_t *reg, rw_prom_gauge_t *gauge)
 {
     if (reg == nullptr || gauge == nullptr)
         return -EINVAL;
-    if (reg->gauge_count >= RW_PROM_MAX_METRICS)
+    if (reg->gauge_count >= IOG_PROM_MAX_METRICS)
         return -ENOSPC;
 
     reg->gauges[reg->gauge_count++] = gauge;
@@ -66,7 +66,7 @@ int rw_prom_register_histogram(rw_prom_registry_t *reg, rw_prom_histogram_t *his
 {
     if (reg == nullptr || hist == nullptr)
         return -EINVAL;
-    if (reg->histogram_count >= RW_PROM_MAX_METRICS)
+    if (reg->histogram_count >= IOG_PROM_MAX_METRICS)
         return -ENOSPC;
 
     reg->histograms[reg->histogram_count++] = hist;
@@ -115,7 +115,7 @@ void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value)
 
     /* Find the first bucket whose boundary >= value and increment it.
      * Also always increment the +Inf bucket (last slot). */
-    for (size_t i = 0; i < RW_PROM_HISTOGRAM_BUCKETS; i++) {
+    for (size_t i = 0; i < IOG_PROM_HISTOGRAM_BUCKETS; i++) {
         if (value <= hist->boundaries[i]) {
             atomic_fetch_add(&hist->bucket_counts[i], 1);
             break;
@@ -123,7 +123,7 @@ void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value)
     }
 
     /* +Inf bucket always gets incremented */
-    atomic_fetch_add(&hist->bucket_counts[RW_PROM_HISTOGRAM_BUCKETS], 1);
+    atomic_fetch_add(&hist->bucket_counts[IOG_PROM_HISTOGRAM_BUCKETS], 1);
 
     /* Track sum in microseconds (value is in seconds) */
     uint64_t us = (uint64_t)(value * 1000000.0);
@@ -200,7 +200,7 @@ ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf, size_t buf_size
 
         /* Cumulative bucket counts for Prometheus exposition */
         uint64_t cumulative = 0;
-        for (size_t b = 0; b < RW_PROM_HISTOGRAM_BUCKETS; b++) {
+        for (size_t b = 0; b < IOG_PROM_HISTOGRAM_BUCKETS; b++) {
             uint64_t cnt = atomic_load(&h->bucket_counts[b]);
             if (h->boundaries[b] == 0.0 && b > 0)
                 break; /* unused bucket slot */

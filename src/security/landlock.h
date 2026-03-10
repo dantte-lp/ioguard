@@ -6,15 +6,15 @@
  * access per process.  No external library required.
  */
 
-#ifndef RINGWALL_SECURITY_LANDLOCK_H
-#define RINGWALL_SECURITY_LANDLOCK_H
+#ifndef IOGUARD_SECURITY_LANDLOCK_H
+#define IOGUARD_SECURITY_LANDLOCK_H
 
 #include <stdint.h>
 
 /** Landlock profile selecting which filesystem paths to allow. */
 typedef enum : uint8_t {
-    RW_LANDLOCK_WORKER,  /**< Read-only: mdbx file, /dev/net/tun */
-    RW_LANDLOCK_AUTHMOD, /**< Read-write: mdbx + sqlite, read /dev/urandom */
+    IOG_LANDLOCK_WORKER,  /**< Read-only: mdbx file, /dev/net/tun */
+    IOG_LANDLOCK_AUTHMOD, /**< Read-write: mdbx + sqlite, read /dev/urandom */
 } rw_landlock_profile_t;
 
 /**
@@ -38,4 +38,4 @@ typedef enum : uint8_t {
 [[nodiscard]] int rw_landlock_apply(rw_landlock_profile_t profile, const char *mdbx_path,
                                     const char *sqlite_path);
 
-#endif /* RINGWALL_SECURITY_LANDLOCK_H */
+#endif /* IOGUARD_SECURITY_LANDLOCK_H */

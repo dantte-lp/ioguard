@@ -6,8 +6,8 @@
  * No external dependencies — pure C implementation.
  */
 
-#ifndef RINGWALL_METRICS_PROMETHEUS_H
-#define RINGWALL_METRICS_PROMETHEUS_H
+#ifndef IOGUARD_METRICS_PROMETHEUS_H
+#define IOGUARD_METRICS_PROMETHEUS_H
 
 #include <stdatomic.h>
 #include <stddef.h>
@@ -15,10 +15,10 @@
 #include <sys/types.h>
 
 /** Maximum number of histogram buckets (excluding +Inf). */
-constexpr size_t RW_PROM_HISTOGRAM_BUCKETS = 12;
+constexpr size_t IOG_PROM_HISTOGRAM_BUCKETS = 12;
 
 /** Maximum number of metrics per type in a registry. */
-constexpr size_t RW_PROM_MAX_METRICS = 64;
+constexpr size_t IOG_PROM_MAX_METRICS = 64;
 
 /** Monotonically increasing counter (uint64, atomic). */
 typedef struct {
@@ -38,8 +38,8 @@ typedef struct {
 typedef struct {
     const char *name;
     const char *help;
-    double boundaries[RW_PROM_HISTOGRAM_BUCKETS];
-    _Atomic uint64_t bucket_counts[RW_PROM_HISTOGRAM_BUCKETS + 1]; /* +1 for +Inf */
+    double boundaries[IOG_PROM_HISTOGRAM_BUCKETS];
+    _Atomic uint64_t bucket_counts[IOG_PROM_HISTOGRAM_BUCKETS + 1]; /* +1 for +Inf */
     _Atomic uint64_t sum_us; /* sum in microseconds */
     _Atomic uint64_t count;
 } rw_prom_histogram_t;
@@ -137,4 +137,4 @@ void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value);
 [[nodiscard]] ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf,
                                      size_t buf_size);
 
-#endif /* RINGWALL_METRICS_PROMETHEUS_H */
+#endif /* IOGUARD_METRICS_PROMETHEUS_H */
