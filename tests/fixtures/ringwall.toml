@@ -9,6 +9,9 @@ worker-count = 4
 method = "pam"
 cookie-timeout = 300
 cookie-rekey = 14400
+totp-issuer = "ringwall-test"
+totp-digits = 6
+totp-window = 2
 
 [network]
 ipv4-pool = "10.10.0.0/16"
@@ -26,3 +29,6 @@ ciphers = "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256"
 seccomp = true
 landlock = true
 wolfsentry-config = "/etc/ringwall/wolfsentry.json"
+
+[storage]
+vault-key-path = "/etc/ringwall/vault.key"

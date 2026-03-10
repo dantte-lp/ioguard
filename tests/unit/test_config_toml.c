@@ -80,6 +80,42 @@ void test_config_tls_values(void)
     rw_config_free(&cfg);
 }
 
+void test_config_auth_totp_values(void)
+{
+    rw_config_t cfg;
+    int ret = rw_config_load(TEST_CONFIG, &cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+
+    TEST_ASSERT_EQUAL_STRING("ringwall-test", cfg.auth.totp_issuer);
+    TEST_ASSERT_EQUAL_UINT32(6, cfg.auth.totp_digits);
+    TEST_ASSERT_EQUAL_UINT32(2, cfg.auth.totp_window);
+
+    rw_config_free(&cfg);
+}
+
+void test_config_storage_values(void)
+{
+    rw_config_t cfg;
+    int ret = rw_config_load(TEST_CONFIG, &cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+
+    TEST_ASSERT_EQUAL_STRING("/etc/ringwall/vault.key", cfg.storage.vault_key_path);
+
+    rw_config_free(&cfg);
+}
+
+void test_config_totp_defaults(void)
+{
+    rw_config_t cfg;
+    rw_config_set_defaults(&cfg);
+
+    TEST_ASSERT_EQUAL_STRING("ringwall", cfg.auth.totp_issuer);
+    TEST_ASSERT_EQUAL_UINT32(6, cfg.auth.totp_digits);
+    TEST_ASSERT_EQUAL_UINT32(1, cfg.auth.totp_window);
+
+    rw_config_free(&cfg);
+}
+
 void test_config_defaults_when_missing(void)
 {
     rw_config_t cfg;
@@ -101,6 +137,9 @@ int main(void)
     RUN_TEST(test_config_auth_values);
     RUN_TEST(test_config_network_values);
     RUN_TEST(test_config_tls_values);
+    RUN_TEST(test_config_auth_totp_values);
+    RUN_TEST(test_config_storage_values);
+    RUN_TEST(test_config_totp_defaults);
     RUN_TEST(test_config_defaults_when_missing);
     return UNITY_END();
 }

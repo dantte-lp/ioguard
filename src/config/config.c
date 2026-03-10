@@ -33,6 +33,9 @@ void rw_config_set_defaults(rw_config_t *cfg)
     safe_copy(cfg->auth.method, "pam", sizeof(cfg->auth.method));
     cfg->auth.cookie_timeout = 300;
     cfg->auth.cookie_rekey = 14400;
+    snprintf(cfg->auth.totp_issuer, sizeof(cfg->auth.totp_issuer), "ringwall");
+    cfg->auth.totp_digits = 6;
+    cfg->auth.totp_window = 1;
     cfg->network.mtu = 1400;
     safe_copy(cfg->tls.min_version, "1.2", sizeof(cfg->tls.min_version));
     cfg->security.seccomp = true;
@@ -82,6 +85,19 @@ static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
     d = toml_int_in(tbl, "cookie-rekey");
     if (d.ok) {
         auth->cookie_rekey = (uint32_t)d.u.i;
+    }
+    d = toml_string_in(tbl, "totp-issuer");
+    if (d.ok) {
+        safe_copy(auth->totp_issuer, d.u.s, sizeof(auth->totp_issuer));
+        free(d.u.s);
+    }
+    d = toml_int_in(tbl, "totp-digits");
+    if (d.ok) {
+        auth->totp_digits = (uint32_t)d.u.i;
+    }
+    d = toml_int_in(tbl, "totp-window");
+    if (d.ok) {
+        auth->totp_window = (uint32_t)d.u.i;
     }
 }
 
@@ -147,6 +163,26 @@ static void parse_tls(toml_table_t *tbl, rw_config_tls_t *tls)
     }
 }
 
+static void parse_storage(toml_table_t *tbl, rw_config_storage_t *storage)
+{
+    toml_datum_t d;
+    d = toml_string_in(tbl, "mdbx-path");
+    if (d.ok) {
+        safe_copy(storage->mdbx_path, d.u.s, sizeof(storage->mdbx_path));
+        free(d.u.s);
+    }
+    d = toml_string_in(tbl, "sqlite-path");
+    if (d.ok) {
+        safe_copy(storage->sqlite_path, d.u.s, sizeof(storage->sqlite_path));
+        free(d.u.s);
+    }
+    d = toml_string_in(tbl, "vault-key-path");
+    if (d.ok) {
+        safe_copy(storage->vault_key_path, d.u.s, sizeof(storage->vault_key_path));
+        free(d.u.s);
+    }
+}
+
 static void parse_security(toml_table_t *tbl, rw_config_security_t *sec)
 {
     toml_datum_t d;
@@ -201,6 +237,10 @@ int rw_config_load(const char *path, rw_config_t *cfg)
     tbl = toml_table_in(root, "security");
     if (tbl) {
         parse_security(tbl, &cfg->security);
+    }
+    tbl = toml_table_in(root, "storage");
+    if (tbl) {
+        parse_storage(tbl, &cfg->storage);
     }
 
     toml_free(root);

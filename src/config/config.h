@@ -20,6 +20,9 @@ typedef struct {
     char method[64];
     uint32_t cookie_timeout;
     uint32_t cookie_rekey;
+    char totp_issuer[128];
+    uint32_t totp_digits;
+    uint32_t totp_window;
 } rw_config_auth_t;
 
 constexpr size_t RW_CONFIG_MAX_POOLS = 16;
