@@ -80,6 +80,54 @@ void test_totp_base32_decode_20byte_secret(void)
 	TEST_ASSERT_EQUAL_STRING_LEN("12345678901234567890", (char *)buf, 20);
 }
 
+void test_totp_generate_rfc6238_time59(void)
+{
+	/* Time=59 -> counter = 59/30 = 1 (integer division) */
+	uint8_t secret[] = "12345678901234567890";
+	uint32_t code = 0;
+	int ret = rw_totp_generate(secret, 20, 1, &code);
+	TEST_ASSERT_EQUAL_INT(0, ret);
+	TEST_ASSERT_EQUAL_UINT32(287082, code);
+}
+
+void test_totp_generate_rfc6238_time1111111109(void)
+{
+	/* Time=1111111109 -> counter = 37037036 */
+	uint8_t secret[] = "12345678901234567890";
+	uint32_t code = 0;
+	int ret = rw_totp_generate(secret, 20, 37037036, &code);
+	TEST_ASSERT_EQUAL_INT(0, ret);
+	TEST_ASSERT_EQUAL_UINT32(81804, code);
+}
+
+void test_totp_generate_rfc6238_time1234567890(void)
+{
+	/* Time=1234567890 -> counter = 41152263 */
+	uint8_t secret[] = "12345678901234567890";
+	uint32_t code = 0;
+	int ret = rw_totp_generate(secret, 20, 41152263, &code);
+	TEST_ASSERT_EQUAL_INT(0, ret);
+	TEST_ASSERT_EQUAL_UINT32(5924, code);
+}
+
+void test_totp_generate_rfc6238_time2000000000(void)
+{
+	/* Time=2000000000 -> counter = 66666666 */
+	uint8_t secret[] = "12345678901234567890";
+	uint32_t code = 0;
+	int ret = rw_totp_generate(secret, 20, 66666666, &code);
+	TEST_ASSERT_EQUAL_INT(0, ret);
+	TEST_ASSERT_EQUAL_UINT32(279037, code);
+}
+
+void test_totp_generate_null_params(void)
+{
+	uint32_t code = 0;
+	TEST_ASSERT_LESS_THAN_INT(0, rw_totp_generate(nullptr, 0, 1, &code));
+	uint8_t s[20] = {0};
+	TEST_ASSERT_LESS_THAN_INT(0, rw_totp_generate(s, 20, 1, nullptr));
+}
+
 int main(void)
 {
 	UNITY_BEGIN();
@@ -92,5 +140,10 @@ int main(void)
 	RUN_TEST(test_totp_base32_decode_invalid_char);
 	RUN_TEST(test_totp_base32_decode_buffer_too_small);
 	RUN_TEST(test_totp_base32_decode_20byte_secret);
+	RUN_TEST(test_totp_generate_rfc6238_time59);
+	RUN_TEST(test_totp_generate_rfc6238_time1111111109);
+	RUN_TEST(test_totp_generate_rfc6238_time1234567890);
+	RUN_TEST(test_totp_generate_rfc6238_time2000000000);
+	RUN_TEST(test_totp_generate_null_params);
 	return UNITY_END();
 }
