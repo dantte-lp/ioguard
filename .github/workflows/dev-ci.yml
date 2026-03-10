@@ -138,7 +138,7 @@ jobs:
 
       - name: Upload build artifacts
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-${{ matrix.backend }}-${{ matrix.build_type }}
           path: build-${{ matrix.backend }}-${{ matrix.build_type }}/
@@ -190,7 +190,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.backend }}
           path: build-${{ matrix.backend }}-Debug/meson-logs/
@@ -306,7 +306,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: build-gnutls-Debug/meson-logs/coveragereport/

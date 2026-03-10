@@ -78,7 +78,7 @@ jobs:
           podman save -o /tmp/images-${{ github.run_id }}/dev-image.tar localhost/ioguard-dev:latest
 
       - name: Upload image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dev-image
           path: /tmp/images-${{ github.run_id }}/dev-image.tar
@@ -114,7 +114,7 @@ jobs:
           podman save -o /tmp/images-${{ github.run_id }}/test-image.tar localhost/ioguard-test:latest
 
       - name: Upload test image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-image
           path: /tmp/images-${{ github.run_id }}/test-image.tar
@@ -146,7 +146,7 @@ jobs:
           podman save -o /tmp/images-${{ github.run_id }}/build-image.tar localhost/ioguard-build:latest
 
       - name: Upload build image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-image
           path: /tmp/images-${{ github.run_id }}/build-image.tar
@@ -182,7 +182,7 @@ jobs:
           podman save -o /tmp/images-${{ github.run_id }}/ci-image.tar localhost/ioguard-ci:latest
 
       - name: Upload CI image artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-image
           path: /tmp/images-${{ github.run_id }}/ci-image.tar
@@ -281,7 +281,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: test-results/
@@ -290,7 +290,7 @@ jobs:
 
       - name: Upload coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-reports
           path: coverage-reports/
