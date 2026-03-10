@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
@@ -143,8 +144,29 @@ int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
             return 0;
         }
 
-        if (req.body_mode == IHTP_BODY_FIXED && req.content_length > 0) {
-            p->content_length = req.content_length;
+        /* Extract Content-Length from parsed headers (semantics layer is internal) */
+        uint64_t clen = 0;
+        for (size_t i = 0; i < req.num_headers; i++) {
+            if (req.headers[i].name_len == 14 &&
+                strncasecmp(req.headers[i].name, "Content-Length", 14) == 0) {
+                char tmp[32];
+                size_t vlen = req.headers[i].value_len;
+                if (vlen >= sizeof(tmp)) {
+                    vlen = sizeof(tmp) - 1;
+                }
+                memcpy(tmp, req.headers[i].value, vlen);
+                tmp[vlen] = '\0';
+                char *end = nullptr;
+                unsigned long val = strtoul(tmp, &end, 10);
+                if (end != tmp) {
+                    clen = val;
+                }
+                break;
+            }
+        }
+
+        if (clen > 0) {
+            p->content_length = clen;
         } else {
             /* No body expected */
             p->content_length = 0;
@@ -163,6 +185,10 @@ int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
     if (body_copy > 0) {
         memcpy(p->request.body, p->buf + p->header_bytes, body_copy);
         p->request.body_len = body_copy;
+        /* NUL-terminate for safe string operations */
+        if (body_copy < RW_HTTP_MAX_BODY) {
+            p->request.body[body_copy] = '\0';
+        }
     }
 
     /* Check if we have received the full body (or truncated to max) */

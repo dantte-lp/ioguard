@@ -291,6 +291,21 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf llhttp-*
 
+# Build and install iohttpparser from source (pull-based, zero-copy, SIMD HTTP parser)
+ARG IOHTTPPARSER_VERSION=0.1.0
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/nicksherron/iohttpparser.git && \
+    cd iohttpparser && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_TESTING=OFF && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf iohttpparser
+
 # Build and install c-ares from source
 RUN cd /tmp && \
     wget https://github.com/c-ares/c-ares/releases/download/v${CARES_VERSION}/c-ares-${CARES_VERSION}.tar.gz && \

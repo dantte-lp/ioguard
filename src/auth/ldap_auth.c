@@ -1,8 +1,10 @@
+#define _GNU_SOURCE
 #include "auth/ldap_auth.h"
 
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 #ifdef USE_LDAP
 #include <ldap.h>

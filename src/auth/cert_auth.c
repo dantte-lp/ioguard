@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "auth/cert_auth.h"
 
 #include <errno.h>

@@ -20,10 +20,8 @@ struct rw_logger {
     char *buffer;
     size_t buffer_size;
     rw_log_level_t min_level;
-#ifndef USE_STUMPLESS
-    /* Fallback: track write position in buffer for stderr-based logging */
-    size_t write_pos;
-#endif
+    size_t write_pos;  /* tracks write position (both paths) */
+    size_t read_pos;   /* tracks read position (stumpless path) */
 };
 
 constexpr size_t RW_LOG_MIN_BUFFER = 512;
@@ -117,6 +115,17 @@ void rw_log_destroy(rw_logger_t *logger)
     int ret = stumpless_add_entry(logger->target, entry);
     stumpless_destroy_entry_and_contents(entry);
 
+    if (ret >= 0) {
+        /* Scan our buffer to find how far stumpless has written.
+         * We own the buffer and it was zeroed at init, so the first
+         * NUL byte after write_pos marks the end of written data. */
+        size_t pos = logger->write_pos;
+        while (pos < logger->buffer_size && logger->buffer[pos] != '\0') {
+            pos++;
+        }
+        logger->write_pos = pos;
+    }
+
     return (ret >= 0) ? 0 : -EIO;
 }
 
@@ -162,6 +171,14 @@ void rw_log_destroy(rw_logger_t *logger)
     int ret = stumpless_add_entry(logger->target, entry);
     stumpless_destroy_entry_and_contents(entry);
 
+    if (ret >= 0) {
+        size_t pos = logger->write_pos;
+        while (pos < logger->buffer_size && logger->buffer[pos] != '\0') {
+            pos++;
+        }
+        logger->write_pos = pos;
+    }
+
     return (ret >= 0) ? 0 : -EIO;
 }
 
@@ -172,20 +189,21 @@ void rw_log_destroy(rw_logger_t *logger)
         return -EINVAL;
     }
 
-    size_t total = 0;
-    size_t n;
-
-    /* Drain all available data from the stumpless buffer target */
-    while (total < out_size) {
-        n = stumpless_read_buffer(logger->target, out + total,
-                                  out_size - total);
-        if (n == 0) {
-            break;
-        }
-        total += n;
+    /* We own the buffer and track write_pos / read_pos ourselves.
+     * Copy unread data directly from our buffer into the output. */
+    size_t available = logger->write_pos - logger->read_pos;
+    if (available == 0) {
+        return 0;
     }
 
-    return (ssize_t)total;
+    size_t to_copy = available;
+    if (to_copy > out_size) {
+        to_copy = out_size;
+    }
+
+    memcpy(out, logger->buffer + logger->read_pos, to_copy);
+    logger->read_pos += to_copy;
+    return (ssize_t)to_copy;
 }
 
 void rw_log_set_level(rw_logger_t *logger, rw_log_level_t min_level)

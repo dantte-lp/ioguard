@@ -54,7 +54,8 @@ void test_auth_backend_register_returns_zero(void)
 
 void test_auth_backend_find_by_name(void)
 {
-    rw_auth_backend_register(&mock_backend);
+    int ret = rw_auth_backend_register(&mock_backend);
+    TEST_ASSERT_EQUAL_INT(0, ret);
     const rw_auth_backend_t *found = rw_auth_backend_find("mock");
     TEST_ASSERT_NOT_NULL(found);
     TEST_ASSERT_EQUAL_STRING("mock", found->name);
@@ -84,8 +85,10 @@ void test_auth_backend_register_duplicate_returns_eexist(void)
 
 void test_auth_backend_list_returns_registered(void)
 {
-    rw_auth_backend_register(&mock_backend);
-    rw_auth_backend_register(&mock_backend2);
+    int ret = rw_auth_backend_register(&mock_backend);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    ret = rw_auth_backend_register(&mock_backend2);
+    TEST_ASSERT_EQUAL_INT(0, ret);
 
     int count = 0;
     const rw_auth_backend_t *const *list = rw_auth_backend_list(&count);

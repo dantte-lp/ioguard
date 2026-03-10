@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "auth/radius.h"
 
 #include <errno.h>
