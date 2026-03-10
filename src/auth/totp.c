@@ -1,11 +1,13 @@
 #include "auth/totp.h"
 
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
 #ifdef USE_WOLFSSL
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/hmac.h>
+#include <wolfssl/wolfcrypt/random.h>
 #endif
 
 /**
@@ -154,18 +156,84 @@ int rw_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code, ui
 	return -EACCES;
 }
 
-int rw_totp_generate_secret([[maybe_unused]] uint8_t *secret,
-                            [[maybe_unused]] size_t secret_len)
+/**
+ * RFC 4648 Base32 encoding alphabet.
+ */
+static const char B32_ALPHA[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+static ssize_t base32_encode(const uint8_t *data, size_t data_len, char *out, size_t out_size)
 {
-	return -ENOTSUP;
+	if (data == nullptr || out == nullptr)
+		return -EINVAL;
+
+	size_t needed = ((data_len * 8 + 4) / 5) + 1;
+	if (needed > out_size)
+		return -ENOSPC;
+
+	size_t idx = 0;
+	uint64_t buf = 0;
+	int bits = 0;
+
+	for (size_t i = 0; i < data_len; i++) {
+		buf = (buf << 8) | data[i];
+		bits += 8;
+		while (bits >= 5) {
+			bits -= 5;
+			out[idx++] = B32_ALPHA[(buf >> bits) & 0x1F];
+		}
+	}
+	if (bits > 0)
+		out[idx++] = B32_ALPHA[(buf << (5 - bits)) & 0x1F];
+
+	out[idx] = '\0';
+	return (ssize_t)idx;
 }
 
-ssize_t rw_totp_build_uri([[maybe_unused]] const uint8_t *secret,
-                          [[maybe_unused]] size_t secret_len,
-                          [[maybe_unused]] const char *issuer,
-                          [[maybe_unused]] const char *account,
-                          [[maybe_unused]] char *uri_out,
-                          [[maybe_unused]] size_t uri_size)
+int rw_totp_generate_secret(uint8_t *secret, size_t secret_len)
 {
+	if (secret == nullptr || secret_len == 0)
+		return -EINVAL;
+
+#ifdef USE_WOLFSSL
+	WC_RNG rng;
+
+	if (wc_InitRng(&rng) != 0)
+		return -EIO;
+
+	int ret = wc_RNG_GenerateBlock(&rng, secret, (word32)secret_len);
+	wc_FreeRng(&rng);
+
+	if (ret != 0)
+		return -EIO;
+
+	return 0;
+#else
 	return -ENOTSUP;
+#endif
+}
+
+ssize_t rw_totp_build_uri(const uint8_t *secret, size_t secret_len, const char *issuer,
+                          const char *account, char *uri_out, size_t uri_size)
+{
+	if (secret == nullptr || secret_len == 0 || issuer == nullptr || account == nullptr
+	    || uri_out == nullptr || uri_size == 0)
+		return -EINVAL;
+
+	/* Base32-encode the secret */
+	char b32[RW_TOTP_SECRET_B32_MAX];
+	ssize_t b32_len = base32_encode(secret, secret_len, b32, sizeof(b32));
+	if (b32_len < 0)
+		return b32_len;
+
+	int written = snprintf(uri_out, uri_size,
+	                       "otpauth://totp/%s:%s?secret=%s&issuer=%s&digits=6&period=30", issuer,
+	                       account, b32, issuer);
+
+	if (written < 0)
+		return -EIO;
+
+	if ((size_t)written >= uri_size)
+		return -ENOSPC;
+
+	return (ssize_t)written;
 }

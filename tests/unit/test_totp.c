@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unity/unity.h>
 #include "auth/totp.h"
@@ -162,6 +163,50 @@ void test_totp_validate_window_too_far(void)
 	TEST_ASSERT_EQUAL_INT(-EACCES, ret);
 }
 
+/* --- Provisioning tests (Task 4) --- */
+
+void test_totp_generate_secret_produces_bytes(void)
+{
+	uint8_t secret[RW_TOTP_SECRET_SIZE];
+	memset(secret, 0, sizeof(secret));
+	int ret = rw_totp_generate_secret(secret, sizeof(secret));
+	TEST_ASSERT_EQUAL_INT(0, ret);
+	/* Secret should not be all zeros after generation */
+	bool all_zero = true;
+	for (size_t i = 0; i < sizeof(secret); i++) {
+		if (secret[i] != 0) {
+			all_zero = false;
+			break;
+		}
+	}
+	TEST_ASSERT_FALSE(all_zero);
+}
+
+void test_totp_generate_secret_roundtrip(void)
+{
+	/* Generate secret, build URI, verify URI contains expected parts */
+	uint8_t secret[RW_TOTP_SECRET_SIZE];
+	int ret = rw_totp_generate_secret(secret, sizeof(secret));
+	TEST_ASSERT_EQUAL_INT(0, ret);
+
+	char uri[512];
+	ssize_t ulen = rw_totp_build_uri(secret, sizeof(secret), "ringwall", "alice", uri,
+	                                  sizeof(uri));
+	TEST_ASSERT_GREATER_THAN(0, (int)ulen);
+	TEST_ASSERT_NOT_NULL(strstr(uri, "otpauth://totp/ringwall:alice"));
+	TEST_ASSERT_NOT_NULL(strstr(uri, "digits=6"));
+	TEST_ASSERT_NOT_NULL(strstr(uri, "period=30"));
+}
+
+void test_totp_build_uri_buffer_too_small(void)
+{
+	uint8_t secret[RW_TOTP_SECRET_SIZE] = {0x01};
+	char uri[10];
+	ssize_t ret = rw_totp_build_uri(secret, sizeof(secret), "ringwall", "alice", uri,
+	                                 sizeof(uri));
+	TEST_ASSERT_LESS_THAN_INT(0, (int)ret);
+}
+
 int main(void)
 {
 	UNITY_BEGIN();
@@ -183,5 +228,8 @@ int main(void)
 	RUN_TEST(test_totp_validate_wrong_code);
 	RUN_TEST(test_totp_validate_window_drift);
 	RUN_TEST(test_totp_validate_window_too_far);
+	RUN_TEST(test_totp_generate_secret_produces_bytes);
+	RUN_TEST(test_totp_generate_secret_roundtrip);
+	RUN_TEST(test_totp_build_uri_buffer_too_small);
 	return UNITY_END();
 }
