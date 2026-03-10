@@ -9,9 +9,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-IMAGE_NAME="${IMAGE_NAME:-localhost/ringwall-test}"
+IMAGE_NAME="${IMAGE_NAME:-localhost/ioguard-test}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-DEV_IMAGE="${DEV_IMAGE:-localhost/ringwall-dev:latest}"
+DEV_IMAGE="${DEV_IMAGE:-localhost/ioguard-dev:latest}"
 
 # Color output
 RED='\033[0;31m'
@@ -58,11 +58,11 @@ container=$(buildah from "$DEV_IMAGE")
 
 # Configure container metadata
 buildah config \
-    --label "io.ringwall.version=2.0.0-alpha.1" \
-    --label "io.ringwall.environment=test" \
+    --label "io.ioguard.version=2.0.0-alpha.1" \
+    --label "io.ioguard.environment=test" \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
-    --label "org.opencontainers.image.title=ringwall-test" \
+    --label "org.opencontainers.image.title=ioguard-test" \
     --label "org.opencontainers.image.description=Test environment for ioguard" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \

@@ -4,7 +4,7 @@
 #ifndef TEST_FIXTURES_DIR
 #    define TEST_FIXTURES_DIR "."
 #endif
-static const char *TEST_CONFIG = TEST_FIXTURES_DIR "/ringwall.toml";
+static const char *TEST_CONFIG = TEST_FIXTURES_DIR "/ioguard.toml";
 
 void setUp(void)
 {
@@ -74,8 +74,8 @@ void test_config_tls_values(void)
     int ret = rw_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    TEST_ASSERT_EQUAL_STRING("/etc/ringwall/server.pem", cfg.tls.cert_file);
-    TEST_ASSERT_EQUAL_STRING("/etc/ringwall/server.key", cfg.tls.key_file);
+    TEST_ASSERT_EQUAL_STRING("/etc/ioguard/server.pem", cfg.tls.cert_file);
+    TEST_ASSERT_EQUAL_STRING("/etc/ioguard/server.key", cfg.tls.key_file);
 
     rw_config_free(&cfg);
 }
@@ -86,7 +86,7 @@ void test_config_auth_totp_values(void)
     int ret = rw_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    TEST_ASSERT_EQUAL_STRING("ringwall-test", cfg.auth.totp_issuer);
+    TEST_ASSERT_EQUAL_STRING("ioguard-test", cfg.auth.totp_issuer);
     TEST_ASSERT_EQUAL_UINT32(6, cfg.auth.totp_digits);
     TEST_ASSERT_EQUAL_UINT32(2, cfg.auth.totp_window);
 
@@ -99,7 +99,7 @@ void test_config_storage_values(void)
     int ret = rw_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    TEST_ASSERT_EQUAL_STRING("/etc/ringwall/vault.key", cfg.storage.vault_key_path);
+    TEST_ASSERT_EQUAL_STRING("/etc/ioguard/vault.key", cfg.storage.vault_key_path);
 
     rw_config_free(&cfg);
 }

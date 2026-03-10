@@ -52,30 +52,30 @@ jobs:
 
       - name: Clean previous builds
         run: |
-          podman rm -f ringwall-dev-build || true
-          podman rmi -f localhost/ringwall-dev:latest || true
+          podman rm -f ioguard-dev-build || true
+          podman rmi -f localhost/ioguard-dev:latest || true
 
       - name: Build development image
         run: |
           cd deploy/podman
           chmod +x scripts/build-dev.sh
-          IMAGE_NAME=localhost/ringwall-dev IMAGE_TAG=latest ./scripts/build-dev.sh
+          IMAGE_NAME=localhost/ioguard-dev IMAGE_TAG=latest ./scripts/build-dev.sh
         timeout-minutes: 30
 
       - name: Verify image
         run: |
-          podman images | grep ringwall-dev
-          podman inspect localhost/ringwall-dev:latest
+          podman images | grep ioguard-dev
+          podman inspect localhost/ioguard-dev:latest
 
       - name: Test container startup
         run: |
-          podman run --rm localhost/ringwall-dev:latest echo "Container started successfully"
-          podman run --rm localhost/ringwall-dev:latest wolfssl --version || echo "wolfSSL not in PATH yet"
+          podman run --rm localhost/ioguard-dev:latest echo "Container started successfully"
+          podman run --rm localhost/ioguard-dev:latest wolfssl --version || echo "wolfSSL not in PATH yet"
 
       - name: Save image
         run: |
           mkdir -p /tmp/images-${{ github.run_id }}
-          podman save -o /tmp/images-${{ github.run_id }}/dev-image.tar localhost/ringwall-dev:latest
+          podman save -o /tmp/images-${{ github.run_id }}/dev-image.tar localhost/ioguard-dev:latest
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
@@ -106,12 +106,12 @@ jobs:
         run: |
           cd deploy/podman
           chmod +x scripts/build-test.sh
-          IMAGE_NAME=localhost/ringwall-test IMAGE_TAG=latest ./scripts/build-test.sh
+          IMAGE_NAME=localhost/ioguard-test IMAGE_TAG=latest ./scripts/build-test.sh
         timeout-minutes: 10
 
       - name: Save test image
         run: |
-          podman save -o /tmp/images-${{ github.run_id }}/test-image.tar localhost/ringwall-test:latest
+          podman save -o /tmp/images-${{ github.run_id }}/test-image.tar localhost/ioguard-test:latest
 
       - name: Upload test image artifact
         uses: actions/upload-artifact@v4
@@ -130,20 +130,20 @@ jobs:
 
       - name: Clean previous builds
         run: |
-          podman rm -f ringwall-build-build || true
-          podman rmi -f localhost/ringwall-build:latest || true
+          podman rm -f ioguard-build-build || true
+          podman rmi -f localhost/ioguard-build:latest || true
 
       - name: Build build image
         run: |
           cd deploy/podman
           chmod +x scripts/build-build.sh
-          IMAGE_NAME=localhost/ringwall-build IMAGE_TAG=latest ./scripts/build-build.sh
+          IMAGE_NAME=localhost/ioguard-build IMAGE_TAG=latest ./scripts/build-build.sh
         timeout-minutes: 25
 
       - name: Save build image
         run: |
           mkdir -p /tmp/images-${{ github.run_id }}
-          podman save -o /tmp/images-${{ github.run_id }}/build-image.tar localhost/ringwall-build:latest
+          podman save -o /tmp/images-${{ github.run_id }}/build-image.tar localhost/ioguard-build:latest
 
       - name: Upload build image artifact
         uses: actions/upload-artifact@v4
@@ -174,12 +174,12 @@ jobs:
         run: |
           cd deploy/podman
           chmod +x scripts/build-ci.sh
-          IMAGE_NAME=localhost/ringwall-ci IMAGE_TAG=latest ./scripts/build-ci.sh
+          IMAGE_NAME=localhost/ioguard-ci IMAGE_TAG=latest ./scripts/build-ci.sh
         timeout-minutes: 5
 
       - name: Save CI image
         run: |
-          podman save -o /tmp/images-${{ github.run_id }}/ci-image.tar localhost/ringwall-ci:latest
+          podman save -o /tmp/images-${{ github.run_id }}/ci-image.tar localhost/ioguard-ci:latest
 
       - name: Upload CI image artifact
         uses: actions/upload-artifact@v4
@@ -214,7 +214,7 @@ jobs:
           podman run --rm \
             -v ${{ github.workspace }}:/workspace:Z \
             -w /workspace \
-            localhost/ringwall-dev:latest \
+            localhost/ioguard-dev:latest \
             bash -c "make clean && make BACKEND=${{ matrix.backend }} all"
         timeout-minutes: 5
 
@@ -223,7 +223,7 @@ jobs:
           podman run --rm \
             -v ${{ github.workspace }}:/workspace:Z \
             -w /workspace \
-            localhost/ringwall-dev:latest \
+            localhost/ioguard-dev:latest \
             bash -c "make BACKEND=${{ matrix.backend }} test-unit"
         timeout-minutes: 3
 
@@ -249,7 +249,7 @@ jobs:
         run: |
           podman run --rm \
             -v ${{ github.workspace }}:/workspace:Z \
-            localhost/ringwall-ci:latest \
+            localhost/ioguard-ci:latest \
             /usr/local/bin/quick-validate || echo "Quick validate script not found yet"
         timeout-minutes: 5
 
@@ -275,7 +275,7 @@ jobs:
         run: |
           podman run --rm \
             -v ${{ github.workspace }}:/workspace:Z \
-            localhost/ringwall-test:latest \
+            localhost/ioguard-test:latest \
             /usr/local/bin/run-tests || echo "Test script not found yet"
         timeout-minutes: 10
 
@@ -343,24 +343,24 @@ jobs:
 
       - name: Push development image
         run: |
-          podman tag localhost/ringwall-dev:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dev:latest
-          podman tag localhost/ringwall-dev:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dev:${{ github.sha }}
+          podman tag localhost/ioguard-dev:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dev:latest
+          podman tag localhost/ioguard-dev:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dev:${{ github.sha }}
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dev:latest
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-dev:${{ github.sha }}
 
       - name: Push test image
         run: |
-          podman tag localhost/ringwall-test:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-test:latest
+          podman tag localhost/ioguard-test:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-test:latest
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-test:latest
 
       - name: Push build image
         run: |
-          podman tag localhost/ringwall-build:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-build:latest
+          podman tag localhost/ioguard-build:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-build:latest
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-build:latest
 
       - name: Push CI image
         run: |
-          podman tag localhost/ringwall-ci:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-ci:latest
+          podman tag localhost/ioguard-ci:latest ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-ci:latest
           podman push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-ci:latest
 
   security-scan:
@@ -384,7 +384,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: localhost/ringwall-dev:latest
+          image-ref: localhost/ioguard-dev:latest
           format: 'sarif'
           output: 'trivy-results.sarif'
         continue-on-error: true

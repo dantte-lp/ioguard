@@ -9,7 +9,7 @@ description: Use when implementing firewall rules, rate limiting, connection tra
 Always fetch latest docs: library ID `/wolfssl/wolfsentry`
 
 ## Full Documentation
-See `/opt/projects/repositories/ringwall-docs/docs/ringwall/architecture/wolfsentry-integration.md`
+See `/opt/projects/repositories/ioguard-docs/docs/ringwall/architecture/wolfsentry-integration.md`
 
 ## Overview
 

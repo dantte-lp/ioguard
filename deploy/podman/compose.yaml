@@ -35,7 +35,7 @@ services:
   # Development Environment
   # Full development toolchain with debug symbols and hot-reload
   dev:
-    image: localhost/ringwall-dev:latest
+    image: localhost/ioguard-dev:latest
     container_name: ocserv-dev
     hostname: ocserv-dev
 
@@ -95,7 +95,7 @@ services:
   # Test Environment
   # Runtime testing with test frameworks and coverage tools
   test:
-    image: localhost/ringwall-test:latest
+    image: localhost/ioguard-test:latest
     container_name: ocserv-test
     hostname: ocserv-test
 
@@ -146,7 +146,7 @@ services:
   # Build Environment
   # Release-optimized builds for production artifacts
   build:
-    image: localhost/ringwall-build:latest
+    image: localhost/ioguard-build:latest
     container_name: ocserv-build
     hostname: ocserv-build
 
@@ -188,7 +188,7 @@ services:
   # CI/CD Environment
   # Lightweight container for automated testing in pipelines
   ci:
-    image: localhost/ringwall-ci:latest
+    image: localhost/ioguard-ci:latest
     container_name: ocserv-ci
     hostname: ocserv-ci
 
@@ -230,7 +230,7 @@ services:
 
   # Helper service: Documentation builder (optional)
   docs:
-    image: localhost/ringwall-dev:latest
+    image: localhost/ioguard-dev:latest
     container_name: ocserv-docs
     hostname: ocserv-docs
 

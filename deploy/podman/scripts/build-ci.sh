@@ -9,9 +9,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-IMAGE_NAME="${IMAGE_NAME:-localhost/ringwall-ci}"
+IMAGE_NAME="${IMAGE_NAME:-localhost/ioguard-ci}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-BUILD_IMAGE="${BUILD_IMAGE:-localhost/ringwall-build:latest}"
+BUILD_IMAGE="${BUILD_IMAGE:-localhost/ioguard-build:latest}"
 
 # Color output
 RED='\033[0;31m'
@@ -58,11 +58,11 @@ container=$(buildah from "$BUILD_IMAGE")
 
 # Configure container metadata
 buildah config \
-    --label "io.ringwall.version=2.0.0-alpha.1" \
-    --label "io.ringwall.environment=ci" \
+    --label "io.ioguard.version=2.0.0-alpha.1" \
+    --label "io.ioguard.environment=ci" \
     --label "io.buildah.version=1.0" \
     --label "org.opencontainers.image.created=$BUILD_DATE" \
-    --label "org.opencontainers.image.title=ringwall-ci" \
+    --label "org.opencontainers.image.title=ioguard-ci" \
     --label "org.opencontainers.image.description=CI/CD environment for ioguard" \
     --label "org.opencontainers.image.version=2.0.0-alpha.1" \
     --label "org.opencontainers.image.licenses=GPLv2" \

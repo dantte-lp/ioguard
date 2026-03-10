@@ -3,7 +3,7 @@
 # Run inside the dev container: cd /workspace && ./scripts/quality.sh
 # Or from host: podman run --rm --security-opt seccomp=unconfined \
 #   -v /opt/projects/repositories/ioguard:/workspace:Z \
-#   localhost/ringwall-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
+#   localhost/ioguard-dev:latest bash -c "cd /workspace && ./scripts/quality.sh"
 set -euo pipefail
 
 RED='\033[0;31m'

@@ -23,10 +23,10 @@ log_section() {
 
 # Images to inspect
 IMAGES=(
-    "localhost/ringwall-dev:latest"
-    "localhost/ringwall-test:latest"
-    "localhost/ringwall-build:latest"
-    "localhost/ringwall-ci:latest"
+    "localhost/ioguard-dev:latest"
+    "localhost/ioguard-test:latest"
+    "localhost/ioguard-build:latest"
+    "localhost/ioguard-ci:latest"
 )
 
 log_section "Inspecting ioguard Container Images"

@@ -23,7 +23,7 @@ void test_main_parse_args_default_config(void)
     int ret = rw_main_parse_args(1, argv, &path);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_NOT_NULL(path);
-    TEST_ASSERT_EQUAL_STRING("/etc/ringwall/ringwall.toml", path);
+    TEST_ASSERT_EQUAL_STRING("/etc/ioguard/ioguard.toml", path);
 }
 
 void test_main_parse_args_custom_config(void)

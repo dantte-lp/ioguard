@@ -13,7 +13,7 @@ Sprint-based development plan. Each sprint ~2 weeks.
 | S5 | Storage & Security | **DONE** | 100+ | libmdbx, SQLite WAL, wolfSentry, seccomp, Landlock, nftables, 5 fuzz targets |
 | S6 | Integration + TOTP MFA | **DONE** | 150+ | Main process, worker loop, IPAM, split DNS, TOTP/vault, MFA pipeline, security audit |
 | S7 | Auth Backends + Observability | NEXT | ~60 | RADIUS, LDAP, cert auth, iohttpparser, stumpless, Prometheus, tech debt |
-| S8 | Admin & iohttp | PLANNED | ~45 | REST API (iohttp), rwctl CLI, admin SPA, config reload |
+| S8 | Admin & iohttp | PLANNED | ~45 | REST API (iohttp), iogctl CLI, admin SPA, config reload |
 | S9 | Production Hardening | PLANNED | ~35 | Mini CA, E2E tests, benchmarks, split tunnel enforcement, docs |
 
 **Current:** S1-S6 done (~150+ tests). S7 next.
@@ -127,7 +127,7 @@ All work is `[Unreleased]` until first tag.
   - `/api/v1/metrics` — Prometheus text exposition
   - `/api/v1/config` — runtime config view
   - `/api/v1/ipam` — pool status, utilization, collision report
-- **rwctl CLI** — Juniper-style interactive + non-interactive, connects to REST API
+- **iogctl CLI** — Juniper-style interactive + non-interactive, connects to REST API
 - **Admin SPA skeleton** — static files served by iohttp (port 8443)
 - **Config reload** — SIGHUP triggers config re-read (TLS certs, DNS, routes, wolfSentry rules)
 
@@ -162,7 +162,7 @@ Ioguard implements the OpenConnect/AnyConnect protocol for interoperability with
 | LDAP/AD | Yes | S7 | S7 |
 | Certificate auth + templates | Yes | S7 | S7 |
 | REST API | ASA ASDM | iohttp | S8 |
-| CLI management | Cisco CLI | rwctl | S8 |
+| CLI management | Cisco CLI | iogctl | S8 |
 | Per-group policies | Yes | S8 (config) | S8 |
 | Dynamic split tunnel | 5.1.2.42+ | Future | — |
 | IKEv2 Post-Quantum | 5.1.8.105+ | Future | — |

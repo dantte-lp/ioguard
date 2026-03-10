@@ -73,7 +73,7 @@ Full documentation is available in [`docs/`](docs/):
 | 08 | [Development](docs/en/08-development.md) | Build system, testing, sanitizers, fuzzing |
 | 09 | [Monitoring](docs/en/09-monitoring.md) | Prometheus metrics, structured logging |
 | 10 | [Client Compatibility](docs/en/10-client-compat.md) | OpenConnect, Cisco Secure Client, NetworkManager |
-| 11 | [CLI Reference](docs/en/11-cli-reference.md) | rwctl commands, REST API |
+| 11 | [CLI Reference](docs/en/11-cli-reference.md) | iogctl commands, REST API |
 
 ## RFC Compliance
 
