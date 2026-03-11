@@ -9,7 +9,7 @@
  * ============================================================================ */
 
 /* Decompress data payload if using compressed CSTP type, write to TUN */
-static int handle_data_packet(rw_conn_data_t *data, const rw_cstp_packet_t *pkt)
+static int handle_data_packet(iog_conn_data_t *data, const rw_cstp_packet_t *pkt)
 {
     const uint8_t *payload = pkt->payload;
     size_t payload_len = pkt->payload_len;
@@ -36,7 +36,7 @@ static int handle_data_packet(rw_conn_data_t *data, const rw_cstp_packet_t *pkt)
 }
 
 /* Send a CSTP control packet (no payload or small payload) via TLS */
-static int send_cstp_packet(rw_conn_data_t *data, rw_cstp_type_t type, const uint8_t *payload,
+static int send_cstp_packet(iog_conn_data_t *data, rw_cstp_type_t type, const uint8_t *payload,
                             size_t payload_len)
 {
     int encoded =
@@ -54,7 +54,7 @@ static int send_cstp_packet(rw_conn_data_t *data, rw_cstp_type_t type, const uin
 }
 
 /* Send DPD response */
-static int send_dpd_response(rw_conn_data_t *data)
+static int send_dpd_response(iog_conn_data_t *data)
 {
     return send_cstp_packet(data, IOG_CSTP_DPD_RESP, nullptr, 0);
 }
@@ -63,7 +63,7 @@ static int send_dpd_response(rw_conn_data_t *data)
  * Public API
  * ============================================================================ */
 
-int rw_conn_data_init(rw_conn_data_t *data, const rw_conn_data_config_t *cfg)
+int iog_conn_data_init(iog_conn_data_t *data, const iog_conn_data_config_t *cfg)
 {
     if (data == nullptr || cfg == nullptr) {
         return -EINVAL;
@@ -84,7 +84,7 @@ int rw_conn_data_init(rw_conn_data_t *data, const rw_conn_data_config_t *cfg)
     return 0;
 }
 
-int rw_conn_data_process_tls(rw_conn_data_t *data)
+int iog_conn_data_process_tls(iog_conn_data_t *data)
 {
     if (data == nullptr) {
         return -EINVAL;
@@ -157,7 +157,7 @@ int rw_conn_data_process_tls(rw_conn_data_t *data)
     return 0;
 }
 
-int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt, size_t pkt_len)
+int iog_conn_data_process_tun(iog_conn_data_t *data, const uint8_t *pkt, size_t pkt_len)
 {
     if (data == nullptr || pkt == nullptr || pkt_len == 0) {
         return -EINVAL;
@@ -198,7 +198,7 @@ int rw_conn_data_process_tun(rw_conn_data_t *data, const uint8_t *pkt, size_t pk
     return (int)written;
 }
 
-int rw_conn_data_send_dpd_req(rw_conn_data_t *data)
+int iog_conn_data_send_dpd_req(iog_conn_data_t *data)
 {
     if (data == nullptr) {
         return -EINVAL;
@@ -209,7 +209,7 @@ int rw_conn_data_send_dpd_req(rw_conn_data_t *data)
     return send_cstp_packet(data, IOG_CSTP_DPD_REQ, nullptr, 0);
 }
 
-int rw_conn_data_send_keepalive(rw_conn_data_t *data)
+int iog_conn_data_send_keepalive(iog_conn_data_t *data)
 {
     if (data == nullptr) {
         return -EINVAL;

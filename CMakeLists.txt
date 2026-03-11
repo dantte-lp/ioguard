@@ -621,13 +621,13 @@ if(BUILD_TESTING)
         rw_add_test(test_worker tests/unit/test_worker.c rw_worker rw_cstp rw_dpd)
 
         # Sprint 6 — Worker event loop
-        add_library(rw_worker_loop STATIC src/core/worker_loop.c)
-        target_include_directories(rw_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_worker_loop PUBLIC _GNU_SOURCE)
-        target_link_libraries(rw_worker_loop PUBLIC rw_worker iog_io rw_fdpass rw_cstp rw_dpd)
+        add_library(iog_worker_loop STATIC src/core/worker_loop.c)
+        target_include_directories(iog_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_worker_loop PUBLIC _GNU_SOURCE)
+        target_link_libraries(iog_worker_loop PUBLIC rw_worker iog_io rw_fdpass rw_cstp rw_dpd)
 
         rw_add_test(test_worker_loop tests/unit/test_worker_loop.c
-            rw_worker_loop iog_io rw_fdpass rw_cstp rw_dpd rw_worker)
+            iog_worker_loop iog_io rw_fdpass rw_cstp rw_dpd rw_worker)
 
         # Sprint 6 — Per-connection TLS handshake
         if(WOLFSSL_FOUND)

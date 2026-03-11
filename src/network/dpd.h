@@ -31,12 +31,12 @@ typedef enum : uint8_t {
     IOG_CHANNEL_CSTP_ONLY,
     IOG_CHANNEL_DTLS_PRIMARY,
     IOG_CHANNEL_DTLS_FALLBACK,
-} rw_channel_state_t;
+} iog_channel_state_t;
 
 /** DPD context — pure state machine, no I/O. */
 typedef struct {
     rw_dpd_state_t state;
-    rw_channel_state_t channel;
+    iog_channel_state_t channel;
     uint32_t interval_s;
     uint32_t max_retries;
     uint32_t retry_count;
@@ -108,6 +108,6 @@ const char *rw_dpd_state_name(rw_dpd_state_t state);
  * @param state Channel state value.
  * @return Static string with the channel state name, or "UNKNOWN".
  */
-const char *rw_channel_state_name(rw_channel_state_t state);
+const char *iog_channel_state_name(iog_channel_state_t state);
 
 #endif /* RINGWALL_NETWORK_DPD_H */

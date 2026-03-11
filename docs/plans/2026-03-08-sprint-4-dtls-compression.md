@@ -987,24 +987,24 @@ git commit -m "feat: DTLS master secret hex encoding for X-DTLS-Master-Secret (6
 - Create: `tests/unit/test_channel.c`
 - Modify: `CMakeLists.txt`
 
-**Context:** Channel switching logic. Uses existing `rw_channel_state_t` from dpd.h. Pure state machine — no I/O.
+**Context:** Channel switching logic. Uses existing `iog_channel_state_t` from dpd.h. Pure state machine — no I/O.
 
 **Key types:**
 ```c
 typedef struct {
-	rw_channel_state_t state;
+	iog_channel_state_t state;
 	bool cstp_active;
 	bool dtls_active;
 	uint32_t dtls_fail_count;
 	uint32_t dtls_max_fails;
 	rw_compress_type_t compress_type;
-} rw_channel_ctx_t;
+} iog_channel_ctx_t;
 
-void rw_channel_init(rw_channel_ctx_t *ctx);
-[[nodiscard]] rw_channel_state_t rw_channel_on_dtls_up(rw_channel_ctx_t *ctx);
-[[nodiscard]] rw_channel_state_t rw_channel_on_dtls_down(rw_channel_ctx_t *ctx);
-[[nodiscard]] rw_channel_state_t rw_channel_on_dtls_recovery(rw_channel_ctx_t *ctx);
-[[nodiscard]] bool rw_channel_use_dtls(const rw_channel_ctx_t *ctx);
+void iog_channel_init(iog_channel_ctx_t *ctx);
+[[nodiscard]] iog_channel_state_t iog_channel_on_dtls_up(iog_channel_ctx_t *ctx);
+[[nodiscard]] iog_channel_state_t iog_channel_on_dtls_down(iog_channel_ctx_t *ctx);
+[[nodiscard]] iog_channel_state_t iog_channel_on_dtls_recovery(iog_channel_ctx_t *ctx);
+[[nodiscard]] bool iog_channel_use_dtls(const iog_channel_ctx_t *ctx);
 ```
 
 **Tests (10):** init state, CSTP_ONLY→DTLS_PRIMARY, DTLS_PRIMARY→DTLS_FALLBACK, DTLS_FALLBACK→DTLS_PRIMARY, routing decisions, CSTP always active, compress type tracking.
@@ -1046,7 +1046,7 @@ git commit -m "feat: DTLS HTTP header builder/parser for Cisco compatibility (8 
 ## Task 8: Compression integration with CSTP
 
 **Files:**
-- Modify: `src/core/worker.h` (add compress_ctx to rw_connection_t)
+- Modify: `src/core/worker.h` (add compress_ctx to iog_connection_t)
 - Modify: `src/core/worker.c` (init/destroy compress context)
 - Create: `tests/unit/test_compress_cstp.c`
 - Modify: `CMakeLists.txt`
@@ -1128,7 +1128,7 @@ git commit -m "chore: Sprint 4 complete — DTLS, channel switching, LZ4/LZS com
 
 **Existing (reuse):**
 - `src/network/cstp.h/c` — CSTP framing, COMPRESSED packet type (0x08)
-- `src/network/dpd.h` — `rw_channel_state_t` enum
+- `src/network/dpd.h` — `iog_channel_state_t` enum
 - `src/core/worker.h/c` — connection tracking, add compress_ctx
 - `src/crypto/tls_wolfssl.h/c` — TLS context for master secret export
 - `CMakeLists.txt` — `rw_add_test()` macro

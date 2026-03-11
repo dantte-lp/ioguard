@@ -74,9 +74,9 @@ static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload, size_t paylo
 }
 
 /* Helper: create initialized conn_data with mock I/O */
-static int make_conn_data(rw_conn_data_t *data)
+static int make_conn_data(iog_conn_data_t *data)
 {
-    rw_conn_data_config_t cfg = {
+    iog_conn_data_config_t cfg = {
         .tls_read = mock_tls_read,
         .tls_write = mock_tls_write,
         .tls_ctx = &tls_sv[0],
@@ -84,7 +84,7 @@ static int make_conn_data(rw_conn_data_t *data)
         .dpd = &dpd,
         .compress = &compress_ctx,
     };
-    return rw_conn_data_init(data, &cfg);
+    return iog_conn_data_init(data, &cfg);
 }
 
 /* ============================================================================
@@ -93,7 +93,7 @@ static int make_conn_data(rw_conn_data_t *data)
 
 void test_conn_data_init_destroy(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
     TEST_ASSERT_NOT_NULL(data.tls_read);
     TEST_ASSERT_NOT_NULL(data.tls_write);
@@ -103,7 +103,7 @@ void test_conn_data_init_destroy(void)
 
 void test_conn_data_tls_to_tun(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
     /* Inject a DATA packet into mock TLS */
@@ -111,7 +111,7 @@ void test_conn_data_tls_to_tun(void)
     TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_DATA, payload, sizeof(payload)));
 
     /* Process TLS input */
-    int ret = rw_conn_data_process_tls(&data);
+    int ret = iog_conn_data_process_tls(&data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read from TUN end */
@@ -123,12 +123,12 @@ void test_conn_data_tls_to_tun(void)
 
 void test_conn_data_tun_to_tls(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
     /* Send a TUN packet */
     const uint8_t pkt[] = {0x45, 0x00, 0x00, 0x14, 0xBE, 0xEF, 0xCA, 0xFE};
-    int ret = rw_conn_data_process_tun(&data, pkt, sizeof(pkt));
+    int ret = iog_conn_data_process_tun(&data, pkt, sizeof(pkt));
     TEST_ASSERT_GREATER_THAN(0, ret);
 
     /* Read CSTP frame from mock TLS */
@@ -147,14 +147,14 @@ void test_conn_data_tun_to_tls(void)
 
 void test_conn_data_dpd_request_response(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
     /* Inject DPD_REQ */
     TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_DPD_REQ, nullptr, 0));
 
     /* Process */
-    int ret = rw_conn_data_process_tls(&data);
+    int ret = iog_conn_data_process_tls(&data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read DPD_RESP from mock TLS */
@@ -170,14 +170,14 @@ void test_conn_data_dpd_request_response(void)
 
 void test_conn_data_keepalive_passthrough(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
     /* Inject KEEPALIVE */
     TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_KEEPALIVE, nullptr, 0));
 
     /* Process */
-    int ret = rw_conn_data_process_tls(&data);
+    int ret = iog_conn_data_process_tls(&data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Nothing should arrive on TUN */
@@ -188,21 +188,21 @@ void test_conn_data_keepalive_passthrough(void)
 
 void test_conn_data_disconnect_cleanup(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
     /* Inject DISCONNECT */
     TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_DISCONNECT, nullptr, 0));
 
     /* Process — should return -ECONNRESET */
-    int ret = rw_conn_data_process_tls(&data);
+    int ret = iog_conn_data_process_tls(&data);
     TEST_ASSERT_EQUAL_INT(-ECONNRESET, ret);
     TEST_ASSERT_TRUE(data.disconnected);
 }
 
 void test_conn_data_compressed_lz4(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
     /* Switch to LZ4 compression */
@@ -214,7 +214,7 @@ void test_conn_data_compressed_lz4(void)
     memset(payload, 0x42, sizeof(payload));
 
     /* Send via TUN path (compresses + encodes) */
-    int ret = rw_conn_data_process_tun(&data, payload, sizeof(payload));
+    int ret = iog_conn_data_process_tun(&data, payload, sizeof(payload));
     TEST_ASSERT_GREATER_THAN(0, ret);
 
     /* Read CSTP frame from mock TLS */
@@ -235,7 +235,7 @@ void test_conn_data_compressed_lz4(void)
     TEST_ASSERT_GREATER_THAN(0, (int)w);
 
     /* Process TLS input — should decompress and write to TUN */
-    ret = rw_conn_data_process_tls(&data);
+    ret = iog_conn_data_process_tls(&data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read from TUN */
@@ -247,7 +247,7 @@ void test_conn_data_compressed_lz4(void)
 
 void test_conn_data_multiple_packets_batch(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
     /* Inject 3 DATA packets in one burst */
@@ -260,7 +260,7 @@ void test_conn_data_multiple_packets_batch(void)
     TEST_ASSERT_GREATER_THAN(0, inject_cstp(IOG_CSTP_DATA, p3, sizeof(p3)));
 
     /* Process all at once */
-    int ret = rw_conn_data_process_tls(&data);
+    int ret = iog_conn_data_process_tls(&data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read all 3 packets from TUN */
@@ -282,10 +282,10 @@ void test_conn_data_multiple_packets_batch(void)
 
 void test_conn_data_send_dpd_req(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
-    int ret = rw_conn_data_send_dpd_req(&data);
+    int ret = iog_conn_data_send_dpd_req(&data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read from mock TLS */
@@ -301,10 +301,10 @@ void test_conn_data_send_dpd_req(void)
 
 void test_conn_data_send_keepalive(void)
 {
-    rw_conn_data_t data;
+    iog_conn_data_t data;
     TEST_ASSERT_EQUAL_INT(0, make_conn_data(&data));
 
-    int ret = rw_conn_data_send_keepalive(&data);
+    int ret = iog_conn_data_send_keepalive(&data);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read from mock TLS */

@@ -9,16 +9,16 @@
 
 /* Per-connection callback context for io_uring operations */
 typedef struct {
-    rw_worker_loop_t *loop;
+    iog_worker_loop_t *loop;
     uint64_t conn_id;
 } rw_conn_ctx_t;
 
 static void on_tls_recv(int res, void *user_data);
 
 /* Arm a recv operation on the connection's TLS fd */
-static int arm_connection_recv(rw_worker_loop_t *loop, uint64_t conn_id)
+static int arm_connection_recv(iog_worker_loop_t *loop, uint64_t conn_id)
 {
-    rw_connection_t *conn = rw_worker_find_connection(loop->worker, conn_id);
+    iog_connection_t *conn = iog_worker_find_connection(loop->worker, conn_id);
     if (conn == nullptr) {
         return -ENOENT;
     }
@@ -43,7 +43,7 @@ static int arm_connection_recv(rw_worker_loop_t *loop, uint64_t conn_id)
 static void on_tls_recv(int res, void *user_data)
 {
     rw_conn_ctx_t *ctx = user_data;
-    rw_connection_t *conn = rw_worker_find_connection(ctx->loop->worker, ctx->conn_id);
+    iog_connection_t *conn = iog_worker_find_connection(ctx->loop->worker, ctx->conn_id);
     if (conn == nullptr) {
         free(ctx);
         return;
@@ -55,7 +55,7 @@ static void on_tls_recv(int res, void *user_data)
         if (conn->tun_fd >= 0) {
             close(conn->tun_fd);
         }
-        (void)rw_worker_remove_connection(ctx->loop->worker, ctx->conn_id);
+        (void)iog_worker_remove_connection(ctx->loop->worker, ctx->conn_id);
         free(ctx);
         return;
     }
@@ -76,7 +76,7 @@ static void on_tls_recv(int res, void *user_data)
 
 /* Try to receive a new connection from main process via fd passing.
  * Non-blocking: returns 0 if got connection, -EAGAIN if nothing available. */
-static int try_accept_connection(rw_worker_loop_t *loop)
+static int try_accept_connection(iog_worker_loop_t *loop)
 {
     int fds[2] = {-1, -1};
     size_t nfds = 0;
@@ -94,7 +94,7 @@ static int try_accept_connection(rw_worker_loop_t *loop)
     int tls_fd = fds[0];
     int tun_fd = (nfds >= 2) ? fds[1] : -1;
 
-    int64_t conn_id = rw_worker_add_connection(loop->worker, tls_fd, tun_fd);
+    int64_t conn_id = iog_worker_add_connection(loop->worker, tls_fd, tun_fd);
     if (conn_id < 0) {
         /* At capacity or error — close the received fds */
         close(tls_fd);
@@ -107,7 +107,7 @@ static int try_accept_connection(rw_worker_loop_t *loop)
     /* Arm recv on the new connection's TLS fd */
     ret = arm_connection_recv(loop, (uint64_t)conn_id);
     if (ret < 0) {
-        (void)rw_worker_remove_connection(loop->worker, (uint64_t)conn_id);
+        (void)iog_worker_remove_connection(loop->worker, (uint64_t)conn_id);
         close(tls_fd);
         if (tun_fd >= 0) {
             close(tun_fd);
@@ -118,7 +118,7 @@ static int try_accept_connection(rw_worker_loop_t *loop)
     return 0;
 }
 
-int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *cfg)
+int iog_worker_loop_init(iog_worker_loop_t *loop, const iog_worker_loop_config_t *cfg)
 {
     memset(loop, 0, sizeof(*loop));
 
@@ -127,7 +127,7 @@ int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *c
         return -ENOMEM;
     }
 
-    loop->worker = rw_worker_create(cfg->worker_cfg);
+    loop->worker = iog_worker_create(cfg->worker_cfg);
     if (loop->worker == nullptr) {
         iog_io_destroy(loop->io);
         loop->io = nullptr;
@@ -147,7 +147,7 @@ int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *c
     return 0;
 }
 
-int rw_worker_loop_process_events(rw_worker_loop_t *loop)
+int iog_worker_loop_process_events(iog_worker_loop_t *loop)
 {
     /* Check for new connections from main process */
     int ret = try_accept_connection(loop);
@@ -164,12 +164,12 @@ int rw_worker_loop_process_events(rw_worker_loop_t *loop)
     return 0;
 }
 
-int rw_worker_loop_run(rw_worker_loop_t *loop)
+int iog_worker_loop_run(iog_worker_loop_t *loop)
 {
     loop->running = true;
 
     while (loop->running) {
-        int ret = rw_worker_loop_process_events(loop);
+        int ret = iog_worker_loop_process_events(loop);
         if (ret < 0) {
             return ret;
         }
@@ -178,7 +178,7 @@ int rw_worker_loop_run(rw_worker_loop_t *loop)
     return 0;
 }
 
-void rw_worker_loop_stop(rw_worker_loop_t *loop)
+void iog_worker_loop_stop(iog_worker_loop_t *loop)
 {
     loop->running = false;
     if (loop->io != nullptr) {
@@ -186,10 +186,10 @@ void rw_worker_loop_stop(rw_worker_loop_t *loop)
     }
 }
 
-void rw_worker_loop_destroy(rw_worker_loop_t *loop)
+void iog_worker_loop_destroy(iog_worker_loop_t *loop)
 {
     if (loop->worker != nullptr) {
-        rw_worker_destroy(loop->worker);
+        iog_worker_destroy(loop->worker);
         loop->worker = nullptr;
     }
     if (loop->io != nullptr) {

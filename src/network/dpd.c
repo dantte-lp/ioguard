@@ -80,7 +80,7 @@ const char *rw_dpd_state_name(rw_dpd_state_t state)
     }
 }
 
-const char *rw_channel_state_name(rw_channel_state_t state)
+const char *iog_channel_state_name(iog_channel_state_t state)
 {
     switch (state) {
     case IOG_CHANNEL_CSTP_ONLY:

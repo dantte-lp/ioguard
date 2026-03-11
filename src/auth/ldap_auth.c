@@ -114,15 +114,15 @@ static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
                                            rw_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     if (req->username == nullptr || req->password == nullptr) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     if (!g_ldap_initialized) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     memset(resp, 0, sizeof(*resp));
@@ -133,13 +133,13 @@ static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
                                              req->username,
                                              bind_dn, sizeof(bind_dn));
     if (dn_len < 0) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     LDAP *ld = nullptr;
     int rc = ldap_initialize(&ld, g_ldap_cfg.uri);
     if (rc != LDAP_SUCCESS) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     /* Force LDAPv3 */
@@ -164,7 +164,7 @@ static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
         rc = ldap_start_tls_s(ld, nullptr, nullptr);
         if (rc != LDAP_SUCCESS) {
             ldap_unbind_ext_s(ld, nullptr, nullptr);
-            return RW_AUTH_STATUS_ERROR;
+            return IOG_AUTH_STATUS_ERROR;
         }
     }
 
@@ -182,14 +182,14 @@ static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
 
     if (rc == LDAP_INVALID_CREDENTIALS) {
         ldap_unbind_ext_s(ld, nullptr, nullptr);
-        resp->status = RW_AUTH_STATUS_FAILURE;
-        return RW_AUTH_STATUS_FAILURE;
+        resp->status = IOG_AUTH_STATUS_FAILURE;
+        return IOG_AUTH_STATUS_FAILURE;
     }
 
     if (rc != LDAP_SUCCESS) {
         ldap_unbind_ext_s(ld, nullptr, nullptr);
-        resp->status = RW_AUTH_STATUS_ERROR;
-        return RW_AUTH_STATUS_ERROR;
+        resp->status = IOG_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     /* Optionally search for group memberships */
@@ -247,8 +247,8 @@ static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
 
     ldap_unbind_ext_s(ld, nullptr, nullptr);
 
-    resp->status = RW_AUTH_STATUS_SUCCESS;
-    return RW_AUTH_STATUS_SUCCESS;
+    resp->status = IOG_AUTH_STATUS_SUCCESS;
+    return IOG_AUTH_STATUS_SUCCESS;
 }
 
 #else /* !USE_LDAP */
@@ -261,9 +261,9 @@ static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
 {
     (void)req;
     if (resp != nullptr) {
-        resp->status = RW_AUTH_STATUS_ERROR;
+        resp->status = IOG_AUTH_STATUS_ERROR;
     }
-    return RW_AUTH_STATUS_ERROR;
+    return IOG_AUTH_STATUS_ERROR;
 }
 
 #endif /* USE_LDAP */

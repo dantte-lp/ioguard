@@ -14,8 +14,8 @@ static rw_auth_status_t mock_authenticate(const rw_auth_request_t *req,
                                            rw_auth_response_t *resp)
 {
     (void)req;
-    resp->status = RW_AUTH_STATUS_SUCCESS;
-    return RW_AUTH_STATUS_SUCCESS;
+    resp->status = IOG_AUTH_STATUS_SUCCESS;
+    return IOG_AUTH_STATUS_SUCCESS;
 }
 
 static void mock_destroy(void)

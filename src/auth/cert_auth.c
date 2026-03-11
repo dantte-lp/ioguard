@@ -53,17 +53,17 @@ static rw_auth_status_t cert_authenticate(const rw_auth_request_t *req,
                                            rw_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     if (!g_cert_initialized) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     /* Client cert is required for this backend */
     if (req->client_cert == nullptr || req->client_cert_len == 0) {
-        resp->status = RW_AUTH_STATUS_FAILURE;
-        return RW_AUTH_STATUS_FAILURE;
+        resp->status = IOG_AUTH_STATUS_FAILURE;
+        return IOG_AUTH_STATUS_FAILURE;
     }
 
     /* Extract username from the certificate */
@@ -71,17 +71,17 @@ static rw_auth_status_t cert_authenticate(const rw_auth_request_t *req,
     int ret = rw_cert_extract_username(req->client_cert, req->client_cert_len,
                                        g_cert_cfg.username_field, username, sizeof(username));
     if (ret != 0) {
-        resp->status = RW_AUTH_STATUS_FAILURE;
-        return RW_AUTH_STATUS_FAILURE;
+        resp->status = IOG_AUTH_STATUS_FAILURE;
+        return IOG_AUTH_STATUS_FAILURE;
     }
 
     /* Authentication succeeded — username was extracted and cert was parsed */
-    resp->status = RW_AUTH_STATUS_SUCCESS;
+    resp->status = IOG_AUTH_STATUS_SUCCESS;
     resp->groups[0] = '\0';
     resp->framed_ip = 0;
     resp->has_framed_ipv6 = false;
 
-    return RW_AUTH_STATUS_SUCCESS;
+    return IOG_AUTH_STATUS_SUCCESS;
 }
 
 /**

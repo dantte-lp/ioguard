@@ -10,11 +10,11 @@ constexpr int RW_AUTH_BACKEND_MAX = 16;
 
 /** Authentication status codes returned by backends. */
 typedef enum {
-    RW_AUTH_STATUS_SUCCESS = 0,
-    RW_AUTH_STATUS_FAILURE = -1,
-    RW_AUTH_STATUS_ERROR = -2,
-    RW_AUTH_STATUS_ACCOUNT_EXPIRED = -3,
-    RW_AUTH_STATUS_PASSWORD_EXPIRED = -4,
+    IOG_AUTH_STATUS_SUCCESS = 0,
+    IOG_AUTH_STATUS_FAILURE = -1,
+    IOG_AUTH_STATUS_ERROR = -2,
+    IOG_AUTH_STATUS_ACCOUNT_EXPIRED = -3,
+    IOG_AUTH_STATUS_PASSWORD_EXPIRED = -4,
 } rw_auth_status_t;
 
 /** Authentication request passed to a backend. */

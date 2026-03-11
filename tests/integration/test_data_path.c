@@ -215,35 +215,35 @@ void test_dpd_probe_response_roundtrip(void)
 void test_worker_connection_lifecycle(void)
 {
     /* 1. Create worker with max_conns=4 */
-    rw_worker_config_t cfg;
-    rw_worker_config_init(&cfg);
+    iog_worker_config_t cfg;
+    iog_worker_config_init(&cfg);
     cfg.max_connections = 4;
 
-    rw_worker_t *w = rw_worker_create(&cfg);
+    iog_worker_t *w = iog_worker_create(&cfg);
     TEST_ASSERT_NOT_NULL(w);
 
     /* 2. Add connection with dummy fds */
-    int64_t conn_id = rw_worker_add_connection(w, 10, 11);
+    int64_t conn_id = iog_worker_add_connection(w, 10, 11);
     TEST_ASSERT_GREATER_OR_EQUAL_INT64(0, conn_id);
 
     /* 3. Find connection, verify tls_fd and tun_fd */
-    rw_connection_t *conn = rw_worker_find_connection(w, (uint64_t)conn_id);
+    iog_connection_t *conn = iog_worker_find_connection(w, (uint64_t)conn_id);
     TEST_ASSERT_NOT_NULL(conn);
     TEST_ASSERT_EQUAL_INT(10, conn->tls_fd);
     TEST_ASSERT_EQUAL_INT(11, conn->tun_fd);
-    TEST_ASSERT_EQUAL_UINT32(1, rw_worker_connection_count(w));
+    TEST_ASSERT_EQUAL_UINT32(1, iog_worker_connection_count(w));
 
     /* 4. Remove connection */
-    int ret = rw_worker_remove_connection(w, (uint64_t)conn_id);
+    int ret = iog_worker_remove_connection(w, (uint64_t)conn_id);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* 5. Verify count=0, find returns nullptr */
-    TEST_ASSERT_EQUAL_UINT32(0, rw_worker_connection_count(w));
-    conn = rw_worker_find_connection(w, (uint64_t)conn_id);
+    TEST_ASSERT_EQUAL_UINT32(0, iog_worker_connection_count(w));
+    conn = iog_worker_find_connection(w, (uint64_t)conn_id);
     TEST_ASSERT_NULL(conn);
 
     /* 6. Destroy worker */
-    rw_worker_destroy(w);
+    iog_worker_destroy(w);
 }
 
 int main(void)

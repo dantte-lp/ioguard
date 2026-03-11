@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
         close(worker_sv[0]);
         close(authmod_sv[0]);
         if (config.security.seccomp) rw_sandbox_apply(RW_SANDBOX_WORKER);
-        /* rw_worker_loop_run() — implemented in Task 4 */
+        /* iog_worker_loop_run() — implemented in Task 4 */
         _exit(EXIT_SUCCESS);
     }
     close(worker_sv[1]);
@@ -448,47 +448,47 @@ void test_worker_loop_tun_write(void);             /* write to TUN fd (socketpai
 /**
  * @brief Worker event loop context.
  *
- * Wraps rw_worker_t (connection pool) with an io_uring event loop.
+ * Wraps iog_worker_t (connection pool) with an io_uring event loop.
  * Receives new client fds from main via accept_fd (SCM_RIGHTS).
  * Drives TLS handshake, CSTP framing, and TUN I/O per connection.
  */
 typedef struct {
-    rw_worker_t *worker;
+    iog_worker_t *worker;
     iog_io_ctx_t *io;
     int accept_fd;             /* unix socket: main passes client fds here */
     int ipc_fd;                /* IPC to auth-mod */
     const rw_config_t *config;
     bool running;
-} rw_worker_loop_t;
+} iog_worker_loop_t;
 
 typedef struct {
     int accept_fd;
     int ipc_fd;
     const rw_config_t *config;
-    const rw_worker_config_t *worker_cfg;
-} rw_worker_loop_config_t;
+    const iog_worker_config_t *worker_cfg;
+} iog_worker_loop_config_t;
 
 /**
  * @brief Initialize worker event loop.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_worker_loop_init(rw_worker_loop_t *loop,
-                                       const rw_worker_loop_config_t *cfg);
+[[nodiscard]] int iog_worker_loop_init(iog_worker_loop_t *loop,
+                                       const iog_worker_loop_config_t *cfg);
 
 /**
- * @brief Run worker event loop (blocking). Returns on rw_worker_loop_stop().
+ * @brief Run worker event loop (blocking). Returns on iog_worker_loop_stop().
  */
-[[nodiscard]] int rw_worker_loop_run(rw_worker_loop_t *loop);
+[[nodiscard]] int iog_worker_loop_run(iog_worker_loop_t *loop);
 
 /**
  * @brief Signal worker event loop to stop.
  */
-void rw_worker_loop_stop(rw_worker_loop_t *loop);
+void iog_worker_loop_stop(iog_worker_loop_t *loop);
 
 /**
  * @brief Destroy worker event loop and free resources.
  */
-void rw_worker_loop_destroy(rw_worker_loop_t *loop);
+void iog_worker_loop_destroy(iog_worker_loop_t *loop);
 
 #endif /* RINGWALL_CORE_WORKER_LOOP_H */
 ```
@@ -497,12 +497,12 @@ void rw_worker_loop_destroy(rw_worker_loop_t *loop);
 
 Core loop structure:
 ```c
-int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *cfg)
+int iog_worker_loop_init(iog_worker_loop_t *loop, const iog_worker_loop_config_t *cfg)
 {
     loop->io = iog_io_init(cfg->worker_cfg->queue_depth, 0);
     if (!loop->io) return -ENOMEM;
 
-    loop->worker = rw_worker_create(cfg->worker_cfg);
+    loop->worker = iog_worker_create(cfg->worker_cfg);
     if (!loop->worker) { iog_io_destroy(loop->io); return -ENOMEM; }
 
     loop->accept_fd = cfg->accept_fd;
@@ -512,7 +512,7 @@ int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *c
     return 0;
 }
 
-int rw_worker_loop_run(rw_worker_loop_t *loop)
+int iog_worker_loop_run(iog_worker_loop_t *loop)
 {
     loop->running = true;
 
@@ -530,19 +530,19 @@ int rw_worker_loop_run(rw_worker_loop_t *loop)
 
 The `on_accept_fd` callback:
 1. `rw_fdpass_recv()` to get client fd
-2. `rw_worker_add_connection()` to allocate slot
+2. `iog_worker_add_connection()` to allocate slot
 3. Start TLS handshake (Task 6)
 4. Re-arm accept_fd for next connection
 
 **Step 4: Add to CMakeLists.txt**
 
 ```cmake
-add_library(rw_worker_loop STATIC src/core/worker_loop.c)
-target_include_directories(rw_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(rw_worker_loop PUBLIC rw_worker iog_io rw_fdpass rw_cstp rw_dpd)
-target_compile_definitions(rw_worker_loop PUBLIC _GNU_SOURCE)
+add_library(iog_worker_loop STATIC src/core/worker_loop.c)
+target_include_directories(iog_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(iog_worker_loop PUBLIC rw_worker iog_io rw_fdpass rw_cstp rw_dpd)
+target_compile_definitions(iog_worker_loop PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_worker_loop tests/unit/test_worker_loop.c rw_worker_loop iog_io rw_fdpass rw_cstp rw_dpd rw_worker)
+rw_add_test(test_worker_loop tests/unit/test_worker_loop.c iog_worker_loop iog_io rw_fdpass rw_cstp rw_dpd rw_worker)
 ```
 
 **Step 5: Build, test, commit**
@@ -762,7 +762,7 @@ typedef struct {
     int tun_fd;
     rw_dpd_ctx_t *dpd;
     rw_compress_ctx_t *compress;
-    rw_channel_ctx_t channel;
+    iog_channel_ctx_t channel;
 
     /* Receive buffer (accumulates partial CSTP frames from TLS) */
     uint8_t recv_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
@@ -770,12 +770,12 @@ typedef struct {
 
     /* Send buffer (CSTP-encoded frame for TLS write) */
     uint8_t send_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
-} rw_conn_data_t;
+} iog_conn_data_t;
 
 /**
  * @brief Initialize data path for a connection.
  */
-void rw_conn_data_init(rw_conn_data_t *data, rw_tls_conn_t *tls, int tun_fd,
+void iog_conn_data_init(iog_conn_data_t *data, rw_tls_conn_t *tls, int tun_fd,
                         rw_dpd_ctx_t *dpd, rw_compress_ctx_t *compress);
 
 /**
@@ -789,7 +789,7 @@ void rw_conn_data_init(rw_conn_data_t *data, rw_tls_conn_t *tls, int tun_fd,
  *
  * @return 0 on success, -EAGAIN if incomplete, negative errno on error.
  */
-[[nodiscard]] int rw_conn_data_process_tls(rw_conn_data_t *data);
+[[nodiscard]] int iog_conn_data_process_tls(iog_conn_data_t *data);
 
 /**
  * @brief Process data received from TUN.
@@ -800,27 +800,27 @@ void rw_conn_data_init(rw_conn_data_t *data, rw_tls_conn_t *tls, int tun_fd,
  * @param pkt_len Packet length.
  * @return bytes sent via TLS, or negative errno.
  */
-[[nodiscard]] int rw_conn_data_process_tun(rw_conn_data_t *data,
+[[nodiscard]] int iog_conn_data_process_tun(iog_conn_data_t *data,
                                             const uint8_t *pkt, size_t pkt_len);
 
 /**
  * @brief Send a DPD request via TLS.
  */
-[[nodiscard]] int rw_conn_data_send_dpd_req(rw_conn_data_t *data);
+[[nodiscard]] int iog_conn_data_send_dpd_req(iog_conn_data_t *data);
 
 /**
  * @brief Send a keepalive via TLS.
  */
-[[nodiscard]] int rw_conn_data_send_keepalive(rw_conn_data_t *data);
+[[nodiscard]] int iog_conn_data_send_keepalive(iog_conn_data_t *data);
 
 #endif /* RINGWALL_CORE_CONN_DATA_H */
 ```
 
 **Step 3: Implement conn_data.c**
 
-Core logic for `rw_conn_data_process_tls()`:
+Core logic for `iog_conn_data_process_tls()`:
 ```c
-int rw_conn_data_process_tls(rw_conn_data_t *data)
+int iog_conn_data_process_tls(iog_conn_data_t *data)
 {
     /* Read from TLS into recv_buf */
     int n = rw_tls_conn_read(data->tls,
@@ -864,7 +864,7 @@ int rw_conn_data_process_tls(rw_conn_data_t *data)
 ```
 
 For `handle_data_packet()`: decompress if compressed type, then write to TUN fd.
-For `rw_conn_data_process_tun()`: compress payload, CSTP-encode with DATA type, TLS write.
+For `iog_conn_data_process_tun()`: compress payload, CSTP-encode with DATA type, TLS write.
 
 **Testing approach:** Use socketpairs to mock both TLS and TUN. For TLS mock, create a thin wrapper that reads/writes plaintext (skip actual encryption in unit tests). The integration test (Task 10) will use real wolfSSL.
 
@@ -913,27 +913,27 @@ typedef void (*rw_conn_dead_cb)(uint64_t conn_id, void *user_data);
 typedef struct {
     iog_io_ctx_t *io;
     rw_dpd_ctx_t *dpd;
-    rw_conn_data_t *data;
+    iog_conn_data_t *data;
     uint64_t conn_id;
     uint32_t keepalive_interval_s;
     uint32_t idle_timeout_s;
     rw_conn_dead_cb on_dead;
     void *on_dead_user_data;
     bool active;
-} rw_conn_timer_t;
+} iog_conn_timer_t;
 
-[[nodiscard]] int rw_conn_timer_start(rw_conn_timer_t *timer);
-void rw_conn_timer_stop(rw_conn_timer_t *timer);
-void rw_conn_timer_on_activity(rw_conn_timer_t *timer);
+[[nodiscard]] int iog_conn_timer_start(iog_conn_timer_t *timer);
+void iog_conn_timer_stop(iog_conn_timer_t *timer);
+void iog_conn_timer_on_activity(iog_conn_timer_t *timer);
 
 #endif /* RINGWALL_CORE_CONN_TIMER_H */
 ```
 
 **Step 3: Implement conn_timer.c**
 
-- `rw_conn_timer_start()`: arm DPD timeout via `iog_io_add_timeout_cb()`, arm keepalive timeout
+- `iog_conn_timer_start()`: arm DPD timeout via `iog_io_add_timeout_cb()`, arm keepalive timeout
 - DPD timeout callback: call `rw_dpd_on_timeout()`, if DEAD → call `on_dead`, else send DPD request, re-arm
-- Keepalive callback: `rw_conn_data_send_keepalive()`, re-arm
+- Keepalive callback: `iog_conn_data_send_keepalive()`, re-arm
 - `on_activity()`: reset idle timer, update DPD last_recv
 
 **Step 4: Build, test, commit**
@@ -1046,18 +1046,18 @@ void test_shutdown_cleanup_no_leaks(void);            /* destroy all contexts, n
 **Step 2: Implement worker shutdown in worker_loop.c**
 
 ```c
-void rw_worker_loop_stop(rw_worker_loop_t *loop)
+void iog_worker_loop_stop(iog_worker_loop_t *loop)
 {
     loop->running = false;
     iog_io_stop(loop->io);
 }
 
 /* Called from run loop when stopping */
-static int drain_connections(rw_worker_loop_t *loop)
+static int drain_connections(iog_worker_loop_t *loop)
 {
     /* For each active connection: send CSTP DISCONNECT */
     for (uint32_t i = 0; i < loop->worker->config.max_connections; i++) {
-        rw_connection_t *conn = &loop->worker->conns[i];
+        iog_connection_t *conn = &loop->worker->conns[i];
         if (!conn->active) continue;
 
         uint8_t buf[RW_CSTP_HEADER_SIZE];
@@ -1066,7 +1066,7 @@ static int drain_connections(rw_worker_loop_t *loop)
             /* Best-effort send — ignore errors during shutdown */
             rw_tls_conn_write(/* ... */, buf, (size_t)n);
         }
-        rw_worker_remove_connection(loop->worker, conn->conn_id);
+        iog_worker_remove_connection(loop->worker, conn->conn_id);
     }
     return 0;
 }
@@ -1110,7 +1110,7 @@ void test_vpn_flow_multiple_clients(void);           /* 3 clients, independent d
 
 ```cmake
 rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
-    rw_worker_loop rw_conn_data rw_conn_tls rw_conn_timer rw_security_hooks
+    iog_worker_loop rw_conn_data rw_conn_tls rw_conn_timer rw_security_hooks
     rw_worker iog_io rw_fdpass rw_cstp rw_dpd rw_compress rw_secmod
     rw_mdbx iog_sqlite rw_migrate ${WOLFSSL_LIBRARIES})
 ```

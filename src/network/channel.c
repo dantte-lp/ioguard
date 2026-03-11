@@ -1,8 +1,8 @@
 #include "network/channel.h"
 
-void rw_channel_init(rw_channel_ctx_t *ctx)
+void iog_channel_init(iog_channel_ctx_t *ctx)
 {
-    *ctx = (rw_channel_ctx_t){
+    *ctx = (iog_channel_ctx_t){
         .state = IOG_CHANNEL_CSTP_ONLY,
         .cstp_active = true,
         .dtls_active = false,
@@ -12,7 +12,7 @@ void rw_channel_init(rw_channel_ctx_t *ctx)
     };
 }
 
-rw_channel_state_t rw_channel_on_dtls_up(rw_channel_ctx_t *ctx)
+iog_channel_state_t iog_channel_on_dtls_up(iog_channel_ctx_t *ctx)
 {
     ctx->state = IOG_CHANNEL_DTLS_PRIMARY;
     ctx->dtls_active = true;
@@ -20,7 +20,7 @@ rw_channel_state_t rw_channel_on_dtls_up(rw_channel_ctx_t *ctx)
     return ctx->state;
 }
 
-rw_channel_state_t rw_channel_on_dtls_down(rw_channel_ctx_t *ctx)
+iog_channel_state_t iog_channel_on_dtls_down(iog_channel_ctx_t *ctx)
 {
     ctx->dtls_fail_count++;
     if (ctx->dtls_fail_count >= ctx->dtls_max_fails) {
@@ -33,7 +33,7 @@ rw_channel_state_t rw_channel_on_dtls_down(rw_channel_ctx_t *ctx)
     return ctx->state;
 }
 
-rw_channel_state_t rw_channel_on_dtls_recovery(rw_channel_ctx_t *ctx)
+iog_channel_state_t iog_channel_on_dtls_recovery(iog_channel_ctx_t *ctx)
 {
     ctx->state = IOG_CHANNEL_DTLS_PRIMARY;
     ctx->dtls_active = true;
@@ -41,12 +41,12 @@ rw_channel_state_t rw_channel_on_dtls_recovery(rw_channel_ctx_t *ctx)
     return ctx->state;
 }
 
-bool rw_channel_use_dtls(const rw_channel_ctx_t *ctx)
+bool iog_channel_use_dtls(const iog_channel_ctx_t *ctx)
 {
     return ctx->dtls_active && ctx->state == IOG_CHANNEL_DTLS_PRIMARY;
 }
 
-const char *rw_channel_state_str(const rw_channel_ctx_t *ctx)
+const char *iog_channel_state_str(const iog_channel_ctx_t *ctx)
 {
-    return rw_channel_state_name(ctx->state);
+    return iog_channel_state_name(ctx->state);
 }

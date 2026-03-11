@@ -24,34 +24,34 @@ void tearDown(void)
  */
 void test_channel_lifecycle(void)
 {
-    rw_channel_ctx_t ch;
-    rw_channel_init(&ch);
+    iog_channel_ctx_t ch;
+    iog_channel_init(&ch);
 
     /* Start CSTP_ONLY */
     TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_CSTP_ONLY, ch.state);
-    TEST_ASSERT_FALSE(rw_channel_use_dtls(&ch));
+    TEST_ASSERT_FALSE(iog_channel_use_dtls(&ch));
 
     /* DTLS comes up */
-    (void)rw_channel_on_dtls_up(&ch);
+    (void)iog_channel_on_dtls_up(&ch);
     TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_DTLS_PRIMARY, ch.state);
-    TEST_ASSERT_TRUE(rw_channel_use_dtls(&ch));
+    TEST_ASSERT_TRUE(iog_channel_use_dtls(&ch));
 
     /* DTLS fails → fallback */
-    (void)rw_channel_on_dtls_down(&ch);
+    (void)iog_channel_on_dtls_down(&ch);
     TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_DTLS_FALLBACK, ch.state);
-    TEST_ASSERT_FALSE(rw_channel_use_dtls(&ch));
+    TEST_ASSERT_FALSE(iog_channel_use_dtls(&ch));
 
     /* Recovery */
-    (void)rw_channel_on_dtls_recovery(&ch);
+    (void)iog_channel_on_dtls_recovery(&ch);
     TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_DTLS_PRIMARY, ch.state);
-    TEST_ASSERT_TRUE(rw_channel_use_dtls(&ch));
+    TEST_ASSERT_TRUE(iog_channel_use_dtls(&ch));
 
     /* Multiple failures → CSTP_ONLY */
-    (void)rw_channel_on_dtls_down(&ch);
-    (void)rw_channel_on_dtls_down(&ch);
-    (void)rw_channel_on_dtls_down(&ch);
+    (void)iog_channel_on_dtls_down(&ch);
+    (void)iog_channel_on_dtls_down(&ch);
+    (void)iog_channel_on_dtls_down(&ch);
     TEST_ASSERT_EQUAL_UINT8(IOG_CHANNEL_CSTP_ONLY, ch.state);
-    TEST_ASSERT_FALSE(rw_channel_use_dtls(&ch));
+    TEST_ASSERT_FALSE(iog_channel_use_dtls(&ch));
 }
 
 /**
@@ -146,18 +146,18 @@ void test_dtls_headers_roundtrip(void)
  */
 void test_worker_compress_lifecycle(void)
 {
-    rw_worker_config_t cfg;
-    rw_worker_config_init(&cfg);
+    iog_worker_config_t cfg;
+    iog_worker_config_init(&cfg);
     cfg.max_connections = 4;
 
-    rw_worker_t *w = rw_worker_create(&cfg);
+    iog_worker_t *w = iog_worker_create(&cfg);
     TEST_ASSERT_NOT_NULL(w);
 
     /* Add connection — gets NONE compress by default */
-    int64_t cid = rw_worker_add_connection(w, 10, 11);
+    int64_t cid = iog_worker_add_connection(w, 10, 11);
     TEST_ASSERT_GREATER_OR_EQUAL_INT64(0, cid);
 
-    rw_connection_t *conn = rw_worker_find_connection(w, (uint64_t)cid);
+    iog_connection_t *conn = iog_worker_find_connection(w, (uint64_t)cid);
     TEST_ASSERT_NOT_NULL(conn);
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, conn->compress.type);
 
@@ -168,10 +168,10 @@ void test_worker_compress_lifecycle(void)
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, conn->compress.type);
 
     /* Remove — should clean up compress context */
-    (void)rw_worker_remove_connection(w, (uint64_t)cid);
-    TEST_ASSERT_EQUAL_UINT32(0, rw_worker_connection_count(w));
+    (void)iog_worker_remove_connection(w, (uint64_t)cid);
+    TEST_ASSERT_EQUAL_UINT32(0, iog_worker_connection_count(w));
 
-    rw_worker_destroy(w);
+    iog_worker_destroy(w);
 }
 
 int main(void)

@@ -97,22 +97,22 @@ void test_compress_lzs_cstp_roundtrip(void)
 
 void test_worker_connection_has_compress(void)
 {
-    rw_worker_config_t cfg;
-    rw_worker_config_init(&cfg);
+    iog_worker_config_t cfg;
+    iog_worker_config_init(&cfg);
     cfg.max_connections = 4;
 
-    rw_worker_t *w = rw_worker_create(&cfg);
+    iog_worker_t *w = iog_worker_create(&cfg);
     TEST_ASSERT_NOT_NULL(w);
 
-    int64_t conn_id = rw_worker_add_connection(w, 10, 11);
+    int64_t conn_id = iog_worker_add_connection(w, 10, 11);
     TEST_ASSERT_GREATER_OR_EQUAL_INT64(0, conn_id);
 
-    rw_connection_t *conn = rw_worker_find_connection(w, (uint64_t)conn_id);
+    iog_connection_t *conn = iog_worker_find_connection(w, (uint64_t)conn_id);
     TEST_ASSERT_NOT_NULL(conn);
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, conn->compress.type);
 
-    (void)rw_worker_remove_connection(w, (uint64_t)conn_id);
-    rw_worker_destroy(w);
+    (void)iog_worker_remove_connection(w, (uint64_t)conn_id);
+    iog_worker_destroy(w);
 }
 
 void test_data_cstp_not_compressed(void)
@@ -134,15 +134,15 @@ void test_data_cstp_not_compressed(void)
 
 void test_compress_type_in_connection(void)
 {
-    rw_worker_config_t cfg;
-    rw_worker_config_init(&cfg);
+    iog_worker_config_t cfg;
+    iog_worker_config_init(&cfg);
     cfg.max_connections = 2;
 
-    rw_worker_t *w = rw_worker_create(&cfg);
+    iog_worker_t *w = iog_worker_create(&cfg);
     TEST_ASSERT_NOT_NULL(w);
 
-    int64_t cid = rw_worker_add_connection(w, 5, 6);
-    rw_connection_t *conn = rw_worker_find_connection(w, (uint64_t)cid);
+    int64_t cid = iog_worker_add_connection(w, 5, 6);
+    iog_connection_t *conn = iog_worker_find_connection(w, (uint64_t)cid);
     TEST_ASSERT_NOT_NULL(conn);
 
     /* Default is NONE */
@@ -154,8 +154,8 @@ void test_compress_type_in_connection(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, conn->compress.type);
 
-    (void)rw_worker_remove_connection(w, (uint64_t)cid);
-    rw_worker_destroy(w);
+    (void)iog_worker_remove_connection(w, (uint64_t)cid);
+    iog_worker_destroy(w);
 }
 
 int main(void)

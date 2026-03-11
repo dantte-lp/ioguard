@@ -14,11 +14,11 @@ constexpr uint32_t RW_SHUTDOWN_DRAIN_TIMEOUT_S = 30;
  * @brief Shutdown context for coordinating graceful drain.
  */
 typedef struct {
-    rw_worker_t *worker;
+    iog_worker_t *worker;
     uint32_t drain_timeout_s;
     uint32_t connections_drained;
     bool drain_started;
-} rw_shutdown_ctx_t;
+} iog_shutdown_ctx_t;
 
 /**
  * @brief Initialize shutdown context.
@@ -28,7 +28,7 @@ typedef struct {
  * @param timeout_s  Drain timeout in seconds (0 = use default).
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker, uint32_t timeout_s);
+[[nodiscard]] int iog_shutdown_init(iog_shutdown_ctx_t *ctx, iog_worker_t *worker, uint32_t timeout_s);
 
 /**
  * @brief Encode a CSTP DISCONNECT frame into a buffer.
@@ -39,7 +39,7 @@ typedef struct {
  * @param buf_len  Buffer size.
  * @return Encoded length on success, negative errno on error.
  */
-[[nodiscard]] int rw_shutdown_encode_disconnect(uint8_t *buf, size_t buf_len);
+[[nodiscard]] int iog_shutdown_encode_disconnect(uint8_t *buf, size_t buf_len);
 
 /**
  * @brief Drain all active connections in the worker.
@@ -51,7 +51,7 @@ typedef struct {
  * @param ctx  Shutdown context.
  * @return Number of connections drained, or negative errno on error.
  */
-[[nodiscard]] int rw_shutdown_drain(rw_shutdown_ctx_t *ctx);
+[[nodiscard]] int iog_shutdown_drain(iog_shutdown_ctx_t *ctx);
 
 /**
  * @brief Check if drain timeout has been exceeded.
@@ -60,6 +60,6 @@ typedef struct {
  * @param elapsed_s  Seconds since drain started.
  * @return true if timeout exceeded.
  */
-[[nodiscard]] bool rw_shutdown_timed_out(const rw_shutdown_ctx_t *ctx, uint32_t elapsed_s);
+[[nodiscard]] bool iog_shutdown_timed_out(const iog_shutdown_ctx_t *ctx, uint32_t elapsed_s);
 
 #endif /* RINGWALL_CORE_SHUTDOWN_H */

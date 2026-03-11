@@ -127,19 +127,19 @@ int main(int argc, char *argv[])
         close(worker_sv[0]);
         close(authmod_sv[0]);
 
-        rw_worker_config_t wcfg;
-        rw_worker_config_init(&wcfg);
-        rw_worker_loop_config_t wlcfg = {
+        iog_worker_config_t wcfg;
+        iog_worker_config_init(&wcfg);
+        iog_worker_loop_config_t wlcfg = {
             .accept_fd = worker_sv[1],
             .ipc_fd = -1,
             .worker_cfg = &wcfg,
         };
 
-        rw_worker_loop_t loop;
-        rc = rw_worker_loop_init(&loop, &wlcfg);
+        iog_worker_loop_t loop;
+        rc = iog_worker_loop_init(&loop, &wlcfg);
         if (rc == 0) {
-            rc = rw_worker_loop_run(&loop);
-            rw_worker_loop_destroy(&loop);
+            rc = iog_worker_loop_run(&loop);
+            iog_worker_loop_destroy(&loop);
         }
 
         close(worker_sv[1]);

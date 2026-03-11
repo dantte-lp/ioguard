@@ -214,15 +214,15 @@ static rw_auth_status_t radius_authenticate(const rw_auth_request_t *req,
                                              rw_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     if (req->username == nullptr || req->password == nullptr) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     if (!g_initialized) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     memset(resp, 0, sizeof(*resp));
@@ -234,7 +234,7 @@ static rw_auth_status_t radius_authenticate(const rw_auth_request_t *req,
 
     int ret = build_avpairs(g_rh, req->username, req->password, g_cfg.nas_identifier, &send);
     if (ret != 0) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     int rc_ret = rc_auth(g_rh, 0, send, &received, msg);
@@ -243,19 +243,19 @@ static rw_auth_status_t radius_authenticate(const rw_auth_request_t *req,
     rw_auth_status_t status;
     switch (rc_ret) {
     case OK_RC:
-        status = RW_AUTH_STATUS_SUCCESS;
-        resp->status = RW_AUTH_STATUS_SUCCESS;
+        status = IOG_AUTH_STATUS_SUCCESS;
+        resp->status = IOG_AUTH_STATUS_SUCCESS;
         (void)parse_accept(received, resp);
         break;
     case REJECT_RC:
-        status = RW_AUTH_STATUS_FAILURE;
-        resp->status = RW_AUTH_STATUS_FAILURE;
+        status = IOG_AUTH_STATUS_FAILURE;
+        resp->status = IOG_AUTH_STATUS_FAILURE;
         break;
     case TIMEOUT_RC:
     case ERROR_RC:
     default:
-        status = RW_AUTH_STATUS_ERROR;
-        resp->status = RW_AUTH_STATUS_ERROR;
+        status = IOG_AUTH_STATUS_ERROR;
+        resp->status = IOG_AUTH_STATUS_ERROR;
         break;
     }
 
@@ -265,8 +265,8 @@ static rw_auth_status_t radius_authenticate(const rw_auth_request_t *req,
 
     return status;
 #else
-    resp->status = RW_AUTH_STATUS_ERROR;
-    return RW_AUTH_STATUS_ERROR;
+    resp->status = IOG_AUTH_STATUS_ERROR;
+    return IOG_AUTH_STATUS_ERROR;
 #endif /* USE_RADCLI */
 }
 

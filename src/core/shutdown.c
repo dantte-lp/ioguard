@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <string.h>
 
-int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker, uint32_t timeout_s)
+int iog_shutdown_init(iog_shutdown_ctx_t *ctx, iog_worker_t *worker, uint32_t timeout_s)
 {
     if (ctx == nullptr || worker == nullptr) {
         return -EINVAL;
@@ -18,7 +18,7 @@ int rw_shutdown_init(rw_shutdown_ctx_t *ctx, rw_worker_t *worker, uint32_t timeo
     return 0;
 }
 
-int rw_shutdown_encode_disconnect(uint8_t *buf, size_t buf_len)
+int iog_shutdown_encode_disconnect(uint8_t *buf, size_t buf_len)
 {
     if (buf == nullptr || buf_len < IOG_CSTP_HEADER_SIZE) {
         return -EINVAL;
@@ -27,7 +27,7 @@ int rw_shutdown_encode_disconnect(uint8_t *buf, size_t buf_len)
     return rw_cstp_encode(buf, buf_len, IOG_CSTP_DISCONNECT, nullptr, 0);
 }
 
-int rw_shutdown_drain(rw_shutdown_ctx_t *ctx)
+int iog_shutdown_drain(iog_shutdown_ctx_t *ctx)
 {
     if (ctx == nullptr || ctx->worker == nullptr) {
         return -EINVAL;
@@ -37,14 +37,14 @@ int rw_shutdown_drain(rw_shutdown_ctx_t *ctx)
 
     /* Iterate over all connection slots — safe regardless of conn_id range */
     uint32_t drained = 0;
-    uint32_t max_slots = rw_worker_max_connections(ctx->worker);
+    uint32_t max_slots = iog_worker_max_connections(ctx->worker);
 
     for (uint32_t i = 0; i < max_slots; i++) {
-        rw_connection_t *conn = rw_worker_connection_at(ctx->worker, i);
+        iog_connection_t *conn = iog_worker_connection_at(ctx->worker, i);
         if (conn == nullptr) {
             continue;
         }
-        (void)rw_worker_remove_connection(ctx->worker, conn->conn_id);
+        (void)iog_worker_remove_connection(ctx->worker, conn->conn_id);
         drained++;
     }
 
@@ -52,7 +52,7 @@ int rw_shutdown_drain(rw_shutdown_ctx_t *ctx)
     return (int)drained;
 }
 
-bool rw_shutdown_timed_out(const rw_shutdown_ctx_t *ctx, uint32_t elapsed_s)
+bool iog_shutdown_timed_out(const iog_shutdown_ctx_t *ctx, uint32_t elapsed_s)
 {
     if (ctx == nullptr) {
         return true;
