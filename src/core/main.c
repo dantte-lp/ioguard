@@ -17,7 +17,7 @@
 
 constexpr char IOG_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
 
-int rw_main_parse_args(int argc, char *argv[], const char **config_path)
+int iog_main_parse_args(int argc, char *argv[], const char **config_path)
 {
     *config_path = IOG_DEFAULT_CONFIG_PATH;
     for (int i = 1; i < argc; i++) {
@@ -30,7 +30,7 @@ int rw_main_parse_args(int argc, char *argv[], const char **config_path)
     return 0;
 }
 
-int rw_main_create_ipc_pair(int sv[2])
+int iog_main_create_ipc_pair(int sv[2])
 {
     if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sv) < 0) {
         return -errno;
@@ -38,7 +38,7 @@ int rw_main_create_ipc_pair(int sv[2])
     return 0;
 }
 
-int rw_main_create_accept_pair(int sv[2])
+int iog_main_create_accept_pair(int sv[2])
 {
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) < 0) {
         return -errno;
@@ -46,7 +46,7 @@ int rw_main_create_accept_pair(int sv[2])
     return 0;
 }
 
-int rw_main_create_signalfd(void)
+int iog_main_create_signalfd(void)
 {
     sigset_t mask;
     sigemptyset(&mask);
@@ -67,7 +67,7 @@ int rw_main_create_signalfd(void)
 int main(int argc, char *argv[])
 {
     const char *config_path;
-    int rc = rw_main_parse_args(argc, argv, &config_path);
+    int rc = iog_main_parse_args(argc, argv, &config_path);
     if (rc == 1) {
         fprintf(stdout, "Usage: ioguard [--config path]\n");
         return EXIT_SUCCESS;
@@ -84,14 +84,14 @@ int main(int argc, char *argv[])
 
     /* Create IPC socketpair for auth-mod */
     int authmod_sv[2];
-    rc = rw_main_create_ipc_pair(authmod_sv);
+    rc = iog_main_create_ipc_pair(authmod_sv);
     if (rc < 0) {
         goto cleanup_config;
     }
 
     /* Create accept socketpair for worker (fd passing) */
     int worker_sv[2];
-    rc = rw_main_create_accept_pair(worker_sv);
+    rc = iog_main_create_accept_pair(worker_sv);
     if (rc < 0) {
         goto cleanup_authmod_sv;
     }
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
     close(worker_sv[1]);
 
     /* Main: signal loop */
-    int sigfd = rw_main_create_signalfd();
+    int sigfd = iog_main_create_signalfd();
     if (sigfd < 0) {
         rc = sigfd;
         goto cleanup_children;

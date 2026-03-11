@@ -20,7 +20,7 @@ void test_main_parse_args_default_config(void)
 {
     char *argv[] = {"ioguard"};
     const char *path = nullptr;
-    int ret = rw_main_parse_args(1, argv, &path);
+    int ret = iog_main_parse_args(1, argv, &path);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_NOT_NULL(path);
     TEST_ASSERT_EQUAL_STRING("/etc/ioguard/ioguard.toml", path);
@@ -30,7 +30,7 @@ void test_main_parse_args_custom_config(void)
 {
     char *argv[] = {"ioguard", "--config", "/tmp/test.toml"};
     const char *path = nullptr;
-    int ret = rw_main_parse_args(3, argv, &path);
+    int ret = iog_main_parse_args(3, argv, &path);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_STRING("/tmp/test.toml", path);
 }
@@ -39,14 +39,14 @@ void test_main_parse_args_help_flag(void)
 {
     char *argv[] = {"ioguard", "--help"};
     const char *path = nullptr;
-    int ret = rw_main_parse_args(2, argv, &path);
+    int ret = iog_main_parse_args(2, argv, &path);
     TEST_ASSERT_EQUAL_INT(1, ret);
 }
 
 void test_main_create_ipc_socketpair(void)
 {
     int sv[2] = {-1, -1};
-    int ret = rw_main_create_ipc_pair(sv);
+    int ret = iog_main_create_ipc_pair(sv);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, sv[0]);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, sv[1]);
@@ -68,7 +68,7 @@ void test_main_create_ipc_socketpair(void)
 void test_main_create_accept_socketpair(void)
 {
     int sv[2] = {-1, -1};
-    int ret = rw_main_create_accept_pair(sv);
+    int ret = iog_main_create_accept_pair(sv);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, sv[0]);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, sv[1]);
@@ -93,7 +93,7 @@ void test_main_signalfd_creation(void)
     sigset_t old_mask;
     sigprocmask(SIG_BLOCK, nullptr, &old_mask);
 
-    int fd = rw_main_create_signalfd();
+    int fd = iog_main_create_signalfd();
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, fd);
 
     /* Send SIGTERM to self and read from signalfd */
@@ -113,7 +113,7 @@ void test_main_signalfd_creation(void)
 void test_main_fork_child_receives_fd(void)
 {
     int sv[2];
-    int ret = rw_main_create_ipc_pair(sv);
+    int ret = iog_main_create_ipc_pair(sv);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     pid_t pid = fork();
@@ -146,7 +146,7 @@ void test_main_signal_loop_sigterm_exits(void)
     sigset_t old_mask;
     sigprocmask(SIG_BLOCK, nullptr, &old_mask);
 
-    int fd = rw_main_create_signalfd();
+    int fd = iog_main_create_signalfd();
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, fd);
 
     /* Send SIGTERM directly (already blocked, so it's queued) */

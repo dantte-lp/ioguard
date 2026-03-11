@@ -52,7 +52,7 @@ static int send_mock_connection(int *local_end)
 
     /* Send tls_sv[1] (worker end) to the loop via fdpass */
     int fds[] = {tls_sv[1]};
-    ret = rw_fdpass_send(accept_sv[0], fds, 1, nullptr, 0);
+    ret = iog_fdpass_send(accept_sv[0], fds, 1, nullptr, 0);
     if (ret < 0) {
         close(tls_sv[0]);
         close(tls_sv[1]);
@@ -233,7 +233,7 @@ void test_worker_loop_tun_write(void)
 
     /* Send both fds (TLS + TUN) via fdpass */
     int fds[] = {tls_sv[1], tun_sv[1]};
-    int ret = rw_fdpass_send(accept_sv[0], fds, 2, nullptr, 0);
+    int ret = iog_fdpass_send(accept_sv[0], fds, 2, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(0, ret);
     close(tls_sv[1]);
     close(tun_sv[1]);

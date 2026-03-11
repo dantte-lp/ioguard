@@ -82,7 +82,7 @@ static int try_accept_connection(iog_worker_loop_t *loop)
     size_t nfds = 0;
     size_t dlen = 0;
 
-    int ret = rw_fdpass_recv(loop->accept_fd, fds, 2, &nfds, nullptr, &dlen);
+    int ret = iog_fdpass_recv(loop->accept_fd, fds, 2, &nfds, nullptr, &dlen);
     if (ret < 0) {
         return ret;
     }
