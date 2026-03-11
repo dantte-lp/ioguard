@@ -990,7 +990,7 @@ void test_hooks_landlock_paths_from_config(void);  /* config paths → landlock 
  * @brief Check incoming connection before TLS handshake.
  * @return 0 if allowed, -EACCES if blocked.
  */
-[[nodiscard]] int rw_security_check_connection(rw_wolfsentry_ctx_t *ws,
+[[nodiscard]] int rw_security_check_connection(iog_wolfsentry_ctx_t *ws,
                                                 int af, const void *addr,
                                                 uint16_t port);
 
@@ -1012,7 +1012,7 @@ void test_hooks_landlock_paths_from_config(void);  /* config paths → landlock 
 **Step 3: Implement security_hooks.c**
 
 - `rw_security_apply_process()`: if `config->security.seccomp` → `rw_sandbox_apply()`, if `config->security.landlock` → `rw_landlock_apply()`
-- `rw_security_check_connection()`: delegate to `rw_wolfsentry_check_connection()`
+- `rw_security_check_connection()`: delegate to `iog_wolfsentry_check_connection()`
 - `rw_security_session_create/destroy()`: build `rw_fw_session_t`, delegate to `rw_fw_session_create/destroy()`
 
 **Step 4: Build, test, commit**

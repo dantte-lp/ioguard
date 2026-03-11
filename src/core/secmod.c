@@ -135,10 +135,10 @@ static int secmod_handle_totp(iog_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req
     }
 
     /* Decrypt the TOTP secret via vault */
-    uint8_t decrypted[RW_TOTP_SECRET_SIZE + 16];
+    uint8_t decrypted[IOG_TOTP_SECRET_SIZE + 16];
     size_t dec_len = 0;
 
-    ret = rw_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len, decrypted,
+    ret = iog_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len, decrypted,
                            sizeof(decrypted), &dec_len);
     explicit_bzero(&user, sizeof(user));
 
@@ -162,7 +162,7 @@ static int secmod_handle_totp(iog_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req
     }
 
     uint32_t otp_code = (uint32_t)otp_val;
-    ret = rw_totp_validate(decrypted, dec_len, otp_code, (uint64_t)time(nullptr), 1);
+    ret = iog_totp_validate(decrypted, dec_len, otp_code, (uint64_t)time(nullptr), 1);
     explicit_bzero(decrypted, sizeof(decrypted));
 
     if (ret < 0) {
@@ -376,7 +376,7 @@ int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *confi
 
     /* Initialize vault for field-level encryption (TOTP secrets) */
     if (config->storage.vault_key_path[0] != '\0') {
-        ret = rw_vault_init(config->storage.vault_key_path, &ctx->vault);
+        ret = iog_vault_init(config->storage.vault_key_path, &ctx->vault);
         if (ret < 0) {
             if (ctx->sqlite != nullptr) {
                 iog_sqlite_close(ctx->sqlite);
@@ -496,7 +496,7 @@ void iog_secmod_destroy(iog_secmod_ctx_t *ctx)
     }
 
     if (ctx->vault != nullptr) {
-        rw_vault_destroy(ctx->vault);
+        iog_vault_destroy(ctx->vault);
     }
 
     explicit_bzero(ctx, sizeof(*ctx));

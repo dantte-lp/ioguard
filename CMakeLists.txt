@@ -259,8 +259,8 @@ target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} rw_memory)
 target_link_directories(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARY_DIRS})
 target_include_directories(rw_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS} ${PROTO_GEN_DIR})
 
-add_library(rw_xml_auth STATIC src/network/xml_auth.c)
-target_include_directories(rw_xml_auth PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_xml_auth STATIC src/network/xml_auth.c)
+target_include_directories(iog_xml_auth PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 find_path(IOHTTPPARSER_INCLUDE_DIR iohttpparser/ihtp_parser.h
     PATHS /usr/local/include /usr/include)
@@ -564,7 +564,7 @@ if(BUILD_TESTING)
 
         # Sprint 2 network tests
         rw_add_test(test_http tests/unit/test_http.c rw_http)
-        rw_add_test(test_xml_auth tests/unit/test_xml_auth.c rw_xml_auth)
+        rw_add_test(test_xml_auth tests/unit/test_xml_auth.c iog_xml_auth)
 
         # Sprint 2 session tests (needs wolfSSL for wolfCrypt RNG)
         rw_add_test(test_session tests/unit/test_session.c rw_session)
@@ -751,14 +751,14 @@ if(BUILD_TESTING)
             PATHS /usr/local/lib /usr/local/lib64)
 
         if(WOLFSENTRY_INCLUDE_DIR AND WOLFSENTRY_LIBRARY)
-            add_library(rw_wolfsentry STATIC src/security/wolfsentry.c)
-            target_include_directories(rw_wolfsentry PUBLIC
+            add_library(iog_wolfsentry STATIC src/security/wolfsentry.c)
+            target_include_directories(iog_wolfsentry PUBLIC
                 ${CMAKE_SOURCE_DIR}/src ${WOLFSENTRY_INCLUDE_DIR})
-            target_link_libraries(rw_wolfsentry PUBLIC ${WOLFSENTRY_LIBRARY})
-            target_compile_definitions(rw_wolfsentry PUBLIC _GNU_SOURCE)
+            target_link_libraries(iog_wolfsentry PUBLIC ${WOLFSENTRY_LIBRARY})
+            target_compile_definitions(iog_wolfsentry PUBLIC _GNU_SOURCE)
 
             rw_add_test(test_wolfsentry tests/unit/test_wolfsentry.c
-                rw_wolfsentry)
+                iog_wolfsentry)
             target_link_libraries(test_wolfsentry PRIVATE ${WOLFSENTRY_LIBRARY})
             target_include_directories(test_wolfsentry PRIVATE
                 ${WOLFSENTRY_INCLUDE_DIR})
@@ -767,8 +767,8 @@ if(BUILD_TESTING)
                 POSITION_INDEPENDENT_CODE OFF)
             target_link_options(test_wolfsentry PRIVATE -no-pie)
             target_compile_options(test_wolfsentry PRIVATE -fno-PIE)
-            target_compile_options(rw_wolfsentry PRIVATE -fno-PIE)
-            set_target_properties(rw_wolfsentry PROPERTIES
+            target_compile_options(iog_wolfsentry PRIVATE -fno-PIE)
+            set_target_properties(iog_wolfsentry PROPERTIES
                 POSITION_INDEPENDENT_CODE OFF)
             message(STATUS "Found wolfSentry: ${WOLFSENTRY_LIBRARY}")
         else()

@@ -254,64 +254,64 @@ Also: init request (capabilities, device-id, mac-address), MFA challenge reply (
 #include <stdint.h>
 #include <stdbool.h>
 
-#define RW_XML_MAX_STR 256
-#define RW_XML_MAX_GROUPS 16
+#define IOG_XML_MAX_STR 256
+#define IOG_XML_MAX_GROUPS 16
 
 /* Parsed client auth request */
 typedef struct {
-    char username[RW_XML_MAX_STR];
-    char password[RW_XML_MAX_STR];
-    char group_select[RW_XML_MAX_STR];
-    char device_id[RW_XML_MAX_STR];
-    char platform_version[RW_XML_MAX_STR];
-    char session_token[RW_XML_MAX_STR];
+    char username[IOG_XML_MAX_STR];
+    char password[IOG_XML_MAX_STR];
+    char group_select[IOG_XML_MAX_STR];
+    char device_id[IOG_XML_MAX_STR];
+    char platform_version[IOG_XML_MAX_STR];
+    char session_token[IOG_XML_MAX_STR];
     char otp[64];
-    char client_version[RW_XML_MAX_STR];
+    char client_version[IOG_XML_MAX_STR];
     char auth_type[64];           /* "auth-request", "init", etc. */
     bool has_username;
     bool has_password;
     bool has_otp;
     bool has_session_token;
-} rw_xml_auth_request_t;
+} iog_xml_auth_request_t;
 
 /* Server response types */
 typedef enum {
-    RW_XML_RESP_CHALLENGE,        /* Send login form */
-    RW_XML_RESP_MFA_CHALLENGE,    /* Send OTP/MFA challenge */
-    RW_XML_RESP_SUCCESS,          /* Auth success + session token */
-    RW_XML_RESP_FAILURE,          /* Auth failure */
-} rw_xml_response_type_t;
+    IOG_XML_RESP_CHALLENGE,        /* Send login form */
+    IOG_XML_RESP_MFA_CHALLENGE,    /* Send OTP/MFA challenge */
+    IOG_XML_RESP_SUCCESS,          /* Auth success + session token */
+    IOG_XML_RESP_FAILURE,          /* Auth failure */
+} iog_xml_response_type_t;
 
 typedef struct {
     char name[64];
     char label[128];
-} rw_xml_group_t;
+} iog_xml_group_t;
 
 /* Parameters for building server responses */
 typedef struct {
-    rw_xml_response_type_t type;
+    iog_xml_response_type_t type;
     /* For challenge: form fields are standard (username, password, group) */
-    rw_xml_group_t groups[RW_XML_MAX_GROUPS];
+    iog_xml_group_t groups[IOG_XML_MAX_GROUPS];
     uint32_t group_count;
     char banner[512];
     /* For success */
-    char session_token[RW_XML_MAX_STR];
+    char session_token[IOG_XML_MAX_STR];
     /* For failure */
-    char error_message[RW_XML_MAX_STR];
+    char error_message[IOG_XML_MAX_STR];
     uint32_t retry_count;
     uint32_t max_retries;
     /* For MFA */
-    char mfa_message[RW_XML_MAX_STR];
-} rw_xml_auth_response_t;
+    char mfa_message[IOG_XML_MAX_STR];
+} iog_xml_auth_response_t;
 
-[[nodiscard]] int rw_xml_parse_auth_request(const char *xml, size_t len,
-                                             rw_xml_auth_request_t *out);
+[[nodiscard]] int iog_xml_parse_auth_request(const char *xml, size_t len,
+                                             iog_xml_auth_request_t *out);
 
-[[nodiscard]] int rw_xml_build_auth_response(const rw_xml_auth_response_t *resp,
+[[nodiscard]] int iog_xml_build_auth_response(const iog_xml_auth_response_t *resp,
                                               char *buf, size_t buf_size,
                                               size_t *out_len);
 
-void rw_xml_auth_request_zero(rw_xml_auth_request_t *req);
+void iog_xml_auth_request_zero(iog_xml_auth_request_t *req);
 
 #endif /* RINGWALL_NETWORK_XML_AUTH_H */
 ```
@@ -330,7 +330,7 @@ Tests (Unity):
 9. `test_build_failure_response` — build auth failure with error message
 10. `test_build_group_select` — build challenge with group `<select>` options
 11. `test_parse_entity_decode` — `&amp;` → `&`, `&lt;` → `<`, `&quot;` → `"`
-12. `test_password_zeroed` — after `rw_xml_auth_request_zero()`, password is zeroed
+12. `test_password_zeroed` — after `iog_xml_auth_request_zero()`, password is zeroed
 13. `test_malformed_xml` — returns error for invalid XML
 
 **Step 2: Implement XML parser** (`src/network/xml_auth.c`)
@@ -345,11 +345,11 @@ Parser strategy — SAX-style, no DOM:
 
 Builder: `snprintf` chain building XML response string. Helper function `xml_escape()` for `<`, `>`, `&`, `"`.
 
-`rw_xml_auth_request_zero()`: calls `explicit_bzero()` on password and session_token fields.
+`iog_xml_auth_request_zero()`: calls `explicit_bzero()` on password and session_token fields.
 
 **Step 3: Wire into CMake, build, test**
 
-Add `rw_xml_auth` (or include in `rw_http` library). No external deps.
+Add `iog_xml_auth` (or include in `rw_http` library). No external deps.
 
 **Step 4: Commit**
 

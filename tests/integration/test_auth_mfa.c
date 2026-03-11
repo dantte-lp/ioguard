@@ -46,7 +46,7 @@ static const uint8_t test_key[IOG_VAULT_KEY_SIZE] = {
 };
 
 /* Fixed 20-byte TOTP secret for test user */
-static const uint8_t test_totp_secret[RW_TOTP_SECRET_SIZE] = {
+static const uint8_t test_totp_secret[IOG_TOTP_SECRET_SIZE] = {
     0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
     0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30,
 };
@@ -71,7 +71,7 @@ static int write_hex_key_file(const char *path, const uint8_t *key, size_t len)
 /**
  * Create a user in SQLite with TOTP enabled, encrypting the secret via vault.
  */
-static int setup_totp_user(iog_sqlite_ctx_t *sqlite, rw_vault_t *vault, const char *username,
+static int setup_totp_user(iog_sqlite_ctx_t *sqlite, iog_vault_t *vault, const char *username,
                            bool totp_enabled)
 {
     /* Create base user record */
@@ -91,9 +91,9 @@ static int setup_totp_user(iog_sqlite_ctx_t *sqlite, rw_vault_t *vault, const ch
     }
 
     /* Encrypt the TOTP secret via vault */
-    uint8_t encrypted[RW_TOTP_SECRET_SIZE + IOG_VAULT_OVERHEAD];
+    uint8_t encrypted[IOG_TOTP_SECRET_SIZE + IOG_VAULT_OVERHEAD];
     size_t enc_len = 0;
-    ret = rw_vault_encrypt(vault, test_totp_secret, RW_TOTP_SECRET_SIZE, encrypted,
+    ret = iog_vault_encrypt(vault, test_totp_secret, IOG_TOTP_SECRET_SIZE, encrypted,
                            sizeof(encrypted), &enc_len);
     if (ret < 0) {
         return ret;
@@ -190,9 +190,9 @@ void test_mfa_flow_totp_second_factor(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Generate a valid TOTP code for current time */
-    uint64_t time_step = (uint64_t)time(nullptr) / RW_TOTP_TIME_STEP;
+    uint64_t time_step = (uint64_t)time(nullptr) / IOG_TOTP_TIME_STEP;
     uint32_t code = 0;
-    ret = rw_totp_generate(test_totp_secret, RW_TOTP_SECRET_SIZE, time_step, &code);
+    ret = iog_totp_generate(test_totp_secret, IOG_TOTP_SECRET_SIZE, time_step, &code);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Format as 6-digit zero-padded string */
@@ -325,9 +325,9 @@ void test_mfa_flow_audit_trail(void)
     iog_ipc_free_auth_response(&resp);
 
     /* Second: correct OTP */
-    uint64_t time_step = (uint64_t)time(nullptr) / RW_TOTP_TIME_STEP;
+    uint64_t time_step = (uint64_t)time(nullptr) / IOG_TOTP_TIME_STEP;
     uint32_t code = 0;
-    ret = rw_totp_generate(test_totp_secret, RW_TOTP_SECRET_SIZE, time_step, &code);
+    ret = iog_totp_generate(test_totp_secret, IOG_TOTP_SECRET_SIZE, time_step, &code);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     char otp_str[16];

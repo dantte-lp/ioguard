@@ -378,21 +378,21 @@ void test_wolfsentry_connection_event(void);         // simulate connect event
 
 typedef struct {
     struct wolfsentry_context *ws_ctx;
-} rw_wolfsentry_ctx_t;
+} iog_wolfsentry_ctx_t;
 
 typedef enum : uint8_t {
-    RW_WS_ACCEPT = 0,
-    RW_WS_REJECT = 1,
-    RW_WS_ERROR  = 2,
-} rw_ws_result_t;
+    IOG_WS_ACCEPT = 0,
+    IOG_WS_REJECT = 1,
+    IOG_WS_ERROR  = 2,
+} iog_ws_result_t;
 
-[[nodiscard]] int rw_wolfsentry_init(rw_wolfsentry_ctx_t *ctx);
-void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
+[[nodiscard]] int iog_wolfsentry_init(iog_wolfsentry_ctx_t *ctx);
+void iog_wolfsentry_close(iog_wolfsentry_ctx_t *ctx);
 
-[[nodiscard]] int rw_wolfsentry_load_json(rw_wolfsentry_ctx_t *ctx, const char *json, size_t json_len);
+[[nodiscard]] int iog_wolfsentry_load_json(iog_wolfsentry_ctx_t *ctx, const char *json, size_t json_len);
 
-[[nodiscard]] rw_ws_result_t rw_wolfsentry_check_connection(
-    rw_wolfsentry_ctx_t *ctx,
+[[nodiscard]] iog_ws_result_t iog_wolfsentry_check_connection(
+    iog_wolfsentry_ctx_t *ctx,
     int af,                         // AF_INET or AF_INET6
     const void *remote_addr,        // struct in_addr or in6_addr
     uint16_t remote_port,
@@ -400,8 +400,8 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
     uint16_t local_port,
     int protocol);                  // IPPROTO_TCP
 
-[[nodiscard]] int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr);
-[[nodiscard]] int rw_wolfsentry_unban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr);
+[[nodiscard]] int iog_wolfsentry_ban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr);
+[[nodiscard]] int iog_wolfsentry_unban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr);
 
 #endif // RINGWALL_SECURITY_WOLFSENTRY_H
 ```
@@ -422,12 +422,12 @@ find_path(WOLFSENTRY_INCLUDE_DIR wolfsentry/wolfsentry.h PATHS /usr/local/includ
 find_library(WOLFSENTRY_LIBRARY wolfsentry PATHS /usr/local/lib /usr/local/lib64)
 
 if(WOLFSENTRY_INCLUDE_DIR AND WOLFSENTRY_LIBRARY)
-    add_library(rw_wolfsentry STATIC src/security/wolfsentry.c)
-    target_include_directories(rw_wolfsentry PUBLIC ${CMAKE_SOURCE_DIR}/src ${WOLFSENTRY_INCLUDE_DIR})
-    target_link_libraries(rw_wolfsentry PUBLIC ${WOLFSENTRY_LIBRARY})
-    target_compile_definitions(rw_wolfsentry PUBLIC _GNU_SOURCE)
+    add_library(iog_wolfsentry STATIC src/security/wolfsentry.c)
+    target_include_directories(iog_wolfsentry PUBLIC ${CMAKE_SOURCE_DIR}/src ${WOLFSENTRY_INCLUDE_DIR})
+    target_link_libraries(iog_wolfsentry PUBLIC ${WOLFSENTRY_LIBRARY})
+    target_compile_definitions(iog_wolfsentry PUBLIC _GNU_SOURCE)
 
-    rw_add_test(test_wolfsentry tests/unit/test_wolfsentry.c rw_wolfsentry)
+    rw_add_test(test_wolfsentry tests/unit/test_wolfsentry.c iog_wolfsentry)
 endif()
 ```
 

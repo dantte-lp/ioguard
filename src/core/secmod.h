@@ -29,7 +29,7 @@ typedef struct {
     iog_session_store_t *sessions;
     rw_mdbx_ctx_t *mdbx;     /* persistent sessions (nullable) */
     iog_sqlite_ctx_t *sqlite; /* audit + users (nullable) */
-    rw_vault_t *vault;       /* field-level encryption (nullable) */
+    iog_vault_t *vault;       /* field-level encryption (nullable) */
     const iog_config_t *config;
     bool running;
 } iog_secmod_ctx_t;

@@ -37,13 +37,13 @@ static int hex_to_bytes(const char *hex, size_t hex_len, uint8_t *out, size_t ou
     return 0;
 }
 
-int rw_vault_init_from_key(const uint8_t *key, size_t key_len, rw_vault_t **out)
+int iog_vault_init_from_key(const uint8_t *key, size_t key_len, iog_vault_t **out)
 {
     if (key == nullptr || key_len != IOG_VAULT_KEY_SIZE || out == nullptr) {
         return -EINVAL;
     }
 
-    rw_vault_t *v = calloc(1, sizeof(*v));
+    iog_vault_t *v = calloc(1, sizeof(*v));
     if (v == nullptr) {
         return -ENOMEM;
     }
@@ -63,7 +63,7 @@ int rw_vault_init_from_key(const uint8_t *key, size_t key_len, rw_vault_t **out)
     return 0;
 }
 
-int rw_vault_init(const char *key_path, rw_vault_t **out)
+int iog_vault_init(const char *key_path, iog_vault_t **out)
 {
     if (key_path == nullptr || out == nullptr) {
         return -EINVAL;
@@ -90,7 +90,7 @@ int rw_vault_init(const char *key_path, rw_vault_t **out)
     if (clean_len == IOG_VAULT_KEY_SIZE * 2) {
         ret = hex_to_bytes(buf, clean_len, key, IOG_VAULT_KEY_SIZE);
         if (ret == 0) {
-            ret = rw_vault_init_from_key(key, IOG_VAULT_KEY_SIZE, out);
+            ret = iog_vault_init_from_key(key, IOG_VAULT_KEY_SIZE, out);
             explicit_bzero(key, sizeof(key));
             explicit_bzero(buf, sizeof(buf));
             return ret;
@@ -100,7 +100,7 @@ int rw_vault_init(const char *key_path, rw_vault_t **out)
     /* Try raw bytes */
     if (n >= IOG_VAULT_KEY_SIZE) {
         memcpy(key, buf, IOG_VAULT_KEY_SIZE);
-        ret = rw_vault_init_from_key(key, IOG_VAULT_KEY_SIZE, out);
+        ret = iog_vault_init_from_key(key, IOG_VAULT_KEY_SIZE, out);
         explicit_bzero(key, sizeof(key));
         explicit_bzero(buf, sizeof(buf));
         return ret;
@@ -110,7 +110,7 @@ int rw_vault_init(const char *key_path, rw_vault_t **out)
     return -EINVAL;
 }
 
-void rw_vault_destroy(rw_vault_t *vault)
+void iog_vault_destroy(iog_vault_t *vault)
 {
     if (vault == nullptr) {
         return;
@@ -126,7 +126,7 @@ void rw_vault_destroy(rw_vault_t *vault)
     free(vault);
 }
 
-int rw_vault_encrypt(rw_vault_t *vault, const uint8_t *plaintext, size_t plain_len, uint8_t *out,
+int iog_vault_encrypt(iog_vault_t *vault, const uint8_t *plaintext, size_t plain_len, uint8_t *out,
                      size_t out_size, size_t *out_len)
 {
     if (vault == nullptr || plaintext == nullptr || out == nullptr || out_len == nullptr) {
@@ -180,7 +180,7 @@ encrypt_cleanup:
 #endif
 }
 
-int rw_vault_decrypt(rw_vault_t *vault, const uint8_t *cipherblob, size_t blob_len, uint8_t *out,
+int iog_vault_decrypt(iog_vault_t *vault, const uint8_t *cipherblob, size_t blob_len, uint8_t *out,
                      size_t out_size, size_t *out_len)
 {
     if (vault == nullptr || cipherblob == nullptr || out == nullptr || out_len == nullptr) {
