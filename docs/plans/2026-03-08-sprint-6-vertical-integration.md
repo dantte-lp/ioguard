@@ -320,10 +320,10 @@ int main(int argc, char *argv[])
         close(worker_sv[0]);
         close(worker_sv[1]);
         if (config.security.seccomp) rw_sandbox_apply(RW_SANDBOX_AUTHMOD);
-        rw_secmod_ctx_t secmod;
-        rw_secmod_init(&secmod, authmod_sv[1], &config);
-        rc = rw_secmod_run(&secmod);
-        rw_secmod_destroy(&secmod);
+        iog_secmod_ctx_t secmod;
+        iog_secmod_init(&secmod, authmod_sv[1], &config);
+        rc = iog_secmod_run(&secmod);
+        iog_secmod_destroy(&secmod);
         rw_config_free(&config);
         _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
     }
@@ -591,18 +591,18 @@ typedef struct {
     iog_sqlite_ctx_t sqlite;         /* audit logging + user management */
     const rw_config_t *config;
     bool running;
-} rw_secmod_ctx_t;
+} iog_secmod_ctx_t;
 ```
 
 **Step 3: Update secmod.c**
 
-- `rw_secmod_init()`: call `rw_mdbx_init()` + `iog_sqlite_init()`, remove `rw_session_store_create()`
+- `iog_secmod_init()`: call `rw_mdbx_init()` + `iog_sqlite_init()`, remove `rw_session_store_create()`
 - Auth success handler: `rw_mdbx_session_create()` instead of in-memory store, then `iog_sqlite_audit_insert()`
 - Session validate: `rw_mdbx_session_lookup()` instead of in-memory lookup
 - Disconnect: `rw_mdbx_session_delete()` + audit entry
-- `rw_secmod_destroy()`: close both stores
+- `iog_secmod_destroy()`: close both stores
 
-**Step 4: Update CMakeLists.txt** — link rw_secmod against rw_mdbx and iog_sqlite
+**Step 4: Update CMakeLists.txt** — link iog_secmod against rw_mdbx and iog_sqlite
 
 **Step 5: Build, test, commit**
 
@@ -1103,7 +1103,7 @@ void test_vpn_flow_multiple_clients(void);           /* 3 clients, independent d
 - Use `socketpair()` for everything (no real network, no root needed)
 - Mock TUN with socketpair (one end is "TUN", other end is test validator)
 - Mock TLS with self-signed wolfSSL over socketpair
-- Auth-mod runs in same process (call `rw_secmod_handle_message()` directly)
+- Auth-mod runs in same process (call `iog_secmod_handle_message()` directly)
 - Worker event loop runs in a separate thread (`pthread_create`), test drives the client side
 
 **Step 2: Add to CMakeLists.txt**
@@ -1111,7 +1111,7 @@ void test_vpn_flow_multiple_clients(void);           /* 3 clients, independent d
 ```cmake
 rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
     iog_worker_loop rw_conn_data rw_conn_tls rw_conn_timer rw_security_hooks
-    rw_worker iog_io rw_fdpass rw_cstp rw_dpd rw_compress rw_secmod
+    rw_worker iog_io rw_fdpass rw_cstp rw_dpd rw_compress iog_secmod
     rw_mdbx iog_sqlite rw_migrate ${WOLFSSL_LIBRARIES})
 ```
 

@@ -11,7 +11,7 @@
 #include "ipc/transport.h"
 
 static iog_ipc_channel_t ch;
-static rw_secmod_ctx_t ctx;
+static iog_secmod_ctx_t ctx;
 static iog_config_t config;
 
 void setUp(void)
@@ -24,13 +24,13 @@ void setUp(void)
     int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    ret = rw_secmod_init(&ctx, ch.parent_fd, &config);
+    ret = iog_secmod_init(&ctx, ch.parent_fd, &config);
     TEST_ASSERT_EQUAL_INT(0, ret);
 }
 
 void tearDown(void)
 {
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(ch.parent_fd);
     close(ch.child_fd);
 }
@@ -66,7 +66,7 @@ void test_auth_flow_failed_auth(void)
     TEST_ASSERT_GREATER_THAN(0, n);
 
     /* Sec-mod processes the message — sends response on parent_fd */
-    ret = rw_secmod_handle_message(&ctx, recv_buf, (size_t)n);
+    ret = iog_secmod_handle_message(&ctx, recv_buf, (size_t)n);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Worker reads response from child_fd */
@@ -112,7 +112,7 @@ void test_auth_flow_response_format(void)
     ssize_t n = iog_ipc_recv(ch.parent_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
-    ret = rw_secmod_handle_message(&ctx, recv_buf, (size_t)n);
+    ret = iog_secmod_handle_message(&ctx, recv_buf, (size_t)n);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];
@@ -159,7 +159,7 @@ void test_auth_flow_session_validate_bogus(void)
     ssize_t n = iog_ipc_recv(ch.parent_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
-    ret = rw_secmod_handle_message(&ctx, recv_buf, (size_t)n);
+    ret = iog_secmod_handle_message(&ctx, recv_buf, (size_t)n);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];

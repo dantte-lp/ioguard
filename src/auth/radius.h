@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct rw_auth_backend;
+struct iog_auth_backend;
 
 /** Maximum length for RADIUS server address (host:port). */
 constexpr size_t RW_RADIUS_SERVER_MAX = 256;
@@ -58,7 +58,7 @@ void rw_radius_destroy(void);
  *
  * @return Pointer to a static backend struct with name "radius".
  */
-const struct rw_auth_backend *rw_radius_backend(void);
+const struct iog_auth_backend *iog_radius_backend(void);
 
 /**
  * Apply defaults to a RADIUS configuration.

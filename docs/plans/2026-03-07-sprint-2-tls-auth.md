@@ -602,19 +602,19 @@ typedef struct {
     rw_session_store_t *sessions;
     const rw_config_t *config;
     bool running;
-} rw_secmod_ctx_t;
+} iog_secmod_ctx_t;
 
-[[nodiscard]] int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd,
+[[nodiscard]] int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd,
                                   const rw_config_t *config);
 
-[[nodiscard]] int rw_secmod_run(rw_secmod_ctx_t *ctx);
+[[nodiscard]] int iog_secmod_run(iog_secmod_ctx_t *ctx);
 
-void rw_secmod_stop(rw_secmod_ctx_t *ctx);
+void iog_secmod_stop(iog_secmod_ctx_t *ctx);
 
-void rw_secmod_destroy(rw_secmod_ctx_t *ctx);
+void iog_secmod_destroy(iog_secmod_ctx_t *ctx);
 
 /* Entry point for child process (called after fork/pidfd_spawn) */
-[[noreturn]] void rw_secmod_main(int ipc_fd, const rw_config_t *config);
+[[noreturn]] void iog_secmod_main(int ipc_fd, const rw_config_t *config);
 
 #endif /* RINGWALL_CORE_SECMOD_H */
 ```
@@ -634,7 +634,7 @@ Note: Tests create a socketpair, run secmod in a thread or use non-blocking poll
 
 Event loop:
 ```c
-int rw_secmod_run(rw_secmod_ctx_t *ctx) {
+int iog_secmod_run(iog_secmod_ctx_t *ctx) {
     ctx->running = true;
     while (ctx->running) {
         /* poll(ipc_fd, POLLIN, 1000ms) */
@@ -680,7 +680,7 @@ End-to-end test: fork sec-mod child, send auth request from parent (simulating w
 ```c
 void test_full_auth_flow(void) {
     /* 1. Create socketpair (SOCK_SEQPACKET) */
-    /* 2. Fork child → rw_secmod_main(child_fd, &config) */
+    /* 2. Fork child → iog_secmod_main(child_fd, &config) */
     /* 3. Parent: pack AUTH_REQUEST (username="root", password="x", no cookie) */
     /* 4. Parent: rw_ipc_send(parent_fd, buf, len) */
     /* 5. Parent: rw_ipc_recv(parent_fd, buf, sizeof(buf)) */

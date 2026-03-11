@@ -29,21 +29,21 @@ void test_cert_auth_destroy_null_safe(void)
 
 void test_cert_auth_backend_registers(void)
 {
-    const rw_auth_backend_t *backend = rw_cert_auth_backend();
+    const iog_auth_backend_t *backend = iog_cert_auth_backend();
     TEST_ASSERT_NOT_NULL(backend);
     TEST_ASSERT_NOT_NULL(backend->name);
     TEST_ASSERT_NOT_NULL(backend->init);
     TEST_ASSERT_NOT_NULL(backend->authenticate);
     TEST_ASSERT_NOT_NULL(backend->destroy);
 
-    int ret = rw_auth_backend_register(backend);
+    int ret = iog_auth_backend_register(backend);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    const rw_auth_backend_t *found = rw_auth_backend_find("cert");
+    const iog_auth_backend_t *found = iog_auth_backend_find("cert");
     TEST_ASSERT_NOT_NULL(found);
     TEST_ASSERT_EQUAL_PTR(backend, found);
 
-    rw_auth_backend_cleanup();
+    iog_auth_backend_cleanup();
 }
 
 void test_cert_auth_extract_cn_from_subject(void)
@@ -78,7 +78,7 @@ void test_cert_auth_username_field_default_is_cn(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Verify init succeeded and backend is usable by getting descriptor */
-    const rw_auth_backend_t *backend = rw_cert_auth_backend();
+    const iog_auth_backend_t *backend = iog_cert_auth_backend();
     TEST_ASSERT_NOT_NULL(backend);
     TEST_ASSERT_EQUAL_STRING("cert", backend->name);
 
@@ -89,7 +89,7 @@ void test_cert_auth_username_field_default_is_cn(void)
 
 void test_cert_auth_backend_name_is_cert(void)
 {
-    const rw_auth_backend_t *backend = rw_cert_auth_backend();
+    const iog_auth_backend_t *backend = iog_cert_auth_backend();
     TEST_ASSERT_NOT_NULL(backend);
     TEST_ASSERT_EQUAL_STRING("cert", backend->name);
 }

@@ -67,7 +67,7 @@ void rw_ldap_destroy(void);
  *
  * @return Pointer to the static LDAP backend descriptor.
  */
-const rw_auth_backend_t *rw_ldap_backend(void);
+const iog_auth_backend_t *iog_ldap_backend(void);
 
 /**
  * Build a bind DN from the template and username.

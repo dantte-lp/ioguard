@@ -15,7 +15,7 @@ typedef enum {
     IOG_AUTH_STATUS_ERROR = -2,
     IOG_AUTH_STATUS_ACCOUNT_EXPIRED = -3,
     IOG_AUTH_STATUS_PASSWORD_EXPIRED = -4,
-} rw_auth_status_t;
+} iog_auth_status_t;
 
 /** Authentication request passed to a backend. */
 typedef struct {
@@ -26,25 +26,25 @@ typedef struct {
     size_t client_cert_len;
     const char *source_ip;
     uint16_t source_port;
-} rw_auth_request_t;
+} iog_auth_request_t;
 
 /** Authentication response populated by a backend. */
 typedef struct {
-    rw_auth_status_t status;
+    iog_auth_status_t status;
     char groups[256];            /* comma-separated group list */
     uint32_t framed_ip;          /* RADIUS Framed-IP-Address, 0 if N/A */
     uint8_t framed_ipv6[16];    /* RADIUS Framed-IPv6-Address */
     bool has_framed_ipv6;
-} rw_auth_response_t;
+} iog_auth_response_t;
 
 /** Pluggable authentication backend interface. */
-typedef struct rw_auth_backend {
+typedef struct iog_auth_backend {
     const char *name;
     int (*init)(const void *config);
-    rw_auth_status_t (*authenticate)(const rw_auth_request_t *req,
-                                     rw_auth_response_t *resp);
+    iog_auth_status_t (*authenticate)(const iog_auth_request_t *req,
+                                     iog_auth_response_t *resp);
     void (*destroy)(void);
-} rw_auth_backend_t;
+} iog_auth_backend_t;
 
 /**
  * Register an authentication backend.
@@ -54,7 +54,7 @@ typedef struct rw_auth_backend {
  *         -EEXIST if a backend with the same name is already registered,
  *         -ENOSPC if the registry is full.
  */
-[[nodiscard]] int rw_auth_backend_register(const rw_auth_backend_t *backend);
+[[nodiscard]] int iog_auth_backend_register(const iog_auth_backend_t *backend);
 
 /**
  * Find a registered backend by name.
@@ -62,7 +62,7 @@ typedef struct rw_auth_backend {
  * @param name  Backend name to search for.
  * @return Pointer to the backend, or nullptr if not found.
  */
-const rw_auth_backend_t *rw_auth_backend_find(const char *name);
+const iog_auth_backend_t *iog_auth_backend_find(const char *name);
 
 /**
  * List all registered backends.
@@ -70,13 +70,13 @@ const rw_auth_backend_t *rw_auth_backend_find(const char *name);
  * @param count  Output: number of registered backends.
  * @return Pointer to the internal array of backend pointers.
  */
-const rw_auth_backend_t *const *rw_auth_backend_list(int *count);
+const iog_auth_backend_t *const *iog_auth_backend_list(int *count);
 
 /**
  * Destroy all registered backends and clear the registry.
  *
  * Calls destroy() on each backend that has a non-null destroy callback.
  */
-void rw_auth_backend_cleanup(void);
+void iog_auth_backend_cleanup(void);
 
 #endif /* RINGWALL_AUTH_BACKEND_H */

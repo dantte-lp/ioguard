@@ -106,11 +106,11 @@ int main(int argc, char *argv[])
         close(authmod_sv[0]);
         close(worker_sv[0]);
         close(worker_sv[1]);
-        rw_secmod_ctx_t secmod;
-        rc = rw_secmod_init(&secmod, authmod_sv[1], &config);
+        iog_secmod_ctx_t secmod;
+        rc = iog_secmod_init(&secmod, authmod_sv[1], &config);
         if (rc == 0) {
-            rc = rw_secmod_run(&secmod);
-            rw_secmod_destroy(&secmod);
+            rc = iog_secmod_run(&secmod);
+            iog_secmod_destroy(&secmod);
         }
         iog_config_free(&config);
         _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);

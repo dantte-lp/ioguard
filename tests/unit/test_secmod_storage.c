@@ -46,27 +46,27 @@ void tearDown(void)
 
 void test_secmod_init_with_mdbx(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
 
-    int ret = rw_secmod_init(&ctx, sv[0], &config);
+    int ret = iog_secmod_init(&ctx, sv[0], &config);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_NOT_NULL(ctx.mdbx);
     TEST_ASSERT_NOT_NULL(ctx.sqlite);
     TEST_ASSERT_NOT_NULL(ctx.sessions);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }
 
 void test_secmod_mdbx_session_create_and_lookup(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
-    TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
+    TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Create a session record directly in mdbx */
     iog_session_record_t session;
@@ -88,17 +88,17 @@ void test_secmod_mdbx_session_create_and_lookup(void)
     TEST_ASSERT_EQUAL_STRING("testuser", out.username);
     TEST_ASSERT_EQUAL_STRING("vpn-users", out.groupname);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }
 
 void test_secmod_sqlite_audit_insert(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
-    TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
+    TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Insert an audit entry */
     rw_audit_entry_t entry;
@@ -120,17 +120,17 @@ void test_secmod_sqlite_audit_insert(void)
     TEST_ASSERT_EQUAL_STRING("AUTH", results[0].event_type);
     TEST_ASSERT_EQUAL_STRING("OK", results[0].result);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }
 
 void test_secmod_auth_failure_audit(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
-    TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
+    TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Simulate a failed auth audit */
     rw_audit_entry_t entry;
@@ -151,17 +151,17 @@ void test_secmod_auth_failure_audit(void)
     TEST_ASSERT_EQUAL_UINT(1, count);
     TEST_ASSERT_EQUAL_STRING("FAIL", results[0].result);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }
 
 void test_secmod_session_delete_cleans_mdbx(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
-    TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
+    TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Create session */
     iog_session_record_t session;
@@ -181,7 +181,7 @@ void test_secmod_session_delete_cleans_mdbx(void)
     int ret = iog_mdbx_session_lookup(ctx.mdbx, session.session_id, &out);
     TEST_ASSERT_EQUAL_INT(-ENOENT, ret);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }
@@ -207,10 +207,10 @@ static int expired_session_collect_iter(const iog_session_record_t *session, voi
 
 void test_secmod_expired_session_cleanup(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
-    TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
+    TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Create an already-expired session */
     iog_session_record_t session;
@@ -243,17 +243,17 @@ void test_secmod_expired_session_cleanup(void)
     TEST_ASSERT_EQUAL_INT(0, iog_mdbx_session_count(ctx.mdbx, &count));
     TEST_ASSERT_EQUAL_UINT(0, count);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }
 
 void test_secmod_ban_check_before_auth(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
-    TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
+    TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Ban an IP */
     int ret = iog_sqlite_ban_add(ctx.sqlite, "10.0.0.99", "brute force", 60);
@@ -271,17 +271,17 @@ void test_secmod_ban_check_before_auth(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_FALSE(banned);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }
 
 void test_secmod_validate_reads_mdbx(void)
 {
-    rw_secmod_ctx_t ctx;
+    iog_secmod_ctx_t ctx;
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv));
-    TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
+    TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Create session in mdbx */
     iog_session_record_t session;
@@ -301,7 +301,7 @@ void test_secmod_validate_reads_mdbx(void)
     TEST_ASSERT_EQUAL_STRING("validate-test", out.username);
     TEST_ASSERT_GREATER_THAN(0, out.expires_at);
 
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(sv[0]);
     close(sv[1]);
 }

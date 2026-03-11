@@ -3,10 +3,10 @@
 #include <errno.h>
 #include <string.h>
 
-static const rw_auth_backend_t *registry[RW_AUTH_BACKEND_MAX];
+static const iog_auth_backend_t *registry[RW_AUTH_BACKEND_MAX];
 static int registry_count;
 
-int rw_auth_backend_register(const rw_auth_backend_t *backend)
+int iog_auth_backend_register(const iog_auth_backend_t *backend)
 {
     if (backend == nullptr || backend->name == nullptr) {
         return -EINVAL;
@@ -27,7 +27,7 @@ int rw_auth_backend_register(const rw_auth_backend_t *backend)
     return 0;
 }
 
-const rw_auth_backend_t *rw_auth_backend_find(const char *name)
+const iog_auth_backend_t *iog_auth_backend_find(const char *name)
 {
     if (name == nullptr) {
         return nullptr;
@@ -42,7 +42,7 @@ const rw_auth_backend_t *rw_auth_backend_find(const char *name)
     return nullptr;
 }
 
-const rw_auth_backend_t *const *rw_auth_backend_list(int *count)
+const iog_auth_backend_t *const *iog_auth_backend_list(int *count)
 {
     if (count != nullptr) {
         *count = registry_count;
@@ -51,7 +51,7 @@ const rw_auth_backend_t *const *rw_auth_backend_list(int *count)
     return registry;
 }
 
-void rw_auth_backend_cleanup(void)
+void iog_auth_backend_cleanup(void)
 {
     for (int i = 0; i < registry_count; i++) {
         if (registry[i]->destroy != nullptr) {

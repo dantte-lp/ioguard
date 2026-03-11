@@ -49,8 +49,8 @@ static void apply_defaults(rw_cert_auth_config_t *cfg)
 /**
  * Authenticate using the client certificate from the request.
  */
-static rw_auth_status_t cert_authenticate(const rw_auth_request_t *req,
-                                           rw_auth_response_t *resp)
+static iog_auth_status_t cert_authenticate(const iog_auth_request_t *req,
+                                           iog_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
         return IOG_AUTH_STATUS_ERROR;
@@ -95,7 +95,7 @@ static int cert_backend_init(const void *config)
 /**
  * Static backend descriptor for registration with the auth framework.
  */
-static const rw_auth_backend_t cert_backend = {
+static const iog_auth_backend_t cert_backend = {
     .name = "cert",
     .init = cert_backend_init,
     .authenticate = cert_authenticate,
@@ -128,7 +128,7 @@ void rw_cert_auth_destroy(void)
     }
 }
 
-const rw_auth_backend_t *rw_cert_auth_backend(void)
+const iog_auth_backend_t *iog_cert_auth_backend(void)
 {
     return &cert_backend;
 }

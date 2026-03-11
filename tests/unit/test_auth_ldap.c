@@ -7,13 +7,13 @@
 
 void setUp(void)
 {
-    rw_auth_backend_cleanup();
+    iog_auth_backend_cleanup();
 }
 
 void tearDown(void)
 {
     rw_ldap_destroy();
-    rw_auth_backend_cleanup();
+    iog_auth_backend_cleanup();
 }
 
 void test_ldap_init_null_config_returns_einval(void)
@@ -41,13 +41,13 @@ void test_ldap_destroy_null_safe(void)
 
 void test_ldap_backend_registers(void)
 {
-    const rw_auth_backend_t *backend = rw_ldap_backend();
+    const iog_auth_backend_t *backend = iog_ldap_backend();
     TEST_ASSERT_NOT_NULL(backend);
 
-    int ret = rw_auth_backend_register(backend);
+    int ret = iog_auth_backend_register(backend);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    const rw_auth_backend_t *found = rw_auth_backend_find("ldap");
+    const iog_auth_backend_t *found = iog_auth_backend_find("ldap");
     TEST_ASSERT_NOT_NULL(found);
     TEST_ASSERT_EQUAL_PTR(backend, found);
 }
@@ -105,7 +105,7 @@ void test_ldap_config_validates_uri_scheme(void)
 
 void test_ldap_backend_name_is_ldap(void)
 {
-    const rw_auth_backend_t *backend = rw_ldap_backend();
+    const iog_auth_backend_t *backend = iog_ldap_backend();
     TEST_ASSERT_NOT_NULL(backend);
     TEST_ASSERT_EQUAL_STRING("ldap", backend->name);
     TEST_ASSERT_NOT_NULL(backend->init);

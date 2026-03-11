@@ -110,8 +110,8 @@ void rw_ldap_destroy(void)
  * Flow: ldap_initialize → set LDAPv3 → optional StartTLS → bind → search
  *       groups → unbind.
  */
-static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
-                                           rw_auth_response_t *resp)
+static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
+                                           iog_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
         return IOG_AUTH_STATUS_ERROR;
@@ -256,8 +256,8 @@ static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
 /**
  * Stub when LDAP support is not compiled in.
  */
-static rw_auth_status_t ldap_authenticate(const rw_auth_request_t *req,
-                                           rw_auth_response_t *resp)
+static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
+                                           iog_auth_response_t *resp)
 {
     (void)req;
     if (resp != nullptr) {
@@ -276,14 +276,14 @@ static int ldap_backend_init(const void *config)
     return rw_ldap_init((const rw_ldap_config_t *)config);
 }
 
-static const rw_auth_backend_t ldap_backend_desc = {
+static const iog_auth_backend_t ldap_backend_desc = {
     .name = "ldap",
     .init = ldap_backend_init,
     .authenticate = ldap_authenticate,
     .destroy = rw_ldap_destroy,
 };
 
-const rw_auth_backend_t *rw_ldap_backend(void)
+const iog_auth_backend_t *iog_ldap_backend(void)
 {
     return &ldap_backend_desc;
 }

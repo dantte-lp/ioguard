@@ -105,7 +105,7 @@ cleanup:
 /**
  * Parse Access-Accept response to extract Framed-IP-Address.
  */
-static int parse_accept(VALUE_PAIR *received, rw_auth_response_t *resp)
+static int parse_accept(VALUE_PAIR *received, iog_auth_response_t *resp)
 {
     if (resp == nullptr) {
         return -EINVAL;
@@ -210,8 +210,8 @@ radcli_err:
 #endif
 }
 
-static rw_auth_status_t radius_authenticate(const rw_auth_request_t *req,
-                                             rw_auth_response_t *resp)
+static iog_auth_status_t radius_authenticate(const iog_auth_request_t *req,
+                                             iog_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
         return IOG_AUTH_STATUS_ERROR;
@@ -240,7 +240,7 @@ static rw_auth_status_t radius_authenticate(const rw_auth_request_t *req,
     int rc_ret = rc_auth(g_rh, 0, send, &received, msg);
     rc_avpair_free(send);
 
-    rw_auth_status_t status;
+    iog_auth_status_t status;
     switch (rc_ret) {
     case OK_RC:
         status = IOG_AUTH_STATUS_SUCCESS;
@@ -287,14 +287,14 @@ void rw_radius_destroy(void)
     g_initialized = false;
 }
 
-static const rw_auth_backend_t g_radius_backend = {
+static const iog_auth_backend_t g_radius_backend = {
     .name = "radius",
     .init = rw_radius_init,
     .authenticate = radius_authenticate,
     .destroy = rw_radius_destroy,
 };
 
-const struct rw_auth_backend *rw_radius_backend(void)
+const struct iog_auth_backend *iog_radius_backend(void)
 {
     return &g_radius_backend;
 }

@@ -4,7 +4,7 @@
 
 **Goal:** Multi-backend authentication (RADIUS, LDAP, cert), HTTP parser migration (llhttp → iohttpparser), structured logging (stumpless), Prometheus metrics, and tech debt cleanup.
 
-**Architecture:** Auth backends plug into auth-mod process via a common `rw_auth_backend_t` interface. Each backend (PAM, RADIUS, LDAP, cert) implements init/auth/destroy. Logging uses stumpless buffer targets flushed asynchronously via io_uring WRITEV. Prometheus metrics are exposed as a custom text formatter (~600 LOC) over the existing metrics counters.
+**Architecture:** Auth backends plug into auth-mod process via a common `iog_auth_backend_t` interface. Each backend (PAM, RADIUS, LDAP, cert) implements init/auth/destroy. Logging uses stumpless buffer targets flushed asynchronously via io_uring WRITEV. Prometheus metrics are exposed as a custom text formatter (~600 LOC) over the existing metrics counters.
 
 **Tech Stack:** radcli (RADIUS), libldap (LDAP), wolfSSL (cert auth), iohttpparser (HTTP), stumpless (logging), io_uring (async I/O), Unity (tests)
 
@@ -246,44 +246,44 @@ void tearDown(void) {}
 
 void test_auth_backend_register_returns_zero(void)
 {
-    rw_auth_backend_t backend = {
+    iog_auth_backend_t backend = {
         .name = "mock",
         .init = mock_init,
         .authenticate = mock_auth,
         .destroy = mock_destroy,
     };
-    TEST_ASSERT_EQUAL_INT(0, rw_auth_backend_register(&backend));
+    TEST_ASSERT_EQUAL_INT(0, iog_auth_backend_register(&backend));
 }
 
 void test_auth_backend_find_by_name(void)
 {
-    const rw_auth_backend_t *found = rw_auth_backend_find("mock");
+    const iog_auth_backend_t *found = iog_auth_backend_find("mock");
     TEST_ASSERT_NOT_NULL(found);
     TEST_ASSERT_EQUAL_STRING("mock", found->name);
 }
 
 void test_auth_backend_find_unknown_returns_null(void)
 {
-    const rw_auth_backend_t *found = rw_auth_backend_find("nonexistent");
+    const iog_auth_backend_t *found = iog_auth_backend_find("nonexistent");
     TEST_ASSERT_NULL(found);
 }
 
 void test_auth_backend_register_null_returns_einval(void)
 {
-    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_auth_backend_register(nullptr));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_auth_backend_register(nullptr));
 }
 
 void test_auth_backend_register_duplicate_returns_eexist(void)
 {
-    rw_auth_backend_t backend = { .name = "dup", ... };
-    rw_auth_backend_register(&backend);
-    TEST_ASSERT_EQUAL_INT(-EEXIST, rw_auth_backend_register(&backend));
+    iog_auth_backend_t backend = { .name = "dup", ... };
+    iog_auth_backend_register(&backend);
+    TEST_ASSERT_EQUAL_INT(-EEXIST, iog_auth_backend_register(&backend));
 }
 
 void test_auth_backend_list_returns_registered(void)
 {
     size_t count = 0;
-    const rw_auth_backend_t **list = rw_auth_backend_list(&count);
+    const iog_auth_backend_t **list = iog_auth_backend_list(&count);
     TEST_ASSERT_GREATER_THAN(0, count);
     TEST_ASSERT_NOT_NULL(list);
 }
@@ -309,7 +309,7 @@ typedef enum {
     RW_AUTH_ERR = -2,
     RW_AUTH_MFA_REQUIRED = -3,
     RW_AUTH_ACCOUNT_LOCKED = -4,
-} rw_auth_status_t;
+} iog_auth_status_t;
 
 typedef struct {
     const char *username;
@@ -319,28 +319,28 @@ typedef struct {
     size_t client_cert_len;
     const char *source_ip;
     uint16_t source_port;
-} rw_auth_request_t;
+} iog_auth_request_t;
 
 typedef struct {
-    rw_auth_status_t status;
+    iog_auth_status_t status;
     char groups[256];           /* comma-separated group list */
     uint32_t framed_ip;         /* RADIUS Framed-IP-Address, 0 if N/A */
     uint8_t framed_ipv6[16];   /* RADIUS Framed-IPv6-Address */
     bool has_framed_ipv6;
-} rw_auth_response_t;
+} iog_auth_response_t;
 
-typedef struct rw_auth_backend {
+typedef struct iog_auth_backend {
     const char *name;
     [[nodiscard]] int (*init)(const void *config);
-    [[nodiscard]] rw_auth_status_t (*authenticate)(const rw_auth_request_t *req,
-                                                    rw_auth_response_t *resp);
+    [[nodiscard]] iog_auth_status_t (*authenticate)(const iog_auth_request_t *req,
+                                                    iog_auth_response_t *resp);
     void (*destroy)(void);
-} rw_auth_backend_t;
+} iog_auth_backend_t;
 
-[[nodiscard]] int rw_auth_backend_register(const rw_auth_backend_t *backend);
-const rw_auth_backend_t *rw_auth_backend_find(const char *name);
-const rw_auth_backend_t **rw_auth_backend_list(size_t *count);
-void rw_auth_backend_cleanup(void);
+[[nodiscard]] int iog_auth_backend_register(const iog_auth_backend_t *backend);
+const iog_auth_backend_t *iog_auth_backend_find(const char *name);
+const iog_auth_backend_t **iog_auth_backend_list(size_t *count);
+void iog_auth_backend_cleanup(void);
 
 #endif
 ```
@@ -405,7 +405,7 @@ typedef struct {
 void rw_radius_destroy(void);
 
 /* Returns the backend descriptor for registration */
-const rw_auth_backend_t *rw_radius_backend(void);
+const iog_auth_backend_t *iog_radius_backend(void);
 
 #endif
 ```
@@ -503,7 +503,7 @@ typedef struct {
 
 [[nodiscard]] int rw_ldap_init(const rw_ldap_config_t *cfg);
 void rw_ldap_destroy(void);
-const rw_auth_backend_t *rw_ldap_backend(void);
+const iog_auth_backend_t *iog_ldap_backend(void);
 
 #endif
 ```
@@ -594,7 +594,7 @@ typedef struct {
 
 [[nodiscard]] int rw_cert_auth_init(const rw_cert_auth_config_t *cfg);
 void rw_cert_auth_destroy(void);
-const rw_auth_backend_t *rw_cert_auth_backend(void);
+const iog_auth_backend_t *iog_cert_auth_backend(void);
 
 /* Helper: extract username from X.509 certificate */
 [[nodiscard]] int rw_cert_extract_username(const uint8_t *der, size_t der_len,
@@ -1047,27 +1047,27 @@ git commit -m "feat(metrics): add Prometheus metrics with text exposition format
 
 ```cmake
 # Auth backend interface
-add_library(rw_auth_backend STATIC src/auth/auth_backend.c)
-target_include_directories(rw_auth_backend PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_auth_backend STATIC src/auth/auth_backend.c)
+target_include_directories(iog_auth_backend PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 # RADIUS backend
 if(RADCLI_FOUND)
-    add_library(rw_auth_radius STATIC src/auth/radius.c)
-    target_link_libraries(rw_auth_radius PUBLIC rw_auth_backend ${RADCLI_LIBRARIES})
-    target_include_directories(rw_auth_radius PUBLIC ${RADCLI_INCLUDE_DIRS})
+    add_library(iog_auth_radius STATIC src/auth/radius.c)
+    target_link_libraries(iog_auth_radius PUBLIC iog_auth_backend ${RADCLI_LIBRARIES})
+    target_include_directories(iog_auth_radius PUBLIC ${RADCLI_INCLUDE_DIRS})
 endif()
 
 # LDAP backend
 find_library(LDAP_LIBRARY ldap)
 find_library(LBER_LIBRARY lber)
 if(LDAP_LIBRARY AND LBER_LIBRARY)
-    add_library(rw_auth_ldap STATIC src/auth/ldap_auth.c)
-    target_link_libraries(rw_auth_ldap PUBLIC rw_auth_backend ${LDAP_LIBRARY} ${LBER_LIBRARY})
+    add_library(iog_auth_ldap STATIC src/auth/ldap_auth.c)
+    target_link_libraries(iog_auth_ldap PUBLIC iog_auth_backend ${LDAP_LIBRARY} ${LBER_LIBRARY})
 endif()
 
 # Cert auth
-add_library(rw_auth_cert STATIC src/auth/cert_auth.c)
-target_link_libraries(rw_auth_cert PUBLIC rw_auth_backend rw_crypto)
+add_library(iog_auth_cert STATIC src/auth/cert_auth.c)
+target_link_libraries(iog_auth_cert PUBLIC iog_auth_backend rw_crypto)
 
 # HTTP (migrate from llhttp to iohttpparser)
 find_library(IOHTTPPARSER_LIBRARY iohttpparser)
@@ -1088,14 +1088,14 @@ target_include_directories(rw_metrics PUBLIC ${CMAKE_SOURCE_DIR}/src)
 **Step 2: Register new tests**
 
 ```cmake
-rw_add_test(test_auth_backend tests/unit/test_auth_backend.c rw_auth_backend)
-if(TARGET rw_auth_radius)
-    rw_add_test(test_auth_radius tests/unit/test_auth_radius.c rw_auth_radius)
+rw_add_test(test_auth_backend tests/unit/test_auth_backend.c iog_auth_backend)
+if(TARGET iog_auth_radius)
+    rw_add_test(test_auth_radius tests/unit/test_auth_radius.c iog_auth_radius)
 endif()
-if(TARGET rw_auth_ldap)
-    rw_add_test(test_auth_ldap tests/unit/test_auth_ldap.c rw_auth_ldap)
+if(TARGET iog_auth_ldap)
+    rw_add_test(test_auth_ldap tests/unit/test_auth_ldap.c iog_auth_ldap)
 endif()
-rw_add_test(test_auth_cert tests/unit/test_auth_cert.c rw_auth_cert)
+rw_add_test(test_auth_cert tests/unit/test_auth_cert.c iog_auth_cert)
 rw_add_test(test_log tests/unit/test_log.c iog_log)
 rw_add_test(test_prometheus tests/unit/test_prometheus.c rw_metrics)
 ```

@@ -35,7 +35,7 @@
  * ============================================================================ */
 
 static iog_ipc_channel_t ch;
-static rw_secmod_ctx_t ctx;
+static iog_secmod_ctx_t ctx;
 static iog_config_t config;
 static char vault_key_path[PATH_MAX];
 
@@ -115,7 +115,7 @@ static int do_auth_roundtrip(const iog_ipc_auth_request_t *req, iog_ipc_auth_res
         return -EINVAL;
     }
 
-    int ret = rw_secmod_handle_message(&ctx, buf, (size_t)packed);
+    int ret = iog_secmod_handle_message(&ctx, buf, (size_t)packed);
     if (ret < 0) {
         return ret;
     }
@@ -156,7 +156,7 @@ void setUp(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Init secmod with parent_fd as its IPC fd */
-    ret = rw_secmod_init(&ctx, ch.parent_fd, &config);
+    ret = iog_secmod_init(&ctx, ch.parent_fd, &config);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Verify storage subsystems are available */
@@ -166,7 +166,7 @@ void setUp(void)
 
 void tearDown(void)
 {
-    rw_secmod_destroy(&ctx);
+    iog_secmod_destroy(&ctx);
     close(ch.parent_fd);
     close(ch.child_fd);
     unlink(vault_key_path);

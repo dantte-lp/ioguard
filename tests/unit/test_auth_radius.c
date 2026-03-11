@@ -7,13 +7,13 @@
 
 void setUp(void)
 {
-    rw_auth_backend_cleanup();
+    iog_auth_backend_cleanup();
 }
 
 void tearDown(void)
 {
     rw_radius_destroy();
-    rw_auth_backend_cleanup();
+    iog_auth_backend_cleanup();
 }
 
 /* -----------------------------------------------------------------------
@@ -51,21 +51,21 @@ void test_radius_destroy_null_safe(void)
 }
 
 /* -----------------------------------------------------------------------
- * Test: rw_radius_backend returns valid backend, can register
+ * Test: iog_radius_backend returns valid backend, can register
  * ----------------------------------------------------------------------- */
 void test_radius_backend_registers(void)
 {
-    const rw_auth_backend_t *backend = rw_radius_backend();
+    const iog_auth_backend_t *backend = iog_radius_backend();
     TEST_ASSERT_NOT_NULL(backend);
     TEST_ASSERT_NOT_NULL(backend->name);
     TEST_ASSERT_NOT_NULL(backend->init);
     TEST_ASSERT_NOT_NULL(backend->authenticate);
     TEST_ASSERT_NOT_NULL(backend->destroy);
 
-    int ret = rw_auth_backend_register(backend);
+    int ret = iog_auth_backend_register(backend);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    const rw_auth_backend_t *found = rw_auth_backend_find("radius");
+    const iog_auth_backend_t *found = iog_auth_backend_find("radius");
     TEST_ASSERT_NOT_NULL(found);
     TEST_ASSERT_EQUAL_PTR(backend, found);
 }
@@ -138,11 +138,11 @@ void test_radius_config_validate_valid(void)
 }
 
 /* -----------------------------------------------------------------------
- * Test: rw_radius_backend()->name is "radius"
+ * Test: iog_radius_backend()->name is "radius"
  * ----------------------------------------------------------------------- */
 void test_radius_backend_name_is_radius(void)
 {
-    const rw_auth_backend_t *backend = rw_radius_backend();
+    const iog_auth_backend_t *backend = iog_radius_backend();
     TEST_ASSERT_NOT_NULL(backend);
     TEST_ASSERT_EQUAL_STRING("radius", backend->name);
 }
