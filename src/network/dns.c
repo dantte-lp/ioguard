@@ -6,21 +6,21 @@
 #include <stdio.h>
 #include <string.h>
 
-void rw_dns_config_init(rw_dns_config_t *cfg)
+void iog_dns_config_init(iog_dns_config_t *cfg)
 {
     if (cfg == nullptr) {
         return;
     }
     memset(cfg, 0, sizeof(*cfg));
-    cfg->mode = RW_DNS_STANDARD;
+    cfg->mode = IOG_DNS_STANDARD;
 }
 
-int rw_dns_add_server(rw_dns_config_t *cfg, const char *addr)
+int iog_dns_add_server(iog_dns_config_t *cfg, const char *addr)
 {
     if (cfg == nullptr || addr == nullptr) {
         return -EINVAL;
     }
-    if (cfg->server_count >= RW_DNS_MAX_SERVERS) {
+    if (cfg->server_count >= IOG_DNS_MAX_SERVERS) {
         return -ENOSPC;
     }
 
@@ -36,7 +36,7 @@ int rw_dns_add_server(rw_dns_config_t *cfg, const char *addr)
     return 0;
 }
 
-void rw_dns_set_default_domain(rw_dns_config_t *cfg, const char *domain)
+void iog_dns_set_default_domain(iog_dns_config_t *cfg, const char *domain)
 {
     if (cfg == nullptr || domain == nullptr) {
         return;
@@ -44,7 +44,7 @@ void rw_dns_set_default_domain(rw_dns_config_t *cfg, const char *domain)
     snprintf(cfg->default_domain, sizeof(cfg->default_domain), "%s", domain);
 }
 
-void rw_dns_set_mode(rw_dns_config_t *cfg, rw_dns_mode_t mode)
+void iog_dns_set_mode(iog_dns_config_t *cfg, iog_dns_mode_t mode)
 {
     if (cfg == nullptr) {
         return;
@@ -52,12 +52,12 @@ void rw_dns_set_mode(rw_dns_config_t *cfg, rw_dns_mode_t mode)
     cfg->mode = mode;
 }
 
-int rw_dns_add_split_domain(rw_dns_config_t *cfg, const char *domain)
+int iog_dns_add_split_domain(iog_dns_config_t *cfg, const char *domain)
 {
     if (cfg == nullptr || domain == nullptr) {
         return -EINVAL;
     }
-    if (cfg->split_domain_count >= RW_DNS_MAX_DOMAINS) {
+    if (cfg->split_domain_count >= IOG_DNS_MAX_DOMAINS) {
         return -ENOSPC;
     }
 
@@ -67,7 +67,7 @@ int rw_dns_add_split_domain(rw_dns_config_t *cfg, const char *domain)
     return 0;
 }
 
-bool rw_dns_domain_matches(const char *query, const char *domain)
+bool iog_dns_domain_matches(const char *query, const char *domain)
 {
     if (query == nullptr || domain == nullptr) {
         return false;
@@ -100,14 +100,14 @@ bool rw_dns_domain_matches(const char *query, const char *domain)
     return strncasecmp(query + offset, domain, dlen) == 0;
 }
 
-bool rw_dns_is_split_domain(const rw_dns_config_t *cfg, const char *query)
+bool iog_dns_is_split_domain(const iog_dns_config_t *cfg, const char *query)
 {
     if (cfg == nullptr || query == nullptr) {
         return false;
     }
 
     for (uint32_t i = 0; i < cfg->split_domain_count; i++) {
-        if (rw_dns_domain_matches(query, cfg->split_domains[i])) {
+        if (iog_dns_domain_matches(query, cfg->split_domains[i])) {
             return true;
         }
     }

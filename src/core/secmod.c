@@ -23,7 +23,7 @@ static void secmod_audit_log(iog_secmod_ctx_t *ctx, const char *event_type, cons
         return;
     }
 
-    rw_audit_entry_t entry;
+    iog_audit_entry_t entry;
     memset(&entry, 0, sizeof(entry));
     snprintf(entry.event_type, sizeof(entry.event_type), "%s", event_type);
     if (username != nullptr) {
@@ -204,8 +204,8 @@ static int secmod_handle_auth(iog_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req
     }
 
     /* Primary authentication via PAM */
-    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
-    if (result == RW_AUTH_SUCCESS) {
+    iog_auth_result_t result = iog_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
+    if (result == IOG_AUTH_SUCCESS) {
         /* Check if user has TOTP enabled */
         if (ctx->sqlite != nullptr && ctx->vault != nullptr) {
             iog_user_record_t user;
@@ -319,7 +319,7 @@ int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *confi
 
     /* Initialise PAM with the configured auth method (service name) */
     const char *service = (config->auth.method[0] != '\0') ? config->auth.method : nullptr;
-    int ret = rw_pam_init(&ctx->pam_cfg, service);
+    int ret = iog_pam_init(&ctx->pam_cfg, service);
     if (ret != 0) {
         return ret;
     }

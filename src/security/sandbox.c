@@ -91,7 +91,7 @@ static int add_syscalls(scmp_filter_ctx ctx, const int *syscalls, int count)
  * Caller must release with seccomp_release().
  * On success, *out_count receives the total number of allowed syscalls.
  */
-static int build_filter(rw_sandbox_profile_t profile, scmp_filter_ctx *out_ctx, int *out_count)
+static int build_filter(iog_sandbox_profile_t profile, scmp_filter_ctx *out_ctx, int *out_count)
 {
     scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL_PROCESS);
     if (ctx == nullptr) {
@@ -135,7 +135,7 @@ fail:
     return rc;
 }
 
-int rw_sandbox_build(rw_sandbox_profile_t profile, int *out_count)
+int iog_sandbox_build(iog_sandbox_profile_t profile, int *out_count)
 {
     if (out_count == nullptr) {
         return -EINVAL;
@@ -149,7 +149,7 @@ int rw_sandbox_build(rw_sandbox_profile_t profile, int *out_count)
     return rc;
 }
 
-int rw_sandbox_apply(rw_sandbox_profile_t profile)
+int iog_sandbox_apply(iog_sandbox_profile_t profile)
 {
     scmp_filter_ctx ctx = nullptr;
     int rc = build_filter(profile, &ctx, nullptr);

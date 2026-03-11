@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_CONN_DATA_H
-#define RINGWALL_CORE_CONN_DATA_H
+#ifndef IOGUARD_CORE_CONN_DATA_H
+#define IOGUARD_CORE_CONN_DATA_H
 
 #include "network/compress.h"
 #include "network/cstp.h"
@@ -109,4 +109,4 @@ typedef struct {
  */
 [[nodiscard]] int iog_conn_data_send_keepalive(iog_conn_data_t *data);
 
-#endif /* RINGWALL_CORE_CONN_DATA_H */
+#endif /* IOGUARD_CORE_CONN_DATA_H */

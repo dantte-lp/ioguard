@@ -127,25 +127,25 @@ void test_fdpass_received_fd_is_usable(void);     /* pass pipe, write/read throu
 **Step 2: Write fdpass.h**
 
 ```c
-#ifndef RINGWALL_IPC_FDPASS_H
-#define RINGWALL_IPC_FDPASS_H
+#ifndef IOGUARD_IPC_FDPASS_H
+#define IOGUARD_IPC_FDPASS_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t RW_FDPASS_MAX_FDS = 4;
+constexpr size_t IOG_FDPASS_MAX_FDS = 4;
 
 /**
  * @brief Send file descriptor(s) over a unix socket via SCM_RIGHTS.
  *
  * @param sock_fd  Unix socket (SOCK_SEQPACKET or SOCK_STREAM).
  * @param fds      Array of fds to send.
- * @param nfds     Number of fds (1..RW_FDPASS_MAX_FDS).
+ * @param nfds     Number of fds (1..IOG_FDPASS_MAX_FDS).
  * @param data     Optional payload (may be nullptr if data_len == 0).
  * @param data_len Payload length. At least 1 byte required by some kernels.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds,
+[[nodiscard]] int iog_fdpass_send(int sock_fd, const int *fds, size_t nfds,
                                   const void *data, size_t data_len);
 
 /**
@@ -159,26 +159,26 @@ constexpr size_t RW_FDPASS_MAX_FDS = 4;
  * @param data_len  [in] buffer size, [out] bytes received.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds,
+[[nodiscard]] int iog_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds,
                                   size_t *nfds_out, void *data, size_t *data_len);
 
-#endif /* RINGWALL_IPC_FDPASS_H */
+#endif /* IOGUARD_IPC_FDPASS_H */
 ```
 
 **Step 3: Implement fdpass.c**
 
-- `rw_fdpass_send()`: build `msghdr` with `cmsghdr` for `SOL_SOCKET/SCM_RIGHTS`, `sendmsg()`
-- `rw_fdpass_recv()`: `recvmsg()` with `CMSG_SPACE()` for max fds, extract fds from `cmsghdr`
+- `iog_fdpass_send()`: build `msghdr` with `cmsghdr` for `SOL_SOCKET/SCM_RIGHTS`, `sendmsg()`
+- `iog_fdpass_recv()`: `recvmsg()` with `CMSG_SPACE()` for max fds, extract fds from `cmsghdr`
 - If no payload provided, send 1 byte dummy (some kernels require ancillary data to have a payload)
 
 **Step 4: Add to CMakeLists.txt**
 
 ```cmake
-add_library(rw_fdpass STATIC src/ipc/fdpass.c)
-target_include_directories(rw_fdpass PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_compile_definitions(rw_fdpass PUBLIC _GNU_SOURCE)
+add_library(iog_fdpass STATIC src/ipc/fdpass.c)
+target_include_directories(iog_fdpass PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(iog_fdpass PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_fdpass tests/unit/test_fdpass.c rw_fdpass)
+iog_add_test(test_fdpass tests/unit/test_fdpass.c iog_fdpass)
 ```
 
 **Step 5: Build, test, commit**
@@ -237,7 +237,7 @@ void test_main_signal_loop_sigterm_exits(void);      /* send SIGTERM, loop retur
 
 constexpr char IOG_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
 
-int rw_main_parse_args(int argc, char *argv[], const char **config_path)
+int iog_main_parse_args(int argc, char *argv[], const char **config_path)
 {
     *config_path = IOG_DEFAULT_CONFIG_PATH;
     for (int i = 1; i < argc; i++) {
@@ -250,21 +250,21 @@ int rw_main_parse_args(int argc, char *argv[], const char **config_path)
     return 0;
 }
 
-int rw_main_create_ipc_pair(int sv[2])
+int iog_main_create_ipc_pair(int sv[2])
 {
     if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sv) < 0)
         return -errno;
     return 0;
 }
 
-int rw_main_create_accept_pair(int sv[2])
+int iog_main_create_accept_pair(int sv[2])
 {
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) < 0)
         return -errno;
     return 0;
 }
 
-int rw_main_create_signalfd(void)
+int iog_main_create_signalfd(void)
 {
     sigset_t mask;
     sigemptyset(&mask);
@@ -286,7 +286,7 @@ int rw_main_create_signalfd(void)
 int main(int argc, char *argv[])
 {
     const char *config_path;
-    int rc = rw_main_parse_args(argc, argv, &config_path);
+    int rc = iog_main_parse_args(argc, argv, &config_path);
     if (rc == 1) { /* --help */
         fprintf(stdout, "Usage: ioguard [--config path]\n");
         return EXIT_SUCCESS;
@@ -303,12 +303,12 @@ int main(int argc, char *argv[])
 
     /* Create IPC socketpair for auth-mod */
     int authmod_sv[2];
-    rc = rw_main_create_ipc_pair(authmod_sv);
+    rc = iog_main_create_ipc_pair(authmod_sv);
     if (rc < 0) goto cleanup_config;
 
     /* Create accept socketpair for worker (fd passing) */
     int worker_sv[2];
-    rc = rw_main_create_accept_pair(worker_sv);
+    rc = iog_main_create_accept_pair(worker_sv);
     if (rc < 0) goto cleanup_authmod_sv;
 
     /* Fork auth-mod */
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
         close(authmod_sv[0]);
         close(worker_sv[0]);
         close(worker_sv[1]);
-        if (config.security.seccomp) rw_sandbox_apply(RW_SANDBOX_AUTHMOD);
+        if (config.security.seccomp) iog_sandbox_apply(IOG_SANDBOX_AUTHMOD);
         iog_secmod_ctx_t secmod;
         iog_secmod_init(&secmod, authmod_sv[1], &config);
         rc = iog_secmod_run(&secmod);
@@ -336,16 +336,16 @@ int main(int argc, char *argv[])
         /* Child: worker process */
         close(worker_sv[0]);
         close(authmod_sv[0]);
-        if (config.security.seccomp) rw_sandbox_apply(RW_SANDBOX_WORKER);
+        if (config.security.seccomp) iog_sandbox_apply(IOG_SANDBOX_WORKER);
         /* iog_worker_loop_run() — implemented in Task 4 */
         _exit(EXIT_SUCCESS);
     }
     close(worker_sv[1]);
 
     /* Main: signal loop */
-    if (config.security.seccomp) rw_sandbox_apply(RW_SANDBOX_MAIN);
+    if (config.security.seccomp) iog_sandbox_apply(IOG_SANDBOX_MAIN);
 
-    int sigfd = rw_main_create_signalfd();
+    int sigfd = iog_main_create_signalfd();
     if (sigfd < 0) { rc = sigfd; goto cleanup_children; }
 
     /* Read signalfd in a loop */
@@ -389,15 +389,15 @@ cleanup_config:
 **Step 4: Create main.h (exported helpers for testing)**
 
 ```c
-#ifndef RINGWALL_CORE_MAIN_H
-#define RINGWALL_CORE_MAIN_H
+#ifndef IOGUARD_CORE_MAIN_H
+#define IOGUARD_CORE_MAIN_H
 
-[[nodiscard]] int rw_main_parse_args(int argc, char *argv[], const char **config_path);
-[[nodiscard]] int rw_main_create_ipc_pair(int sv[2]);
-[[nodiscard]] int rw_main_create_accept_pair(int sv[2]);
-[[nodiscard]] int rw_main_create_signalfd(void);
+[[nodiscard]] int iog_main_parse_args(int argc, char *argv[], const char **config_path);
+[[nodiscard]] int iog_main_create_ipc_pair(int sv[2]);
+[[nodiscard]] int iog_main_create_accept_pair(int sv[2]);
+[[nodiscard]] int iog_main_create_signalfd(void);
 
-#endif /* RINGWALL_CORE_MAIN_H */
+#endif /* IOGUARD_CORE_MAIN_H */
 ```
 
 **Step 5: Add test to CMakeLists.txt, build, test, commit**
@@ -435,8 +435,8 @@ void test_worker_loop_tun_write(void);             /* write to TUN fd (socketpai
 **Step 2: Write worker_loop.h**
 
 ```c
-#ifndef RINGWALL_CORE_WORKER_LOOP_H
-#define RINGWALL_CORE_WORKER_LOOP_H
+#ifndef IOGUARD_CORE_WORKER_LOOP_H
+#define IOGUARD_CORE_WORKER_LOOP_H
 
 #include "config/config.h"
 #include "core/worker.h"
@@ -490,7 +490,7 @@ void iog_worker_loop_stop(iog_worker_loop_t *loop);
  */
 void iog_worker_loop_destroy(iog_worker_loop_t *loop);
 
-#endif /* RINGWALL_CORE_WORKER_LOOP_H */
+#endif /* IOGUARD_CORE_WORKER_LOOP_H */
 ```
 
 **Step 3: Implement worker_loop.c**
@@ -529,7 +529,7 @@ int iog_worker_loop_run(iog_worker_loop_t *loop)
 ```
 
 The `on_accept_fd` callback:
-1. `rw_fdpass_recv()` to get client fd
+1. `iog_fdpass_recv()` to get client fd
 2. `iog_worker_add_connection()` to allocate slot
 3. Start TLS handshake (Task 6)
 4. Re-arm accept_fd for next connection
@@ -539,10 +539,10 @@ The `on_accept_fd` callback:
 ```cmake
 add_library(iog_worker_loop STATIC src/core/worker_loop.c)
 target_include_directories(iog_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(iog_worker_loop PUBLIC rw_worker iog_io rw_fdpass rw_cstp rw_dpd)
+target_link_libraries(iog_worker_loop PUBLIC iog_worker iog_io iog_fdpass iog_cstp iog_dpd)
 target_compile_definitions(iog_worker_loop PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_worker_loop tests/unit/test_worker_loop.c iog_worker_loop iog_io rw_fdpass rw_cstp rw_dpd rw_worker)
+iog_add_test(test_worker_loop tests/unit/test_worker_loop.c iog_worker_loop iog_io iog_fdpass iog_cstp iog_dpd iog_worker)
 ```
 
 **Step 5: Build, test, commit**
@@ -586,7 +586,7 @@ Add storage fields to context:
 
 typedef struct {
     int ipc_fd;
-    rw_pam_config_t pam_cfg;
+    iog_pam_config_t pam_cfg;
     iog_mdbx_ctx_t mdbx;            /* replaces iog_session_store_t */
     iog_sqlite_ctx_t sqlite;         /* audit logging + user management */
     const iog_config_t *config;
@@ -637,8 +637,8 @@ void test_conn_tls_wolfsentry_reject(void);          /* banned IP → reject bef
 **Step 2: Write conn_tls.h**
 
 ```c
-#ifndef RINGWALL_CORE_CONN_TLS_H
-#define RINGWALL_CORE_CONN_TLS_H
+#ifndef IOGUARD_CORE_CONN_TLS_H
+#define IOGUARD_CORE_CONN_TLS_H
 
 #include <wolfssl/options.h>
 #include <wolfssl/ssl.h>
@@ -650,7 +650,7 @@ void test_conn_tls_wolfsentry_reject(void);          /* banned IP → reject bef
  */
 typedef struct {
     WOLFSSL_CTX *ctx;
-} rw_tls_server_t;
+} iog_tls_server_t;
 
 /**
  * @brief Per-connection TLS state.
@@ -659,48 +659,48 @@ typedef struct {
     WOLFSSL *ssl;
     int fd;
     bool handshake_done;
-} rw_tls_conn_t;
+} iog_tls_conn_t;
 
 typedef struct {
     const char *cert_file;
     const char *key_file;
     const char *ca_file;           /* may be nullptr */
     const char *ciphers;           /* may be nullptr for defaults */
-} rw_tls_server_config_t;
+} iog_tls_server_config_t;
 
-[[nodiscard]] int rw_tls_server_init(rw_tls_server_t *srv, const rw_tls_server_config_t *cfg);
-void rw_tls_server_destroy(rw_tls_server_t *srv);
+[[nodiscard]] int iog_tls_server_init(iog_tls_server_t *srv, const iog_tls_server_config_t *cfg);
+void iog_tls_server_destroy(iog_tls_server_t *srv);
 
-[[nodiscard]] int rw_tls_conn_init(rw_tls_conn_t *conn, rw_tls_server_t *srv, int fd);
-void rw_tls_conn_destroy(rw_tls_conn_t *conn);
+[[nodiscard]] int iog_tls_conn_init(iog_tls_conn_t *conn, iog_tls_server_t *srv, int fd);
+void iog_tls_conn_destroy(iog_tls_conn_t *conn);
 
 /**
  * @brief Attempt TLS handshake (non-blocking).
  * @return 0 if complete, -EAGAIN if WANT_READ/WANT_WRITE, negative errno on error.
  */
-[[nodiscard]] int rw_tls_conn_handshake(rw_tls_conn_t *conn);
+[[nodiscard]] int iog_tls_conn_handshake(iog_tls_conn_t *conn);
 
 /**
  * @brief Read decrypted data.
  * @return bytes read (>0), -EAGAIN, or negative errno.
  */
-[[nodiscard]] int rw_tls_conn_read(rw_tls_conn_t *conn, void *buf, size_t len);
+[[nodiscard]] int iog_tls_conn_read(iog_tls_conn_t *conn, void *buf, size_t len);
 
 /**
  * @brief Write data to encrypt and send.
  * @return bytes written (>0), -EAGAIN, or negative errno.
  */
-[[nodiscard]] int rw_tls_conn_write(rw_tls_conn_t *conn, const void *buf, size_t len);
+[[nodiscard]] int iog_tls_conn_write(iog_tls_conn_t *conn, const void *buf, size_t len);
 
-#endif /* RINGWALL_CORE_CONN_TLS_H */
+#endif /* IOGUARD_CORE_CONN_TLS_H */
 ```
 
 **Step 3: Implement conn_tls.c**
 
-- `rw_tls_server_init()`: `wolfSSL_CTX_new(wolfTLSv1_3_server_method())`, load cert/key, set non-blocking
-- `rw_tls_conn_init()`: `wolfSSL_new()`, `wolfSSL_set_fd()`, set non-blocking
-- `rw_tls_conn_handshake()`: call `wolfSSL_accept()`, map `SSL_ERROR_WANT_READ/WRITE` to `-EAGAIN`
-- `rw_tls_conn_read/write()`: wrap `wolfSSL_read/write()` with error mapping
+- `iog_tls_server_init()`: `wolfSSL_CTX_new(wolfTLSv1_3_server_method())`, load cert/key, set non-blocking
+- `iog_tls_conn_init()`: `wolfSSL_new()`, `wolfSSL_set_fd()`, set non-blocking
+- `iog_tls_conn_handshake()`: call `wolfSSL_accept()`, map `SSL_ERROR_WANT_READ/WRITE` to `-EAGAIN`
+- `iog_tls_conn_read/write()`: wrap `wolfSSL_read/write()` with error mapping
 
 **Note:** Tests use a self-signed cert generated at test time (`tests/fixtures/` or temp dir). Use wolfSSL's `wolfSSL_CTX_use_certificate_buffer()` with embedded test cert for hermetic tests.
 
@@ -741,8 +741,8 @@ void test_data_path_multiple_packets_batch(void);    /* 3 packets in one TLS rea
 **Step 2: Write conn_data.h**
 
 ```c
-#ifndef RINGWALL_CORE_CONN_DATA_H
-#define RINGWALL_CORE_CONN_DATA_H
+#ifndef IOGUARD_CORE_CONN_DATA_H
+#define IOGUARD_CORE_CONN_DATA_H
 
 #include "core/conn_tls.h"
 #include "core/worker.h"
@@ -758,24 +758,24 @@ void test_data_path_multiple_packets_batch(void);    /* 3 packets in one TLS rea
  * Owned by the worker event loop, one instance per active connection.
  */
 typedef struct {
-    rw_tls_conn_t *tls;
+    iog_tls_conn_t *tls;
     int tun_fd;
     iog_dpd_ctx_t *dpd;
     iog_compress_ctx_t *compress;
     iog_channel_ctx_t channel;
 
     /* Receive buffer (accumulates partial CSTP frames from TLS) */
-    uint8_t recv_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     size_t recv_len;
 
     /* Send buffer (CSTP-encoded frame for TLS write) */
-    uint8_t send_buf[RW_CSTP_HEADER_SIZE + RW_CSTP_MAX_PAYLOAD];
+    uint8_t send_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
 } iog_conn_data_t;
 
 /**
  * @brief Initialize data path for a connection.
  */
-void iog_conn_data_init(iog_conn_data_t *data, rw_tls_conn_t *tls, int tun_fd,
+void iog_conn_data_init(iog_conn_data_t *data, iog_tls_conn_t *tls, int tun_fd,
                         iog_dpd_ctx_t *dpd, iog_compress_ctx_t *compress);
 
 /**
@@ -813,7 +813,7 @@ void iog_conn_data_init(iog_conn_data_t *data, rw_tls_conn_t *tls, int tun_fd,
  */
 [[nodiscard]] int iog_conn_data_send_keepalive(iog_conn_data_t *data);
 
-#endif /* RINGWALL_CORE_CONN_DATA_H */
+#endif /* IOGUARD_CORE_CONN_DATA_H */
 ```
 
 **Step 3: Implement conn_data.c**
@@ -823,31 +823,31 @@ Core logic for `iog_conn_data_process_tls()`:
 int iog_conn_data_process_tls(iog_conn_data_t *data)
 {
     /* Read from TLS into recv_buf */
-    int n = rw_tls_conn_read(data->tls,
+    int n = iog_tls_conn_read(data->tls,
                               data->recv_buf + data->recv_len,
                               sizeof(data->recv_buf) - data->recv_len);
     if (n < 0) return n;  /* -EAGAIN or error */
     data->recv_len += (size_t)n;
 
     /* Decode CSTP packets (may be multiple in buffer) */
-    while (data->recv_len >= RW_CSTP_HEADER_SIZE) {
-        rw_cstp_packet_t pkt;
-        int consumed = rw_cstp_decode(data->recv_buf, data->recv_len, &pkt);
+    while (data->recv_len >= IOG_CSTP_HEADER_SIZE) {
+        iog_cstp_packet_t pkt;
+        int consumed = iog_cstp_decode(data->recv_buf, data->recv_len, &pkt);
         if (consumed == -EAGAIN) break;  /* incomplete frame */
         if (consumed < 0) return consumed;
 
         /* Route by packet type */
         int rc = 0;
         switch (pkt.type) {
-        case RW_CSTP_DATA:
+        case IOG_CSTP_DATA:
             rc = handle_data_packet(data, &pkt);
             break;
-        case RW_CSTP_DPD_REQ:
+        case IOG_CSTP_DPD_REQ:
             rc = send_dpd_response(data);
             break;
-        case RW_CSTP_KEEPALIVE:
+        case IOG_CSTP_KEEPALIVE:
             break;  /* no-op */
-        case RW_CSTP_DISCONNECT:
+        case IOG_CSTP_DISCONNECT:
             return -ECONNRESET;
         default:
             break;
@@ -901,14 +901,14 @@ void test_timer_reschedule_after_activity(void);  /* data received → reset idl
 **Step 2: Write conn_timer.h**
 
 ```c
-#ifndef RINGWALL_CORE_CONN_TIMER_H
-#define RINGWALL_CORE_CONN_TIMER_H
+#ifndef IOGUARD_CORE_CONN_TIMER_H
+#define IOGUARD_CORE_CONN_TIMER_H
 
 #include "core/conn_data.h"
 #include "io/uring.h"
 #include "network/dpd.h"
 
-typedef void (*rw_conn_dead_cb)(uint64_t conn_id, void *user_data);
+typedef void (*iog_conn_dead_cb)(uint64_t conn_id, void *user_data);
 
 typedef struct {
     iog_io_ctx_t *io;
@@ -917,7 +917,7 @@ typedef struct {
     uint64_t conn_id;
     uint32_t keepalive_interval_s;
     uint32_t idle_timeout_s;
-    rw_conn_dead_cb on_dead;
+    iog_conn_dead_cb on_dead;
     void *on_dead_user_data;
     bool active;
 } iog_conn_timer_t;
@@ -926,7 +926,7 @@ typedef struct {
 void iog_conn_timer_stop(iog_conn_timer_t *timer);
 void iog_conn_timer_on_activity(iog_conn_timer_t *timer);
 
-#endif /* RINGWALL_CORE_CONN_TIMER_H */
+#endif /* IOGUARD_CORE_CONN_TIMER_H */
 ```
 
 **Step 3: Implement conn_timer.c**
@@ -969,8 +969,8 @@ void test_hooks_landlock_paths_from_config(void);  /* config paths → landlock 
 **Step 2: Write security_hooks.h**
 
 ```c
-#ifndef RINGWALL_CORE_SECURITY_HOOKS_H
-#define RINGWALL_CORE_SECURITY_HOOKS_H
+#ifndef IOGUARD_CORE_SECURITY_HOOKS_H
+#define IOGUARD_CORE_SECURITY_HOOKS_H
 
 #include "config/config.h"
 #include "security/wolfsentry.h"
@@ -983,37 +983,37 @@ void test_hooks_landlock_paths_from_config(void);  /* config paths → landlock 
  * @brief Apply process-level security restrictions.
  * Called immediately after fork(), before any I/O.
  */
-[[nodiscard]] int rw_security_apply_process(rw_sandbox_profile_t profile,
+[[nodiscard]] int iog_security_apply_process(iog_sandbox_profile_t profile,
                                              const iog_config_t *config);
 
 /**
  * @brief Check incoming connection before TLS handshake.
  * @return 0 if allowed, -EACCES if blocked.
  */
-[[nodiscard]] int rw_security_check_connection(iog_wolfsentry_ctx_t *ws,
+[[nodiscard]] int iog_security_check_connection(iog_wolfsentry_ctx_t *ws,
                                                 int af, const void *addr,
                                                 uint16_t port);
 
 /**
  * @brief Create per-session firewall rules after auth success.
  */
-[[nodiscard]] int rw_security_session_create(const char *username,
+[[nodiscard]] int iog_security_session_create(const char *username,
                                               int af, uint32_t assigned_ip);
 
 /**
  * @brief Remove per-session firewall rules on disconnect.
  */
-[[nodiscard]] int rw_security_session_destroy(const char *username,
+[[nodiscard]] int iog_security_session_destroy(const char *username,
                                                int af, uint32_t assigned_ip);
 
-#endif /* RINGWALL_CORE_SECURITY_HOOKS_H */
+#endif /* IOGUARD_CORE_SECURITY_HOOKS_H */
 ```
 
 **Step 3: Implement security_hooks.c**
 
-- `rw_security_apply_process()`: if `config->security.seccomp` → `rw_sandbox_apply()`, if `config->security.landlock` → `rw_landlock_apply()`
-- `rw_security_check_connection()`: delegate to `iog_wolfsentry_check_connection()`
-- `rw_security_session_create/destroy()`: build `iog_fw_session_t`, delegate to `iog_fw_session_create/destroy()`
+- `iog_security_apply_process()`: if `config->security.seccomp` → `iog_sandbox_apply()`, if `config->security.landlock` → `iog_landlock_apply()`
+- `iog_security_check_connection()`: delegate to `iog_wolfsentry_check_connection()`
+- `iog_security_session_create/destroy()`: build `iog_fw_session_t`, delegate to `iog_fw_session_create/destroy()`
 
 **Step 4: Build, test, commit**
 
@@ -1060,11 +1060,11 @@ static int drain_connections(iog_worker_loop_t *loop)
         iog_connection_t *conn = &loop->worker->conns[i];
         if (!conn->active) continue;
 
-        uint8_t buf[RW_CSTP_HEADER_SIZE];
-        int n = rw_cstp_encode(buf, sizeof(buf), RW_CSTP_DISCONNECT, nullptr, 0);
+        uint8_t buf[IOG_CSTP_HEADER_SIZE];
+        int n = iog_cstp_encode(buf, sizeof(buf), IOG_CSTP_DISCONNECT, nullptr, 0);
         if (n > 0) {
             /* Best-effort send — ignore errors during shutdown */
-            rw_tls_conn_write(/* ... */, buf, (size_t)n);
+            iog_tls_conn_write(/* ... */, buf, (size_t)n);
         }
         iog_worker_remove_connection(loop->worker, conn->conn_id);
     }
@@ -1109,9 +1109,9 @@ void test_vpn_flow_multiple_clients(void);           /* 3 clients, independent d
 **Step 2: Add to CMakeLists.txt**
 
 ```cmake
-rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
-    iog_worker_loop rw_conn_data rw_conn_tls rw_conn_timer rw_security_hooks
-    rw_worker iog_io rw_fdpass rw_cstp rw_dpd rw_compress iog_secmod
+iog_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
+    iog_worker_loop iog_conn_data iog_conn_tls iog_conn_timer iog_security_hooks
+    iog_worker iog_io iog_fdpass iog_cstp iog_dpd iog_compress iog_secmod
     iog_mdbx iog_sqlite iog_migrate ${WOLFSSL_LIBRARIES})
 ```
 
@@ -1223,8 +1223,8 @@ void test_ipam_stats_total_and_used(void);          /* verify counts after alloc
 **Step 2: Write ipam.h**
 
 ```c
-#ifndef RINGWALL_NETWORK_IPAM_H
-#define RINGWALL_NETWORK_IPAM_H
+#ifndef IOGUARD_NETWORK_IPAM_H
+#define IOGUARD_NETWORK_IPAM_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -1286,7 +1286,7 @@ void iog_ipam_destroy(iog_ipam_t *ipam);
 /* Statistics */
 void iog_ipam_get_stats(const iog_ipam_t *ipam, iog_ipam_stats_t *stats);
 
-#endif /* RINGWALL_NETWORK_IPAM_H */
+#endif /* IOGUARD_NETWORK_IPAM_H */
 ```
 
 **Step 3: Write ipam.c**
@@ -1304,13 +1304,13 @@ Key implementation details:
 ```c
 /* Replace single ipv4_pool string with multi-pool support */
 typedef struct {
-    char ipv4_pools[IOG_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];  /* CIDR strings */
+    char ipv4_pools[IOG_IPAM_MAX_POOLS][IOG_CONFIG_MAX_STR];  /* CIDR strings */
     uint32_t ipv4_pool_count;
-    char ipv6_pools[IOG_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];
+    char ipv6_pools[IOG_IPAM_MAX_POOLS][IOG_CONFIG_MAX_STR];
     uint32_t ipv6_pool_count;
-    char dns[RW_CONFIG_MAX_DNS][RW_CONFIG_MAX_STR];
+    char dns[IOG_CONFIG_MAX_DNS][IOG_CONFIG_MAX_STR];
     uint32_t dns_count;
-    char default_domain[RW_CONFIG_MAX_STR];
+    char default_domain[IOG_CONFIG_MAX_STR];
     uint32_t mtu;
 } iog_config_network_t;
 ```
@@ -1322,7 +1322,7 @@ typedef struct {
 add_library(iog_ipam STATIC src/network/ipam.c)
 target_include_directories(iog_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-rw_add_test(test_ipam tests/unit/test_ipam.c iog_ipam)
+iog_add_test(test_ipam tests/unit/test_ipam.c iog_ipam)
 ```
 
 **Step 6: Build and run**
@@ -1364,7 +1364,7 @@ void tearDown(void) {}
 void test_dns_config_init_defaults(void);            /* mode=STANDARD, 0 servers, 0 domains */
 void test_dns_config_add_server(void);               /* add "8.8.8.8", count=1 */
 void test_dns_config_add_server_ipv6(void);          /* add "2001:4860:4860::8888" */
-void test_dns_config_add_server_max(void);           /* add RW_DNS_MAX_SERVERS+1 → -ENOSPC */
+void test_dns_config_add_server_max(void);           /* add IOG_DNS_MAX_SERVERS+1 → -ENOSPC */
 void test_dns_config_set_domain(void);               /* set "corp.example.com" */
 
 /* Split DNS domain matching */
@@ -1381,75 +1381,75 @@ void test_dns_is_split_domain(void);                 /* query matches added doma
 void test_dns_is_not_split_domain(void);             /* query doesn't match → false */
 
 /* Mode validation */
-void test_dns_mode_split(void);                      /* RW_DNS_SPLIT */
-void test_dns_mode_tunnel_all(void);                 /* RW_DNS_TUNNEL_ALL */
-void test_dns_mode_standard(void);                   /* RW_DNS_STANDARD */
+void test_dns_mode_split(void);                      /* IOG_DNS_SPLIT */
+void test_dns_mode_tunnel_all(void);                 /* IOG_DNS_TUNNEL_ALL */
+void test_dns_mode_standard(void);                   /* IOG_DNS_STANDARD */
 ```
 
 **Step 2: Write dns.h**
 
 ```c
-#ifndef RINGWALL_NETWORK_DNS_H
-#define RINGWALL_NETWORK_DNS_H
+#ifndef IOGUARD_NETWORK_DNS_H
+#define IOGUARD_NETWORK_DNS_H
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t RW_DNS_MAX_SERVERS = 4;
-constexpr size_t RW_DNS_MAX_DOMAINS = 32;
-constexpr size_t RW_DNS_MAX_NAME = 256;
+constexpr size_t IOG_DNS_MAX_SERVERS = 4;
+constexpr size_t IOG_DNS_MAX_DOMAINS = 32;
+constexpr size_t IOG_DNS_MAX_NAME = 256;
 
 typedef enum : uint8_t {
-    RW_DNS_STANDARD    = 0,   /* all DNS through tunnel (legacy) */
-    RW_DNS_TUNNEL_ALL  = 1,   /* all DNS forced through tunnel */
-    RW_DNS_SPLIT       = 2,   /* domain-based routing */
-} rw_dns_mode_t;
+    IOG_DNS_STANDARD    = 0,   /* all DNS through tunnel (legacy) */
+    IOG_DNS_TUNNEL_ALL  = 1,   /* all DNS forced through tunnel */
+    IOG_DNS_SPLIT       = 2,   /* domain-based routing */
+} iog_dns_mode_t;
 
 typedef struct {
-    rw_dns_mode_t mode;
-    char servers[RW_DNS_MAX_SERVERS][46];     /* INET6_ADDRSTRLEN */
+    iog_dns_mode_t mode;
+    char servers[IOG_DNS_MAX_SERVERS][46];     /* INET6_ADDRSTRLEN */
     uint32_t server_count;
-    char default_domain[RW_DNS_MAX_NAME];
-    char split_domains[RW_DNS_MAX_DOMAINS][RW_DNS_MAX_NAME];
+    char default_domain[IOG_DNS_MAX_NAME];
+    char split_domains[IOG_DNS_MAX_DOMAINS][IOG_DNS_MAX_NAME];
     uint32_t split_domain_count;
-} rw_dns_config_t;
+} iog_dns_config_t;
 
 /* Lifecycle */
-void rw_dns_config_init(rw_dns_config_t *cfg);
+void iog_dns_config_init(iog_dns_config_t *cfg);
 
 /* Configuration */
-[[nodiscard]] int rw_dns_add_server(rw_dns_config_t *cfg, const char *addr);
-void rw_dns_set_default_domain(rw_dns_config_t *cfg, const char *domain);
-void rw_dns_set_mode(rw_dns_config_t *cfg, rw_dns_mode_t mode);
-[[nodiscard]] int rw_dns_add_split_domain(rw_dns_config_t *cfg, const char *domain);
+[[nodiscard]] int iog_dns_add_server(iog_dns_config_t *cfg, const char *addr);
+void iog_dns_set_default_domain(iog_dns_config_t *cfg, const char *domain);
+void iog_dns_set_mode(iog_dns_config_t *cfg, iog_dns_mode_t mode);
+[[nodiscard]] int iog_dns_add_split_domain(iog_dns_config_t *cfg, const char *domain);
 
 /* Domain matching — suffix match with '.' boundary.
  * "mail.corp.example.com" matches split domain "corp.example.com".
  * "notcorp.example.com" does NOT match "corp.example.com". */
-[[nodiscard]] bool rw_dns_is_split_domain(const rw_dns_config_t *cfg, const char *query);
+[[nodiscard]] bool iog_dns_is_split_domain(const iog_dns_config_t *cfg, const char *query);
 
 /* Domain match helper (exported for testing) */
-[[nodiscard]] bool rw_dns_domain_matches(const char *query, const char *domain);
+[[nodiscard]] bool iog_dns_domain_matches(const char *query, const char *domain);
 
-#endif /* RINGWALL_NETWORK_DNS_H */
+#endif /* IOGUARD_NETWORK_DNS_H */
 ```
 
 **Step 3: Write dns.c**
 
 Key implementation:
-- `rw_dns_domain_matches()`: case-insensitive suffix match. Query must equal domain exactly OR end with `.domain` (boundary check prevents `notcorp.example.com` matching `corp.example.com`)
-- `rw_dns_is_split_domain()`: iterate `split_domains[]`, return true on first match
-- `rw_dns_add_server()`: validate with `inet_pton(AF_INET)` || `inet_pton(AF_INET6)`, copy to array
+- `iog_dns_domain_matches()`: case-insensitive suffix match. Query must equal domain exactly OR end with `.domain` (boundary check prevents `notcorp.example.com` matching `corp.example.com`)
+- `iog_dns_is_split_domain()`: iterate `split_domains[]`, return true on first match
+- `iog_dns_add_server()`: validate with `inet_pton(AF_INET)` || `inet_pton(AF_INET6)`, copy to array
 
 **Step 4: Add to CMakeLists.txt**
 
 ```cmake
 # Split DNS configuration
-add_library(rw_dns STATIC src/network/dns.c)
-target_include_directories(rw_dns PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_dns STATIC src/network/dns.c)
+target_include_directories(iog_dns PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-rw_add_test(test_dns tests/unit/test_dns.c rw_dns)
+iog_add_test(test_dns tests/unit/test_dns.c iog_dns)
 ```
 
 **Step 5: Build and run**
@@ -1474,41 +1474,41 @@ git commit -m "feat: split DNS configuration with domain matching (17 tests)"
 - Modify: `src/network/tun.c`
 - Modify: `tests/unit/test_tun.c`
 
-**Why:** `rw_tun_calc_mtu()` subtracts only 20 bytes (IPv4 header). IPv6 header is 40 bytes. Must accept address family parameter for correct MTU calculation.
+**Why:** `iog_tun_calc_mtu()` subtracts only 20 bytes (IPv4 header). IPv6 header is 40 bytes. Must accept address family parameter for correct MTU calculation.
 
 **Step 1: Add tests to test_tun.c**
 
 ```c
-void test_tun_calc_mtu_ipv4(void);     /* rw_tun_calc_mtu(1500, AF_INET)  → 1500 - 20 - 20 - 37 - 4 = 1419 */
-void test_tun_calc_mtu_ipv6(void);     /* rw_tun_calc_mtu(1500, AF_INET6) → 1500 - 40 - 20 - 37 - 4 = 1399 */
-void test_tun_calc_mtu_ipv6_clamp(void); /* small base_mtu → clamp to RW_TUN_MIN_MTU */
+void test_tun_calc_mtu_ipv4(void);     /* iog_tun_calc_mtu(1500, AF_INET)  → 1500 - 20 - 20 - 37 - 4 = 1419 */
+void test_tun_calc_mtu_ipv6(void);     /* iog_tun_calc_mtu(1500, AF_INET6) → 1500 - 40 - 20 - 37 - 4 = 1399 */
+void test_tun_calc_mtu_ipv6_clamp(void); /* small base_mtu → clamp to IOG_TUN_MIN_MTU */
 ```
 
 **Step 2: Update tun.h signature**
 
 ```c
-/* Old: uint32_t rw_tun_calc_mtu(uint32_t base_mtu); */
+/* Old: uint32_t iog_tun_calc_mtu(uint32_t base_mtu); */
 /* New: */
-[[nodiscard]] uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af);
+[[nodiscard]] uint32_t iog_tun_calc_mtu(uint32_t base_mtu, int af);
 ```
 
 **Step 3: Update tun.c**
 
 ```c
-uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af)
+uint32_t iog_tun_calc_mtu(uint32_t base_mtu, int af)
 {
     /* IP header: 20 (IPv4) or 40 (IPv6) */
     uint32_t ip_overhead = (af == AF_INET6) ? 40 : 20;
     /* TCP: 20, TLS record: 37, CSTP header: 4 */
     uint32_t total_overhead = ip_overhead + 20 + 37 + 4;
 
-    if (base_mtu <= total_overhead + RW_TUN_MIN_MTU)
-        return RW_TUN_MIN_MTU;
+    if (base_mtu <= total_overhead + IOG_TUN_MIN_MTU)
+        return IOG_TUN_MIN_MTU;
     return base_mtu - total_overhead;
 }
 ```
 
-**Step 4: Update callers** — grep for `rw_tun_calc_mtu(` and add `AF_INET` as second arg (existing callers are IPv4-only).
+**Step 4: Update callers** — grep for `iog_tun_calc_mtu(` and add `AF_INET` as second arg (existing callers are IPv4-only).
 
 **Step 5: Build and run**
 

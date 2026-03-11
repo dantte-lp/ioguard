@@ -14,7 +14,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 | 8446 | TLS 1.3 | §4 Handshake, §5 Record, §7 Crypto | Primary protocol, wolfSSL native API |
 | 9147 | DTLS 1.3 | §3 Overview, §4 Record, §5 Handshake | UDP tunnel transport, anti-replay |
 | 6347 | DTLS 1.2 | §3 Record, §4 Handshake | Fallback for older clients |
-| 7301 | ALPN | §3 Protocol negotiation | `rw_tls_set_alpn()` — negotiate CSTP vs HTTP |
+| 7301 | ALPN | §3 Protocol negotiation | `iog_tls_set_alpn()` — negotiate CSTP vs HTTP |
 | 6066 | TLS Extensions | §3 SNI, §4 Max Fragment | SNI routing, fragment limits |
 | 9325 | BCP 195 (TLS/DTLS) | §3 Protocol, §4 Cipher | TLS 1.2+, AEAD-only, forward secrecy |
 | 7525 | (superseded by 9325) | — | Legacy reference only |
@@ -46,13 +46,13 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 | RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
-| 2865 | RADIUS | §3 Packet, §5 Attributes | `rw_auth_radius_*()` via radcli |
+| 2865 | RADIUS | §3 Packet, §5 Attributes | `iog_auth_radius_*()` via radcli |
 | 2866 | RADIUS Accounting | §4 Packet types | Session accounting (Start/Stop/Interim) |
 | 9765 | RADIUS/1.1 over TLS | §3 Transport | RadSec transport (TLS-wrapped RADIUS) |
-| 4511 | LDAP Protocol | §4 Operations | `rw_auth_ldap_bind()` via libldap |
+| 4511 | LDAP Protocol | §4 Operations | `iog_auth_ldap_bind()` via libldap |
 | 4513 | LDAP Auth Methods | §5 SASL, §6 TLS | SASL bind + StartTLS |
 | 4515 | LDAP Search Filters | §3 String repr | User/group lookups |
-| 6238 | TOTP | §4 Algorithm | `rw_auth_totp_verify()` via liboath |
+| 6238 | TOTP | §4 Algorithm | `iog_auth_totp_verify()` via liboath |
 | 4226 | HOTP | §5 Algorithm | HOTP fallback via liboath |
 | 7519 | JWT | §3 Claims, §4 Header | Session token format |
 | 7515 | JWS | §3 Serialization | Token signature verification |
@@ -64,7 +64,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 | RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
-| 5280 | X.509 PKI | §4 Cert format, §6 Validation | `rw_tls_verify_peer()`, CRL checks |
+| 5280 | X.509 PKI | §4 Cert format, §6 Validation | `iog_tls_verify_peer()`, CRL checks |
 | 6960 | OCSP | §2 Protocol, §4 Response | Real-time certificate revocation |
 | 8555 | ACME | §7 Order, §8 Challenge | Automated cert provisioning |
 | 8737 | ACME TLS-ALPN-01 | §3 Challenge | Port-443 cert validation |
@@ -76,7 +76,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 | RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
-| 5116 | AEAD Interface | §2 Interface | `rw_crypto_aead_*()` abstraction |
+| 5116 | AEAD Interface | §2 Interface | `iog_crypto_aead_*()` abstraction |
 | 8439 | ChaCha20-Poly1305 | §2 Algorithm | CSTP/DTLS cipher (wolfCrypt) |
 | 5288 | AES-GCM for TLS | §3 Cipher suites | Default cipher suite |
 | 7748 | X25519/X448 | §5 Diffie-Hellman | Key exchange (wolfSSL) |
@@ -84,7 +84,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 | 5869 | HKDF | §2 Extract-and-Expand | TLS key derivation |
 | 2104 | HMAC | §2 Definition | Session cookies (HMAC-SHA256) |
 | 8017 | PKCS#1 RSA | §7 OAEP, §8 PSS | RSA key operations |
-| 9106 | Argon2 | §3 Algorithm | Password hashing in `rw_auth_local_*()` |
+| 9106 | Argon2 | §3 Algorithm | Password hashing in `iog_auth_local_*()` |
 
 ## 7. HTTP (Control Channel)
 
@@ -100,7 +100,7 @@ Local copies in `docs/rfc/rfcNNNN.txt`. This is a P0/P1 quick-reference — not 
 
 | RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
-| 1035 | DNS Implementation | §3 Names, §4 Messages | `rw_dns_*()` via c-ares |
+| 1035 | DNS Implementation | §3 Names, §4 Messages | `iog_dns_*()` via c-ares |
 | 7858 | DNS over TLS (DoT) | §3 Connection | Encrypted upstream resolution |
 | 8484 | DNS over HTTPS (DoH) | §4 Protocol | Alternative encrypted DNS |
 | 9460 | SVCB/HTTPS Records | §2 SVCB RDATA | Service endpoint discovery |
@@ -138,8 +138,8 @@ Note: LZ4 and LZS (Cisco) are the primary VPN data compression — no RFCs, see 
 
 | RFC | Title | Key Sections | ioguard Relevance |
 |-----|-------|-------------|-------------------|
-| 2827 | BCP38 Ingress Filtering | §2 Method | `rw_nft_*()` — anti-spoofing rules |
-| 5424 | Syslog Protocol | §6 Message format | `rw_log_*()` via stumpless (RFC 5424) |
+| 2827 | BCP38 Ingress Filtering | §2 Method | `iog_nft_*()` — anti-spoofing rules |
+| 5424 | Syslog Protocol | §6 Message format | `iog_log_*()` via stumpless (RFC 5424) |
 | 7258 | Pervasive Monitoring | §2 Threat model | Design principle: encrypt everything |
 | 9505 | Censorship Survey | §2 Techniques | VPN tunnel obfuscation awareness |
 

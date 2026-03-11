@@ -8,28 +8,28 @@ ROOT = Path('/opt/projects/repositories/ioguard')
 
 TEXT_REPLACEMENTS = [
     ('rwctl', 'iogctl'),
-    ('ringwall.toml', 'ioguard.toml'),
-    ('/etc/ringwall/', '/etc/ioguard/'),
-    ('/var/lib/ringwall/', '/var/lib/ioguard/'),
-    ('localhost/ringwall-dev', 'localhost/ioguard-dev'),
-    ('localhost/ringwall-test', 'localhost/ioguard-test'),
-    ('localhost/ringwall-build', 'localhost/ioguard-build'),
-    ('localhost/ringwall-ci', 'localhost/ioguard-ci'),
-    ('ghcr.io/dantte-lp/ringwall-dev', 'ghcr.io/dantte-lp/ioguard-dev'),
-    ('ghcr.io/dantte-lp/ringwall-test', 'ghcr.io/dantte-lp/ioguard-test'),
-    ('ghcr.io/dantte-lp/ringwall-build', 'ghcr.io/dantte-lp/ioguard-build'),
-    ('ghcr.io/dantte-lp/ringwall-ci', 'ghcr.io/dantte-lp/ioguard-ci'),
-    ('io.ringwall.', 'io.ioguard.'),
-    ('org.opencontainers.image.title=ringwall-dev', 'org.opencontainers.image.title=ioguard-dev'),
-    ('org.opencontainers.image.title=ringwall-test', 'org.opencontainers.image.title=ioguard-test'),
-    ('org.opencontainers.image.title=ringwall-build', 'org.opencontainers.image.title=ioguard-build'),
-    ('org.opencontainers.image.title=ringwall-ci', 'org.opencontainers.image.title=ioguard-ci'),
-    ('ringwall-dev', 'ioguard-dev'),
-    ('ringwall-test', 'ioguard-test'),
-    ('ringwall-build', 'ioguard-build'),
-    ('ringwall-ci', 'ioguard-ci'),
-    ('ringwall-connect', 'ioguard-connect'),
-    ('ringwall-docs', 'ioguard-docs'),
+    ('ioguard.toml', 'ioguard.toml'),
+    ('/etc/ioguard/', '/etc/ioguard/'),
+    ('/var/lib/ioguard/', '/var/lib/ioguard/'),
+    ('localhost/ioguard-dev', 'localhost/ioguard-dev'),
+    ('localhost/ioguard-test', 'localhost/ioguard-test'),
+    ('localhost/ioguard-build', 'localhost/ioguard-build'),
+    ('localhost/ioguard-ci', 'localhost/ioguard-ci'),
+    ('ghcr.io/dantte-lp/ioguard-dev', 'ghcr.io/dantte-lp/ioguard-dev'),
+    ('ghcr.io/dantte-lp/ioguard-test', 'ghcr.io/dantte-lp/ioguard-test'),
+    ('ghcr.io/dantte-lp/ioguard-build', 'ghcr.io/dantte-lp/ioguard-build'),
+    ('ghcr.io/dantte-lp/ioguard-ci', 'ghcr.io/dantte-lp/ioguard-ci'),
+    ('io.ioguard.', 'io.ioguard.'),
+    ('org.opencontainers.image.title=ioguard-dev', 'org.opencontainers.image.title=ioguard-dev'),
+    ('org.opencontainers.image.title=ioguard-test', 'org.opencontainers.image.title=ioguard-test'),
+    ('org.opencontainers.image.title=ioguard-build', 'org.opencontainers.image.title=ioguard-build'),
+    ('org.opencontainers.image.title=ioguard-ci', 'org.opencontainers.image.title=ioguard-ci'),
+    ('ioguard-dev', 'ioguard-dev'),
+    ('ioguard-test', 'ioguard-test'),
+    ('ioguard-build', 'ioguard-build'),
+    ('ioguard-ci', 'ioguard-ci'),
+    ('ioguard-connect', 'ioguard-connect'),
+    ('ioguard-docs', 'ioguard-docs'),
 ]
 
 EXCLUDED_SUFFIXES = {
@@ -99,14 +99,14 @@ def main() -> int:
             print(path.relative_to(ROOT))
             changed += 1
 
-    old_fixture = ROOT / 'tests/fixtures/ringwall.toml'
+    old_fixture = ROOT / 'tests/fixtures/ioguard.toml'
     new_fixture = ROOT / 'tests/fixtures/ioguard.toml'
     if old_fixture.exists() and not new_fixture.exists():
         subprocess.run(
             ['git', '-C', str(ROOT), 'mv', str(old_fixture), str(new_fixture)],
             check=True,
         )
-        print('tests/fixtures/ringwall.toml -> tests/fixtures/ioguard.toml')
+        print('tests/fixtures/ioguard.toml -> tests/fixtures/ioguard.toml')
         changed += 1
 
     print(f'changed={changed}')

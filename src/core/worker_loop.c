@@ -11,7 +11,7 @@
 typedef struct {
     iog_worker_loop_t *loop;
     uint64_t conn_id;
-} rw_conn_ctx_t;
+} iog_conn_ctx_t;
 
 static void on_tls_recv(int res, void *user_data);
 
@@ -23,7 +23,7 @@ static int arm_connection_recv(iog_worker_loop_t *loop, uint64_t conn_id)
         return -ENOENT;
     }
 
-    rw_conn_ctx_t *ctx = calloc(1, sizeof(*ctx));
+    iog_conn_ctx_t *ctx = calloc(1, sizeof(*ctx));
     if (ctx == nullptr) {
         return -ENOMEM;
     }
@@ -42,7 +42,7 @@ static int arm_connection_recv(iog_worker_loop_t *loop, uint64_t conn_id)
 /* Callback: data received on a connection's TLS fd */
 static void on_tls_recv(int res, void *user_data)
 {
-    rw_conn_ctx_t *ctx = user_data;
+    iog_conn_ctx_t *ctx = user_data;
     iog_connection_t *conn = iog_worker_find_connection(ctx->loop->worker, ctx->conn_id);
     if (conn == nullptr) {
         free(ctx);

@@ -6,8 +6,8 @@
  * and VPN MTU calculation accounting for IP/TCP/TLS/CSTP overhead.
  */
 
-#ifndef RINGWALL_NETWORK_TUN_H
-#define RINGWALL_NETWORK_TUN_H
+#ifndef IOGUARD_NETWORK_TUN_H
+#define IOGUARD_NETWORK_TUN_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -29,27 +29,27 @@ typedef struct {
     char dev_name[IOG_TUN_NAME_MAX];
     uint32_t mtu;
     bool set_nonblock;
-} rw_tun_config_t;
+} iog_tun_config_t;
 
 /** Allocated TUN device state. */
 typedef struct {
     int fd;
     char dev_name[IOG_TUN_NAME_MAX];
     uint32_t mtu;
-} rw_tun_t;
+} iog_tun_t;
 
 /**
  * @brief Initialize config with defaults (MTU=1406, nonblock=true, empty name).
  * @param cfg Config to initialize.
  */
-void rw_tun_config_init(rw_tun_config_t *cfg);
+void iog_tun_config_init(iog_tun_config_t *cfg);
 
 /**
  * @brief Validate config.
  * @param cfg Config to validate.
  * @return 0 on success, -EINVAL on invalid parameters.
  */
-[[nodiscard]] int rw_tun_config_validate(const rw_tun_config_t *cfg);
+[[nodiscard]] int iog_tun_config_validate(const iog_tun_config_t *cfg);
 
 /**
  * @brief Allocate and configure a TUN device. Requires CAP_NET_ADMIN.
@@ -57,13 +57,13 @@ void rw_tun_config_init(rw_tun_config_t *cfg);
  * @param tun Output: allocated device state (tun->fd is valid on success).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_tun_alloc(const rw_tun_config_t *cfg, rw_tun_t *tun);
+[[nodiscard]] int iog_tun_alloc(const iog_tun_config_t *cfg, iog_tun_t *tun);
 
 /**
  * @brief Close TUN device and release resources.
  * @param tun Device to close (tun->fd set to -1 after close).
  */
-void rw_tun_close(rw_tun_t *tun);
+void iog_tun_close(iog_tun_t *tun);
 
 /**
  * @brief Calculate effective VPN MTU from base network MTU.
@@ -75,6 +75,6 @@ void rw_tun_close(rw_tun_t *tun);
  * @param af       Address family (AF_INET or AF_INET6).
  * @return Effective VPN MTU, clamped to IOG_TUN_MIN_MTU minimum.
  */
-[[nodiscard]] uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af);
+[[nodiscard]] uint32_t iog_tun_calc_mtu(uint32_t base_mtu, int af);
 
-#endif /* RINGWALL_NETWORK_TUN_H */
+#endif /* IOGUARD_NETWORK_TUN_H */

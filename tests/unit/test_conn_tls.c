@@ -33,19 +33,19 @@ void tearDown(void)
 
 void test_conn_tls_ctx_create_destroy(void)
 {
-    rw_tls_server_t srv;
-    rw_tls_server_config_t cfg = {
+    iog_tls_server_t srv;
+    iog_tls_server_config_t cfg = {
         .cert_file = cert_path,
         .key_file = key_path,
         .ca_file = nullptr,
         .ciphers = nullptr,
     };
 
-    int ret = rw_tls_server_init(&srv, &cfg);
+    int ret = iog_tls_server_init(&srv, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_NOT_NULL(srv.ctx);
 
-    rw_tls_server_destroy(&srv);
+    iog_tls_server_destroy(&srv);
 }
 
 /* ============================================================================
@@ -54,19 +54,19 @@ void test_conn_tls_ctx_create_destroy(void)
 
 void test_conn_tls_null_params(void)
 {
-    rw_tls_server_t srv;
-    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_tls_server_init(nullptr, nullptr));
-    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_tls_server_init(&srv, nullptr));
+    iog_tls_server_t srv;
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_tls_server_init(nullptr, nullptr));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_tls_server_init(&srv, nullptr));
 
-    rw_tls_server_config_t cfg = {
+    iog_tls_server_config_t cfg = {
         .cert_file = nullptr,
         .key_file = nullptr,
     };
-    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_tls_server_init(&srv, &cfg));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_tls_server_init(&srv, &cfg));
 
     /* destroy with nullptr should be safe */
-    rw_tls_server_destroy(nullptr);
-    rw_tls_conn_destroy(nullptr);
+    iog_tls_server_destroy(nullptr);
+    iog_tls_conn_destroy(nullptr);
 }
 
 /* ============================================================================
@@ -75,27 +75,27 @@ void test_conn_tls_null_params(void)
 
 void test_conn_tls_conn_init_destroy(void)
 {
-    rw_tls_server_t srv;
-    rw_tls_server_config_t cfg = {
+    iog_tls_server_t srv;
+    iog_tls_server_config_t cfg = {
         .cert_file = cert_path,
         .key_file = key_path,
     };
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_server_init(&srv, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_server_init(&srv, &cfg));
 
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sv));
 
-    rw_tls_conn_t conn;
-    int ret = rw_tls_conn_init(&conn, &srv, sv[0]);
+    iog_tls_conn_t conn;
+    int ret = iog_tls_conn_init(&conn, &srv, sv[0]);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_NOT_NULL(conn.session);
     TEST_ASSERT_EQUAL_INT(sv[0], conn.fd);
     TEST_ASSERT_FALSE(conn.handshake_done);
 
-    rw_tls_conn_destroy(&conn);
+    iog_tls_conn_destroy(&conn);
     close(sv[0]);
     close(sv[1]);
-    rw_tls_server_destroy(&srv);
+    iog_tls_server_destroy(&srv);
 }
 
 /* ============================================================================
@@ -183,19 +183,19 @@ static void *client_thread_fn(void *arg)
 
 void test_conn_tls_handshake_loopback(void)
 {
-    rw_tls_server_t srv;
-    rw_tls_server_config_t cfg = {
+    iog_tls_server_t srv;
+    iog_tls_server_config_t cfg = {
         .cert_file = cert_path,
         .key_file = key_path,
     };
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_server_init(&srv, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_server_init(&srv, &cfg));
 
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sv));
 
     /* Server side */
-    rw_tls_conn_t conn;
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_conn_init(&conn, &srv, sv[0]));
+    iog_tls_conn_t conn;
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_conn_init(&conn, &srv, sv[0]));
 
     /* Client side in separate thread */
     client_thread_ctx_t client_ctx;
@@ -209,7 +209,7 @@ void test_conn_tls_handshake_loopback(void)
     /* Server handshake (retry on EAGAIN) */
     int ret = -EAGAIN;
     for (int i = 0; i < 100 && ret == -EAGAIN; i++) {
-        ret = rw_tls_conn_handshake(&conn);
+        ret = iog_tls_conn_handshake(&conn);
         if (ret == -EAGAIN) {
             usleep(1000);
         }
@@ -221,10 +221,10 @@ void test_conn_tls_handshake_loopback(void)
     TEST_ASSERT_EQUAL_INT(0, client_ctx.result);
     TEST_ASSERT_TRUE(client_ctx.handshake_done);
 
-    rw_tls_conn_destroy(&conn);
+    iog_tls_conn_destroy(&conn);
     close(sv[0]);
     close(sv[1]);
-    rw_tls_server_destroy(&srv);
+    iog_tls_server_destroy(&srv);
 }
 
 /* ============================================================================
@@ -233,18 +233,18 @@ void test_conn_tls_handshake_loopback(void)
 
 void test_conn_tls_read_after_handshake(void)
 {
-    rw_tls_server_t srv;
-    rw_tls_server_config_t cfg = {
+    iog_tls_server_t srv;
+    iog_tls_server_config_t cfg = {
         .cert_file = cert_path,
         .key_file = key_path,
     };
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_server_init(&srv, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_server_init(&srv, &cfg));
 
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sv));
 
-    rw_tls_conn_t conn;
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_conn_init(&conn, &srv, sv[0]));
+    iog_tls_conn_t conn;
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_conn_init(&conn, &srv, sv[0]));
 
     /* Client thread does handshake then we read */
     client_thread_ctx_t client_ctx;
@@ -258,7 +258,7 @@ void test_conn_tls_read_after_handshake(void)
     /* Server handshake */
     int ret = -EAGAIN;
     for (int i = 0; i < 100 && ret == -EAGAIN; i++) {
-        ret = rw_tls_conn_handshake(&conn);
+        ret = iog_tls_conn_handshake(&conn);
         if (ret == -EAGAIN) {
             usleep(1000);
         }
@@ -271,10 +271,10 @@ void test_conn_tls_read_after_handshake(void)
 
     pthread_join(client_thread, nullptr);
 
-    rw_tls_conn_destroy(&conn);
+    iog_tls_conn_destroy(&conn);
     close(sv[0]);
     close(sv[1]);
-    rw_tls_server_destroy(&srv);
+    iog_tls_server_destroy(&srv);
 }
 
 /* ============================================================================
@@ -283,18 +283,18 @@ void test_conn_tls_read_after_handshake(void)
 
 void test_conn_tls_write_after_handshake(void)
 {
-    rw_tls_server_t srv;
-    rw_tls_server_config_t cfg = {
+    iog_tls_server_t srv;
+    iog_tls_server_config_t cfg = {
         .cert_file = cert_path,
         .key_file = key_path,
     };
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_server_init(&srv, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_server_init(&srv, &cfg));
 
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sv));
 
-    rw_tls_conn_t conn;
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_conn_init(&conn, &srv, sv[0]));
+    iog_tls_conn_t conn;
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_conn_init(&conn, &srv, sv[0]));
 
     client_thread_ctx_t client_ctx;
     memset(&client_ctx, 0, sizeof(client_ctx));
@@ -307,7 +307,7 @@ void test_conn_tls_write_after_handshake(void)
     /* Server handshake */
     int ret = -EAGAIN;
     for (int i = 0; i < 100 && ret == -EAGAIN; i++) {
-        ret = rw_tls_conn_handshake(&conn);
+        ret = iog_tls_conn_handshake(&conn);
         if (ret == -EAGAIN) {
             usleep(1000);
         }
@@ -316,7 +316,7 @@ void test_conn_tls_write_after_handshake(void)
 
     /* Server writes data */
     const char *msg = "hello from server";
-    ssize_t written = rw_tls_conn_write(&conn, msg, strlen(msg));
+    ssize_t written = iog_tls_conn_write(&conn, msg, strlen(msg));
     TEST_ASSERT_GREATER_THAN(0, (int)written);
 
     /* Wait for client to read it */
@@ -325,10 +325,10 @@ void test_conn_tls_write_after_handshake(void)
     TEST_ASSERT_EQUAL_INT((int)strlen(msg), client_ctx.recv_len);
     TEST_ASSERT_EQUAL_STRING(msg, client_ctx.recv_buf);
 
-    rw_tls_conn_destroy(&conn);
+    iog_tls_conn_destroy(&conn);
     close(sv[0]);
     close(sv[1]);
-    rw_tls_server_destroy(&srv);
+    iog_tls_server_destroy(&srv);
 }
 
 /* ============================================================================
@@ -337,32 +337,32 @@ void test_conn_tls_write_after_handshake(void)
 
 void test_conn_tls_io_before_handshake(void)
 {
-    rw_tls_server_t srv;
-    rw_tls_server_config_t cfg = {
+    iog_tls_server_t srv;
+    iog_tls_server_config_t cfg = {
         .cert_file = cert_path,
         .key_file = key_path,
     };
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_server_init(&srv, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_server_init(&srv, &cfg));
 
     int sv[2];
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sv));
 
-    rw_tls_conn_t conn;
-    TEST_ASSERT_EQUAL_INT(0, rw_tls_conn_init(&conn, &srv, sv[0]));
+    iog_tls_conn_t conn;
+    TEST_ASSERT_EQUAL_INT(0, iog_tls_conn_init(&conn, &srv, sv[0]));
 
     /* Read before handshake */
     char buf[64];
-    ssize_t ret = rw_tls_conn_read(&conn, buf, sizeof(buf));
+    ssize_t ret = iog_tls_conn_read(&conn, buf, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(-EPROTO, (int)ret);
 
     /* Write before handshake */
-    ret = rw_tls_conn_write(&conn, "test", 4);
+    ret = iog_tls_conn_write(&conn, "test", 4);
     TEST_ASSERT_EQUAL_INT(-EPROTO, (int)ret);
 
-    rw_tls_conn_destroy(&conn);
+    iog_tls_conn_destroy(&conn);
     close(sv[0]);
     close(sv[1]);
-    rw_tls_server_destroy(&srv);
+    iog_tls_server_destroy(&srv);
 }
 
 int main(void)

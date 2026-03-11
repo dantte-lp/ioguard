@@ -17,7 +17,7 @@ void test_hex_encode_basic(void)
 {
     const uint8_t data[] = {0xDE, 0xAD, 0xBE, 0xEF};
     char hex[16];
-    int ret = rw_dtls_hex_encode(data, sizeof(data), hex, sizeof(hex));
+    int ret = iog_dtls_hex_encode(data, sizeof(data), hex, sizeof(hex));
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_STRING("deadbeef", hex);
 }
@@ -26,7 +26,7 @@ void test_hex_decode_basic(void)
 {
     const char *hex = "deadbeef";
     uint8_t out[4];
-    int ret = rw_dtls_hex_decode(hex, strlen(hex), out, sizeof(out));
+    int ret = iog_dtls_hex_decode(hex, strlen(hex), out, sizeof(out));
     TEST_ASSERT_EQUAL_INT(4, ret);
     TEST_ASSERT_EQUAL_UINT8(0xDE, out[0]);
     TEST_ASSERT_EQUAL_UINT8(0xAD, out[1]);
@@ -45,10 +45,10 @@ void test_hex_roundtrip(void)
     char hex[IOG_DTLS_MASTER_SECRET_HEX_LEN + 1];
     uint8_t decoded[IOG_DTLS_MASTER_SECRET_LEN];
 
-    int ret = rw_dtls_hex_encode(original, sizeof(original), hex, sizeof(hex));
+    int ret = iog_dtls_hex_encode(original, sizeof(original), hex, sizeof(hex));
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    ret = rw_dtls_hex_decode(hex, strlen(hex), decoded, sizeof(decoded));
+    ret = iog_dtls_hex_decode(hex, strlen(hex), decoded, sizeof(decoded));
     TEST_ASSERT_EQUAL_INT((int)sizeof(original), ret);
     TEST_ASSERT_EQUAL_MEMORY(original, decoded, sizeof(original));
 }
@@ -56,23 +56,23 @@ void test_hex_roundtrip(void)
 void test_hex_decode_invalid_chars(void)
 {
     uint8_t out[4];
-    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_dtls_hex_decode("ZZZZ", 4, out, sizeof(out)));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_dtls_hex_decode("ZZZZ", 4, out, sizeof(out)));
 }
 
 void test_hex_decode_odd_length(void)
 {
     uint8_t out[4];
-    TEST_ASSERT_EQUAL_INT(-EINVAL, rw_dtls_hex_decode("abc", 3, out, sizeof(out)));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_dtls_hex_decode("abc", 3, out, sizeof(out)));
 }
 
 void test_master_secret_clear(void)
 {
-    rw_dtls_master_secret_t ms;
+    iog_dtls_master_secret_t ms;
     memset(ms.secret, 0xFF, sizeof(ms.secret));
     memcpy(ms.hex, "abcdef", 6);
     ms.valid = true;
 
-    rw_dtls_master_secret_clear(&ms);
+    iog_dtls_master_secret_clear(&ms);
 
     uint8_t zero[IOG_DTLS_MASTER_SECRET_LEN] = {0};
     TEST_ASSERT_EQUAL_MEMORY(zero, ms.secret, sizeof(zero));

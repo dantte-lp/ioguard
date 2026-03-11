@@ -142,8 +142,8 @@ void test_timer_dpd_probe_fires(void)
     ssize_t n = read(tls_sv[1], buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_DPD_REQ, decoded.type);
 }
@@ -208,8 +208,8 @@ void test_timer_keepalive_fires(void)
     ssize_t n = read(tls_sv[1], buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_KEEPALIVE, decoded.type);
 }

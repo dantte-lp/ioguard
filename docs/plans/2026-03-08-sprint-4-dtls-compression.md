@@ -44,13 +44,13 @@ ctest --preset clang-debug
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t RW_COMPRESS_MAX_INPUT = 16384;
-constexpr size_t RW_COMPRESS_MAX_OUTPUT = 16384 + 256; /* headroom */
+constexpr size_t IOG_COMPRESS_MAX_INPUT = 16384;
+constexpr size_t IOG_COMPRESS_MAX_OUTPUT = 16384 + 256; /* headroom */
 
 typedef enum : uint8_t {
-	RW_COMPRESS_NONE,
-	RW_COMPRESS_LZ4,
-	RW_COMPRESS_LZS,
+	IOG_COMPRESS_NONE,
+	IOG_COMPRESS_LZ4,
+	IOG_COMPRESS_LZS,
 } iog_compress_type_t;
 
 typedef struct {
@@ -100,10 +100,10 @@ int iog_compress_init(iog_compress_ctx_t *ctx, iog_compress_type_t type)
 	ctx->codec_ctx = nullptr;
 
 	switch (type) {
-	case RW_COMPRESS_NONE:
+	case IOG_COMPRESS_NONE:
 		return 0;
-	case RW_COMPRESS_LZ4:
-	case RW_COMPRESS_LZS:
+	case IOG_COMPRESS_LZ4:
+	case IOG_COMPRESS_LZS:
 		/* backends registered by compress_lz4.c / compress_lzs.c */
 		return -ENOTSUP;
 	}
@@ -116,10 +116,10 @@ int iog_compress(iog_compress_ctx_t *ctx,
 {
 	if (!ctx || !in || !out)
 		return -EINVAL;
-	if (in_len > RW_COMPRESS_MAX_INPUT)
+	if (in_len > IOG_COMPRESS_MAX_INPUT)
 		return -EINVAL;
 
-	if (ctx->type == RW_COMPRESS_NONE) {
+	if (ctx->type == IOG_COMPRESS_NONE) {
 		if (out_size < in_len)
 			return -ENOSPC;
 		memcpy(out, in, in_len);
@@ -136,7 +136,7 @@ int iog_decompress(iog_compress_ctx_t *ctx,
 	if (!ctx || !in || !out)
 		return -EINVAL;
 
-	if (ctx->type == RW_COMPRESS_NONE) {
+	if (ctx->type == IOG_COMPRESS_NONE) {
 		if (out_size < in_len)
 			return -ENOSPC;
 		memcpy(out, in, in_len);
@@ -151,15 +151,15 @@ void iog_compress_destroy(iog_compress_ctx_t *ctx)
 	if (!ctx)
 		return;
 	ctx->codec_ctx = nullptr;
-	ctx->type = RW_COMPRESS_NONE;
+	ctx->type = IOG_COMPRESS_NONE;
 }
 
 const char *iog_compress_type_name(iog_compress_type_t type)
 {
 	switch (type) {
-	case RW_COMPRESS_NONE: return "none";
-	case RW_COMPRESS_LZ4:  return "lz4";
-	case RW_COMPRESS_LZS:  return "lzs";
+	case IOG_COMPRESS_NONE: return "none";
+	case IOG_COMPRESS_LZ4:  return "lz4";
+	case IOG_COMPRESS_LZS:  return "lzs";
 	}
 	return "unknown";
 }
@@ -167,12 +167,12 @@ const char *iog_compress_type_name(iog_compress_type_t type)
 iog_compress_type_t iog_compress_negotiate(const char *accept_encoding)
 {
 	if (!accept_encoding)
-		return RW_COMPRESS_NONE;
+		return IOG_COMPRESS_NONE;
 	if (strstr(accept_encoding, "lz4"))
-		return RW_COMPRESS_LZ4;
+		return IOG_COMPRESS_LZ4;
 	if (strstr(accept_encoding, "lzs"))
-		return RW_COMPRESS_LZS;
-	return RW_COMPRESS_NONE;
+		return IOG_COMPRESS_LZS;
+	return IOG_COMPRESS_NONE;
 }
 ```
 
@@ -190,21 +190,21 @@ void tearDown(void) {}
 void test_compress_init_none(void)
 {
 	iog_compress_ctx_t ctx;
-	int ret = iog_compress_init(&ctx, RW_COMPRESS_NONE);
+	int ret = iog_compress_init(&ctx, IOG_COMPRESS_NONE);
 	TEST_ASSERT_EQUAL_INT(0, ret);
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, ctx.type);
+	TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, ctx.type);
 	iog_compress_destroy(&ctx);
 }
 
 void test_compress_init_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(-EINVAL, iog_compress_init(nullptr, RW_COMPRESS_NONE));
+	TEST_ASSERT_EQUAL_INT(-EINVAL, iog_compress_init(nullptr, IOG_COMPRESS_NONE));
 }
 
 void test_compress_none_passthrough(void)
 {
 	iog_compress_ctx_t ctx;
-	iog_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_init(&ctx, IOG_COMPRESS_NONE);
 
 	const uint8_t data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
 	uint8_t out[64];
@@ -219,7 +219,7 @@ void test_compress_none_passthrough(void)
 void test_decompress_none_passthrough(void)
 {
 	iog_compress_ctx_t ctx;
-	iog_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_init(&ctx, IOG_COMPRESS_NONE);
 
 	const uint8_t data[] = { 0xCA, 0xFE };
 	uint8_t out[64];
@@ -234,7 +234,7 @@ void test_decompress_none_passthrough(void)
 void test_compress_output_too_small(void)
 {
 	iog_compress_ctx_t ctx;
-	iog_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_init(&ctx, IOG_COMPRESS_NONE);
 
 	const uint8_t data[] = { 0x01, 0x02, 0x03, 0x04 };
 	uint8_t out[2]; /* too small */
@@ -248,10 +248,10 @@ void test_compress_output_too_small(void)
 void test_compress_input_too_large(void)
 {
 	iog_compress_ctx_t ctx;
-	iog_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_init(&ctx, IOG_COMPRESS_NONE);
 
 	uint8_t out[64];
-	int ret = iog_compress(&ctx, out, RW_COMPRESS_MAX_INPUT + 1, out, sizeof(out));
+	int ret = iog_compress(&ctx, out, IOG_COMPRESS_MAX_INPUT + 1, out, sizeof(out));
 	TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
 	iog_compress_destroy(&ctx);
@@ -259,17 +259,17 @@ void test_compress_input_too_large(void)
 
 void test_compress_type_name(void)
 {
-	TEST_ASSERT_EQUAL_STRING("none", iog_compress_type_name(RW_COMPRESS_NONE));
-	TEST_ASSERT_EQUAL_STRING("lz4", iog_compress_type_name(RW_COMPRESS_LZ4));
-	TEST_ASSERT_EQUAL_STRING("lzs", iog_compress_type_name(RW_COMPRESS_LZS));
+	TEST_ASSERT_EQUAL_STRING("none", iog_compress_type_name(IOG_COMPRESS_NONE));
+	TEST_ASSERT_EQUAL_STRING("lz4", iog_compress_type_name(IOG_COMPRESS_LZ4));
+	TEST_ASSERT_EQUAL_STRING("lzs", iog_compress_type_name(IOG_COMPRESS_LZS));
 }
 
 void test_compress_negotiate(void)
 {
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZS, iog_compress_negotiate("lzs,deflate"));
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZ4, iog_compress_negotiate("lz4"));
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, iog_compress_negotiate("deflate"));
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, iog_compress_negotiate(nullptr));
+	TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, iog_compress_negotiate("lzs,deflate"));
+	TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZ4, iog_compress_negotiate("lz4"));
+	TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, iog_compress_negotiate("deflate"));
+	TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, iog_compress_negotiate(nullptr));
 }
 
 void test_compress_destroy_null(void)
@@ -297,10 +297,10 @@ int main(void)
 
 ```cmake
         # Sprint 4 — Compression abstraction
-        add_library(rw_compress STATIC src/network/compress.c)
-        target_include_directories(rw_compress PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        add_library(iog_compress STATIC src/network/compress.c)
+        target_include_directories(iog_compress PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        rw_add_test(test_compress tests/unit/test_compress.c rw_compress)
+        iog_add_test(test_compress tests/unit/test_compress.c iog_compress)
 ```
 
 **Step 5: Build, test, commit**
@@ -816,7 +816,7 @@ NOTE: `test_lzs_reset` has a comment typo — the implementer should fix "window
 
 **Step 4: Modify compress.c to register LZS backend**
 
-Update `iog_compress_init()` case `RW_COMPRESS_LZS` to allocate and init `iog_lzs_ctx_t`.
+Update `iog_compress_init()` case `IOG_COMPRESS_LZS` to allocate and init `iog_lzs_ctx_t`.
 Update `iog_compress()` and `iog_decompress()` to call `iog_lzs_compress()`/`iog_lzs_decompress()`.
 Update `iog_compress_destroy()` to free LZS context.
 
@@ -824,11 +824,11 @@ Update `iog_compress_destroy()` to free LZS context.
 
 ```cmake
         # Sprint 4 — LZS compression
-        add_library(rw_compress_lzs STATIC src/network/compress_lzs.c)
-        target_include_directories(rw_compress_lzs PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        add_library(iog_compress_lzs STATIC src/network/compress_lzs.c)
+        target_include_directories(iog_compress_lzs PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        target_link_libraries(rw_compress PUBLIC rw_compress_lzs)
-        rw_add_test(test_compress_lzs tests/unit/test_compress_lzs.c rw_compress_lzs)
+        target_link_libraries(iog_compress PUBLIC iog_compress_lzs)
+        iog_add_test(test_compress_lzs tests/unit/test_compress_lzs.c iog_compress_lzs)
 ```
 
 **Step 6: Build, test, commit**
@@ -853,21 +853,21 @@ git commit -m "feat: LZS compression codec — RFC 1974 with sliding window (9 t
 **Step 1: Write compress_lz4.h**
 
 ```c
-#ifndef RINGWALL_NETWORK_COMPRESS_LZ4_H
-#define RINGWALL_NETWORK_COMPRESS_LZ4_H
+#ifndef IOGUARD_NETWORK_COMPRESS_LZ4_H
+#define IOGUARD_NETWORK_COMPRESS_LZ4_H
 
 #include <stddef.h>
 #include <stdint.h>
 
 /** Compress using LZ4. Returns bytes written or negative errno. */
-[[nodiscard]] int rw_lz4_compress(const uint8_t *in, size_t in_len,
+[[nodiscard]] int iog_lz4_compress(const uint8_t *in, size_t in_len,
                                    uint8_t *out, size_t out_size);
 
 /** Decompress using LZ4. Returns bytes written or negative errno. */
-[[nodiscard]] int rw_lz4_decompress(const uint8_t *in, size_t in_len,
+[[nodiscard]] int iog_lz4_decompress(const uint8_t *in, size_t in_len,
                                      uint8_t *out, size_t out_size);
 
-#endif /* RINGWALL_NETWORK_COMPRESS_LZ4_H */
+#endif /* IOGUARD_NETWORK_COMPRESS_LZ4_H */
 ```
 
 **Step 2: Write compress_lz4.c** — wraps `LZ4_compress_default()` and `LZ4_decompress_safe()`.
@@ -897,15 +897,15 @@ git commit -m "feat: LZ4 compression codec wrapper (7 tests)"
 **Step 1: Write dtls.h**
 
 ```c
-#ifndef RINGWALL_NETWORK_DTLS_H
-#define RINGWALL_NETWORK_DTLS_H
+#ifndef IOGUARD_NETWORK_DTLS_H
+#define IOGUARD_NETWORK_DTLS_H
 
 #include <stdbool.h>
 #include <stdint.h>
 
-constexpr uint32_t RW_DTLS_DEFAULT_MTU = 1400;
-constexpr uint32_t RW_DTLS_DEFAULT_TIMEOUT_S = 5;
-constexpr uint32_t RW_DTLS_DEFAULT_REKEY_S = 3600;
+constexpr uint32_t IOG_DTLS_DEFAULT_MTU = 1400;
+constexpr uint32_t IOG_DTLS_DEFAULT_TIMEOUT_S = 5;
+constexpr uint32_t IOG_DTLS_DEFAULT_REKEY_S = 3600;
 
 typedef struct {
 	uint32_t mtu;
@@ -916,20 +916,20 @@ typedef struct {
 	const char *ca_file;
 	const char *cipher_list;
 	bool enable_cookies;
-} rw_dtls_config_t;
+} iog_dtls_config_t;
 
-typedef struct rw_dtls_ctx rw_dtls_ctx_t;
+typedef struct iog_dtls_ctx iog_dtls_ctx_t;
 
-void rw_dtls_config_init(rw_dtls_config_t *cfg);
-[[nodiscard]] int rw_dtls_config_validate(const rw_dtls_config_t *cfg);
-[[nodiscard]] rw_dtls_ctx_t *rw_dtls_create(const rw_dtls_config_t *cfg);
-void rw_dtls_destroy(rw_dtls_ctx_t *ctx);
-[[nodiscard]] uint32_t rw_dtls_get_mtu(const rw_dtls_ctx_t *ctx);
+void iog_dtls_config_init(iog_dtls_config_t *cfg);
+[[nodiscard]] int iog_dtls_config_validate(const iog_dtls_config_t *cfg);
+[[nodiscard]] iog_dtls_ctx_t *iog_dtls_create(const iog_dtls_config_t *cfg);
+void iog_dtls_destroy(iog_dtls_ctx_t *ctx);
+[[nodiscard]] uint32_t iog_dtls_get_mtu(const iog_dtls_ctx_t *ctx);
 
 /** Cisco-compatible DTLS 1.2 cipher list. */
-[[nodiscard]] const char *rw_dtls_cisco_ciphers(void);
+[[nodiscard]] const char *iog_dtls_cisco_ciphers(void);
 
-#endif /* RINGWALL_NETWORK_DTLS_H */
+#endif /* IOGUARD_NETWORK_DTLS_H */
 ```
 
 **Step 2: Write dtls.c** — `wolfSSL_CTX_new(wolfDTLSv1_2_server_method())`, set ciphers, MTU, cookie callbacks. Opaque struct holds `WOLFSSL_CTX *`.
@@ -956,18 +956,18 @@ git commit -m "feat: DTLS 1.2 context management with wolfSSL (8 tests)"
 
 **Key types:**
 ```c
-constexpr size_t RW_DTLS_MASTER_SECRET_LEN = 48;
-constexpr size_t RW_DTLS_MASTER_SECRET_HEX_LEN = 96; /* 48 * 2 */
+constexpr size_t IOG_DTLS_MASTER_SECRET_LEN = 48;
+constexpr size_t IOG_DTLS_MASTER_SECRET_HEX_LEN = 96; /* 48 * 2 */
 
 typedef struct {
-	uint8_t secret[RW_DTLS_MASTER_SECRET_LEN];
-	char hex[RW_DTLS_MASTER_SECRET_HEX_LEN + 1];
+	uint8_t secret[IOG_DTLS_MASTER_SECRET_LEN];
+	char hex[IOG_DTLS_MASTER_SECRET_HEX_LEN + 1];
 	bool valid;
-} rw_dtls_master_secret_t;
+} iog_dtls_master_secret_t;
 
-[[nodiscard]] int rw_dtls_hex_encode(const uint8_t *in, size_t in_len,
+[[nodiscard]] int iog_dtls_hex_encode(const uint8_t *in, size_t in_len,
                                       char *hex, size_t hex_size);
-[[nodiscard]] int rw_dtls_hex_decode(const char *hex, size_t hex_len,
+[[nodiscard]] int iog_dtls_hex_decode(const char *hex, size_t hex_len,
                                       uint8_t *out, size_t out_size);
 ```
 
@@ -1027,7 +1027,7 @@ git commit -m "feat: channel state machine for CSTP/DTLS switching (10 tests)"
 
 **Key functions:**
 ```c
-[[nodiscard]] int rw_dtls_build_headers(char *buf, size_t buf_size,
+[[nodiscard]] int iog_dtls_build_headers(char *buf, size_t buf_size,
                                          const char *master_secret_hex,
                                          const char *cipher_suite,
                                          const char *accept_encoding);
@@ -1131,7 +1131,7 @@ git commit -m "chore: Sprint 4 complete — DTLS, channel switching, LZ4/LZS com
 - `src/network/dpd.h` — `iog_channel_state_t` enum
 - `src/core/worker.h/c` — connection tracking, add compress_ctx
 - `src/crypto/tls_wolfssl.h/c` — TLS context for master secret export
-- `CMakeLists.txt` — `rw_add_test()` macro
+- `CMakeLists.txt` — `iog_add_test()` macro
 
 **New:**
 - `src/network/compress.h/c` — Compression abstraction
@@ -1143,7 +1143,7 @@ git commit -m "chore: Sprint 4 complete — DTLS, channel switching, LZ4/LZS com
 - `src/network/dtls_headers.h/c` — DTLS HTTP header builder
 
 **Reference:**
-- `docs/ioguard-docs/ringwall/protocol/cisco-compatibility.md` — DTLS headers, cipher suites
+- `docs/ioguard-docs/ioguard/protocol/cisco-compatibility.md` — DTLS headers, cipher suites
 - `docs/ioguard-docs/openconnect-protocol/protocol/crypto.md` — Crypto protocol details
 - `.claude/skills/wolfssl-api/SKILL.md` — wolfSSL DTLS API patterns
 - `.claude/skills/ocprotocol/SKILL.md` — OpenConnect protocol, compression negotiation

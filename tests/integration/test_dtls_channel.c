@@ -76,12 +76,12 @@ void test_compress_lzs_cstp_integration(void)
 
     /* Wrap in CSTP COMPRESSED frame */
     uint8_t frame[IOG_CSTP_HEADER_SIZE + 128];
-    int flen = rw_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
+    int flen = iog_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
     TEST_ASSERT_GREATER_THAN(0, flen);
 
     /* Decode CSTP */
-    rw_cstp_packet_t pkt;
-    int consumed = rw_cstp_decode(frame, (size_t)flen, &pkt);
+    iog_cstp_packet_t pkt;
+    int consumed = iog_cstp_decode(frame, (size_t)flen, &pkt);
     TEST_ASSERT_EQUAL_INT(flen, consumed);
     TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_COMPRESSED, pkt.type);
 
@@ -111,12 +111,12 @@ void test_master_secret_hex_roundtrip(void)
     }
 
     char hex[IOG_DTLS_MASTER_SECRET_HEX_LEN + 1];
-    int ret = rw_dtls_hex_encode(secret, sizeof(secret), hex, sizeof(hex));
+    int ret = iog_dtls_hex_encode(secret, sizeof(secret), hex, sizeof(hex));
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_size_t(IOG_DTLS_MASTER_SECRET_HEX_LEN, strlen(hex));
 
     uint8_t decoded[IOG_DTLS_MASTER_SECRET_LEN];
-    ret = rw_dtls_hex_decode(hex, strlen(hex), decoded, sizeof(decoded));
+    ret = iog_dtls_hex_decode(hex, strlen(hex), decoded, sizeof(decoded));
     TEST_ASSERT_EQUAL_INT((int)sizeof(secret), ret);
     TEST_ASSERT_EQUAL_MEMORY(secret, decoded, sizeof(secret));
 }
@@ -127,7 +127,7 @@ void test_master_secret_hex_roundtrip(void)
 void test_dtls_headers_roundtrip(void)
 {
     char headers[512];
-    int ret = rw_dtls_build_headers(headers, sizeof(headers), "aabbccdd11223344",
+    int ret = iog_dtls_build_headers(headers, sizeof(headers), "aabbccdd11223344",
                                     "DHE-RSA-AES256-SHA", "lzs");
     TEST_ASSERT_GREATER_THAN(0, ret);
 

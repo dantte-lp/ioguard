@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <string.h>
 
-static const iog_auth_backend_t *registry[RW_AUTH_BACKEND_MAX];
+static const iog_auth_backend_t *registry[IOG_AUTH_BACKEND_MAX];
 static int registry_count;
 
 int iog_auth_backend_register(const iog_auth_backend_t *backend)
@@ -19,7 +19,7 @@ int iog_auth_backend_register(const iog_auth_backend_t *backend)
         }
     }
 
-    if (registry_count >= RW_AUTH_BACKEND_MAX) {
+    if (registry_count >= IOG_AUTH_BACKEND_MAX) {
         return -ENOSPC;
     }
 

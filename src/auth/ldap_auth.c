@@ -12,7 +12,7 @@
 #endif
 
 /** Module-level configuration (copied from caller during init). */
-static rw_ldap_config_t g_ldap_cfg;
+static iog_ldap_config_t g_ldap_cfg;
 static bool g_ldap_initialized;
 
 /**
@@ -28,7 +28,7 @@ static bool validate_uri_scheme(const char *uri)
             strncmp(uri, "ldaps://", 8) == 0);
 }
 
-ssize_t rw_ldap_build_bind_dn(const char *tmpl, const char *user,
+ssize_t iog_ldap_build_bind_dn(const char *tmpl, const char *user,
                                char *out, size_t out_sz)
 {
     if (tmpl == nullptr || user == nullptr || out == nullptr || out_sz == 0) {
@@ -46,7 +46,7 @@ ssize_t rw_ldap_build_bind_dn(const char *tmpl, const char *user,
     return ret;
 }
 
-ssize_t rw_ldap_build_group_filter(const char *attr, const char *user_dn,
+ssize_t iog_ldap_build_group_filter(const char *attr, const char *user_dn,
                                     char *out, size_t out_sz)
 {
     if (attr == nullptr || user_dn == nullptr || out == nullptr || out_sz == 0) {
@@ -64,7 +64,7 @@ ssize_t rw_ldap_build_group_filter(const char *attr, const char *user_dn,
     return ret;
 }
 
-int rw_ldap_init(const rw_ldap_config_t *config)
+int iog_ldap_init(const iog_ldap_config_t *config)
 {
     if (config == nullptr) {
         return -EINVAL;
@@ -87,14 +87,14 @@ int rw_ldap_init(const rw_ldap_config_t *config)
     }
 
     if (g_ldap_cfg.timeout_ms == 0) {
-        g_ldap_cfg.timeout_ms = RW_LDAP_DEFAULT_TIMEOUT_MS;
+        g_ldap_cfg.timeout_ms = IOG_LDAP_DEFAULT_TIMEOUT_MS;
     }
 
     g_ldap_initialized = true;
     return 0;
 }
 
-void rw_ldap_destroy(void)
+void iog_ldap_destroy(void)
 {
     if (g_ldap_initialized) {
         explicit_bzero(&g_ldap_cfg, sizeof(g_ldap_cfg));
@@ -128,8 +128,8 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
     memset(resp, 0, sizeof(*resp));
 
     /* Build the bind DN from template + username */
-    char bind_dn[RW_LDAP_DN_BUF_MAX];
-    ssize_t dn_len = rw_ldap_build_bind_dn(g_ldap_cfg.bind_dn_template,
+    char bind_dn[IOG_LDAP_DN_BUF_MAX];
+    ssize_t dn_len = iog_ldap_build_bind_dn(g_ldap_cfg.bind_dn_template,
                                              req->username,
                                              bind_dn, sizeof(bind_dn));
     if (dn_len < 0) {
@@ -194,8 +194,8 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
 
     /* Optionally search for group memberships */
     if (g_ldap_cfg.search_base[0] != '\0') {
-        char filter[RW_LDAP_FILTER_BUF_MAX];
-        ssize_t flen = rw_ldap_build_group_filter(g_ldap_cfg.group_attr,
+        char filter[IOG_LDAP_FILTER_BUF_MAX];
+        ssize_t flen = iog_ldap_build_group_filter(g_ldap_cfg.group_attr,
                                                    bind_dn,
                                                    filter, sizeof(filter));
         if (flen > 0) {
@@ -269,18 +269,18 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
 #endif /* USE_LDAP */
 
 /**
- * Backend init callback — delegates to rw_ldap_init().
+ * Backend init callback — delegates to iog_ldap_init().
  */
 static int ldap_backend_init(const void *config)
 {
-    return rw_ldap_init((const rw_ldap_config_t *)config);
+    return iog_ldap_init((const iog_ldap_config_t *)config);
 }
 
 static const iog_auth_backend_t ldap_backend_desc = {
     .name = "ldap",
     .init = ldap_backend_init,
     .authenticate = ldap_authenticate,
-    .destroy = rw_ldap_destroy,
+    .destroy = iog_ldap_destroy,
 };
 
 const iog_auth_backend_t *iog_ldap_backend(void)

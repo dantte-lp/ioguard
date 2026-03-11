@@ -53,10 +53,10 @@ static void on_dead_cb(uint64_t conn_id, void *user_data)
     dead_called++;
 }
 
-static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload, size_t payload_len)
+static int inject_cstp(iog_cstp_type_t type, const uint8_t *payload, size_t payload_len)
 {
     uint8_t buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
-    int encoded = rw_cstp_encode(buf, sizeof(buf), type, payload, payload_len);
+    int encoded = iog_cstp_encode(buf, sizeof(buf), type, payload, payload_len);
     if (encoded < 0) {
         return encoded;
     }
@@ -132,8 +132,8 @@ void test_vpn_flow_cstp_data_roundtrip(void)
     n = read(tls_sv[1], tls_buf, sizeof(tls_buf));
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(tls_buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(tls_buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_DATA, decoded.type);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(reply, decoded.payload, sizeof(reply));
@@ -163,8 +163,8 @@ void test_vpn_flow_dpd_probe_response(void)
     ssize_t n = read(tls_sv[1], buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
-    rw_cstp_packet_t pkt;
-    int consumed = rw_cstp_decode(buf, (size_t)n, &pkt);
+    iog_cstp_packet_t pkt;
+    int consumed = iog_cstp_decode(buf, (size_t)n, &pkt);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_DPD_REQ, pkt.type);
 
@@ -246,7 +246,7 @@ void test_vpn_flow_multiple_clients(void)
         /* Inject CSTP DATA via "client" end */
         uint8_t cstp_buf[IOG_CSTP_HEADER_SIZE + 4];
         int encoded =
-            rw_cstp_encode(cstp_buf, sizeof(cstp_buf), IOG_CSTP_DATA, payload, sizeof(payload));
+            iog_cstp_encode(cstp_buf, sizeof(cstp_buf), IOG_CSTP_DATA, payload, sizeof(payload));
         TEST_ASSERT_GREATER_THAN(0, encoded);
         ssize_t w = write(cli_tls[i][1], cstp_buf, (size_t)encoded);
         TEST_ASSERT_GREATER_THAN(0, (int)w);

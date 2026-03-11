@@ -15,13 +15,13 @@
 typedef enum : uint8_t {
     IOG_LANDLOCK_WORKER,  /**< Read-only: mdbx file, /dev/net/tun */
     IOG_LANDLOCK_AUTHMOD, /**< Read-write: mdbx + sqlite, read /dev/urandom */
-} rw_landlock_profile_t;
+} iog_landlock_profile_t;
 
 /**
  * @brief Check whether the running kernel supports Landlock.
  * @return true if Landlock ABI v1+ is available.
  */
-[[nodiscard]] bool rw_landlock_supported(void);
+[[nodiscard]] bool iog_landlock_supported(void);
 
 /**
  * @brief Build and apply a Landlock ruleset to the calling process.
@@ -35,7 +35,7 @@ typedef enum : uint8_t {
  * After this call, filesystem access outside the allowed paths is denied
  * with EACCES.  This is irreversible for the calling process.
  */
-[[nodiscard]] int rw_landlock_apply(rw_landlock_profile_t profile, const char *mdbx_path,
+[[nodiscard]] int iog_landlock_apply(iog_landlock_profile_t profile, const char *mdbx_path,
                                     const char *sqlite_path);
 
 #endif /* IOGUARD_SECURITY_LANDLOCK_H */

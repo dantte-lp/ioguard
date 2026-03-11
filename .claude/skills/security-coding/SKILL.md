@@ -15,12 +15,12 @@ ALL comparisons of secrets, tokens, cookies, MACs MUST be constant-time:
 // CORRECT: constant-time comparison
 #include <wolfssl/wolfcrypt/misc.h>
 
-bool rw_verify_cookie(const uint8_t *a, const uint8_t *b, size_t len) {
+bool iog_verify_cookie(const uint8_t *a, const uint8_t *b, size_t len) {
     return ConstantCompare(a, b, (int)len) == 0;
 }
 
 // WRONG: timing side-channel
-bool rw_verify_cookie_INSECURE(const uint8_t *a, const uint8_t *b, size_t len) {
+bool iog_verify_cookie_INSECURE(const uint8_t *a, const uint8_t *b, size_t len) {
     return memcmp(a, b, len) == 0;  // NEVER for secrets
 }
 ```
@@ -32,7 +32,7 @@ ALL sensitive data MUST be zeroed before freeing:
 ```c
 #include <wolfssl/wolfcrypt/misc.h>
 
-void rw_free_session(iog_session_t *sess) {
+void iog_free_session(iog_session_t *sess) {
     if (sess == nullptr) return;
     ForceZero(sess->master_secret, sizeof(sess->master_secret));
     ForceZero(sess->cookie, sizeof(sess->cookie));
@@ -47,17 +47,17 @@ ALL data from network is untrusted. Validate BEFORE processing:
 
 ```c
 [[nodiscard]]
-static int rw_parse_packet(const uint8_t *data, size_t len) {
+static int iog_parse_packet(const uint8_t *data, size_t len) {
     // Check minimum length
-    if (len < RW_MIN_PACKET_SIZE) return RW_ERR_TOO_SHORT;
-    if (len > RW_MAX_PACKET_SIZE) return RW_ERR_TOO_LONG;
+    if (len < IOG_MIN_PACKET_SIZE) return IOG_ERR_TOO_SHORT;
+    if (len > IOG_MAX_PACKET_SIZE) return IOG_ERR_TOO_LONG;
 
     // Validate header fields with bounds
     uint16_t payload_len = ntohs(*(uint16_t *)(data + 2));
-    if (payload_len > len - RW_HEADER_SIZE) return RW_ERR_INVALID;
+    if (payload_len > len - IOG_HEADER_SIZE) return IOG_ERR_INVALID;
 
     // Safe to process
-    return RW_OK;
+    return IOG_OK;
 }
 ```
 
@@ -79,11 +79,11 @@ static int rw_parse_packet(const uint8_t *data, size_t len) {
 #include <stdckdint.h>
 
 [[nodiscard]]
-static int rw_safe_add(size_t a, size_t b, size_t *result) {
+static int iog_safe_add(size_t a, size_t b, size_t *result) {
     if (ckd_add(result, a, b)) {
-        return RW_ERR_OVERFLOW;
+        return IOG_ERR_OVERFLOW;
     }
-    return RW_OK;
+    return IOG_OK;
 }
 ```
 
@@ -93,7 +93,7 @@ static int rw_safe_add(size_t a, size_t b, size_t *result) {
 // Drop privileges after binding to port 443
 #include <sys/capability.h>
 
-static void rw_drop_privileges(void) {
+static void iog_drop_privileges(void) {
     // Set UID/GID to unprivileged user
     setgid(iog_config.gid);
     setuid(iog_config.uid);
@@ -112,7 +112,7 @@ Worker processes MUST have restricted syscalls:
 ```c
 #include <seccomp.h>
 
-static int rw_setup_seccomp(void) {
+static int iog_setup_seccomp(void) {
     scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL);
 
     // Allow only necessary syscalls
@@ -210,7 +210,7 @@ All database access follows the principle of least privilege and defense-in-dept
 ```c
 // Safe prepared statement usage pattern
 [[nodiscard]]
-static int rw_db_insert_user(sqlite3 *db, sqlite3_stmt *stmt,
+static int iog_db_insert_user(sqlite3 *db, sqlite3_stmt *stmt,
                              const char *username, int group_id) {
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
@@ -242,22 +242,22 @@ Session cookies authenticate VPN clients after the initial TLS handshake.
 #include <wolfssl/wolfcrypt/hmac.h>
 #include <wolfssl/wolfcrypt/misc.h>
 
-#define RW_COOKIE_LEN    32
-#define RW_HMAC_LEN      32
+#define IOG_COOKIE_LEN    32
+#define IOG_HMAC_LEN      32
 
 [[nodiscard]]
-static int rw_cookie_generate(WC_RNG *rng, const uint8_t *server_key,
+static int iog_cookie_generate(WC_RNG *rng, const uint8_t *server_key,
                               size_t key_len, uint8_t *cookie_out,
                               uint8_t *hmac_out) {
     // 32 bytes of random from wolfCrypt RNG
-    if (wc_RNG_GenerateBlock(rng, cookie_out, RW_COOKIE_LEN) != 0)
+    if (wc_RNG_GenerateBlock(rng, cookie_out, IOG_COOKIE_LEN) != 0)
         return -EIO;
 
     // HMAC-SHA256 sign with server secret
     Hmac hmac;
     if (wc_HmacSetKey(&hmac, WC_SHA256, server_key, (word32)key_len) != 0)
         goto fail;
-    if (wc_HmacUpdate(&hmac, cookie_out, RW_COOKIE_LEN) != 0)
+    if (wc_HmacUpdate(&hmac, cookie_out, IOG_COOKIE_LEN) != 0)
         goto fail;
     if (wc_HmacFinal(&hmac, hmac_out) != 0)
         goto fail;
@@ -267,7 +267,7 @@ static int rw_cookie_generate(WC_RNG *rng, const uint8_t *server_key,
 
 fail:
     ForceZero(&hmac, sizeof(hmac));
-    ForceZero(cookie_out, RW_COOKIE_LEN);
+    ForceZero(cookie_out, IOG_COOKIE_LEN);
     return -EIO;
 }
 ```
@@ -288,7 +288,7 @@ Plugins are loaded early and locked down before the worker event loop starts.
 #include <seccomp.h>
 
 [[nodiscard]]
-static int rw_plugin_load_and_lock(const char *path, void **handle_out) {
+static int iog_plugin_load_and_lock(const char *path, void **handle_out) {
     // 1. Load plugin BEFORE seccomp is active
     void *h = dlopen(path, RTLD_NOW | RTLD_LOCAL);
     if (h == nullptr) return -ENOENT;

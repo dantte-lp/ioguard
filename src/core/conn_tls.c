@@ -34,7 +34,7 @@ static int tls_err_to_errno(int tls_err)
 /* Track whether tls_global_init has been called */
 static bool g_tls_initialized = false;
 
-int rw_tls_server_init(rw_tls_server_t *srv, const rw_tls_server_config_t *cfg)
+int iog_tls_server_init(iog_tls_server_t *srv, const iog_tls_server_config_t *cfg)
 {
     if (srv == nullptr || cfg == nullptr) {
         return -EINVAL;
@@ -96,7 +96,7 @@ cleanup:
     return tls_err_to_errno(ret);
 }
 
-void rw_tls_server_destroy(rw_tls_server_t *srv)
+void iog_tls_server_destroy(iog_tls_server_t *srv)
 {
     if (srv == nullptr) {
         return;
@@ -107,7 +107,7 @@ void rw_tls_server_destroy(rw_tls_server_t *srv)
     }
 }
 
-int rw_tls_conn_init(rw_tls_conn_t *conn, rw_tls_server_t *srv, int fd)
+int iog_tls_conn_init(iog_tls_conn_t *conn, iog_tls_server_t *srv, int fd)
 {
     if (conn == nullptr || srv == nullptr || srv->ctx == nullptr || fd < 0) {
         return -EINVAL;
@@ -132,7 +132,7 @@ int rw_tls_conn_init(rw_tls_conn_t *conn, rw_tls_server_t *srv, int fd)
     return 0;
 }
 
-void rw_tls_conn_destroy(rw_tls_conn_t *conn)
+void iog_tls_conn_destroy(iog_tls_conn_t *conn)
 {
     if (conn == nullptr) {
         return;
@@ -147,7 +147,7 @@ void rw_tls_conn_destroy(rw_tls_conn_t *conn)
     conn->handshake_done = false;
 }
 
-int rw_tls_conn_handshake(rw_tls_conn_t *conn)
+int iog_tls_conn_handshake(iog_tls_conn_t *conn)
 {
     if (conn == nullptr || conn->session == nullptr) {
         return -EINVAL;
@@ -165,7 +165,7 @@ int rw_tls_conn_handshake(rw_tls_conn_t *conn)
     return tls_err_to_errno(ret);
 }
 
-ssize_t rw_tls_conn_read(rw_tls_conn_t *conn, void *buf, size_t len)
+ssize_t iog_tls_conn_read(iog_tls_conn_t *conn, void *buf, size_t len)
 {
     if (conn == nullptr || conn->session == nullptr || buf == nullptr) {
         return -EINVAL;
@@ -182,7 +182,7 @@ ssize_t rw_tls_conn_read(rw_tls_conn_t *conn, void *buf, size_t len)
     return tls_err_to_errno((int)ret);
 }
 
-ssize_t rw_tls_conn_write(rw_tls_conn_t *conn, const void *buf, size_t len)
+ssize_t iog_tls_conn_write(iog_tls_conn_t *conn, const void *buf, size_t len)
 {
     if (conn == nullptr || conn->session == nullptr || buf == nullptr) {
         return -EINVAL;

@@ -11,7 +11,7 @@ int iog_shutdown_init(iog_shutdown_ctx_t *ctx, iog_worker_t *worker, uint32_t ti
 
     memset(ctx, 0, sizeof(*ctx));
     ctx->worker = worker;
-    ctx->drain_timeout_s = (timeout_s > 0) ? timeout_s : RW_SHUTDOWN_DRAIN_TIMEOUT_S;
+    ctx->drain_timeout_s = (timeout_s > 0) ? timeout_s : IOG_SHUTDOWN_DRAIN_TIMEOUT_S;
     ctx->drain_started = false;
     ctx->connections_drained = 0;
 
@@ -24,7 +24,7 @@ int iog_shutdown_encode_disconnect(uint8_t *buf, size_t buf_len)
         return -EINVAL;
     }
 
-    return rw_cstp_encode(buf, buf_len, IOG_CSTP_DISCONNECT, nullptr, 0);
+    return iog_cstp_encode(buf, buf_len, IOG_CSTP_DISCONNECT, nullptr, 0);
 }
 
 int iog_shutdown_drain(iog_shutdown_ctx_t *ctx)

@@ -4,7 +4,7 @@ cd /opt/projects/repositories/ioguard
 rg -n "\bRW_IPC_MAX_MSG_SIZE\b|\brw_dpd_|\brw_compress_|\brw_lzs_|\brw_fw_|\brw_dtls_parse_accept_encoding\b|\brw_security_build_fw_session\b|\bRW_FW_CHAIN_NAME_MAX\b|\bRW_LZS_" \
   .claude/skills/c23-standards/SKILL.md \
   docs/plans/2026-03-07-sprint-1-foundation.md \
-  docs/plans/2026-03-08-ringwall-rebranding-plan.md \
+  docs/plans/2026-03-08-ioguard-rebranding-plan.md \
   docs/plans/2026-03-08-sprint-4-dtls-compression.md \
   docs/plans/2026-03-08-sprint-5-storage-security.md \
   docs/plans/2026-03-08-sprint-6-vertical-integration.md \

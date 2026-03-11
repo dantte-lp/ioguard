@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_WORKER_LOOP_H
-#define RINGWALL_CORE_WORKER_LOOP_H
+#ifndef IOGUARD_CORE_WORKER_LOOP_H
+#define IOGUARD_CORE_WORKER_LOOP_H
 
 #include "core/worker.h"
 #include "io/uring.h"
@@ -65,4 +65,4 @@ void iog_worker_loop_stop(iog_worker_loop_t *loop);
  */
 void iog_worker_loop_destroy(iog_worker_loop_t *loop);
 
-#endif /* RINGWALL_CORE_WORKER_LOOP_H */
+#endif /* IOGUARD_CORE_WORKER_LOOP_H */

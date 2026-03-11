@@ -9,8 +9,8 @@
 #    include <wolfssl/ssl.h>
 #endif
 
-struct rw_dtls_ctx {
-    rw_dtls_config_t config;
+struct iog_dtls_ctx {
+    iog_dtls_config_t config;
 #ifdef USE_WOLFSSL
     WOLFSSL_CTX *ssl_ctx;
 #else
@@ -18,9 +18,9 @@ struct rw_dtls_ctx {
 #endif
 };
 
-void rw_dtls_config_init(rw_dtls_config_t *cfg)
+void iog_dtls_config_init(iog_dtls_config_t *cfg)
 {
-    *cfg = (rw_dtls_config_t){
+    *cfg = (iog_dtls_config_t){
         .mtu = IOG_DTLS_DEFAULT_MTU,
         .timeout_init_s = IOG_DTLS_DEFAULT_TIMEOUT_S,
         .rekey_interval_s = IOG_DTLS_DEFAULT_REKEY_S,
@@ -32,7 +32,7 @@ void rw_dtls_config_init(rw_dtls_config_t *cfg)
     };
 }
 
-int rw_dtls_config_validate(const rw_dtls_config_t *cfg)
+int iog_dtls_config_validate(const iog_dtls_config_t *cfg)
 {
     if (!cfg) {
         return -EINVAL;
@@ -46,13 +46,13 @@ int rw_dtls_config_validate(const rw_dtls_config_t *cfg)
     return 0;
 }
 
-rw_dtls_ctx_t *rw_dtls_create(const rw_dtls_config_t *cfg)
+iog_dtls_ctx_t *iog_dtls_create(const iog_dtls_config_t *cfg)
 {
-    if (rw_dtls_config_validate(cfg) != 0) {
+    if (iog_dtls_config_validate(cfg) != 0) {
         return nullptr;
     }
 
-    rw_dtls_ctx_t *ctx = calloc(1, sizeof(*ctx));
+    iog_dtls_ctx_t *ctx = calloc(1, sizeof(*ctx));
     if (!ctx) {
         return nullptr;
     }
@@ -67,7 +67,7 @@ rw_dtls_ctx_t *rw_dtls_create(const rw_dtls_config_t *cfg)
     }
 
     /* Set cipher list */
-    const char *ciphers = cfg->cipher_list ? cfg->cipher_list : rw_dtls_cisco_ciphers();
+    const char *ciphers = cfg->cipher_list ? cfg->cipher_list : iog_dtls_cisco_ciphers();
     wolfSSL_CTX_set_cipher_list(ctx->ssl_ctx, ciphers);
 
     /* Load certs if provided */
@@ -94,7 +94,7 @@ rw_dtls_ctx_t *rw_dtls_create(const rw_dtls_config_t *cfg)
     return ctx;
 }
 
-void rw_dtls_destroy(rw_dtls_ctx_t *ctx)
+void iog_dtls_destroy(iog_dtls_ctx_t *ctx)
 {
     if (!ctx) {
         return;
@@ -108,12 +108,12 @@ void rw_dtls_destroy(rw_dtls_ctx_t *ctx)
     free(ctx);
 }
 
-uint32_t rw_dtls_get_mtu(const rw_dtls_ctx_t *ctx)
+uint32_t iog_dtls_get_mtu(const iog_dtls_ctx_t *ctx)
 {
     return ctx->config.mtu;
 }
 
-const char *rw_dtls_cisco_ciphers(void)
+const char *iog_dtls_cisco_ciphers(void)
 {
     return "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:AES128-SHA";
 }

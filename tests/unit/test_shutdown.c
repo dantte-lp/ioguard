@@ -33,7 +33,7 @@ void test_shutdown_init_defaults(void)
 {
     iog_shutdown_ctx_t ctx;
     TEST_ASSERT_EQUAL_INT(0, iog_shutdown_init(&ctx, worker, 0));
-    TEST_ASSERT_EQUAL_UINT(RW_SHUTDOWN_DRAIN_TIMEOUT_S, ctx.drain_timeout_s);
+    TEST_ASSERT_EQUAL_UINT(IOG_SHUTDOWN_DRAIN_TIMEOUT_S, ctx.drain_timeout_s);
     TEST_ASSERT_FALSE(ctx.drain_started);
     TEST_ASSERT_EQUAL_UINT(0, ctx.connections_drained);
 }
@@ -59,8 +59,8 @@ void test_shutdown_encode_disconnect(void)
     TEST_ASSERT_GREATER_THAN(0, len);
 
     /* Verify it decodes as DISCONNECT */
-    rw_cstp_packet_t pkt;
-    int consumed = rw_cstp_decode(buf, (size_t)len, &pkt);
+    iog_cstp_packet_t pkt;
+    int consumed = iog_cstp_decode(buf, (size_t)len, &pkt);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_DISCONNECT, pkt.type);
     TEST_ASSERT_EQUAL_UINT(0, pkt.payload_len);

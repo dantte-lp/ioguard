@@ -9,7 +9,7 @@ FILES = [
     Path('CMakeLists.txt'),
     Path('docs/plans/2026-03-07-sprint-1-foundation.md'),
     Path('docs/plans/2026-03-07-sprint-2-tls-auth.md'),
-    Path('docs/plans/2026-03-08-ringwall-rebranding-plan.md'),
+    Path('docs/plans/2026-03-08-ioguard-rebranding-plan.md'),
     Path('docs/plans/2026-03-08-sprint-5-storage-security.md'),
     Path('docs/plans/2026-03-08-sprint-6-vertical-integration.md'),
     Path('docs/plans/2026-03-10-sprint-7-auth-observability.md'),
@@ -19,13 +19,13 @@ FILES = [
 ]
 
 REPLACEMENTS = {
-    'RINGWALL_CONFIG_CONFIG_H': 'IOGUARD_CONFIG_CONFIG_H',
-    'RINGWALL_CORE_SESSION_H': 'IOGUARD_CORE_SESSION_H',
-    'RINGWALL_SESSION_CACHE_H': 'IOGUARD_SESSION_CACHE_H',
-    'rw_main_helpers': 'iog_main_helpers',
-    'rw_memory': 'iog_memory',
-    'rw_config': 'iog_config',
-    'rw_session': 'iog_session',
+    'IOGUARD_CONFIG_CONFIG_H': 'IOGUARD_CONFIG_CONFIG_H',
+    'IOGUARD_CORE_SESSION_H': 'IOGUARD_CORE_SESSION_H',
+    'IOGUARD_SESSION_CACHE_H': 'IOGUARD_SESSION_CACHE_H',
+    'iog_main_helpers': 'iog_main_helpers',
+    'iog_memory': 'iog_memory',
+    'iog_config': 'iog_config',
+    'iog_session': 'iog_session',
 }
 
 for path in FILES:

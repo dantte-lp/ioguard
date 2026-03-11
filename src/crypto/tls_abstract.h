@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RINGWALL_TLS_ABSTRACT_H
-#define RINGWALL_TLS_ABSTRACT_H
+#ifndef IOGUARD_TLS_ABSTRACT_H
+#define IOGUARD_TLS_ABSTRACT_H
 
 /**
  * TLS Abstraction Layer for ioguard
@@ -727,4 +727,4 @@ static inline void tls_context_cleanup(tls_context_t **ctx_ptr)
     }
 }
 
-#endif // RINGWALL_TLS_ABSTRACT_H
+#endif // IOGUARD_TLS_ABSTRACT_H

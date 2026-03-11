@@ -67,7 +67,7 @@ deploy/podman/      # Container configurations
 **Full reference: `.claude/skills/coding-standards/SKILL.md`** — MUST be followed for all code.
 
 - **Naming**: `iog_module_verb_noun()` functions, `iog_module_name_t` types, `IOG_MODULE_VALUE` enums/macros
-- **Prefix**: `rw_` public API, `tls_` TLS layer
+- **Prefix**: `iog_` public API, `tls_` TLS layer
 - **Typedef suffix**: `_t` for all types
 - **Include guards**: `IOGUARD_MODULE_FILE_H` (NOT `OCSERV_*`)
 - **Pointer style**: `int *ptr` (right-aligned, Linux kernel style)

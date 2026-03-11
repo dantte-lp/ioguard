@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_CONN_TIMER_H
-#define RINGWALL_CORE_CONN_TIMER_H
+#ifndef IOGUARD_CORE_CONN_TIMER_H
+#define IOGUARD_CORE_CONN_TIMER_H
 
 #include "core/conn_data.h"
 #include "network/dpd.h"
@@ -13,7 +13,7 @@
  * @param conn_id  Connection identifier.
  * @param user_data  Caller-supplied context.
  */
-typedef void (*rw_conn_dead_cb)(uint64_t conn_id, void *user_data);
+typedef void (*iog_conn_dead_cb)(uint64_t conn_id, void *user_data);
 
 /**
  * @brief Per-connection timer state for DPD, keepalive, and idle timeout.
@@ -29,7 +29,7 @@ typedef struct {
     uint32_t dpd_interval_ms;
     uint32_t keepalive_interval_ms;
     uint32_t idle_timeout_ms;
-    rw_conn_dead_cb on_dead;
+    iog_conn_dead_cb on_dead;
     void *on_dead_user_data;
     time_t last_activity;
     bool active;
@@ -45,7 +45,7 @@ typedef struct {
     uint32_t dpd_interval_s;
     uint32_t keepalive_interval_s;
     uint32_t idle_timeout_s;
-    rw_conn_dead_cb on_dead;
+    iog_conn_dead_cb on_dead;
     void *on_dead_user_data;
 } iog_conn_timer_config_t;
 
@@ -104,4 +104,4 @@ void iog_conn_timer_on_activity(iog_conn_timer_t *timer);
  */
 void iog_conn_timer_stop(iog_conn_timer_t *timer);
 
-#endif /* RINGWALL_CORE_CONN_TIMER_H */
+#endif /* IOGUARD_CORE_CONN_TIMER_H */

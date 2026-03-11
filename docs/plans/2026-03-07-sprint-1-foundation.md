@@ -9,7 +9,7 @@
 **Tech Stack:** C23, liburing 2.7+, protobuf-c 1.5.1+, tomlc99, mimalloc 3.1.5+ (MI_SECURE), Unity test framework. Linux kernel 6.7+, glibc 2.39+.
 
 **References:**
-- Architecture design: `docs/plans/2026-03-07-ringwall-architecture-design.md`
+- Architecture design: `docs/plans/2026-03-07-ioguard-architecture-design.md`
 - IPC research: `docs/draft/three-ipc-mechanisms.md`
 - Process management: `docs/draft/process-management-without-libuv.md`
 - Skills: `.claude/skills/c23-standards/`, `.claude/skills/security-coding/`
@@ -48,14 +48,14 @@ cmake --build --preset clang-debug --target lint
 
 **Step 1: Create directory structure with stub files**
 
-Create all source directories and empty stub files with proper include guards. Each `.h` file gets the include guard pattern `RINGWALL_MODULE_FILE_H` and each `.c` file gets just its own header include. No implementation yet — just the skeleton.
+Create all source directories and empty stub files with proper include guards. Each `.h` file gets the include guard pattern `IOGUARD_MODULE_FILE_H` and each `.c` file gets just its own header include. No implementation yet — just the skeleton.
 
 Example header stub (`src/io/uring.h`):
 ```c
-#ifndef RINGWALL_IO_URING_H
-#define RINGWALL_IO_URING_H
+#ifndef IOGUARD_IO_URING_H
+#define IOGUARD_IO_URING_H
 
-#endif /* RINGWALL_IO_URING_H */
+#endif /* IOGUARD_IO_URING_H */
 ```
 
 Example source stub (`src/io/uring.c`):
@@ -138,25 +138,25 @@ if(TOML_FOUND)
     target_compile_definitions(iog_config PUBLIC USE_TOML)
 endif()
 
-add_library(rw_ipc STATIC src/ipc/transport.c src/ipc/messages.c)
-target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} iog_memory)
-target_include_directories(rw_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS})
+add_library(iog_ipc STATIC src/ipc/transport.c src/ipc/messages.c)
+target_link_libraries(iog_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} iog_memory)
+target_include_directories(iog_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS})
 ```
 
 Add unit test targets (one per test file, all link unity):
 ```cmake
 if(BUILD_TESTING AND UNITY_INCLUDE_DIR AND UNITY_SRC_DIR)
     # Macro to add a unit test
-    macro(rw_add_test TEST_NAME TEST_SRC)
+    macro(iog_add_test TEST_NAME TEST_SRC)
         add_executable(${TEST_NAME} ${TEST_SRC})
         target_link_libraries(${TEST_NAME} PRIVATE unity ${ARGN})
         add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
     endmacro()
 
-    rw_add_test(test_io_uring tests/unit/test_io_uring.c iog_io)
-    rw_add_test(test_memory tests/unit/test_memory.c iog_memory)
-    rw_add_test(test_config_toml tests/unit/test_config_toml.c iog_config)
-    rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c rw_ipc iog_io)
+    iog_add_test(test_io_uring tests/unit/test_io_uring.c iog_io)
+    iog_add_test(test_memory tests/unit/test_memory.c iog_memory)
+    iog_add_test(test_config_toml tests/unit/test_config_toml.c iog_config)
+    iog_add_test(test_ipc_transport tests/unit/test_ipc_transport.c iog_ipc iog_io)
 endif()
 ```
 
@@ -195,43 +195,43 @@ void tearDown(void) {}
 
 void test_rw_mem_init_returns_zero(void)
 {
-    int ret = rw_mem_init();
+    int ret = iog_mem_init();
     TEST_ASSERT_EQUAL_INT(0, ret);
 }
 
 void test_rw_mem_alloc_returns_nonnull(void)
 {
-    void *ptr = rw_mem_alloc(128);
+    void *ptr = iog_mem_alloc(128);
     TEST_ASSERT_NOT_NULL(ptr);
-    rw_mem_free(ptr);
+    iog_mem_free(ptr);
 }
 
 void test_rw_mem_calloc_returns_zeroed(void)
 {
-    uint8_t *ptr = rw_mem_calloc(1, 64);
+    uint8_t *ptr = iog_mem_calloc(1, 64);
     TEST_ASSERT_NOT_NULL(ptr);
     for (int i = 0; i < 64; i++) {
         TEST_ASSERT_EQUAL_UINT8(0, ptr[i]);
     }
-    rw_mem_free(ptr);
+    iog_mem_free(ptr);
 }
 
 void test_rw_mem_alloc_zero_returns_null(void)
 {
-    void *ptr = rw_mem_alloc(0);
+    void *ptr = iog_mem_alloc(0);
     TEST_ASSERT_NULL(ptr);
 }
 
 void test_rw_mem_free_null_is_safe(void)
 {
-    rw_mem_free(nullptr); /* must not crash */
+    iog_mem_free(nullptr); /* must not crash */
 }
 
 void test_rw_mem_secure_zero(void)
 {
     uint8_t buf[32];
     memset(buf, 0xAA, sizeof(buf));
-    rw_mem_secure_zero(buf, sizeof(buf));
+    iog_mem_secure_zero(buf, sizeof(buf));
     for (int i = 0; i < 32; i++) {
         TEST_ASSERT_EQUAL_UINT8(0, buf[i]);
     }
@@ -260,30 +260,30 @@ Expected: FAIL — functions not defined (linker error)
 
 `src/utils/memory.h`:
 ```c
-#ifndef RINGWALL_UTILS_MEMORY_H
-#define RINGWALL_UTILS_MEMORY_H
+#ifndef IOGUARD_UTILS_MEMORY_H
+#define IOGUARD_UTILS_MEMORY_H
 
 #include <stddef.h>
 
 /* Initialize memory allocator (mimalloc if available) */
-[[nodiscard]] int rw_mem_init(void);
+[[nodiscard]] int iog_mem_init(void);
 
 /* Allocate memory. Returns nullptr for size == 0. */
-[[nodiscard]] void *rw_mem_alloc(size_t size);
+[[nodiscard]] void *iog_mem_alloc(size_t size);
 
 /* Allocate zeroed memory */
-[[nodiscard]] void *rw_mem_calloc(size_t count, size_t size);
+[[nodiscard]] void *iog_mem_calloc(size_t count, size_t size);
 
 /* Reallocate memory */
-[[nodiscard]] void *rw_mem_realloc(void *ptr, size_t new_size);
+[[nodiscard]] void *iog_mem_realloc(void *ptr, size_t new_size);
 
 /* Free memory. Safe to call with nullptr. */
-void rw_mem_free(void *ptr);
+void iog_mem_free(void *ptr);
 
 /* Securely zero memory (not optimized away by compiler) */
-void rw_mem_secure_zero(void *ptr, size_t len);
+void iog_mem_secure_zero(void *ptr, size_t len);
 
-#endif /* RINGWALL_UTILS_MEMORY_H */
+#endif /* IOGUARD_UTILS_MEMORY_H */
 ```
 
 `src/utils/memory.c`:
@@ -295,7 +295,7 @@ void rw_mem_secure_zero(void *ptr, size_t len);
 #include <mimalloc.h>
 #endif
 
-int rw_mem_init(void)
+int iog_mem_init(void)
 {
 #ifdef USE_MIMALLOC
     mi_option_enable(mi_option_secure);
@@ -303,7 +303,7 @@ int rw_mem_init(void)
     return 0;
 }
 
-void *rw_mem_alloc(size_t size)
+void *iog_mem_alloc(size_t size)
 {
     if (size == 0) {
         return nullptr;
@@ -315,7 +315,7 @@ void *rw_mem_alloc(size_t size)
 #endif
 }
 
-void *rw_mem_calloc(size_t count, size_t size)
+void *iog_mem_calloc(size_t count, size_t size)
 {
     if (count == 0 || size == 0) {
         return nullptr;
@@ -327,7 +327,7 @@ void *rw_mem_calloc(size_t count, size_t size)
 #endif
 }
 
-void *rw_mem_realloc(void *ptr, size_t new_size)
+void *iog_mem_realloc(void *ptr, size_t new_size)
 {
 #ifdef USE_MIMALLOC
     return mi_realloc(ptr, new_size);
@@ -336,7 +336,7 @@ void *rw_mem_realloc(void *ptr, size_t new_size)
 #endif
 }
 
-void rw_mem_free(void *ptr)
+void iog_mem_free(void *ptr)
 {
     if (ptr == nullptr) {
         return;
@@ -348,7 +348,7 @@ void rw_mem_free(void *ptr)
 #endif
 }
 
-void rw_mem_secure_zero(void *ptr, size_t len)
+void iog_mem_secure_zero(void *ptr, size_t len)
 {
     explicit_bzero(ptr, len);
 }
@@ -452,8 +452,8 @@ Expected: FAIL — linker errors, functions undefined
 
 `src/io/uring.h`:
 ```c
-#ifndef RINGWALL_IO_URING_H
-#define RINGWALL_IO_URING_H
+#ifndef IOGUARD_IO_URING_H
+#define IOGUARD_IO_URING_H
 
 #include <liburing.h>
 #include <stdbool.h>
@@ -508,7 +508,7 @@ void iog_io_stop(iog_io_ctx_t *ctx);
  * fired: pointer to int, set to 1 when timeout fires */
 [[nodiscard]] int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired);
 
-#endif /* RINGWALL_IO_URING_H */
+#endif /* IOGUARD_IO_URING_H */
 ```
 
 `src/io/uring.c`:
@@ -865,61 +865,61 @@ void tearDown(void) {}
 
 void test_rw_ipc_create_socketpair(void)
 {
-    rw_ipc_channel_t ch;
-    int ret = rw_ipc_create_pair(&ch);
+    iog_ipc_channel_t ch;
+    int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, ch.parent_fd);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, ch.child_fd);
-    rw_ipc_close(&ch);
+    iog_ipc_close(&ch);
 }
 
 void test_rw_ipc_send_recv_message(void)
 {
-    rw_ipc_channel_t ch;
-    int ret = rw_ipc_create_pair(&ch);
+    iog_ipc_channel_t ch;
+    int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     const uint8_t msg[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-    ret = rw_ipc_send(ch.parent_fd, msg, sizeof(msg));
+    ret = iog_ipc_send(ch.parent_fd, msg, sizeof(msg));
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     uint8_t buf[256];
-    ssize_t n = rw_ipc_recv(ch.child_fd, buf, sizeof(buf));
+    ssize_t n = iog_ipc_recv(ch.child_fd, buf, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(5, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(msg, buf, 5);
 
-    rw_ipc_close(&ch);
+    iog_ipc_close(&ch);
 }
 
 void test_rw_ipc_preserves_message_boundaries(void)
 {
-    rw_ipc_channel_t ch;
-    int ret = rw_ipc_create_pair(&ch);
+    iog_ipc_channel_t ch;
+    int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Send two messages */
     const uint8_t msg1[] = {0xAA, 0xBB};
     const uint8_t msg2[] = {0xCC, 0xDD, 0xEE};
-    rw_ipc_send(ch.parent_fd, msg1, sizeof(msg1));
-    rw_ipc_send(ch.parent_fd, msg2, sizeof(msg2));
+    iog_ipc_send(ch.parent_fd, msg1, sizeof(msg1));
+    iog_ipc_send(ch.parent_fd, msg2, sizeof(msg2));
 
     /* Receive them — each recv() should get exactly one message */
     uint8_t buf[256];
-    ssize_t n1 = rw_ipc_recv(ch.child_fd, buf, sizeof(buf));
+    ssize_t n1 = iog_ipc_recv(ch.child_fd, buf, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(2, n1);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(msg1, buf, 2);
 
-    ssize_t n2 = rw_ipc_recv(ch.child_fd, buf, sizeof(buf));
+    ssize_t n2 = iog_ipc_recv(ch.child_fd, buf, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(3, n2);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(msg2, buf, 3);
 
-    rw_ipc_close(&ch);
+    iog_ipc_close(&ch);
 }
 
 void test_rw_ipc_send_fd(void)
 {
-    rw_ipc_channel_t ch;
-    int ret = rw_ipc_create_pair(&ch);
+    iog_ipc_channel_t ch;
+    int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Create a pipe to pass */
@@ -928,12 +928,12 @@ void test_rw_ipc_send_fd(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Send write end through IPC */
-    ret = rw_ipc_send_fd(ch.parent_fd, pipefd[1]);
+    ret = iog_ipc_send_fd(ch.parent_fd, pipefd[1]);
     TEST_ASSERT_EQUAL_INT(0, ret);
     close(pipefd[1]); /* close our copy */
 
     /* Receive fd on other end */
-    int received_fd = rw_ipc_recv_fd(ch.child_fd);
+    int received_fd = iog_ipc_recv_fd(ch.child_fd);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, received_fd);
 
     /* Write through received fd, read from pipe read end */
@@ -944,7 +944,7 @@ void test_rw_ipc_send_fd(void)
 
     close(received_fd);
     close(pipefd[0]);
-    rw_ipc_close(&ch);
+    iog_ipc_close(&ch);
 }
 
 int main(void)
@@ -966,8 +966,8 @@ Expected: FAIL — undefined symbols
 
 `src/ipc/transport.h`:
 ```c
-#ifndef RINGWALL_IPC_TRANSPORT_H
-#define RINGWALL_IPC_TRANSPORT_H
+#ifndef IOGUARD_IPC_TRANSPORT_H
+#define IOGUARD_IPC_TRANSPORT_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -977,30 +977,30 @@ Expected: FAIL — undefined symbols
 typedef struct {
     int parent_fd; /* used by parent process (Main) */
     int child_fd;  /* used by child process (worker/sec-mod) */
-} rw_ipc_channel_t;
+} iog_ipc_channel_t;
 
 /* Maximum IPC message size (must fit in provided buffers) */
 #define IOG_IPC_MAX_MSG_SIZE 4096
 
 /* Create a SOCK_SEQPACKET socketpair for IPC */
-[[nodiscard]] int rw_ipc_create_pair(rw_ipc_channel_t *ch);
+[[nodiscard]] int iog_ipc_create_pair(iog_ipc_channel_t *ch);
 
 /* Close both ends of the channel */
-void rw_ipc_close(rw_ipc_channel_t *ch);
+void iog_ipc_close(iog_ipc_channel_t *ch);
 
 /* Send raw bytes. Returns 0 on success, -errno on error. */
-[[nodiscard]] int rw_ipc_send(int fd, const uint8_t *data, size_t len);
+[[nodiscard]] int iog_ipc_send(int fd, const uint8_t *data, size_t len);
 
 /* Receive raw bytes. Returns message length, or negative errno. */
-[[nodiscard]] ssize_t rw_ipc_recv(int fd, uint8_t *buf, size_t buf_size);
+[[nodiscard]] ssize_t iog_ipc_recv(int fd, uint8_t *buf, size_t buf_size);
 
 /* Send a file descriptor via SCM_RIGHTS. Returns 0 on success. */
-[[nodiscard]] int rw_ipc_send_fd(int socket_fd, int fd_to_send);
+[[nodiscard]] int iog_ipc_send_fd(int socket_fd, int fd_to_send);
 
 /* Receive a file descriptor via SCM_RIGHTS. Returns fd or negative errno. */
-[[nodiscard]] int rw_ipc_recv_fd(int socket_fd);
+[[nodiscard]] int iog_ipc_recv_fd(int socket_fd);
 
-#endif /* RINGWALL_IPC_TRANSPORT_H */
+#endif /* IOGUARD_IPC_TRANSPORT_H */
 ```
 
 `src/ipc/transport.c`:
@@ -1011,7 +1011,7 @@ void rw_ipc_close(rw_ipc_channel_t *ch);
 #include <sys/socket.h>
 #include <unistd.h>
 
-int rw_ipc_create_pair(rw_ipc_channel_t *ch)
+int iog_ipc_create_pair(iog_ipc_channel_t *ch)
 {
     int sv[2];
     int ret = socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sv);
@@ -1023,7 +1023,7 @@ int rw_ipc_create_pair(rw_ipc_channel_t *ch)
     return 0;
 }
 
-void rw_ipc_close(rw_ipc_channel_t *ch)
+void iog_ipc_close(iog_ipc_channel_t *ch)
 {
     if (ch->parent_fd >= 0) {
         close(ch->parent_fd);
@@ -1035,7 +1035,7 @@ void rw_ipc_close(rw_ipc_channel_t *ch)
     }
 }
 
-int rw_ipc_send(int fd, const uint8_t *data, size_t len)
+int iog_ipc_send(int fd, const uint8_t *data, size_t len)
 {
     ssize_t n = send(fd, data, len, MSG_NOSIGNAL);
     if (n < 0) {
@@ -1044,7 +1044,7 @@ int rw_ipc_send(int fd, const uint8_t *data, size_t len)
     return 0;
 }
 
-ssize_t rw_ipc_recv(int fd, uint8_t *buf, size_t buf_size)
+ssize_t iog_ipc_recv(int fd, uint8_t *buf, size_t buf_size)
 {
     ssize_t n = recv(fd, buf, buf_size, 0);
     if (n < 0) {
@@ -1053,7 +1053,7 @@ ssize_t rw_ipc_recv(int fd, uint8_t *buf, size_t buf_size)
     return n;
 }
 
-int rw_ipc_send_fd(int socket_fd, int fd_to_send)
+int iog_ipc_send_fd(int socket_fd, int fd_to_send)
 {
     struct msghdr msg = {0};
     struct iovec iov;
@@ -1087,7 +1087,7 @@ int rw_ipc_send_fd(int socket_fd, int fd_to_send)
     return 0;
 }
 
-int rw_ipc_recv_fd(int socket_fd)
+int iog_ipc_recv_fd(int socket_fd)
 {
     struct msghdr msg = {0};
     struct iovec iov;
@@ -1141,7 +1141,7 @@ git commit -m "feat: add SOCK_SEQPACKET IPC transport with SCM_RIGHTS fd passing
 ## Task 7: IPC Messages — Protobuf-c Definitions
 
 **Files:**
-- Create: `src/ipc/proto/rw_ipc.proto`
+- Create: `src/ipc/proto/iog_ipc.proto`
 - Create: `src/ipc/messages.h`
 - Create: `src/ipc/messages.c`
 - Modify: `CMakeLists.txt` (add protobuf-c code generation)
@@ -1149,10 +1149,10 @@ git commit -m "feat: add SOCK_SEQPACKET IPC transport with SCM_RIGHTS fd passing
 
 **Step 1: Define protobuf schema**
 
-`src/ipc/proto/rw_ipc.proto`:
+`src/ipc/proto/iog_ipc.proto`:
 ```protobuf
 syntax = "proto3";
-package rw_ipc;
+package iog_ipc;
 
 // Message types for Main ↔ Worker ↔ sec-mod IPC
 enum MsgType {
@@ -1204,40 +1204,40 @@ message WorkerStatus {
 
 **Step 2: Add CMake protobuf-c code generation**
 
-Add to CMakeLists.txt before `rw_ipc` library:
+Add to CMakeLists.txt before `iog_ipc` library:
 ```cmake
 # Generate protobuf-c sources
 find_program(PROTOC_C protoc-c REQUIRED)
-set(PROTO_SRC ${CMAKE_SOURCE_DIR}/src/ipc/proto/rw_ipc.proto)
+set(PROTO_SRC ${CMAKE_SOURCE_DIR}/src/ipc/proto/iog_ipc.proto)
 set(PROTO_GEN_DIR ${CMAKE_BINARY_DIR}/generated)
 file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
 
 add_custom_command(
-    OUTPUT ${PROTO_GEN_DIR}/rw_ipc.pb-c.h ${PROTO_GEN_DIR}/rw_ipc.pb-c.c
+    OUTPUT ${PROTO_GEN_DIR}/iog_ipc.pb-c.h ${PROTO_GEN_DIR}/iog_ipc.pb-c.c
     COMMAND ${PROTOC_C} --c_out=${PROTO_GEN_DIR}
             --proto_path=${CMAKE_SOURCE_DIR}/src/ipc/proto
             ${PROTO_SRC}
     DEPENDS ${PROTO_SRC}
-    COMMENT "Generating protobuf-c sources from rw_ipc.proto"
+    COMMENT "Generating protobuf-c sources from iog_ipc.proto"
 )
 
-add_custom_target(proto_gen DEPENDS ${PROTO_GEN_DIR}/rw_ipc.pb-c.h)
+add_custom_target(proto_gen DEPENDS ${PROTO_GEN_DIR}/iog_ipc.pb-c.h)
 ```
 
-Update `rw_ipc` library to include generated sources:
+Update `iog_ipc` library to include generated sources:
 ```cmake
-add_library(rw_ipc STATIC
+add_library(iog_ipc STATIC
     src/ipc/transport.c
     src/ipc/messages.c
-    ${PROTO_GEN_DIR}/rw_ipc.pb-c.c
+    ${PROTO_GEN_DIR}/iog_ipc.pb-c.c
 )
-add_dependencies(rw_ipc proto_gen)
-target_include_directories(rw_ipc PUBLIC
+add_dependencies(iog_ipc proto_gen)
+target_include_directories(iog_ipc PUBLIC
     ${CMAKE_SOURCE_DIR}/src
     ${PROTOBUF_C_INCLUDE_DIRS}
     ${PROTO_GEN_DIR}
 )
-target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} iog_memory)
+target_link_libraries(iog_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} iog_memory)
 ```
 
 **Step 3: Write the failing test**
@@ -1253,32 +1253,32 @@ void tearDown(void) {}
 
 void test_pack_unpack_auth_request(void)
 {
-    rw_ipc_msg_t msg;
-    rw_ipc_msg_init(&msg, RW_IPC_MSG_AUTH_REQUEST);
+    iog_ipc_msg_t msg;
+    iog_ipc_msg_init(&msg, IOG_IPC_MSG_AUTH_REQUEST);
 
-    rw_ipc_auth_request_t req = {
+    iog_ipc_auth_request_t req = {
         .username = "testuser",
         .group = "vpn-users",
         .source_ip = "10.0.0.1",
     };
 
     uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_request(&req, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
-    rw_ipc_auth_request_t decoded;
-    int ret = rw_ipc_unpack_auth_request(buf, packed, &decoded);
+    iog_ipc_auth_request_t decoded;
+    int ret = iog_ipc_unpack_auth_request(buf, packed, &decoded);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_STRING("testuser", decoded.username);
     TEST_ASSERT_EQUAL_STRING("vpn-users", decoded.group);
     TEST_ASSERT_EQUAL_STRING("10.0.0.1", decoded.source_ip);
 
-    rw_ipc_free_auth_request(&decoded);
+    iog_ipc_free_auth_request(&decoded);
 }
 
 void test_pack_unpack_auth_response(void)
 {
-    rw_ipc_auth_response_t resp = {
+    iog_ipc_auth_response_t resp = {
         .success = true,
         .assigned_ip = "10.0.1.100",
         .dns_server = "10.0.0.53",
@@ -1286,22 +1286,22 @@ void test_pack_unpack_auth_response(void)
     };
 
     uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_response(&resp, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_auth_response(&resp, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
-    rw_ipc_auth_response_t decoded;
-    int ret = rw_ipc_unpack_auth_response(buf, packed, &decoded);
+    iog_ipc_auth_response_t decoded;
+    int ret = iog_ipc_unpack_auth_response(buf, packed, &decoded);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(decoded.success);
     TEST_ASSERT_EQUAL_STRING("10.0.1.100", decoded.assigned_ip);
     TEST_ASSERT_EQUAL_UINT32(3600, decoded.session_ttl);
 
-    rw_ipc_free_auth_response(&decoded);
+    iog_ipc_free_auth_response(&decoded);
 }
 
 void test_pack_unpack_worker_status(void)
 {
-    rw_ipc_worker_status_t status = {
+    iog_ipc_worker_status_t status = {
         .active_connections = 42,
         .bytes_rx = 1000000,
         .bytes_tx = 2000000,
@@ -1309,11 +1309,11 @@ void test_pack_unpack_worker_status(void)
     };
 
     uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_worker_status(&status, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_worker_status(&status, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
-    rw_ipc_worker_status_t decoded;
-    int ret = rw_ipc_unpack_worker_status(buf, packed, &decoded);
+    iog_ipc_worker_status_t decoded;
+    int ret = iog_ipc_unpack_worker_status(buf, packed, &decoded);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT32(42, decoded.active_connections);
     TEST_ASSERT_EQUAL_UINT64(1000000, decoded.bytes_rx);
@@ -1323,8 +1323,8 @@ void test_pack_unpack_worker_status(void)
 void test_unpack_truncated_data_fails(void)
 {
     uint8_t garbage[] = {0xFF, 0x00};
-    rw_ipc_auth_request_t decoded;
-    int ret = rw_ipc_unpack_auth_request(garbage, sizeof(garbage), &decoded);
+    iog_ipc_auth_request_t decoded;
+    int ret = iog_ipc_unpack_auth_request(garbage, sizeof(garbage), &decoded);
     TEST_ASSERT_NOT_EQUAL(0, ret);
 }
 
@@ -1343,8 +1343,8 @@ int main(void)
 
 `src/ipc/messages.h`:
 ```c
-#ifndef RINGWALL_IPC_MESSAGES_H
-#define RINGWALL_IPC_MESSAGES_H
+#ifndef IOGUARD_IPC_MESSAGES_H
+#define IOGUARD_IPC_MESSAGES_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -1353,23 +1353,23 @@ int main(void)
 
 /* IPC message types */
 typedef enum {
-    RW_IPC_MSG_UNKNOWN = 0,
-    RW_IPC_MSG_AUTH_REQUEST = 1,
-    RW_IPC_MSG_AUTH_RESPONSE = 2,
-    RW_IPC_MSG_SESSION_OPEN = 3,
-    RW_IPC_MSG_SESSION_CLOSE = 4,
-    RW_IPC_MSG_WORKER_STATUS = 5,
-    RW_IPC_MSG_CONFIG_RELOAD = 6,
-    RW_IPC_MSG_SHUTDOWN = 7,
-} rw_ipc_msg_type_t;
+    IOG_IPC_MSG_UNKNOWN = 0,
+    IOG_IPC_MSG_AUTH_REQUEST = 1,
+    IOG_IPC_MSG_AUTH_RESPONSE = 2,
+    IOG_IPC_MSG_SESSION_OPEN = 3,
+    IOG_IPC_MSG_SESSION_CLOSE = 4,
+    IOG_IPC_MSG_WORKER_STATUS = 5,
+    IOG_IPC_MSG_CONFIG_RELOAD = 6,
+    IOG_IPC_MSG_SHUTDOWN = 7,
+} iog_ipc_msg_type_t;
 
 /* Generic IPC message header */
 typedef struct {
-    rw_ipc_msg_type_t type;
+    iog_ipc_msg_type_t type;
     uint32_t seq;
-} rw_ipc_msg_t;
+} iog_ipc_msg_t;
 
-void rw_ipc_msg_init(rw_ipc_msg_t *msg, rw_ipc_msg_type_t type);
+void iog_ipc_msg_init(iog_ipc_msg_t *msg, iog_ipc_msg_type_t type);
 
 /* Auth request (Worker → sec-mod) */
 typedef struct {
@@ -1378,13 +1378,13 @@ typedef struct {
     const uint8_t *cookie;
     size_t cookie_len;
     const char *source_ip;
-} rw_ipc_auth_request_t;
+} iog_ipc_auth_request_t;
 
-[[nodiscard]] ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req,
+[[nodiscard]] ssize_t iog_ipc_pack_auth_request(const iog_ipc_auth_request_t *req,
                                                 uint8_t *buf, size_t buf_size);
-[[nodiscard]] int rw_ipc_unpack_auth_request(const uint8_t *data, size_t len,
-                                              rw_ipc_auth_request_t *out);
-void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req);
+[[nodiscard]] int iog_ipc_unpack_auth_request(const uint8_t *data, size_t len,
+                                              iog_ipc_auth_request_t *out);
+void iog_ipc_free_auth_request(iog_ipc_auth_request_t *req);
 
 /* Auth response (sec-mod → Worker) */
 typedef struct {
@@ -1395,13 +1395,13 @@ typedef struct {
     uint32_t session_ttl;
     const char *assigned_ip;
     const char *dns_server;
-} rw_ipc_auth_response_t;
+} iog_ipc_auth_response_t;
 
-[[nodiscard]] ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp,
+[[nodiscard]] ssize_t iog_ipc_pack_auth_response(const iog_ipc_auth_response_t *resp,
                                                   uint8_t *buf, size_t buf_size);
-[[nodiscard]] int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len,
-                                                rw_ipc_auth_response_t *out);
-void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp);
+[[nodiscard]] int iog_ipc_unpack_auth_response(const uint8_t *data, size_t len,
+                                                iog_ipc_auth_response_t *out);
+void iog_ipc_free_auth_response(iog_ipc_auth_response_t *resp);
 
 /* Worker status (Worker → Main) */
 typedef struct {
@@ -1409,35 +1409,35 @@ typedef struct {
     uint64_t bytes_rx;
     uint64_t bytes_tx;
     uint32_t pid;
-} rw_ipc_worker_status_t;
+} iog_ipc_worker_status_t;
 
-[[nodiscard]] ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status,
+[[nodiscard]] ssize_t iog_ipc_pack_worker_status(const iog_ipc_worker_status_t *status,
                                                   uint8_t *buf, size_t buf_size);
-[[nodiscard]] int rw_ipc_unpack_worker_status(const uint8_t *data, size_t len,
-                                                rw_ipc_worker_status_t *out);
+[[nodiscard]] int iog_ipc_unpack_worker_status(const uint8_t *data, size_t len,
+                                                iog_ipc_worker_status_t *out);
 
-#endif /* RINGWALL_IPC_MESSAGES_H */
+#endif /* IOGUARD_IPC_MESSAGES_H */
 ```
 
 `src/ipc/messages.c` — wraps protobuf-c generated code:
 ```c
 #include "ipc/messages.h"
-#include "rw_ipc.pb-c.h"
+#include "iog_ipc.pb-c.h"
 #include <string.h>
 #include <stdlib.h>
 
-void rw_ipc_msg_init(rw_ipc_msg_t *msg, rw_ipc_msg_type_t type)
+void iog_ipc_msg_init(iog_ipc_msg_t *msg, iog_ipc_msg_type_t type)
 {
     msg->type = type;
     msg->seq = 0;
 }
 
-ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req,
+ssize_t iog_ipc_pack_auth_request(const iog_ipc_auth_request_t *req,
                                   uint8_t *buf, size_t buf_size)
 {
-    WgIpc__AuthRequest pb = RW_IPC__AUTH_REQUEST__INIT;
-    WgIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
-    hdr.type = RW_IPC__MSG_TYPE__MSG_TYPE_AUTH_REQUEST;
+    WgIpc__AuthRequest pb = IOG_IPC__AUTH_REQUEST__INIT;
+    WgIpc__IpcHeader hdr = IOG_IPC__IPC_HEADER__INIT;
+    hdr.type = IOG_IPC__MSG_TYPE__MSG_TYPE_AUTH_REQUEST;
 
     pb.header = &hdr;
     pb.username = (char *)req->username;
@@ -1449,17 +1449,17 @@ ssize_t rw_ipc_pack_auth_request(const rw_ipc_auth_request_t *req,
         pb.has_cookie = 1;
     }
 
-    size_t packed_size = rw_ipc__auth_request__get_packed_size(&pb);
+    size_t packed_size = iog_ipc__auth_request__get_packed_size(&pb);
     if (packed_size > buf_size) {
         return -1;
     }
-    return (ssize_t)rw_ipc__auth_request__pack(&pb, buf);
+    return (ssize_t)iog_ipc__auth_request__pack(&pb, buf);
 }
 
-int rw_ipc_unpack_auth_request(const uint8_t *data, size_t len,
-                                rw_ipc_auth_request_t *out)
+int iog_ipc_unpack_auth_request(const uint8_t *data, size_t len,
+                                iog_ipc_auth_request_t *out)
 {
-    WgIpc__AuthRequest *pb = rw_ipc__auth_request__unpack(nullptr, len, data);
+    WgIpc__AuthRequest *pb = iog_ipc__auth_request__unpack(nullptr, len, data);
     if (pb == nullptr) {
         return -1;
     }
@@ -1475,11 +1475,11 @@ int rw_ipc_unpack_auth_request(const uint8_t *data, size_t len,
             out->cookie_len = pb->cookie.len;
         }
     }
-    rw_ipc__auth_request__free_unpacked(pb, nullptr);
+    iog_ipc__auth_request__free_unpacked(pb, nullptr);
     return 0;
 }
 
-void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req)
+void iog_ipc_free_auth_request(iog_ipc_auth_request_t *req)
 {
     free((void *)req->username);
     free((void *)req->group);
@@ -1488,12 +1488,12 @@ void rw_ipc_free_auth_request(rw_ipc_auth_request_t *req)
     memset(req, 0, sizeof(*req));
 }
 
-ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp,
+ssize_t iog_ipc_pack_auth_response(const iog_ipc_auth_response_t *resp,
                                     uint8_t *buf, size_t buf_size)
 {
-    WgIpc__AuthResponse pb = RW_IPC__AUTH_RESPONSE__INIT;
-    WgIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
-    hdr.type = RW_IPC__MSG_TYPE__MSG_TYPE_AUTH_RESPONSE;
+    WgIpc__AuthResponse pb = IOG_IPC__AUTH_RESPONSE__INIT;
+    WgIpc__IpcHeader hdr = IOG_IPC__IPC_HEADER__INIT;
+    hdr.type = IOG_IPC__MSG_TYPE__MSG_TYPE_AUTH_RESPONSE;
 
     pb.header = &hdr;
     pb.success = resp->success;
@@ -1507,17 +1507,17 @@ ssize_t rw_ipc_pack_auth_response(const rw_ipc_auth_response_t *resp,
         pb.has_session_cookie = 1;
     }
 
-    size_t packed_size = rw_ipc__auth_response__get_packed_size(&pb);
+    size_t packed_size = iog_ipc__auth_response__get_packed_size(&pb);
     if (packed_size > buf_size) {
         return -1;
     }
-    return (ssize_t)rw_ipc__auth_response__pack(&pb, buf);
+    return (ssize_t)iog_ipc__auth_response__pack(&pb, buf);
 }
 
-int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len,
-                                  rw_ipc_auth_response_t *out)
+int iog_ipc_unpack_auth_response(const uint8_t *data, size_t len,
+                                  iog_ipc_auth_response_t *out)
 {
-    WgIpc__AuthResponse *pb = rw_ipc__auth_response__unpack(nullptr, len, data);
+    WgIpc__AuthResponse *pb = iog_ipc__auth_response__unpack(nullptr, len, data);
     if (pb == nullptr) {
         return -1;
     }
@@ -1536,11 +1536,11 @@ int rw_ipc_unpack_auth_response(const uint8_t *data, size_t len,
             out->session_cookie_len = pb->session_cookie.len;
         }
     }
-    rw_ipc__auth_response__free_unpacked(pb, nullptr);
+    iog_ipc__auth_response__free_unpacked(pb, nullptr);
     return 0;
 }
 
-void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp)
+void iog_ipc_free_auth_response(iog_ipc_auth_response_t *resp)
 {
     free((void *)resp->error_msg);
     free((void *)resp->assigned_ip);
@@ -1549,12 +1549,12 @@ void rw_ipc_free_auth_response(rw_ipc_auth_response_t *resp)
     memset(resp, 0, sizeof(*resp));
 }
 
-ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status,
+ssize_t iog_ipc_pack_worker_status(const iog_ipc_worker_status_t *status,
                                     uint8_t *buf, size_t buf_size)
 {
-    WgIpc__WorkerStatus pb = RW_IPC__WORKER_STATUS__INIT;
-    WgIpc__IpcHeader hdr = RW_IPC__IPC_HEADER__INIT;
-    hdr.type = RW_IPC__MSG_TYPE__MSG_TYPE_WORKER_STATUS;
+    WgIpc__WorkerStatus pb = IOG_IPC__WORKER_STATUS__INIT;
+    WgIpc__IpcHeader hdr = IOG_IPC__IPC_HEADER__INIT;
+    hdr.type = IOG_IPC__MSG_TYPE__MSG_TYPE_WORKER_STATUS;
 
     pb.header = &hdr;
     pb.active_connections = status->active_connections;
@@ -1562,17 +1562,17 @@ ssize_t rw_ipc_pack_worker_status(const rw_ipc_worker_status_t *status,
     pb.bytes_tx = status->bytes_tx;
     pb.pid = status->pid;
 
-    size_t packed_size = rw_ipc__worker_status__get_packed_size(&pb);
+    size_t packed_size = iog_ipc__worker_status__get_packed_size(&pb);
     if (packed_size > buf_size) {
         return -1;
     }
-    return (ssize_t)rw_ipc__worker_status__pack(&pb, buf);
+    return (ssize_t)iog_ipc__worker_status__pack(&pb, buf);
 }
 
-int rw_ipc_unpack_worker_status(const uint8_t *data, size_t len,
-                                  rw_ipc_worker_status_t *out)
+int iog_ipc_unpack_worker_status(const uint8_t *data, size_t len,
+                                  iog_ipc_worker_status_t *out)
 {
-    WgIpc__WorkerStatus *pb = rw_ipc__worker_status__unpack(nullptr, len, data);
+    WgIpc__WorkerStatus *pb = iog_ipc__worker_status__unpack(nullptr, len, data);
     if (pb == nullptr) {
         return -1;
     }
@@ -1580,7 +1580,7 @@ int rw_ipc_unpack_worker_status(const uint8_t *data, size_t len,
     out->bytes_rx = pb->bytes_rx;
     out->bytes_tx = pb->bytes_tx;
     out->pid = pb->pid;
-    rw_ipc__worker_status__free_unpacked(pb, nullptr);
+    iog_ipc__worker_status__free_unpacked(pb, nullptr);
     return 0;
 }
 ```
@@ -1594,7 +1594,7 @@ Expected: All 4 tests PASS.
 **Step 6: Commit**
 
 ```bash
-git add src/ipc/proto/rw_ipc.proto src/ipc/messages.h src/ipc/messages.c \
+git add src/ipc/proto/iog_ipc.proto src/ipc/messages.h src/ipc/messages.c \
         tests/unit/test_ipc_messages.c CMakeLists.txt
 git commit -m "feat: add protobuf-c IPC message pack/unpack with arena allocator"
 ```
@@ -1725,7 +1725,7 @@ void test_config_tls_values(void)
 void test_config_defaults_when_missing(void)
 {
     /* Minimal config: just [server] */
-    const char *minimal = "tests/fixtures/ringwall_minimal.toml";
+    const char *minimal = "tests/fixtures/ioguard_minimal.toml";
     /* This file has only [server] listen-port = 8443 */
 
     iog_config_t cfg;
@@ -1762,11 +1762,11 @@ int main(void)
 #include <stdbool.h>
 #include <stdint.h>
 
-#define RW_CONFIG_MAX_DNS 8
-#define RW_CONFIG_MAX_STR 256
+#define IOG_CONFIG_MAX_DNS 8
+#define IOG_CONFIG_MAX_STR 256
 
 typedef struct {
-    char listen_address[RW_CONFIG_MAX_STR];
+    char listen_address[IOG_CONFIG_MAX_STR];
     uint16_t listen_port;
     uint16_t dtls_port;
     uint32_t max_clients;
@@ -1780,16 +1780,16 @@ typedef struct {
 } iog_config_auth_t;
 
 typedef struct {
-    char ipv4_pool[RW_CONFIG_MAX_STR];
-    char dns[RW_CONFIG_MAX_DNS][RW_CONFIG_MAX_STR];
+    char ipv4_pool[IOG_CONFIG_MAX_STR];
+    char dns[IOG_CONFIG_MAX_DNS][IOG_CONFIG_MAX_STR];
     uint32_t dns_count;
-    char default_domain[RW_CONFIG_MAX_STR];
+    char default_domain[IOG_CONFIG_MAX_STR];
     uint32_t mtu;
 } iog_config_network_t;
 
 typedef struct {
-    char cert_file[RW_CONFIG_MAX_STR];
-    char key_file[RW_CONFIG_MAX_STR];
+    char cert_file[IOG_CONFIG_MAX_STR];
+    char key_file[IOG_CONFIG_MAX_STR];
     char min_version[16];
     char ciphers[512];
 } iog_config_tls_t;
@@ -1797,7 +1797,7 @@ typedef struct {
 typedef struct {
     bool seccomp;
     bool landlock;
-    char wolfsentry_config[RW_CONFIG_MAX_STR];
+    char wolfsentry_config[IOG_CONFIG_MAX_STR];
 } iog_config_security_t;
 
 typedef struct {
@@ -1915,7 +1915,7 @@ static void parse_network(toml_table_t *tbl, iog_config_network_t *net)
     toml_array_t *dns_arr = toml_array_in(tbl, "dns");
     if (dns_arr != nullptr) {
         int n = toml_array_nelem(dns_arr);
-        if (n > RW_CONFIG_MAX_DNS) { n = RW_CONFIG_MAX_DNS; }
+        if (n > IOG_CONFIG_MAX_DNS) { n = IOG_CONFIG_MAX_DNS; }
         for (int i = 0; i < n; i++) {
             d = toml_string_at(dns_arr, i);
             if (d.ok) {
@@ -2055,48 +2055,48 @@ void tearDown(void) {}
 void test_rw_process_spawn_and_wait(void)
 {
     /* Spawn /bin/true — should exit 0 */
-    rw_process_t proc;
+    iog_process_t proc;
     const char *argv[] = {"/bin/true", nullptr};
-    int ret = rw_process_spawn(&proc, "/bin/true", argv);
+    int ret = iog_process_spawn(&proc, "/bin/true", argv);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_THAN(0, proc.pid);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, proc.pidfd);
 
     /* Wait for exit */
     int exit_status;
-    ret = rw_process_wait(&proc, &exit_status, 5000);
+    ret = iog_process_wait(&proc, &exit_status, 5000);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_INT(0, exit_status);
 
-    rw_process_cleanup(&proc);
+    iog_process_cleanup(&proc);
 }
 
 void test_rw_process_spawn_exit_code(void)
 {
-    rw_process_t proc;
+    iog_process_t proc;
     const char *argv[] = {"/bin/false", nullptr};
-    int ret = rw_process_spawn(&proc, "/bin/false", argv);
+    int ret = iog_process_spawn(&proc, "/bin/false", argv);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     int exit_status;
-    ret = rw_process_wait(&proc, &exit_status, 5000);
+    ret = iog_process_wait(&proc, &exit_status, 5000);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_NOT_EQUAL(0, exit_status);
 
-    rw_process_cleanup(&proc);
+    iog_process_cleanup(&proc);
 }
 
 void test_rw_process_spawn_nonexistent(void)
 {
-    rw_process_t proc;
+    iog_process_t proc;
     const char *argv[] = {"/nonexistent", nullptr};
-    int ret = rw_process_spawn(&proc, "/nonexistent", argv);
+    int ret = iog_process_spawn(&proc, "/nonexistent", argv);
     /* Should fail at spawn or child exits immediately */
     if (ret == 0) {
         int exit_status;
-        rw_process_wait(&proc, &exit_status, 5000);
+        iog_process_wait(&proc, &exit_status, 5000);
         TEST_ASSERT_NOT_EQUAL(0, exit_status);
-        rw_process_cleanup(&proc);
+        iog_process_cleanup(&proc);
     } else {
         TEST_ASSERT_LESS_THAN(0, ret);
     }
@@ -2104,20 +2104,20 @@ void test_rw_process_spawn_nonexistent(void)
 
 void test_rw_process_kill(void)
 {
-    rw_process_t proc;
+    iog_process_t proc;
     const char *argv[] = {"/bin/sleep", "60", nullptr};
-    int ret = rw_process_spawn(&proc, "/bin/sleep", argv);
+    int ret = iog_process_spawn(&proc, "/bin/sleep", argv);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Send SIGTERM via pidfd */
-    ret = rw_process_signal(&proc, SIGTERM);
+    ret = iog_process_signal(&proc, SIGTERM);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     int exit_status;
-    ret = rw_process_wait(&proc, &exit_status, 5000);
+    ret = iog_process_wait(&proc, &exit_status, 5000);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    rw_process_cleanup(&proc);
+    iog_process_cleanup(&proc);
 }
 
 int main(void)
@@ -2135,8 +2135,8 @@ int main(void)
 
 `src/core/process.h`:
 ```c
-#ifndef RINGWALL_CORE_PROCESS_H
-#define RINGWALL_CORE_PROCESS_H
+#ifndef IOGUARD_CORE_PROCESS_H
+#define IOGUARD_CORE_PROCESS_H
 
 #include <signal.h>
 #include <sys/types.h>
@@ -2145,28 +2145,28 @@ int main(void)
 typedef struct {
     pid_t pid;
     int pidfd; /* pidfd for race-free operations */
-} rw_process_t;
+} iog_process_t;
 
 /* Spawn a child process using posix_spawn / pidfd_spawn.
  * Returns 0 on success, negative errno on failure.
  * proc->pidfd is set for race-free wait/signal. */
-[[nodiscard]] int rw_process_spawn(rw_process_t *proc, const char *path,
+[[nodiscard]] int iog_process_spawn(iog_process_t *proc, const char *path,
                                     const char *const argv[]);
 
 /* Wait for process exit (blocking with timeout).
  * timeout_ms: max wait time, 0 = indefinite.
  * exit_status: filled with exit code or signal number.
  * Returns 0 on success, -ETIMEDOUT on timeout. */
-[[nodiscard]] int rw_process_wait(rw_process_t *proc, int *exit_status,
+[[nodiscard]] int iog_process_wait(iog_process_t *proc, int *exit_status,
                                    uint32_t timeout_ms);
 
 /* Send signal to process via pidfd (race-free) */
-[[nodiscard]] int rw_process_signal(rw_process_t *proc, int sig);
+[[nodiscard]] int iog_process_signal(iog_process_t *proc, int sig);
 
 /* Cleanup process resources (close pidfd) */
-void rw_process_cleanup(rw_process_t *proc);
+void iog_process_cleanup(iog_process_t *proc);
 
-#endif /* RINGWALL_CORE_PROCESS_H */
+#endif /* IOGUARD_CORE_PROCESS_H */
 ```
 
 `src/core/process.c`:
@@ -2188,7 +2188,7 @@ void rw_process_cleanup(rw_process_t *proc);
 
 extern char **environ;
 
-int rw_process_spawn(rw_process_t *proc, const char *path,
+int iog_process_spawn(iog_process_t *proc, const char *path,
                       const char *const argv[])
 {
     memset(proc, 0, sizeof(*proc));
@@ -2248,7 +2248,7 @@ cleanup:
     return ret;
 }
 
-int rw_process_wait(rw_process_t *proc, int *exit_status, uint32_t timeout_ms)
+int iog_process_wait(iog_process_t *proc, int *exit_status, uint32_t timeout_ms)
 {
     *exit_status = -1;
 
@@ -2280,7 +2280,7 @@ int rw_process_wait(rw_process_t *proc, int *exit_status, uint32_t timeout_ms)
     return 0;
 }
 
-int rw_process_signal(rw_process_t *proc, int sig)
+int iog_process_signal(iog_process_t *proc, int sig)
 {
     if (proc->pidfd >= 0) {
         int ret = syscall(__NR_pidfd_send_signal, proc->pidfd, sig, nullptr, 0);
@@ -2296,7 +2296,7 @@ int rw_process_signal(rw_process_t *proc, int sig)
     return 0;
 }
 
-void rw_process_cleanup(rw_process_t *proc)
+void iog_process_cleanup(iog_process_t *proc)
 {
     if (proc->pidfd >= 0) {
         close(proc->pidfd);
@@ -2308,10 +2308,10 @@ void rw_process_cleanup(rw_process_t *proc)
 
 Add to CMakeLists.txt:
 ```cmake
-add_library(rw_core STATIC src/core/process.c)
-target_include_directories(rw_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_core STATIC src/core/process.c)
+target_include_directories(iog_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-rw_add_test(test_process tests/unit/test_process.c rw_core)
+iog_add_test(test_process tests/unit/test_process.c iog_core)
 ```
 
 **Step 3: Run tests**
@@ -2351,8 +2351,8 @@ void tearDown(void) {}
 
 void test_ipc_roundtrip_auth(void)
 {
-    rw_ipc_channel_t ch;
-    int ret = rw_ipc_create_pair(&ch);
+    iog_ipc_channel_t ch;
+    int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     pid_t pid = fork();
@@ -2364,14 +2364,14 @@ void test_ipc_roundtrip_auth(void)
 
         /* Receive auth request */
         uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
-        ssize_t n = rw_ipc_recv(ch.child_fd, buf, sizeof(buf));
+        ssize_t n = iog_ipc_recv(ch.child_fd, buf, sizeof(buf));
         if (n <= 0) { _exit(1); }
 
-        rw_ipc_auth_request_t req;
-        if (rw_ipc_unpack_auth_request(buf, n, &req) != 0) { _exit(2); }
+        iog_ipc_auth_request_t req;
+        if (iog_ipc_unpack_auth_request(buf, n, &req) != 0) { _exit(2); }
 
         /* Build response */
-        rw_ipc_auth_response_t resp = {
+        iog_ipc_auth_response_t resp = {
             .success = true,
             .assigned_ip = "10.10.0.100",
             .dns_server = "10.0.0.53",
@@ -2379,11 +2379,11 @@ void test_ipc_roundtrip_auth(void)
         };
 
         uint8_t resp_buf[IOG_IPC_MAX_MSG_SIZE];
-        ssize_t packed = rw_ipc_pack_auth_response(&resp, resp_buf, sizeof(resp_buf));
+        ssize_t packed = iog_ipc_pack_auth_response(&resp, resp_buf, sizeof(resp_buf));
         if (packed <= 0) { _exit(3); }
 
-        rw_ipc_send(ch.child_fd, resp_buf, packed);
-        rw_ipc_free_auth_request(&req);
+        iog_ipc_send(ch.child_fd, resp_buf, packed);
+        iog_ipc_free_auth_request(&req);
         close(ch.child_fd);
         _exit(0);
     }
@@ -2392,32 +2392,32 @@ void test_ipc_roundtrip_auth(void)
     close(ch.child_fd);
 
     /* Send auth request */
-    rw_ipc_auth_request_t req = {
+    iog_ipc_auth_request_t req = {
         .username = "admin",
         .group = "vpn-users",
         .source_ip = "192.168.1.100",
     };
 
     uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_request(&req, buf, sizeof(buf));
+    ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
-    ret = rw_ipc_send(ch.parent_fd, buf, packed);
+    ret = iog_ipc_send(ch.parent_fd, buf, packed);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Receive auth response */
-    ssize_t n = rw_ipc_recv(ch.parent_fd, buf, sizeof(buf));
+    ssize_t n = iog_ipc_recv(ch.parent_fd, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
-    rw_ipc_auth_response_t resp;
-    ret = rw_ipc_unpack_auth_response(buf, n, &resp);
+    iog_ipc_auth_response_t resp;
+    ret = iog_ipc_unpack_auth_response(buf, n, &resp);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(resp.success);
     TEST_ASSERT_EQUAL_STRING("10.10.0.100", resp.assigned_ip);
     TEST_ASSERT_EQUAL_STRING("10.0.0.53", resp.dns_server);
     TEST_ASSERT_EQUAL_UINT32(3600, resp.session_ttl);
 
-    rw_ipc_free_auth_response(&resp);
+    iog_ipc_free_auth_response(&resp);
     close(ch.parent_fd);
 
     /* Wait for child */
@@ -2437,7 +2437,7 @@ int main(void)
 
 Add to CMakeLists.txt:
 ```cmake
-rw_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c rw_ipc iog_io)
+iog_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c iog_ipc iog_io)
 ```
 
 **Step 2: Run integration test**

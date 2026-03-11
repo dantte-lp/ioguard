@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_SHUTDOWN_H
-#define RINGWALL_CORE_SHUTDOWN_H
+#ifndef IOGUARD_CORE_SHUTDOWN_H
+#define IOGUARD_CORE_SHUTDOWN_H
 
 #include "core/conn_data.h"
 #include "core/worker.h"
@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 /** Default drain timeout in seconds before force-closing connections. */
-constexpr uint32_t RW_SHUTDOWN_DRAIN_TIMEOUT_S = 30;
+constexpr uint32_t IOG_SHUTDOWN_DRAIN_TIMEOUT_S = 30;
 
 /**
  * @brief Shutdown context for coordinating graceful drain.
@@ -62,4 +62,4 @@ typedef struct {
  */
 [[nodiscard]] bool iog_shutdown_timed_out(const iog_shutdown_ctx_t *ctx, uint32_t elapsed_s);
 
-#endif /* RINGWALL_CORE_SHUTDOWN_H */
+#endif /* IOGUARD_CORE_SHUTDOWN_H */

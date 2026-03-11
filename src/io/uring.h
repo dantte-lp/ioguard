@@ -1,5 +1,5 @@
-#ifndef RINGWALL_IO_URING_H
-#define RINGWALL_IO_URING_H
+#ifndef IOGUARD_IO_URING_H
+#define IOGUARD_IO_URING_H
 
 /* liburing.h requires POSIX/GNU types (sigset_t, AT_FDCWD, idtype_t, etc.)
  * _GNU_SOURCE is set via target_compile_definitions in CMakeLists.txt */
@@ -97,4 +97,4 @@ void iog_io_stop(iog_io_ctx_t *ctx);
 
 [[nodiscard]] int iog_io_cancel(iog_io_ctx_t *ctx, void *user_data);
 
-#endif /* RINGWALL_IO_URING_H */
+#endif /* IOGUARD_IO_URING_H */

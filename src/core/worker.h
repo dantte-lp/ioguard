@@ -6,8 +6,8 @@
  * and lifecycle states. No event loop — pure context management.
  */
 
-#ifndef RINGWALL_CORE_WORKER_H
-#define RINGWALL_CORE_WORKER_H
+#ifndef IOGUARD_CORE_WORKER_H
+#define IOGUARD_CORE_WORKER_H
 
 #include <stdint.h>
 
@@ -46,7 +46,7 @@ typedef struct {
     size_t recv_len;
 } iog_connection_t;
 
-typedef struct rw_worker iog_worker_t;
+typedef struct iog_worker iog_worker_t;
 
 /** Initialize worker config with defaults. */
 void iog_worker_config_init(iog_worker_config_t *cfg);
@@ -89,4 +89,4 @@ void iog_worker_destroy(iog_worker_t *w);
 /** Get human-readable worker state name. */
 [[nodiscard]] const char *iog_worker_state_name(iog_worker_state_t state);
 
-#endif /* RINGWALL_CORE_WORKER_H */
+#endif /* IOGUARD_CORE_WORKER_H */

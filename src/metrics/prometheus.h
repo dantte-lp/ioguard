@@ -25,14 +25,14 @@ typedef struct {
     _Atomic uint64_t value;
     const char *name;
     const char *help;
-} rw_prom_counter_t;
+} iog_prom_counter_t;
 
 /** Gauge that can go up and down (int64, atomic). */
 typedef struct {
     _Atomic int64_t value;
     const char *name;
     const char *help;
-} rw_prom_gauge_t;
+} iog_prom_gauge_t;
 
 /** Histogram with fixed bucket boundaries. */
 typedef struct {
@@ -42,23 +42,23 @@ typedef struct {
     _Atomic uint64_t bucket_counts[IOG_PROM_HISTOGRAM_BUCKETS + 1]; /* +1 for +Inf */
     _Atomic uint64_t sum_us; /* sum in microseconds */
     _Atomic uint64_t count;
-} rw_prom_histogram_t;
+} iog_prom_histogram_t;
 
 /** Opaque registry owning references to all registered metrics. */
-typedef struct rw_prom_registry rw_prom_registry_t;
+typedef struct iog_prom_registry iog_prom_registry_t;
 
 /**
  * @brief Create a new Prometheus metrics registry.
  * @param out  Pointer to store the allocated registry.
  * @return 0 on success, -EINVAL if out is nullptr, -ENOMEM on allocation failure.
  */
-[[nodiscard]] int rw_prom_registry_create(rw_prom_registry_t **out);
+[[nodiscard]] int iog_prom_registry_create(iog_prom_registry_t **out);
 
 /**
  * @brief Destroy a registry and free its memory.
  * @param reg  Registry to destroy (nullptr is safe).
  */
-void rw_prom_registry_destroy(rw_prom_registry_t *reg);
+void iog_prom_registry_destroy(iog_prom_registry_t *reg);
 
 /**
  * @brief Register a counter with the registry.
@@ -66,8 +66,8 @@ void rw_prom_registry_destroy(rw_prom_registry_t *reg);
  * @param counter Counter to register (caller retains ownership).
  * @return 0 on success, -EINVAL if arguments are nullptr, -ENOSPC if full.
  */
-[[nodiscard]] int rw_prom_register_counter(rw_prom_registry_t *reg,
-                                           rw_prom_counter_t *counter);
+[[nodiscard]] int iog_prom_register_counter(iog_prom_registry_t *reg,
+                                           iog_prom_counter_t *counter);
 
 /**
  * @brief Register a gauge with the registry.
@@ -75,8 +75,8 @@ void rw_prom_registry_destroy(rw_prom_registry_t *reg);
  * @param gauge Gauge to register (caller retains ownership).
  * @return 0 on success, -EINVAL if arguments are nullptr, -ENOSPC if full.
  */
-[[nodiscard]] int rw_prom_register_gauge(rw_prom_registry_t *reg,
-                                         rw_prom_gauge_t *gauge);
+[[nodiscard]] int iog_prom_register_gauge(iog_prom_registry_t *reg,
+                                         iog_prom_gauge_t *gauge);
 
 /**
  * @brief Register a histogram with the registry.
@@ -84,47 +84,47 @@ void rw_prom_registry_destroy(rw_prom_registry_t *reg);
  * @param hist Histogram to register (caller retains ownership).
  * @return 0 on success, -EINVAL if arguments are nullptr, -ENOSPC if full.
  */
-[[nodiscard]] int rw_prom_register_histogram(rw_prom_registry_t *reg,
-                                             rw_prom_histogram_t *hist);
+[[nodiscard]] int iog_prom_register_histogram(iog_prom_registry_t *reg,
+                                             iog_prom_histogram_t *hist);
 
 /**
  * @brief Increment a counter by 1.
  * @param counter Counter to increment.
  */
-void rw_prom_counter_inc(rw_prom_counter_t *counter);
+void iog_prom_counter_inc(iog_prom_counter_t *counter);
 
 /**
  * @brief Add a value to a counter.
  * @param counter Counter to add to.
  * @param n       Value to add.
  */
-void rw_prom_counter_add(rw_prom_counter_t *counter, uint64_t n);
+void iog_prom_counter_add(iog_prom_counter_t *counter, uint64_t n);
 
 /**
  * @brief Set a gauge to an absolute value.
  * @param gauge Gauge to set.
  * @param val   Value to set.
  */
-void rw_prom_gauge_set(rw_prom_gauge_t *gauge, int64_t val);
+void iog_prom_gauge_set(iog_prom_gauge_t *gauge, int64_t val);
 
 /**
  * @brief Increment a gauge by 1.
  * @param gauge Gauge to increment.
  */
-void rw_prom_gauge_inc(rw_prom_gauge_t *gauge);
+void iog_prom_gauge_inc(iog_prom_gauge_t *gauge);
 
 /**
  * @brief Decrement a gauge by 1.
  * @param gauge Gauge to decrement.
  */
-void rw_prom_gauge_dec(rw_prom_gauge_t *gauge);
+void iog_prom_gauge_dec(iog_prom_gauge_t *gauge);
 
 /**
  * @brief Observe a value in a histogram.
  * @param hist  Histogram to observe into.
  * @param value Observed value (same unit as boundaries).
  */
-void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value);
+void iog_prom_histogram_observe(iog_prom_histogram_t *hist, double value);
 
 /**
  * @brief Format all registered metrics in Prometheus text exposition format.
@@ -134,7 +134,7 @@ void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value);
  * @return Number of bytes written (excluding NUL) on success,
  *         -EINVAL if arguments are invalid, -ENOSPC if buffer is too small.
  */
-[[nodiscard]] ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf,
+[[nodiscard]] ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf,
                                      size_t buf_size);
 
 #endif /* IOGUARD_METRICS_PROMETHEUS_H */

@@ -30,7 +30,7 @@ static void make_user(iog_user_record_t *u, const char *name)
     u->totp_enabled = false;
 }
 
-static void make_audit(rw_audit_entry_t *e, const char *user, const char *evt)
+static void make_audit(iog_audit_entry_t *e, const char *user, const char *evt)
 {
     memset(e, 0, sizeof(*e));
     snprintf(e->event_type, sizeof(e->event_type), "%s", evt);
@@ -114,7 +114,7 @@ void test_sqlite_user_duplicate(void)
 
 void test_sqlite_audit_log_insert(void)
 {
-    rw_audit_entry_t e;
+    iog_audit_entry_t e;
     make_audit(&e, "alice", "login");
     int rc = iog_sqlite_audit_insert(&ctx, &e);
     TEST_ASSERT_EQUAL_INT(0, rc);
@@ -123,7 +123,7 @@ void test_sqlite_audit_log_insert(void)
 void test_sqlite_audit_log_query_by_username(void)
 {
     /* Insert several entries for different users. */
-    rw_audit_entry_t e;
+    iog_audit_entry_t e;
     make_audit(&e, "dave", "login");
     int rc = iog_sqlite_audit_insert(&ctx, &e);
     TEST_ASSERT_EQUAL_INT(0, rc);
@@ -137,7 +137,7 @@ void test_sqlite_audit_log_query_by_username(void)
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     /* Query dave's entries. */
-    rw_audit_entry_t results[10];
+    iog_audit_entry_t results[10];
     size_t count = 0;
     rc = iog_sqlite_audit_query_by_username(&ctx, "dave", results, 10, &count);
     TEST_ASSERT_EQUAL_INT(0, rc);
@@ -233,12 +233,12 @@ void test_sqlite_injection_prevention(void)
     TEST_ASSERT_EQUAL_INT(-ENOENT, rc);
 
     /* Also try via audit query — should return 0 results, not all rows. */
-    rw_audit_entry_t e;
+    iog_audit_entry_t e;
     make_audit(&e, "real_user", "login");
     rc = iog_sqlite_audit_insert(&ctx, &e);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rw_audit_entry_t results[10];
+    iog_audit_entry_t results[10];
     size_t count = 99;
     rc = iog_sqlite_audit_query_by_username(&ctx, evil, results, 10, &count);
     TEST_ASSERT_EQUAL_INT(0, rc);

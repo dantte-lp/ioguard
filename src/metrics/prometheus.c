@@ -13,21 +13,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct rw_prom_registry {
-    rw_prom_counter_t *counters[IOG_PROM_MAX_METRICS];
+struct iog_prom_registry {
+    iog_prom_counter_t *counters[IOG_PROM_MAX_METRICS];
     size_t counter_count;
-    rw_prom_gauge_t *gauges[IOG_PROM_MAX_METRICS];
+    iog_prom_gauge_t *gauges[IOG_PROM_MAX_METRICS];
     size_t gauge_count;
-    rw_prom_histogram_t *histograms[IOG_PROM_MAX_METRICS];
+    iog_prom_histogram_t *histograms[IOG_PROM_MAX_METRICS];
     size_t histogram_count;
 };
 
-int rw_prom_registry_create(rw_prom_registry_t **out)
+int iog_prom_registry_create(iog_prom_registry_t **out)
 {
     if (out == nullptr)
         return -EINVAL;
 
-    rw_prom_registry_t *reg = calloc(1, sizeof(*reg));
+    iog_prom_registry_t *reg = calloc(1, sizeof(*reg));
     if (reg == nullptr)
         return -ENOMEM;
 
@@ -35,12 +35,12 @@ int rw_prom_registry_create(rw_prom_registry_t **out)
     return 0;
 }
 
-void rw_prom_registry_destroy(rw_prom_registry_t *reg)
+void iog_prom_registry_destroy(iog_prom_registry_t *reg)
 {
     free(reg);
 }
 
-int rw_prom_register_counter(rw_prom_registry_t *reg, rw_prom_counter_t *counter)
+int iog_prom_register_counter(iog_prom_registry_t *reg, iog_prom_counter_t *counter)
 {
     if (reg == nullptr || counter == nullptr)
         return -EINVAL;
@@ -51,7 +51,7 @@ int rw_prom_register_counter(rw_prom_registry_t *reg, rw_prom_counter_t *counter
     return 0;
 }
 
-int rw_prom_register_gauge(rw_prom_registry_t *reg, rw_prom_gauge_t *gauge)
+int iog_prom_register_gauge(iog_prom_registry_t *reg, iog_prom_gauge_t *gauge)
 {
     if (reg == nullptr || gauge == nullptr)
         return -EINVAL;
@@ -62,7 +62,7 @@ int rw_prom_register_gauge(rw_prom_registry_t *reg, rw_prom_gauge_t *gauge)
     return 0;
 }
 
-int rw_prom_register_histogram(rw_prom_registry_t *reg, rw_prom_histogram_t *hist)
+int iog_prom_register_histogram(iog_prom_registry_t *reg, iog_prom_histogram_t *hist)
 {
     if (reg == nullptr || hist == nullptr)
         return -EINVAL;
@@ -73,42 +73,42 @@ int rw_prom_register_histogram(rw_prom_registry_t *reg, rw_prom_histogram_t *his
     return 0;
 }
 
-void rw_prom_counter_inc(rw_prom_counter_t *counter)
+void iog_prom_counter_inc(iog_prom_counter_t *counter)
 {
     if (counter == nullptr)
         return;
     atomic_fetch_add(&counter->value, 1);
 }
 
-void rw_prom_counter_add(rw_prom_counter_t *counter, uint64_t n)
+void iog_prom_counter_add(iog_prom_counter_t *counter, uint64_t n)
 {
     if (counter == nullptr)
         return;
     atomic_fetch_add(&counter->value, n);
 }
 
-void rw_prom_gauge_set(rw_prom_gauge_t *gauge, int64_t val)
+void iog_prom_gauge_set(iog_prom_gauge_t *gauge, int64_t val)
 {
     if (gauge == nullptr)
         return;
     atomic_store(&gauge->value, val);
 }
 
-void rw_prom_gauge_inc(rw_prom_gauge_t *gauge)
+void iog_prom_gauge_inc(iog_prom_gauge_t *gauge)
 {
     if (gauge == nullptr)
         return;
     atomic_fetch_add(&gauge->value, 1);
 }
 
-void rw_prom_gauge_dec(rw_prom_gauge_t *gauge)
+void iog_prom_gauge_dec(iog_prom_gauge_t *gauge)
 {
     if (gauge == nullptr)
         return;
     atomic_fetch_sub(&gauge->value, 1);
 }
 
-void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value)
+void iog_prom_histogram_observe(iog_prom_histogram_t *hist, double value)
 {
     if (hist == nullptr)
         return;
@@ -161,7 +161,7 @@ static int prom_append(char *buf, size_t buf_size, size_t *offset, const char *f
     return written;
 }
 
-ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf, size_t buf_size)
+ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_size)
 {
     if (reg == nullptr || buf == nullptr || buf_size == 0)
         return -EINVAL;
@@ -170,7 +170,7 @@ ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf, size_t buf_size
 
     /* Format counters */
     for (size_t i = 0; i < reg->counter_count; i++) {
-        const rw_prom_counter_t *c = reg->counters[i];
+        const iog_prom_counter_t *c = reg->counters[i];
         uint64_t val = atomic_load(&c->value);
 
         if (c->help != nullptr)
@@ -181,7 +181,7 @@ ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf, size_t buf_size
 
     /* Format gauges */
     for (size_t i = 0; i < reg->gauge_count; i++) {
-        const rw_prom_gauge_t *g = reg->gauges[i];
+        const iog_prom_gauge_t *g = reg->gauges[i];
         int64_t val = atomic_load(&g->value);
 
         if (g->help != nullptr)
@@ -192,7 +192,7 @@ ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf, size_t buf_size
 
     /* Format histograms */
     for (size_t i = 0; i < reg->histogram_count; i++) {
-        const rw_prom_histogram_t *h = reg->histograms[i];
+        const iog_prom_histogram_t *h = reg->histograms[i];
 
         if (h->help != nullptr)
             prom_append(buf, buf_size, &offset, "# HELP %s %s\n", h->name, h->help);

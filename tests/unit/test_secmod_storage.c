@@ -21,13 +21,13 @@ static char mdbx_lock_path[PATH_MAX];
 void setUp(void)
 {
     /* Create temp paths for storage */
-    snprintf(mdbx_path, sizeof(mdbx_path), "/tmp/rw_test_mdbx_XXXXXX");
+    snprintf(mdbx_path, sizeof(mdbx_path), "/tmp/iog_test_mdbx_XXXXXX");
     int fd = mkstemp(mdbx_path);
     close(fd);
     unlink(mdbx_path); /* mdbx creates its own file */
     snprintf(mdbx_lock_path, sizeof(mdbx_lock_path), "%s-lck", mdbx_path);
 
-    snprintf(sqlite_path, sizeof(sqlite_path), "/tmp/rw_test_sqlite_XXXXXX");
+    snprintf(sqlite_path, sizeof(sqlite_path), "/tmp/iog_test_sqlite_XXXXXX");
     fd = mkstemp(sqlite_path);
     close(fd);
     unlink(sqlite_path); /* sqlite creates its own file */
@@ -101,7 +101,7 @@ void test_secmod_sqlite_audit_insert(void)
     TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Insert an audit entry */
-    rw_audit_entry_t entry;
+    iog_audit_entry_t entry;
     memset(&entry, 0, sizeof(entry));
     snprintf(entry.event_type, sizeof(entry.event_type), "AUTH");
     snprintf(entry.username, sizeof(entry.username), "alice");
@@ -112,7 +112,7 @@ void test_secmod_sqlite_audit_insert(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Query audit entries for alice */
-    rw_audit_entry_t results[4];
+    iog_audit_entry_t results[4];
     size_t count = 0;
     ret = iog_sqlite_audit_query_by_username(ctx.sqlite, "alice", results, 4, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -133,7 +133,7 @@ void test_secmod_auth_failure_audit(void)
     TEST_ASSERT_EQUAL_INT(0, iog_secmod_init(&ctx, sv[0], &config));
 
     /* Simulate a failed auth audit */
-    rw_audit_entry_t entry;
+    iog_audit_entry_t entry;
     memset(&entry, 0, sizeof(entry));
     snprintf(entry.event_type, sizeof(entry.event_type), "AUTH");
     snprintf(entry.username, sizeof(entry.username), "bob");
@@ -144,7 +144,7 @@ void test_secmod_auth_failure_audit(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Verify the failure was logged */
-    rw_audit_entry_t results[4];
+    iog_audit_entry_t results[4];
     size_t count = 0;
     ret = iog_sqlite_audit_query_by_username(ctx.sqlite, "bob", results, 4, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);

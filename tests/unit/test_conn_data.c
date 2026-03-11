@@ -59,10 +59,10 @@ void tearDown(void)
 }
 
 /* Helper: inject a CSTP-encoded frame into the test end of TLS socketpair */
-static int inject_cstp(rw_cstp_type_t type, const uint8_t *payload, size_t payload_len)
+static int inject_cstp(iog_cstp_type_t type, const uint8_t *payload, size_t payload_len)
 {
     uint8_t buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
-    int encoded = rw_cstp_encode(buf, sizeof(buf), type, payload, payload_len);
+    int encoded = iog_cstp_encode(buf, sizeof(buf), type, payload, payload_len);
     if (encoded < 0) {
         return encoded;
     }
@@ -137,8 +137,8 @@ void test_conn_data_tun_to_tls(void)
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
     /* Decode and verify */
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(tls_buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(tls_buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_DATA, decoded.type);
     TEST_ASSERT_EQUAL_UINT(sizeof(pkt), decoded.payload_len);
@@ -162,8 +162,8 @@ void test_conn_data_dpd_request_response(void)
     ssize_t n = read(tls_sv[1], tls_buf, sizeof(tls_buf));
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(tls_buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(tls_buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_DPD_RESP, decoded.type);
 }
@@ -223,8 +223,8 @@ void test_conn_data_compressed_lz4(void)
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
     /* Decode — should be COMPRESSED type */
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(tls_buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(tls_buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_COMPRESSED, decoded.type);
     /* Compressed payload should be smaller than original */
@@ -293,8 +293,8 @@ void test_conn_data_send_dpd_req(void)
     ssize_t n = read(tls_sv[1], buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_DPD_REQ, decoded.type);
 }
@@ -312,8 +312,8 @@ void test_conn_data_send_keepalive(void)
     ssize_t n = read(tls_sv[1], buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, (int)n);
 
-    rw_cstp_packet_t decoded;
-    int consumed = rw_cstp_decode(buf, (size_t)n, &decoded);
+    iog_cstp_packet_t decoded;
+    int consumed = iog_cstp_decode(buf, (size_t)n, &decoded);
     TEST_ASSERT_GREATER_THAN(0, consumed);
     TEST_ASSERT_EQUAL_INT(IOG_CSTP_KEEPALIVE, decoded.type);
 }

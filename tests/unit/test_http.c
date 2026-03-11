@@ -2,11 +2,11 @@
 #include <unity/unity.h>
 #include "network/http.h"
 
-static rw_http_parser_t parser;
+static iog_http_parser_t parser;
 
 void setUp(void)
 {
-    int ret = rw_http_parser_init(&parser);
+    int ret = iog_http_parser_init(&parser);
     TEST_ASSERT_EQUAL_INT(0, ret);
 }
 
@@ -24,7 +24,7 @@ void test_http_parse_post_auth(void)
                       "\r\n"
                       "<config-auth><auth>user:pass</auth></config>";
 
-    int ret = rw_http_parse(&parser, req, strlen(req));
+    int ret = iog_http_parse(&parser, req, strlen(req));
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(parser.request.message_complete);
     TEST_ASSERT_TRUE(parser.request.headers_complete);
@@ -46,7 +46,7 @@ void test_http_parse_connect_tunnel(void)
                       "Cookie: webvpn=tok456\r\n"
                       "\r\n";
 
-    int ret = rw_http_parse(&parser, req, strlen(req));
+    int ret = iog_http_parse(&parser, req, strlen(req));
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(parser.request.is_upgrade);
     TEST_ASSERT_TRUE(parser.request.headers_complete);
@@ -65,30 +65,30 @@ void test_http_get_header(void)
                       "\r\n"
                       "hello";
 
-    int ret = rw_http_parse(&parser, req, strlen(req));
+    int ret = iog_http_parse(&parser, req, strlen(req));
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    const char *cookie = rw_http_get_header(&parser.request, "Cookie");
+    const char *cookie = iog_http_get_header(&parser.request, "Cookie");
     TEST_ASSERT_NOT_NULL(cookie);
     TEST_ASSERT_EQUAL_STRING("webvpn=abc123", cookie);
 
-    const char *hostname = rw_http_get_header(&parser.request, "X-CSTP-Hostname");
+    const char *hostname = iog_http_get_header(&parser.request, "X-CSTP-Hostname");
     TEST_ASSERT_NOT_NULL(hostname);
     TEST_ASSERT_EQUAL_STRING("workstation42", hostname);
 
-    const char *ctype = rw_http_get_header(&parser.request, "content-type");
+    const char *ctype = iog_http_get_header(&parser.request, "content-type");
     TEST_ASSERT_NOT_NULL(ctype);
     TEST_ASSERT_EQUAL_STRING("application/xml", ctype);
 
     /* Non-existent header */
-    const char *missing = rw_http_get_header(&parser.request, "X-Nonexistent");
+    const char *missing = iog_http_get_header(&parser.request, "X-Nonexistent");
     TEST_ASSERT_NULL(missing);
 }
 
 void test_http_format_response(void)
 {
     char buf[1024];
-    rw_http_header_t hdrs[2];
+    iog_http_header_t hdrs[2];
 
     snprintf(hdrs[0].name, sizeof(hdrs[0].name), "Content-Type");
     snprintf(hdrs[0].value, sizeof(hdrs[0].value), "text/plain");
@@ -96,7 +96,7 @@ void test_http_format_response(void)
     snprintf(hdrs[1].value, sizeof(hdrs[1].value), "value1");
 
     const char *body = "OK\n";
-    int ret = rw_http_format_response(buf, sizeof(buf), 200, hdrs, 2, body, strlen(body));
+    int ret = iog_http_format_response(buf, sizeof(buf), 200, hdrs, 2, body, strlen(body));
     TEST_ASSERT_GREATER_THAN(0, ret);
 
     /* Verify status line */
@@ -110,9 +110,9 @@ void test_http_format_response(void)
 
 void test_http_max_body_limit(void)
 {
-    /* Build a request with body larger than RW_HTTP_MAX_BODY */
-    char req[RW_HTTP_MAX_BODY + 4096];
-    size_t oversized_body_len = RW_HTTP_MAX_BODY + 1024;
+    /* Build a request with body larger than IOG_HTTP_MAX_BODY */
+    char req[IOG_HTTP_MAX_BODY + 4096];
+    size_t oversized_body_len = IOG_HTTP_MAX_BODY + 1024;
     int hdr_len = snprintf(req, sizeof(req),
                            "POST /data HTTP/1.1\r\n"
                            "Content-Length: %zu\r\n"
@@ -127,11 +127,11 @@ void test_http_max_body_limit(void)
     }
     memset(req + hdr_len, 'A', fill);
 
-    int ret = rw_http_parse(&parser, req, (size_t)hdr_len + fill);
+    int ret = iog_http_parse(&parser, req, (size_t)hdr_len + fill);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    /* Body should be truncated to RW_HTTP_MAX_BODY */
-    TEST_ASSERT_EQUAL_size_t(RW_HTTP_MAX_BODY, parser.request.body_len);
+    /* Body should be truncated to IOG_HTTP_MAX_BODY */
+    TEST_ASSERT_EQUAL_size_t(IOG_HTTP_MAX_BODY, parser.request.body_len);
 }
 
 void test_http_incremental_parse(void)
@@ -146,15 +146,15 @@ void test_http_incremental_parse(void)
     size_t total = strlen(req);
 
     /* Parse full request for reference */
-    rw_http_parser_t full;
-    int ret = rw_http_parser_init(&full);
+    iog_http_parser_t full;
+    int ret = iog_http_parser_init(&full);
     TEST_ASSERT_EQUAL_INT(0, ret);
-    ret = rw_http_parse(&full, req, total);
+    ret = iog_http_parse(&full, req, total);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Parse same request in small chunks */
-    rw_http_parser_t chunked;
-    ret = rw_http_parser_init(&chunked);
+    iog_http_parser_t chunked;
+    ret = iog_http_parser_init(&chunked);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     constexpr size_t chunk_size = 7;
@@ -164,7 +164,7 @@ void test_http_incremental_parse(void)
         if (offset + n > total) {
             n = total - offset;
         }
-        ret = rw_http_parse(&chunked, req + offset, n);
+        ret = iog_http_parse(&chunked, req + offset, n);
         TEST_ASSERT_EQUAL_INT(0, ret);
         offset += n;
     }
@@ -181,7 +181,7 @@ void test_http_invalid_request(void)
 {
     const char *garbage = "XYZZY not-http garbage\r\n\r\n";
 
-    int ret = rw_http_parse(&parser, garbage, strlen(garbage));
+    int ret = iog_http_parse(&parser, garbage, strlen(garbage));
     TEST_ASSERT_LESS_THAN(0, ret);
 }
 

@@ -49,7 +49,7 @@ int iog_conn_timer_handle_dpd(iog_conn_timer_t *timer)
      * iog_conn_data_send_dpd_req() which redundantly calls iog_dpd_on_timeout(). */
     if (timer->dpd->need_send_request) {
         uint8_t buf[IOG_CSTP_HEADER_SIZE];
-        int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_REQ, nullptr, 0);
+        int encoded = iog_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_REQ, nullptr, 0);
         if (encoded > 0) {
             (void)timer->data->tls_write(timer->data->tls_ctx, buf, (size_t)encoded);
         }

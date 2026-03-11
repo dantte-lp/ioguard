@@ -184,10 +184,10 @@ Dead Peer Detection runs on both CSTP and DTLS channels with three states:
 
 ```c
 typedef enum {
-    RW_CHANNEL_CSTP_ONLY,      // DTLS not established or not supported
-    RW_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control only
-    RW_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back to CSTP
-} rw_channel_state_t;
+    IOG_CHANNEL_CSTP_ONLY,      // DTLS not established or not supported
+    IOG_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control only
+    IOG_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back to CSTP
+} iog_channel_state_t;
 ```
 
 - DPD probes every 30 seconds.

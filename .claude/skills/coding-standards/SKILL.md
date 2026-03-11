@@ -224,8 +224,8 @@ struct msghdr msg = {0};
 | Feature | Usage | Example |
 |---------|-------|---------|
 | `nullptr` | All null pointer literals | `if (ptr == nullptr)` |
-| `[[nodiscard]]` | All functions returning error/pointer | `[[nodiscard]] int rw_init(void);` |
-| `constexpr` | Compile-time constants (replaces `#define` for values) | `constexpr size_t RW_MAX = 1024;` |
+| `[[nodiscard]]` | All functions returning error/pointer | `[[nodiscard]] int iog_init(void);` |
+| `constexpr` | Compile-time constants (replaces `#define` for values) | `constexpr size_t IOG_MAX = 1024;` |
 | `bool/true/false` | Boolean type (no `<stdbool.h>` needed in C23) | `bool running = true;` |
 | `_Static_assert` | Struct size validation, array bounds | `_Static_assert(sizeof(cookie) == 32, "...");` |
 
@@ -263,8 +263,8 @@ struct msghdr msg = {0};
                                        iog_session_t **out);
 
 /* Short signatures on one line */
-[[nodiscard]] int rw_mem_init(void);
-void rw_mem_free(void *ptr);
+[[nodiscard]] int iog_mem_init(void);
+void iog_mem_free(void *ptr);
 ```
 
 ### Pointer style (Linux kernel)
@@ -302,7 +302,7 @@ void test_module_action_expected_result(void)
     TEST_ASSERT_NOT_NULL(foo);
 
     /* Act */
-    int ret = rw_foo_action(foo);
+    int ret = iog_foo_action(foo);
 
     /* Assert */
     TEST_ASSERT_EQUAL_INT(0, ret);
@@ -395,7 +395,7 @@ if (ptr == nullptr) { ... }
 #define MAX_SESSIONS 1024
 
 /* CORRECT: constexpr */
-constexpr uint32_t RW_MAX_SESSIONS = 1024;
+constexpr uint32_t IOG_MAX_SESSIONS = 1024;
 ```
 
 ---
@@ -410,7 +410,7 @@ Enforced by `.clang-format` — key rules:
 - **Switch case**: no indent for case labels
 
 ```c
-int rw_example(int value)
+int iog_example(int value)
 {
     switch (value) {
     case 0:

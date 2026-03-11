@@ -4,17 +4,17 @@
 #include <stdio.h>
 #include <string.h>
 
-rw_sandbox_profile_t rw_security_select_sandbox(bool is_worker)
+iog_sandbox_profile_t iog_security_select_sandbox(bool is_worker)
 {
     return is_worker ? IOG_SANDBOX_WORKER : IOG_SANDBOX_AUTHMOD;
 }
 
-rw_landlock_profile_t rw_security_select_landlock(bool is_worker)
+iog_landlock_profile_t iog_security_select_landlock(bool is_worker)
 {
     return is_worker ? IOG_LANDLOCK_WORKER : IOG_LANDLOCK_AUTHMOD;
 }
 
-int rw_security_apply_process(bool is_worker, const iog_config_t *config)
+int iog_security_apply_process(bool is_worker, const iog_config_t *config)
 {
     if (config == nullptr) {
         return -EINVAL;
@@ -24,17 +24,17 @@ int rw_security_apply_process(bool is_worker, const iog_config_t *config)
 
     /* Apply seccomp BPF sandbox if enabled */
     if (config->security.seccomp) {
-        rw_sandbox_profile_t profile = rw_security_select_sandbox(is_worker);
-        ret = rw_sandbox_apply(profile);
+        iog_sandbox_profile_t profile = iog_security_select_sandbox(is_worker);
+        ret = iog_sandbox_apply(profile);
         if (ret < 0) {
             return ret;
         }
     }
 
     /* Apply landlock filesystem isolation if enabled and supported */
-    if (config->security.landlock && rw_landlock_supported()) {
-        rw_landlock_profile_t lprofile = rw_security_select_landlock(is_worker);
-        ret = rw_landlock_apply(lprofile, config->storage.mdbx_path, config->storage.sqlite_path);
+    if (config->security.landlock && iog_landlock_supported()) {
+        iog_landlock_profile_t lprofile = iog_security_select_landlock(is_worker);
+        ret = iog_landlock_apply(lprofile, config->storage.mdbx_path, config->storage.sqlite_path);
         if (ret < 0) {
             return ret;
         }
@@ -67,7 +67,7 @@ int iog_security_build_fw_session(iog_fw_session_t *session, const char *usernam
     return 0;
 }
 
-int rw_security_session_create(const char *username, int af, uint32_t ip)
+int iog_security_session_create(const char *username, int af, uint32_t ip)
 {
     iog_fw_session_t session;
     int ret = iog_security_build_fw_session(&session, username, af, ip);
@@ -78,7 +78,7 @@ int rw_security_session_create(const char *username, int af, uint32_t ip)
     return iog_fw_session_create(&session);
 }
 
-int rw_security_session_destroy(const char *username, int af, uint32_t ip)
+int iog_security_session_destroy(const char *username, int af, uint32_t ip)
 {
     iog_fw_session_t session;
     int ret = iog_security_build_fw_session(&session, username, af, ip);

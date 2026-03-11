@@ -9,7 +9,7 @@
  * ============================================================================ */
 
 /* Decompress data payload if using compressed CSTP type, write to TUN */
-static int handle_data_packet(iog_conn_data_t *data, const rw_cstp_packet_t *pkt)
+static int handle_data_packet(iog_conn_data_t *data, const iog_cstp_packet_t *pkt)
 {
     const uint8_t *payload = pkt->payload;
     size_t payload_len = pkt->payload_len;
@@ -36,11 +36,11 @@ static int handle_data_packet(iog_conn_data_t *data, const rw_cstp_packet_t *pkt
 }
 
 /* Send a CSTP control packet (no payload or small payload) via TLS */
-static int send_cstp_packet(iog_conn_data_t *data, rw_cstp_type_t type, const uint8_t *payload,
+static int send_cstp_packet(iog_conn_data_t *data, iog_cstp_type_t type, const uint8_t *payload,
                             size_t payload_len)
 {
     int encoded =
-        rw_cstp_encode(data->send_buf, sizeof(data->send_buf), type, payload, payload_len);
+        iog_cstp_encode(data->send_buf, sizeof(data->send_buf), type, payload, payload_len);
     if (encoded < 0) {
         return encoded;
     }
@@ -107,8 +107,8 @@ int iog_conn_data_process_tls(iog_conn_data_t *data)
 
     /* Decode CSTP packets (may be multiple in buffer) */
     while (data->recv_len >= IOG_CSTP_HEADER_SIZE) {
-        rw_cstp_packet_t pkt;
-        int consumed = rw_cstp_decode(data->recv_buf, data->recv_len, &pkt);
+        iog_cstp_packet_t pkt;
+        int consumed = iog_cstp_decode(data->recv_buf, data->recv_len, &pkt);
         if (consumed == -EAGAIN) {
             break; /* incomplete frame, need more data */
         }
@@ -167,7 +167,7 @@ int iog_conn_data_process_tun(iog_conn_data_t *data, const uint8_t *pkt, size_t 
     }
 
     /* Compress if compressor available and not NONE */
-    rw_cstp_type_t type = IOG_CSTP_DATA;
+    iog_cstp_type_t type = IOG_CSTP_DATA;
     const uint8_t *payload = pkt;
     size_t payload_len = pkt_len;
     uint8_t comp_buf[IOG_CSTP_MAX_PAYLOAD];
@@ -184,7 +184,7 @@ int iog_conn_data_process_tun(iog_conn_data_t *data, const uint8_t *pkt, size_t 
 
     /* CSTP encode */
     int encoded =
-        rw_cstp_encode(data->send_buf, sizeof(data->send_buf), type, payload, payload_len);
+        iog_cstp_encode(data->send_buf, sizeof(data->send_buf), type, payload, payload_len);
     if (encoded < 0) {
         return encoded;
     }

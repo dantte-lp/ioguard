@@ -52,7 +52,7 @@ io_uring_enable_rings(&ring);
 ### Multishot Accept
 ```c
 io_uring_prep_multishot_accept(sqe, listen_fd, nullptr, nullptr, 0);
-io_uring_sqe_set_data64(sqe, RW_ENCODE_UD(0, RW_OP_ACCEPT));
+io_uring_sqe_set_data64(sqe, IOG_ENCODE_UD(0, IOG_OP_ACCEPT));
 // MUST check IORING_CQE_F_MORE — if absent, re-arm immediately
 ```
 
@@ -90,16 +90,16 @@ io_uring_prep_send_zc(sqe, fd, buf, len, 0, 0);
 
 ```c
 // user_data encoding: conn_id (56 bits) | op_type (8 bits)
-#define RW_ENCODE_UD(conn, op)  (((uint64_t)(conn) << 8) | (uint8_t)(op))
-#define RW_DECODE_OP(ud)        ((uint8_t)((ud) & 0xFF))
-#define RW_DECODE_CONN(ud)      ((ud) >> 8)
+#define IOG_ENCODE_UD(conn, op)  (((uint64_t)(conn) << 8) | (uint8_t)(op))
+#define IOG_DECODE_OP(ud)        ((uint8_t)((ud) & 0xFF))
+#define IOG_DECODE_CONN(ud)      ((ud) >> 8)
 
 // Batch processing loop — NEVER process CQE one-by-one
 unsigned head;
 struct io_uring_cqe *cqe;
 unsigned count = 0;
 io_uring_for_each_cqe(ring, head, cqe) {
-    uint8_t op = RW_DECODE_OP(cqe->user_data);
+    uint8_t op = IOG_DECODE_OP(cqe->user_data);
     // dispatch...
     count++;
 }
@@ -141,10 +141,10 @@ Track in-flight op count per fd. Only close when count reaches 0.
 ```c
 // Per-connection bounded send queue
 typedef struct {
-    rw_send_item_t queue[RW_MAX_SEND_DEPTH];
+    iog_send_item_t queue[IOG_MAX_SEND_DEPTH];
     uint32_t head, tail, count;
     bool send_active;  // true while send CQE pending
-} rw_send_ctx_t;
+} iog_send_ctx_t;
 
 // On send completion CQE:
 conn->send_ctx.send_active = false;

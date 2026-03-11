@@ -46,12 +46,12 @@ cmake --build --preset clang-debug --target format-check   # Check only
 ### C23 Conventions
 
 - **Language**: C23 (`-std=c23`), Linux only (kernel 6.7+, glibc 2.39+)
-- **Naming**: `rw_module_verb_noun()` functions, `rw_module_name_t` types, `RW_MODULE_VALUE` enums
+- **Naming**: `iog_module_verb_noun()` functions, `iog_module_name_t` types, `IOG_MODULE_VALUE` enums
 - **Errors**: Return negative errno (`-ENOMEM`, `-EINVAL`), use `goto cleanup`
 - **Allocation**: Always `sizeof(*ptr)`, never `sizeof(type)`
 - **Security**: `[[nodiscard]]` on all public API, `explicit_bzero()` for secrets
 - **Column limit**: 100 characters
-- **Include guards**: `RINGWALL_MODULE_FILE_H`
+- **Include guards**: `IOGUARD_MODULE_FILE_H`
 
 See `.claude/skills/coding-standards/SKILL.md` for the full reference.
 

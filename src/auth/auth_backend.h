@@ -1,12 +1,12 @@
-#ifndef RINGWALL_AUTH_BACKEND_H
-#define RINGWALL_AUTH_BACKEND_H
+#ifndef IOGUARD_AUTH_BACKEND_H
+#define IOGUARD_AUTH_BACKEND_H
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 /** Maximum number of registered authentication backends. */
-constexpr int RW_AUTH_BACKEND_MAX = 16;
+constexpr int IOG_AUTH_BACKEND_MAX = 16;
 
 /** Authentication status codes returned by backends. */
 typedef enum {
@@ -79,4 +79,4 @@ const iog_auth_backend_t *const *iog_auth_backend_list(int *count);
  */
 void iog_auth_backend_cleanup(void);
 
-#endif /* RINGWALL_AUTH_BACKEND_H */
+#endif /* IOGUARD_AUTH_BACKEND_H */

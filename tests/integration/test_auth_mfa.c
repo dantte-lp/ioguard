@@ -137,7 +137,7 @@ void setUp(void)
     memset(&ctx, 0, sizeof(ctx));
 
     /* Write vault key to temp file */
-    snprintf(vault_key_path, sizeof(vault_key_path), "/tmp/rw_test_vault_XXXXXX");
+    snprintf(vault_key_path, sizeof(vault_key_path), "/tmp/iog_test_vault_XXXXXX");
     int fd = mkstemp(vault_key_path);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
     close(fd);
@@ -283,7 +283,7 @@ void test_mfa_flow_no_totp_user(void)
 void test_mfa_flow_pam_failure_no_totp_challenge(void)
 {
     iog_ipc_auth_request_t req = {
-        .username = "rw_nonexistent_mfa_user",
+        .username = "iog_nonexistent_mfa_user",
         .password = "wrongpass",
         .source_ip = "10.0.0.4",
     };
@@ -346,7 +346,7 @@ void test_mfa_flow_audit_trail(void)
     iog_ipc_free_auth_response(&resp);
 
     /* Verify audit entries exist for dave */
-    rw_audit_entry_t entries[8];
+    iog_audit_entry_t entries[8];
     size_t count = 0;
     ret = iog_sqlite_audit_query_by_username(ctx.sqlite, "dave", entries, 8, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);

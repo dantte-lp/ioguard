@@ -7,8 +7,8 @@
  * when available.
  */
 
-#ifndef RINGWALL_NETWORK_CHANNEL_H
-#define RINGWALL_NETWORK_CHANNEL_H
+#ifndef IOGUARD_NETWORK_CHANNEL_H
+#define IOGUARD_NETWORK_CHANNEL_H
 
 #include "network/compress.h"
 #include "network/dpd.h"
@@ -42,4 +42,4 @@ void iog_channel_init(iog_channel_ctx_t *ctx);
 /** Get current channel state name. */
 [[nodiscard]] const char *iog_channel_state_str(const iog_channel_ctx_t *ctx);
 
-#endif /* RINGWALL_NETWORK_CHANNEL_H */
+#endif /* IOGUARD_NETWORK_CHANNEL_H */

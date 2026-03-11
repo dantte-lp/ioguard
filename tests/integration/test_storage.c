@@ -32,7 +32,7 @@ static void make_session(iog_session_record_t *s, uint8_t id_byte)
     s->deny_roaming = false;
 }
 
-static void make_audit(rw_audit_entry_t *e, const char *user, const char *evt)
+static void make_audit(iog_audit_entry_t *e, const char *user, const char *evt)
 {
     memset(e, 0, sizeof(*e));
     snprintf(e->event_type, sizeof(e->event_type), "%s", evt);
@@ -93,7 +93,7 @@ void test_session_create_mdbx_audit_sqlite(void)
     int rc = iog_mdbx_session_create(&mdbx_ctx, &sess);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rw_audit_entry_t audit;
+    iog_audit_entry_t audit;
     make_audit(&audit, "user1", "session_create");
 
     rc = iog_sqlite_audit_insert(&sql_ctx, &audit);
@@ -140,7 +140,7 @@ void test_session_delete_and_verify(void)
     int rc = iog_mdbx_session_create(&mdbx_ctx, &sess);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rw_audit_entry_t audit;
+    iog_audit_entry_t audit;
     make_audit(&audit, "user119", "session_create");
 
     rc = iog_sqlite_audit_insert(&sql_ctx, &audit);
@@ -156,7 +156,7 @@ void test_session_delete_and_verify(void)
     TEST_ASSERT_EQUAL_INT(-ENOENT, rc);
 
     /* Verify audit entry still exists in sqlite */
-    rw_audit_entry_t audit_out[4];
+    iog_audit_entry_t audit_out[4];
     size_t count = 0;
     rc = iog_sqlite_audit_query_by_username(&sql_ctx, "user119", audit_out, 4, &count);
     TEST_ASSERT_EQUAL_INT(0, rc);

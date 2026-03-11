@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct rw_worker {
+struct iog_worker {
     iog_worker_config_t config;
     iog_worker_state_t state;
     iog_connection_t *conns;

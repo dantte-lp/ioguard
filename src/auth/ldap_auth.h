@@ -1,5 +1,5 @@
-#ifndef RINGWALL_AUTH_LDAP_H
-#define RINGWALL_AUTH_LDAP_H
+#ifndef IOGUARD_AUTH_LDAP_H
+#define IOGUARD_AUTH_LDAP_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -9,43 +9,43 @@
 #include "auth/auth_backend.h"
 
 /** Maximum URI length for LDAP server. */
-constexpr size_t RW_LDAP_URI_MAX = 512;
+constexpr size_t IOG_LDAP_URI_MAX = 512;
 
 /** Maximum bind DN template length. */
-constexpr size_t RW_LDAP_BIND_DN_MAX = 512;
+constexpr size_t IOG_LDAP_BIND_DN_MAX = 512;
 
 /** Maximum search base length. */
-constexpr size_t RW_LDAP_SEARCH_BASE_MAX = 256;
+constexpr size_t IOG_LDAP_SEARCH_BASE_MAX = 256;
 
 /** Maximum group attribute name length. */
-constexpr size_t RW_LDAP_GROUP_ATTR_MAX = 64;
+constexpr size_t IOG_LDAP_GROUP_ATTR_MAX = 64;
 
 /** Maximum group filter length. */
-constexpr size_t RW_LDAP_GROUP_FILTER_MAX = 256;
+constexpr size_t IOG_LDAP_GROUP_FILTER_MAX = 256;
 
 /** Maximum CA certificate path length. */
-constexpr size_t RW_LDAP_CA_CERT_MAX = 256;
+constexpr size_t IOG_LDAP_CA_CERT_MAX = 256;
 
 /** Default LDAP operation timeout in milliseconds. */
-constexpr uint32_t RW_LDAP_DEFAULT_TIMEOUT_MS = 5000;
+constexpr uint32_t IOG_LDAP_DEFAULT_TIMEOUT_MS = 5000;
 
 /** Maximum length of a constructed bind DN. */
-constexpr size_t RW_LDAP_DN_BUF_MAX = 1024;
+constexpr size_t IOG_LDAP_DN_BUF_MAX = 1024;
 
 /** Maximum length of a constructed search filter. */
-constexpr size_t RW_LDAP_FILTER_BUF_MAX = 512;
+constexpr size_t IOG_LDAP_FILTER_BUF_MAX = 512;
 
 /** LDAP backend configuration. */
 typedef struct {
-    char uri[RW_LDAP_URI_MAX];
-    char bind_dn_template[RW_LDAP_BIND_DN_MAX];
-    char search_base[RW_LDAP_SEARCH_BASE_MAX];
-    char group_attr[RW_LDAP_GROUP_ATTR_MAX];
-    char group_filter[RW_LDAP_GROUP_FILTER_MAX];
+    char uri[IOG_LDAP_URI_MAX];
+    char bind_dn_template[IOG_LDAP_BIND_DN_MAX];
+    char search_base[IOG_LDAP_SEARCH_BASE_MAX];
+    char group_attr[IOG_LDAP_GROUP_ATTR_MAX];
+    char group_filter[IOG_LDAP_GROUP_FILTER_MAX];
     bool use_starttls;
     uint32_t timeout_ms;
-    char ca_cert_path[RW_LDAP_CA_CERT_MAX];
-} rw_ldap_config_t;
+    char ca_cert_path[IOG_LDAP_CA_CERT_MAX];
+} iog_ldap_config_t;
 
 /**
  * Initialize the LDAP authentication backend.
@@ -53,14 +53,14 @@ typedef struct {
  * @param config  Pointer to LDAP configuration (copied internally).
  * @return 0 on success, -EINVAL if config is null or invalid.
  */
-[[nodiscard]] int rw_ldap_init(const rw_ldap_config_t *config);
+[[nodiscard]] int iog_ldap_init(const iog_ldap_config_t *config);
 
 /**
  * Destroy the LDAP authentication backend and zero sensitive config.
  *
  * Safe to call with uninitialized state (no-op).
  */
-void rw_ldap_destroy(void);
+void iog_ldap_destroy(void);
 
 /**
  * Return the LDAP backend descriptor for registration.
@@ -81,7 +81,7 @@ const iog_auth_backend_t *iog_ldap_backend(void);
  * @return Number of bytes written (excluding NUL) on success,
  *         -EINVAL if any argument is null, -ENOSPC if buffer too small.
  */
-[[nodiscard]] ssize_t rw_ldap_build_bind_dn(const char *tmpl, const char *user,
+[[nodiscard]] ssize_t iog_ldap_build_bind_dn(const char *tmpl, const char *user,
                                              char *out, size_t out_sz);
 
 /**
@@ -96,8 +96,8 @@ const iog_auth_backend_t *iog_ldap_backend(void);
  * @return Number of bytes written (excluding NUL) on success,
  *         -EINVAL if any argument is null, -ENOSPC if buffer too small.
  */
-[[nodiscard]] ssize_t rw_ldap_build_group_filter(const char *attr,
+[[nodiscard]] ssize_t iog_ldap_build_group_filter(const char *attr,
                                                   const char *user_dn,
                                                   char *out, size_t out_sz);
 
-#endif /* RINGWALL_AUTH_LDAP_H */
+#endif /* IOGUARD_AUTH_LDAP_H */

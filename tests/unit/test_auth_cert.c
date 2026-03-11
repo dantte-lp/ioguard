@@ -6,25 +6,25 @@
 
 void setUp(void)
 {
-    rw_cert_auth_destroy();
+    iog_cert_auth_destroy();
 }
 
 void tearDown(void)
 {
-    rw_cert_auth_destroy();
+    iog_cert_auth_destroy();
 }
 
 void test_cert_auth_init_null_config_returns_einval(void)
 {
-    int ret = rw_cert_auth_init(nullptr);
+    int ret = iog_cert_auth_init(nullptr);
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 }
 
 void test_cert_auth_destroy_null_safe(void)
 {
     /* Calling destroy without init must not crash */
-    rw_cert_auth_destroy();
-    rw_cert_auth_destroy();
+    iog_cert_auth_destroy();
+    iog_cert_auth_destroy();
 }
 
 void test_cert_auth_backend_registers(void)
@@ -50,31 +50,31 @@ void test_cert_auth_extract_cn_from_subject(void)
 {
     /* Null inputs must return -EINVAL */
     char buf[64];
-    int ret = rw_cert_extract_username(nullptr, 0, "CN", buf, sizeof(buf));
+    int ret = iog_cert_extract_username(nullptr, 0, "CN", buf, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
-    ret = rw_cert_extract_username((const uint8_t *)"x", 1, nullptr, buf, sizeof(buf));
+    ret = iog_cert_extract_username((const uint8_t *)"x", 1, nullptr, buf, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
-    ret = rw_cert_extract_username((const uint8_t *)"x", 1, "CN", nullptr, sizeof(buf));
+    ret = iog_cert_extract_username((const uint8_t *)"x", 1, "CN", nullptr, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
-    ret = rw_cert_extract_username((const uint8_t *)"x", 1, "CN", buf, 0);
+    ret = iog_cert_extract_username((const uint8_t *)"x", 1, "CN", buf, 0);
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
     /* Zero-length DER must return -ENOENT */
-    ret = rw_cert_extract_username((const uint8_t *)"", 0, "CN", buf, sizeof(buf));
+    ret = iog_cert_extract_username((const uint8_t *)"", 0, "CN", buf, sizeof(buf));
     TEST_ASSERT_EQUAL_INT(-ENOENT, ret);
 }
 
 void test_cert_auth_username_field_default_is_cn(void)
 {
-    rw_cert_auth_config_t cfg;
+    iog_cert_auth_config_t cfg;
     memset(&cfg, 0, sizeof(cfg));
     snprintf(cfg.ca_cert_path, sizeof(cfg.ca_cert_path), "/etc/pki/ca.pem");
     /* Leave username_field empty — should default to "CN" */
 
-    int ret = rw_cert_auth_init(&cfg);
+    int ret = iog_cert_auth_init(&cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Verify init succeeded and backend is usable by getting descriptor */
@@ -83,7 +83,7 @@ void test_cert_auth_username_field_default_is_cn(void)
     TEST_ASSERT_EQUAL_STRING("cert", backend->name);
 
     /* Re-init should return -EALREADY */
-    ret = rw_cert_auth_init(&cfg);
+    ret = iog_cert_auth_init(&cfg);
     TEST_ASSERT_EQUAL_INT(-EALREADY, ret);
 }
 

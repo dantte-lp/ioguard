@@ -7,7 +7,7 @@ Outputs a structured Markdown registry.
 
 Usage:
     python3 rfc-scraper.py                          # stdout
-    python3 rfc-scraper.py -o ringwall-rfcs.md     # file
+    python3 rfc-scraper.py -o ioguard-rfcs.md     # file
     python3 rfc-scraper.py --download docs/rfc/     # download .txt
     python3 rfc-scraper.py --json                   # JSON output
 """
@@ -35,7 +35,7 @@ log = logging.getLogger("rfc-scraper")
 DATATRACKER_BASE = "https://datatracker.ietf.org"
 DATATRACKER_API = f"{DATATRACKER_BASE}/api/v1"
 RFC_EDITOR_BASE = "https://www.rfc-editor.org"
-USER_AGENT = "ringwall-rfc-scraper/2.0"
+USER_AGENT = "ioguard-rfc-scraper/2.0"
 REQUEST_TIMEOUT = 15
 RATE_LIMIT_DELAY = 0.3
 

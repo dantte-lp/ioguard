@@ -61,14 +61,14 @@ static int hsr_callback(const MDBX_env *env, const MDBX_txn *txn,
 
 ```c
 int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx,
-                            const uint8_t session_id[RW_SESSION_ID_LEN],
+                            const uint8_t session_id[IOG_SESSION_ID_LEN],
                             iog_session_record_t *out)
 {
     MDBX_txn *txn = nullptr;
     int rc = mdbx_txn_begin(ctx->env, nullptr, MDBX_TXN_RDONLY, &txn);
     if (rc != MDBX_SUCCESS) return mdbx_rc_to_errno(rc);
 
-    MDBX_val key = {.iov_base = (void *)session_id, .iov_len = RW_SESSION_ID_LEN};
+    MDBX_val key = {.iov_base = (void *)session_id, .iov_len = IOG_SESSION_ID_LEN};
     MDBX_val data = {0};
 
     rc = mdbx_get(txn, ctx->dbi_sessions, &key, &data);
@@ -93,7 +93,7 @@ int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx,
     if (rc != MDBX_SUCCESS) return mdbx_rc_to_errno(rc);
 
     MDBX_val key = {.iov_base = (void *)session->session_id,
-                     .iov_len = RW_SESSION_ID_LEN};
+                     .iov_len = IOG_SESSION_ID_LEN};
     MDBX_val data = {.iov_base = (void *)session,
                       .iov_len = sizeof(*session)};
 
@@ -125,7 +125,7 @@ Map MDBX return codes to negative errno for the rest of the codebase:
 
 ### Initialization PRAGMAs
 
-Applied in `rw_sqlite_init()` after opening the database:
+Applied in `iog_sqlite_init()` after opening the database:
 
 ```c
 /* Hardening config — disable before PRAGMAs */
@@ -221,7 +221,7 @@ static void safe_copy(char *dst, size_t dst_sz, const char *src)
 void test_mdbx_session_create_and_lookup(void)
 {
     iog_mdbx_ctx_t ctx;
-    char path[] = "/tmp/rw_test_mdbx_XXXXXX";
+    char path[] = "/tmp/iog_test_mdbx_XXXXXX";
     int fd = mkstemp(path);
     close(fd);
     unlink(path);  /* MDBX creates its own file */
@@ -229,12 +229,12 @@ void test_mdbx_session_create_and_lookup(void)
     TEST_ASSERT_EQUAL_INT(0, iog_mdbx_init(&ctx, path));
 
     iog_session_record_t session = {0};
-    memset(session.session_id, 0xAA, RW_SESSION_ID_LEN);
+    memset(session.session_id, 0xAA, IOG_SESSION_ID_LEN);
     TEST_ASSERT_EQUAL_INT(0, iog_mdbx_session_create(&ctx, &session));
 
     iog_session_record_t out = {0};
     TEST_ASSERT_EQUAL_INT(0, iog_mdbx_session_lookup(&ctx, session.session_id, &out));
-    TEST_ASSERT_EQUAL_MEMORY(session.session_id, out.session_id, RW_SESSION_ID_LEN);
+    TEST_ASSERT_EQUAL_MEMORY(session.session_id, out.session_id, IOG_SESSION_ID_LEN);
 
     iog_mdbx_close(&ctx);
     unlink(path);
@@ -250,8 +250,8 @@ void test_mdbx_session_create_and_lookup(void)
 ```c
 void test_sqlite_wal_mode_enabled(void)
 {
-    rw_sqlite_ctx_t ctx;
-    TEST_ASSERT_EQUAL_INT(0, rw_sqlite_init(&ctx, ":memory:"));
+    iog_sqlite_ctx_t ctx;
+    TEST_ASSERT_EQUAL_INT(0, iog_sqlite_init(&ctx, ":memory:"));
 
     sqlite3_stmt *stmt = nullptr;
     sqlite3_prepare_v2(ctx.db, "PRAGMA journal_mode", -1, &stmt, nullptr);
@@ -261,7 +261,7 @@ void test_sqlite_wal_mode_enabled(void)
     TEST_ASSERT_NOT_NULL(mode);
     sqlite3_finalize(stmt);
 
-    rw_sqlite_close(&ctx);
+    iog_sqlite_close(&ctx);
 }
 ```
 
@@ -270,7 +270,7 @@ void test_sqlite_wal_mode_enabled(void)
 - Use temporary paths (`mkstemp` or `:memory:`) for all test databases
 - Clean up files with `unlink()` after each test (including `-lck` for libmdbx)
 - Test HSR callback with mock dead PIDs (`kill(pid, 0)` returning `ESRCH`)
-- Verify WAL mode is active after `rw_sqlite_init()`
+- Verify WAL mode is active after `iog_sqlite_init()`
 - Test duplicate key rejection (`-EEXIST` from both stores)
 - Test not-found returns (`-ENOENT` from both stores)
 - Test nullptr/invalid input returns (`-EINVAL`)

@@ -56,7 +56,7 @@ int iog_compress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint
     }
 
     if (ctx->type == IOG_COMPRESS_LZ4) {
-        return rw_lz4_compress(in, in_len, out, out_size);
+        return iog_lz4_compress(in, in_len, out, out_size);
     }
 
     return -ENOTSUP;
@@ -82,7 +82,7 @@ int iog_decompress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, ui
     }
 
     if (ctx->type == IOG_COMPRESS_LZ4) {
-        return rw_lz4_decompress(in, in_len, out, out_size);
+        return iog_lz4_decompress(in, in_len, out, out_size);
     }
 
     return -ENOTSUP;

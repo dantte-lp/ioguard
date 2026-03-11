@@ -30,11 +30,11 @@
 Read every file in `src/crypto/` and `tests/unit/test_tls_*.c`, `tests/unit/test_priority_parser.c` to understand:
 - What functions are implemented vs stubbed
 - What needs `_GNU_SOURCE`, wolfSSL includes, etc.
-- Include guard style (old `OCSERV_*` vs new `RINGWALL_*`)
+- Include guard style (old `OCSERV_*` vs new `IOGUARD_*`)
 
-**Step 2: Add rw_crypto library to CMakeLists.txt**
+**Step 2: Add iog_crypto library to CMakeLists.txt**
 
-Add a new static library target `rw_crypto` with:
+Add a new static library target `iog_crypto` with:
 - wolfSSL backend: `src/crypto/tls_wolfssl.c`, `src/crypto/tls_abstract.c`, `src/crypto/priority_parser.c`, `src/crypto/session_cache.c`
 - GnuTLS backend: same but with `tls_gnutls.c` instead of `tls_wolfssl.c`
 - Find wolfSSL: `find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h)`, `find_library(WOLFSSL_LIBRARY wolfssl)`
@@ -44,14 +44,14 @@ Add a new static library target `rw_crypto` with:
 - Include dirs: `${CMAKE_SOURCE_DIR}/src/crypto` for internal headers
 
 Add test executables:
-- `test_tls_wolfssl` linking `rw_crypto` (wolfSSL variant) + unity
-- `test_priority_parser` linking `rw_crypto` + unity
+- `test_tls_wolfssl` linking `iog_crypto` (wolfSSL variant) + unity
+- `test_priority_parser` linking `iog_crypto` + unity
 - Register with CTest
 
 **Step 3: Fix any compilation issues**
 
 Common issues to expect:
-- Include guard rename: `OCSERV_*` → `RINGWALL_*` (update if needed for consistency, but not required for compilation)
+- Include guard rename: `OCSERV_*` → `IOGUARD_*` (update if needed for consistency, but not required for compilation)
 - Missing `_GNU_SOURCE` for some functions
 - wolfSSL header path: `/usr/local/include/wolfssl/`
 - Test framework: existing tests use custom macros, may need Unity migration
@@ -93,37 +93,37 @@ Must extract headers: `Cookie`, `X-CSTP-*`, `X-DTLS-*`, `Content-Type`, `Content
 **API design** (`src/network/http.h`):
 
 ```c
-#ifndef RINGWALL_NETWORK_HTTP_H
-#define RINGWALL_NETWORK_HTTP_H
+#ifndef IOGUARD_NETWORK_HTTP_H
+#define IOGUARD_NETWORK_HTTP_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <llhttp.h>
 
-#define RW_HTTP_MAX_HEADERS 32
-#define RW_HTTP_MAX_URL 512
-#define RW_HTTP_MAX_HEADER_NAME 128
-#define RW_HTTP_MAX_HEADER_VALUE 1024
-#define RW_HTTP_MAX_BODY 8192
+#define IOG_HTTP_MAX_HEADERS 32
+#define IOG_HTTP_MAX_URL 512
+#define IOG_HTTP_MAX_HEADER_NAME 128
+#define IOG_HTTP_MAX_HEADER_VALUE 1024
+#define IOG_HTTP_MAX_BODY 8192
 
 typedef struct {
-    char name[RW_HTTP_MAX_HEADER_NAME];
-    char value[RW_HTTP_MAX_HEADER_VALUE];
-} rw_http_header_t;
+    char name[IOG_HTTP_MAX_HEADER_NAME];
+    char value[IOG_HTTP_MAX_HEADER_VALUE];
+} iog_http_header_t;
 
 typedef struct {
     /* Request line */
     uint8_t method;          /* llhttp_method_t: HTTP_POST, HTTP_CONNECT, etc. */
-    char url[RW_HTTP_MAX_URL];
+    char url[IOG_HTTP_MAX_URL];
     size_t url_len;
 
     /* Headers */
-    rw_http_header_t headers[RW_HTTP_MAX_HEADERS];
+    iog_http_header_t headers[IOG_HTTP_MAX_HEADERS];
     uint32_t header_count;
 
     /* Body */
-    char body[RW_HTTP_MAX_BODY];
+    char body[IOG_HTTP_MAX_BODY];
     size_t body_len;
 
     /* State */
@@ -132,33 +132,33 @@ typedef struct {
     bool is_upgrade;         /* CONNECT method detected */
 
     /* Internal parsing state */
-    char _cur_header_field[RW_HTTP_MAX_HEADER_NAME];
+    char _cur_header_field[IOG_HTTP_MAX_HEADER_NAME];
     size_t _cur_field_len;
-    char _cur_header_value[RW_HTTP_MAX_HEADER_VALUE];
+    char _cur_header_value[IOG_HTTP_MAX_HEADER_VALUE];
     size_t _cur_value_len;
     bool _parsing_value;
-} rw_http_request_t;
+} iog_http_request_t;
 
 typedef struct {
     llhttp_t parser;
     llhttp_settings_t settings;
-    rw_http_request_t request;
-} rw_http_parser_t;
+    iog_http_request_t request;
+} iog_http_parser_t;
 
-[[nodiscard]] int rw_http_parser_init(rw_http_parser_t *p);
-void rw_http_parser_reset(rw_http_parser_t *p);
+[[nodiscard]] int iog_http_parser_init(iog_http_parser_t *p);
+void iog_http_parser_reset(iog_http_parser_t *p);
 
-[[nodiscard]] int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len);
+[[nodiscard]] int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len);
 
-const char *rw_http_get_header(const rw_http_request_t *req, const char *name);
+const char *iog_http_get_header(const iog_http_request_t *req, const char *name);
 
-[[nodiscard]] int rw_http_format_response(char *buf, size_t buf_size,
+[[nodiscard]] int iog_http_format_response(char *buf, size_t buf_size,
                                            int status_code,
-                                           const rw_http_header_t *headers,
+                                           const iog_http_header_t *headers,
                                            uint32_t header_count,
                                            const char *body, size_t body_len);
 
-#endif /* RINGWALL_NETWORK_HTTP_H */
+#endif /* IOGUARD_NETWORK_HTTP_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_http.c`)
@@ -168,7 +168,7 @@ Tests (Unity framework):
 2. `test_parse_connect_tunnel` — parse `CONNECT /CSCOSSLC/tunnel HTTP/1.1`, verify `is_upgrade=true`
 3. `test_get_header` — extract `Cookie`, `X-CSTP-Hostname`, `Content-Type`
 4. `test_format_response` — build `HTTP/1.1 200 OK` with headers and body
-5. `test_max_body_limit` — body larger than `RW_HTTP_MAX_BODY` truncated
+5. `test_max_body_limit` — body larger than `IOG_HTTP_MAX_BODY` truncated
 6. `test_incremental_parse` — feed data in small chunks, same result as full parse
 7. `test_invalid_request` — malformed HTTP returns error
 
@@ -183,15 +183,15 @@ llhttp callbacks:
 - `on_headers_complete`: set `headers_complete = true`, check method
 - `on_message_complete`: set `message_complete = true`
 
-`rw_http_parse()` calls `llhttp_execute()`. On `HPE_PAUSED_UPGRADE`, set `is_upgrade = true`.
+`iog_http_parse()` calls `llhttp_execute()`. On `HPE_PAUSED_UPGRADE`, set `is_upgrade = true`.
 
-`rw_http_get_header()`: linear scan of headers array, case-insensitive compare with `strncasecmp`.
+`iog_http_get_header()`: linear scan of headers array, case-insensitive compare with `strncasecmp`.
 
-`rw_http_format_response()`: `snprintf` to build status line + headers + CRLF + body.
+`iog_http_format_response()`: `snprintf` to build status line + headers + CRLF + body.
 
 **Step 3: Wire into CMake**
 
-Add `rw_http` static library, link llhttp. Add test target.
+Add `iog_http` static library, link llhttp. Add test target.
 
 **Step 4: Build and test in container**
 
@@ -247,8 +247,8 @@ Also: init request (capabilities, device-id, mac-address), MFA challenge reply (
 **API design** (`src/network/xml_auth.h`):
 
 ```c
-#ifndef RINGWALL_NETWORK_XML_AUTH_H
-#define RINGWALL_NETWORK_XML_AUTH_H
+#ifndef IOGUARD_NETWORK_XML_AUTH_H
+#define IOGUARD_NETWORK_XML_AUTH_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -313,7 +313,7 @@ typedef struct {
 
 void iog_xml_auth_request_zero(iog_xml_auth_request_t *req);
 
-#endif /* RINGWALL_NETWORK_XML_AUTH_H */
+#endif /* IOGUARD_NETWORK_XML_AUTH_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_xml_auth.c`)
@@ -349,7 +349,7 @@ Builder: `snprintf` chain building XML response string. Helper function `xml_esc
 
 **Step 3: Wire into CMake, build, test**
 
-Add `iog_xml_auth` (or include in `rw_http` library). No external deps.
+Add `iog_xml_auth` (or include in `iog_http` library). No external deps.
 
 **Step 4: Commit**
 
@@ -385,11 +385,11 @@ Reference: `src/crypto/session_cache.h` (existing TLS session cache is different
 #include <stdbool.h>
 #include <time.h>
 
-#define RW_SESSION_COOKIE_SIZE 32
-#define RW_SESSION_MAX_SESSIONS 1024
+#define IOG_SESSION_COOKIE_SIZE 32
+#define IOG_SESSION_MAX_SESSIONS 1024
 
 typedef struct {
-    uint8_t cookie[RW_SESSION_COOKIE_SIZE];
+    uint8_t cookie[IOG_SESSION_COOKIE_SIZE];
     char username[256];
     char group[256];
     char assigned_ip[46];     /* INET6_ADDRSTRLEN */
@@ -440,7 +440,7 @@ Tests (Unity):
 
 **Step 2: Implement** (`src/core/session.c`)
 
-- Session store: array of `iog_session_t` (fixed size, `RW_SESSION_MAX_SESSIONS`)
+- Session store: array of `iog_session_t` (fixed size, `IOG_SESSION_MAX_SESSIONS`)
 - Cookie generation: `wc_RNG_GenerateBlock()` from wolfCrypt (`#include <wolfssl/wolfcrypt/random.h>`)
 - Cookie validation: `wolfSSL_ConstantCompare()` or implement constant-time memcmp
 - Zeroing: `explicit_bzero()` on cookie + password fields in delete
@@ -476,33 +476,33 @@ PAM auth runs in sec-mod process (blocking calls are OK — sec-mod is dedicated
 **API design** (`src/auth/pam.h`):
 
 ```c
-#ifndef RINGWALL_AUTH_PAM_H
-#define RINGWALL_AUTH_PAM_H
+#ifndef IOGUARD_AUTH_PAM_H
+#define IOGUARD_AUTH_PAM_H
 
 #include <stdbool.h>
 #include <stddef.h>
 
-#define RW_PAM_DEFAULT_SERVICE "ioguard"
+#define IOG_PAM_DEFAULT_SERVICE "ioguard"
 
 typedef enum {
-    RW_AUTH_SUCCESS = 0,
-    RW_AUTH_FAILURE = -1,
-    RW_AUTH_ERROR = -2,
-    RW_AUTH_ACCOUNT_EXPIRED = -3,
-    RW_AUTH_PASSWORD_EXPIRED = -4,
-} rw_auth_result_t;
+    IOG_AUTH_SUCCESS = 0,
+    IOG_AUTH_FAILURE = -1,
+    IOG_AUTH_ERROR = -2,
+    IOG_AUTH_ACCOUNT_EXPIRED = -3,
+    IOG_AUTH_PASSWORD_EXPIRED = -4,
+} iog_auth_result_t;
 
 typedef struct {
     char service[64];          /* PAM service name */
-} rw_pam_config_t;
+} iog_pam_config_t;
 
-[[nodiscard]] int rw_pam_init(rw_pam_config_t *cfg, const char *service);
+[[nodiscard]] int iog_pam_init(iog_pam_config_t *cfg, const char *service);
 
-[[nodiscard]] rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
+[[nodiscard]] iog_auth_result_t iog_pam_authenticate(const iog_pam_config_t *cfg,
                                                      const char *username,
                                                      const char *password);
 
-#endif /* RINGWALL_AUTH_PAM_H */
+#endif /* IOGUARD_AUTH_PAM_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_auth_pam.c`)
@@ -525,7 +525,7 @@ static int pam_conversation(int num_msg, const struct pam_message **msg,
                              struct pam_response **resp, void *appdata_ptr);
 
 /* Main auth function */
-rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
+iog_auth_result_t iog_pam_authenticate(const iog_pam_config_t *cfg,
                                        const char *username,
                                        const char *password)
 {
@@ -534,18 +534,18 @@ rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg,
     /* 3. pam_acct_mgmt(pamh, 0) */
     /* 4. pam_end(pamh, ret) */
     /* 5. explicit_bzero on password copy */
-    /* 6. Map PAM error to rw_auth_result_t */
+    /* 6. Map PAM error to iog_auth_result_t */
 }
 ```
 
 Conversation function: allocates `pam_response`, copies password into it. Password copy zeroed after `pam_end()`.
 
 Error mapping:
-- `PAM_SUCCESS` → `RW_AUTH_SUCCESS`
-- `PAM_AUTH_ERR`, `PAM_USER_UNKNOWN`, `PAM_MAXTRIES` → `RW_AUTH_FAILURE`
-- `PAM_ACCT_EXPIRED` → `RW_AUTH_ACCOUNT_EXPIRED`
-- `PAM_NEW_AUTHTOK_REQD` → `RW_AUTH_PASSWORD_EXPIRED`
-- Everything else → `RW_AUTH_ERROR`
+- `PAM_SUCCESS` → `IOG_AUTH_SUCCESS`
+- `PAM_AUTH_ERR`, `PAM_USER_UNKNOWN`, `PAM_MAXTRIES` → `IOG_AUTH_FAILURE`
+- `PAM_ACCT_EXPIRED` → `IOG_AUTH_ACCOUNT_EXPIRED`
+- `PAM_NEW_AUTHTOK_REQD` → `IOG_AUTH_PASSWORD_EXPIRED`
+- Everything else → `IOG_AUTH_ERROR`
 
 **Step 3: Wire into CMake**
 
@@ -573,7 +573,7 @@ git commit -m "feat(auth): PAM authentication backend with password zeroing"
 - Create: `src/core/secmod.c`
 - Create: `tests/unit/test_secmod.c`
 - Modify: `CMakeLists.txt`
-- Modify: `src/ipc/proto/rw_ipc.proto` — add session_open/session_close messages if needed
+- Modify: `src/ipc/proto/iog_ipc.proto` — add session_open/session_close messages if needed
 
 **Context:**
 
@@ -589,8 +589,8 @@ For Sprint 2, sec-mod runs a simple poll-based event loop (not io_uring — it d
 **API design** (`src/core/secmod.h`):
 
 ```c
-#ifndef RINGWALL_CORE_SECMOD_H
-#define RINGWALL_CORE_SECMOD_H
+#ifndef IOGUARD_CORE_SECMOD_H
+#define IOGUARD_CORE_SECMOD_H
 
 #include "auth/pam.h"
 #include "core/session.h"
@@ -598,7 +598,7 @@ For Sprint 2, sec-mod runs a simple poll-based event loop (not io_uring — it d
 
 typedef struct {
     int ipc_fd;                    /* IPC socket (SOCK_SEQPACKET) */
-    rw_pam_config_t pam_cfg;
+    iog_pam_config_t pam_cfg;
     iog_session_store_t *sessions;
     const iog_config_t *config;
     bool running;
@@ -616,7 +616,7 @@ void iog_secmod_destroy(iog_secmod_ctx_t *ctx);
 /* Entry point for child process (called after fork/pidfd_spawn) */
 [[noreturn]] void iog_secmod_main(int ipc_fd, const iog_config_t *config);
 
-#endif /* RINGWALL_CORE_SECMOD_H */
+#endif /* IOGUARD_CORE_SECMOD_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_secmod.c`)
@@ -641,7 +641,7 @@ int iog_secmod_run(iog_secmod_ctx_t *ctx) {
         /* if readable: recv IPC message */
         /* switch (msg.type):
          *   AUTH_REQUEST with cookie → iog_session_validate()
-         *   AUTH_REQUEST without cookie → rw_pam_authenticate() → iog_session_create()
+         *   AUTH_REQUEST without cookie → iog_pam_authenticate() → iog_session_create()
          *   SHUTDOWN → ctx->running = false
          */
         /* send AUTH_RESPONSE back */
@@ -650,11 +650,11 @@ int iog_secmod_run(iog_secmod_ctx_t *ctx) {
 }
 ```
 
-Uses existing IPC transport (`rw_ipc_send`, `rw_ipc_recv`) and message pack/unpack.
+Uses existing IPC transport (`iog_ipc_send`, `iog_ipc_recv`) and message pack/unpack.
 
 **Step 3: Wire into CMake, build, test**
 
-Link: `rw_ipc`, `iog_config`, session module, PAM module.
+Link: `iog_ipc`, `iog_config`, session module, PAM module.
 
 **Step 4: Commit**
 
@@ -682,8 +682,8 @@ void test_full_auth_flow(void) {
     /* 1. Create socketpair (SOCK_SEQPACKET) */
     /* 2. Fork child → iog_secmod_main(child_fd, &config) */
     /* 3. Parent: pack AUTH_REQUEST (username="root", password="x", no cookie) */
-    /* 4. Parent: rw_ipc_send(parent_fd, buf, len) */
-    /* 5. Parent: rw_ipc_recv(parent_fd, buf, sizeof(buf)) */
+    /* 4. Parent: iog_ipc_send(parent_fd, buf, len) */
+    /* 5. Parent: iog_ipc_recv(parent_fd, buf, sizeof(buf)) */
     /* 6. Parent: unpack AUTH_RESPONSE */
     /* 7. Verify: response has session_cookie (32 bytes) */
     /*    Note: PAM will likely FAIL for "root"/"x" — that's OK,
@@ -716,7 +716,7 @@ git commit -m "test: integration test for full auth flow (worker → sec-mod →
 ## Task 8: Update proto definitions for Sprint 2
 
 **Files:**
-- Modify: `src/ipc/proto/rw_ipc.proto`
+- Modify: `src/ipc/proto/iog_ipc.proto`
 - Modify: `src/ipc/messages.h`
 - Modify: `src/ipc/messages.c`
 - Modify: `tests/unit/test_ipc_messages.c`
@@ -744,7 +744,7 @@ Add VPN config fields to auth_response if missing.
 **Step 5: Commit**
 
 ```bash
-git add src/ipc/proto/rw_ipc.proto src/ipc/messages.h src/ipc/messages.c tests/unit/test_ipc_messages.c CMakeLists.txt
+git add src/ipc/proto/iog_ipc.proto src/ipc/messages.h src/ipc/messages.c tests/unit/test_ipc_messages.c CMakeLists.txt
 git commit -m "feat(ipc): extend auth messages with password, OTP, VPN config fields"
 ```
 

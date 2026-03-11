@@ -46,7 +46,7 @@ void test_auth_flow_failed_auth(void)
 {
     /* Pack an auth request with credentials that PAM will reject */
     iog_ipc_auth_request_t req = {
-        .username = "rw_nonexistent_user",
+        .username = "iog_nonexistent_user",
         .password = "wrong",
         .group = "default",
         .source_ip = "192.168.1.1",
@@ -95,7 +95,7 @@ void test_auth_flow_failed_auth(void)
 void test_auth_flow_response_format(void)
 {
     iog_ipc_auth_request_t req = {
-        .username = "rw_nonexistent_user",
+        .username = "iog_nonexistent_user",
         .password = "wrong",
         .group = "default",
         .source_ip = "10.0.0.1",

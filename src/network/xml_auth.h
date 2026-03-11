@@ -1,5 +1,5 @@
-#ifndef RINGWALL_NETWORK_XML_AUTH_H
-#define RINGWALL_NETWORK_XML_AUTH_H
+#ifndef IOGUARD_NETWORK_XML_AUTH_H
+#define IOGUARD_NETWORK_XML_AUTH_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -74,4 +74,4 @@ typedef struct {
  */
 void iog_xml_auth_request_zero(iog_xml_auth_request_t *req);
 
-#endif /* RINGWALL_NETWORK_XML_AUTH_H */
+#endif /* IOGUARD_NETWORK_XML_AUTH_H */

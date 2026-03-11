@@ -9,14 +9,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void rw_tun_config_init(rw_tun_config_t *cfg)
+void iog_tun_config_init(iog_tun_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
     cfg->mtu = IOG_TUN_DEFAULT_MTU;
     cfg->set_nonblock = true;
 }
 
-int rw_tun_config_validate(const rw_tun_config_t *cfg)
+int iog_tun_config_validate(const iog_tun_config_t *cfg)
 {
     if (cfg->mtu < IOG_TUN_MIN_MTU || cfg->mtu > IOG_TUN_MAX_MTU) {
         return -EINVAL;
@@ -24,9 +24,9 @@ int rw_tun_config_validate(const rw_tun_config_t *cfg)
     return 0;
 }
 
-int rw_tun_alloc(const rw_tun_config_t *cfg, rw_tun_t *tun)
+int iog_tun_alloc(const iog_tun_config_t *cfg, iog_tun_t *tun)
 {
-    int ret = rw_tun_config_validate(cfg);
+    int ret = iog_tun_config_validate(cfg);
     if (ret < 0) {
         return ret;
     }
@@ -78,7 +78,7 @@ int rw_tun_alloc(const rw_tun_config_t *cfg, rw_tun_t *tun)
     return 0;
 }
 
-void rw_tun_close(rw_tun_t *tun)
+void iog_tun_close(iog_tun_t *tun)
 {
     if (tun->fd >= 0) {
         close(tun->fd);
@@ -86,7 +86,7 @@ void rw_tun_close(rw_tun_t *tun)
     }
 }
 
-uint32_t rw_tun_calc_mtu(uint32_t base_mtu, int af)
+uint32_t iog_tun_calc_mtu(uint32_t base_mtu, int af)
 {
     /* IP header: 20 (IPv4) or 40 (IPv6) */
     uint32_t ip_overhead = (af == AF_INET6) ? 40 : 20;

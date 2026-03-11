@@ -36,10 +36,10 @@ BACKUP_SUBDIR="${BACKUP_DIR}/${TIMESTAMP}"
 
 # Volumes to backup
 VOLUMES=(
-    "ringwall_dev-home"
-    "ringwall_build-cache"
-    "ringwall_test-results"
-    "ringwall_ci-reports"
+    "ioguard_dev-home"
+    "ioguard_build-cache"
+    "ioguard_test-results"
+    "ioguard_ci-reports"
 )
 
 log_info "Starting volume backup"

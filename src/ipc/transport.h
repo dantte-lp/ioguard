@@ -1,5 +1,5 @@
-#ifndef RINGWALL_IPC_TRANSPORT_H
-#define RINGWALL_IPC_TRANSPORT_H
+#ifndef IOGUARD_IPC_TRANSPORT_H
+#define IOGUARD_IPC_TRANSPORT_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -32,4 +32,4 @@ void iog_ipc_close(iog_ipc_channel_t *ch);
 /* Receive a file descriptor via SCM_RIGHTS. Returns fd or negative errno. */
 [[nodiscard]] int iog_ipc_recv_fd(int socket_fd);
 
-#endif /* RINGWALL_IPC_TRANSPORT_H */
+#endif /* IOGUARD_IPC_TRANSPORT_H */

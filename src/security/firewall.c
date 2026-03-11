@@ -28,7 +28,7 @@
 
 /**
  * Build the chain name into @p out.
- * Format: rw_<username>_<hex-ip>
+ * Format: iog_<username>_<hex-ip>
  */
 int iog_fw_chain_name(const iog_fw_session_t *session, char *out, size_t out_size)
 {
@@ -40,12 +40,12 @@ int iog_fw_chain_name(const iog_fw_session_t *session, char *out, size_t out_siz
 
     if (session->af == AF_INET) {
         const uint8_t *a = (const uint8_t *)&session->assigned_ipv4;
-        ret = snprintf(out, out_size, "rw_%.48s_%02x%02x%02x%02x", session->username, a[0], a[1],
+        ret = snprintf(out, out_size, "iog_%.48s_%02x%02x%02x%02x", session->username, a[0], a[1],
                        a[2], a[3]);
     } else if (session->af == AF_INET6) {
         const uint8_t *b = session->assigned_ipv6.s6_addr;
         ret = snprintf(out, out_size,
-                       "rw_%.24s_"
+                       "iog_%.24s_"
                        "%02x%02x%02x%02x%02x%02x%02x%02x"
                        "%02x%02x%02x%02x%02x%02x%02x%02x",
                        session->username, b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8],

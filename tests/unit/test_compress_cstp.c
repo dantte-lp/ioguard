@@ -17,11 +17,11 @@ void test_cstp_encode_compressed_type(void)
     const uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
     uint8_t buf[IOG_CSTP_HEADER_SIZE + 4];
 
-    int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_COMPRESSED, data, sizeof(data));
+    int encoded = iog_cstp_encode(buf, sizeof(buf), IOG_CSTP_COMPRESSED, data, sizeof(data));
     TEST_ASSERT_EQUAL_INT((int)(IOG_CSTP_HEADER_SIZE + 4), encoded);
 
-    rw_cstp_packet_t pkt;
-    int consumed = rw_cstp_decode(buf, (size_t)encoded, &pkt);
+    iog_cstp_packet_t pkt;
+    int consumed = iog_cstp_decode(buf, (size_t)encoded, &pkt);
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
     TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_COMPRESSED, pkt.type);
     TEST_ASSERT_EQUAL_UINT32(4, pkt.payload_len);
@@ -41,12 +41,12 @@ void test_compress_none_cstp_roundtrip(void)
 
     /* Wrap compressed data in CSTP COMPRESSED frame */
     uint8_t frame[IOG_CSTP_HEADER_SIZE + 64];
-    int flen = rw_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
+    int flen = iog_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
     TEST_ASSERT_GREATER_THAN(0, flen);
 
     /* Decode CSTP frame */
-    rw_cstp_packet_t pkt;
-    int consumed = rw_cstp_decode(frame, (size_t)flen, &pkt);
+    iog_cstp_packet_t pkt;
+    int consumed = iog_cstp_decode(frame, (size_t)flen, &pkt);
     TEST_ASSERT_EQUAL_INT(flen, consumed);
     TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_COMPRESSED, pkt.type);
 
@@ -74,7 +74,7 @@ void test_compress_lzs_cstp_roundtrip(void)
 
     /* Wrap in CSTP frame */
     uint8_t frame[IOG_CSTP_HEADER_SIZE + 128];
-    int flen = rw_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
+    int flen = iog_cstp_encode(frame, sizeof(frame), IOG_CSTP_COMPRESSED, compressed, (size_t)clen);
     TEST_ASSERT_GREATER_THAN(0, flen);
 
     /* Decode CSTP + decompress with fresh context */
@@ -82,8 +82,8 @@ void test_compress_lzs_cstp_roundtrip(void)
     ret = iog_compress_init(&decomp, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    rw_cstp_packet_t pkt;
-    (void)rw_cstp_decode(frame, (size_t)flen, &pkt);
+    iog_cstp_packet_t pkt;
+    (void)iog_cstp_decode(frame, (size_t)flen, &pkt);
 
     uint8_t decompressed[64];
     int dlen =
@@ -121,11 +121,11 @@ void test_data_cstp_not_compressed(void)
     const uint8_t data[] = {0xDE, 0xAD};
     uint8_t buf[IOG_CSTP_HEADER_SIZE + 2];
 
-    int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DATA, data, sizeof(data));
+    int encoded = iog_cstp_encode(buf, sizeof(buf), IOG_CSTP_DATA, data, sizeof(data));
     TEST_ASSERT_GREATER_THAN(0, encoded);
 
-    rw_cstp_packet_t pkt;
-    int consumed = rw_cstp_decode(buf, (size_t)encoded, &pkt);
+    iog_cstp_packet_t pkt;
+    int consumed = iog_cstp_decode(buf, (size_t)encoded, &pkt);
     TEST_ASSERT_EQUAL_INT(encoded, consumed);
     TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_DATA, pkt.type);
     /* DATA payload is raw, not compressed */

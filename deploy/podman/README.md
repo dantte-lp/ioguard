@@ -170,7 +170,7 @@ podman-compose run --rm test bash -c "ninja -C build coverage-html"
 # Build release
 make release
 
-# Output: artifacts/ringwall-YYYYMMDD.tar.gz
+# Output: artifacts/ioguard-YYYYMMDD.tar.gz
 ```
 
 ### CI (ci)

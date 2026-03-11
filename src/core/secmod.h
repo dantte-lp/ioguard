@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_SECMOD_H
-#define RINGWALL_CORE_SECMOD_H
+#ifndef IOGUARD_CORE_SECMOD_H
+#define IOGUARD_CORE_SECMOD_H
 
 #include "auth/pam.h"
 #include "config/config.h"
@@ -25,7 +25,7 @@
  */
 typedef struct {
     int ipc_fd;
-    rw_pam_config_t pam_cfg;
+    iog_pam_config_t pam_cfg;
     iog_session_store_t *sessions;
     iog_mdbx_ctx_t *mdbx;     /* persistent sessions (nullable) */
     iog_sqlite_ctx_t *sqlite; /* audit + users (nullable) */
@@ -79,4 +79,4 @@ void iog_secmod_destroy(iog_secmod_ctx_t *ctx);
  */
 [[nodiscard]] int iog_secmod_handle_message(iog_secmod_ctx_t *ctx, const uint8_t *data, size_t len);
 
-#endif /* RINGWALL_CORE_SECMOD_H */
+#endif /* IOGUARD_CORE_SECMOD_H */

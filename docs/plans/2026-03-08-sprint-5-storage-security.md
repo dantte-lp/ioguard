@@ -8,7 +8,7 @@
 
 **Tech Stack:** C23, liburing 2.14+, wolfSSL 5.8+, wolfSentry 1.6+, libmdbx 0.14+, SQLite 3.40+, libseccomp 2.5+, libmnl, libnftnl, Unity tests, Linux kernel 6.7+.
 
-**IMPORTANT:** This plan assumes the rebranding (ioguard -> ioguard) has been completed. All new code uses `rw_` prefix, `RW_` macros, `RINGWALL_` include guards.
+**IMPORTANT:** This plan assumes the rebranding (ioguard -> ioguard) has been completed. All new code uses `iog_` prefix, `IOG_` macros, `IOGUARD_` include guards.
 
 **Build/test:**
 ```bash
@@ -68,7 +68,7 @@ Rebuild container before starting tasks.
 #include <unistd.h>
 #include <time.h>
 
-static const char *TEST_DB_PATH = "/tmp/test_ringwall.mdbx";
+static const char *TEST_DB_PATH = "/tmp/test_ioguard.mdbx";
 
 void setUp(void) {}
 void tearDown(void) {
@@ -102,7 +102,7 @@ void test_mdbx_geometry_limits(void);               // verify max size <= 1 GB
 #include <stdbool.h>
 #include <time.h>
 
-constexpr size_t RW_SESSION_ID_LEN = 32;
+constexpr size_t IOG_SESSION_ID_LEN = 32;
 constexpr size_t IOG_MDBX_MAX_READERS = 128;
 constexpr size_t IOG_MDBX_MAX_DBS = 8;
 constexpr size_t IOG_MDBX_SIZE_LOWER = 1 * 1024 * 1024;       // 1 MB
@@ -111,7 +111,7 @@ constexpr size_t IOG_MDBX_GROWTH_STEP = 16 * 1024 * 1024;     // 16 MB
 constexpr size_t IOG_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024; // 64 MB
 
 typedef struct {
-    uint8_t  session_id[RW_SESSION_ID_LEN];
+    uint8_t  session_id[IOG_SESSION_ID_LEN];
     uint8_t  cookie_hmac[32];
     uint8_t  dtls_master_secret[48];
     uint32_t assigned_ipv4;
@@ -133,9 +133,9 @@ typedef struct {
 void iog_mdbx_close(iog_mdbx_ctx_t *ctx);
 
 [[nodiscard]] int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx, const iog_session_record_t *session);
-[[nodiscard]] int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN],
+[[nodiscard]] int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN],
                                           iog_session_record_t *out);
-[[nodiscard]] int iog_mdbx_session_delete(iog_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN]);
+[[nodiscard]] int iog_mdbx_session_delete(iog_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN]);
 [[nodiscard]] int iog_mdbx_session_count(iog_mdbx_ctx_t *ctx, uint32_t *count);
 
 typedef int (*iog_mdbx_session_iter_fn)(const iog_session_record_t *session, void *userdata);
@@ -167,7 +167,7 @@ target_link_libraries(iog_mdbx PUBLIC ${MDBX_LIBRARIES})
 target_link_directories(iog_mdbx PUBLIC ${MDBX_LIBRARY_DIRS})
 target_compile_definitions(iog_mdbx PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c iog_mdbx)
+iog_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c iog_mdbx)
 ```
 
 **Step 5: Build and run**
@@ -211,8 +211,8 @@ void test_sqlite_injection_prevention(void);         // evil username -> -ENOENT
 **Step 2: Write sqlite.h**
 
 ```c
-#ifndef RINGWALL_STORAGE_SQLITE_H
-#define RINGWALL_STORAGE_SQLITE_H
+#ifndef IOGUARD_STORAGE_SQLITE_H
+#define IOGUARD_STORAGE_SQLITE_H
 
 #include <sqlite3.h>
 #include <stdint.h>
@@ -237,7 +237,7 @@ typedef struct {
     char     result[16];
     char     details[1024];         // JSON
     char     session_id[65];        // hex
-} rw_audit_entry_t;
+} iog_audit_entry_t;
 
 typedef struct {
     sqlite3      *db;
@@ -255,11 +255,11 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
 [[nodiscard]] int iog_sqlite_user_create(iog_sqlite_ctx_t *ctx, const iog_user_record_t *user);
 [[nodiscard]] int iog_sqlite_user_lookup(iog_sqlite_ctx_t *ctx, const char *username, iog_user_record_t *out);
 
-[[nodiscard]] int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry);
+[[nodiscard]] int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const iog_audit_entry_t *entry);
 [[nodiscard]] int iog_sqlite_ban_check(iog_sqlite_ctx_t *ctx, const char *ip, bool *is_banned);
 [[nodiscard]] int iog_sqlite_ban_add(iog_sqlite_ctx_t *ctx, const char *ip, const char *reason, int duration_minutes);
 
-#endif // RINGWALL_STORAGE_SQLITE_H
+#endif // IOGUARD_STORAGE_SQLITE_H
 ```
 
 **Step 3: Write sqlite.c**
@@ -281,7 +281,7 @@ target_include_directories(iog_sqlite PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(iog_sqlite PUBLIC SQLite::SQLite3)
 target_compile_definitions(iog_sqlite PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c iog_sqlite)
+iog_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c iog_sqlite)
 ```
 
 **Step 5: Build and run**
@@ -368,8 +368,8 @@ void test_wolfsentry_connection_event(void);         // simulate connect event
 **Step 2: Write wolfsentry.h**
 
 ```c
-#ifndef RINGWALL_SECURITY_WOLFSENTRY_H
-#define RINGWALL_SECURITY_WOLFSENTRY_H
+#ifndef IOGUARD_SECURITY_WOLFSENTRY_H
+#define IOGUARD_SECURITY_WOLFSENTRY_H
 
 #include <wolfsentry/wolfsentry.h>
 #include <stdint.h>
@@ -403,7 +403,7 @@ void iog_wolfsentry_close(iog_wolfsentry_ctx_t *ctx);
 [[nodiscard]] int iog_wolfsentry_ban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr);
 [[nodiscard]] int iog_wolfsentry_unban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr);
 
-#endif // RINGWALL_SECURITY_WOLFSENTRY_H
+#endif // IOGUARD_SECURITY_WOLFSENTRY_H
 ```
 
 **Step 3: Write wolfsentry.c**
@@ -427,7 +427,7 @@ if(WOLFSENTRY_INCLUDE_DIR AND WOLFSENTRY_LIBRARY)
     target_link_libraries(iog_wolfsentry PUBLIC ${WOLFSENTRY_LIBRARY})
     target_compile_definitions(iog_wolfsentry PUBLIC _GNU_SOURCE)
 
-    rw_add_test(test_wolfsentry tests/unit/test_wolfsentry.c iog_wolfsentry)
+    iog_add_test(test_wolfsentry tests/unit/test_wolfsentry.c iog_wolfsentry)
 endif()
 ```
 
@@ -461,21 +461,21 @@ void test_sandbox_worker_allows_read(void);          // fork, apply, read -> OK
 **Step 2: Write sandbox.h**
 
 ```c
-#ifndef RINGWALL_SECURITY_SANDBOX_H
-#define RINGWALL_SECURITY_SANDBOX_H
+#ifndef IOGUARD_SECURITY_SANDBOX_H
+#define IOGUARD_SECURITY_SANDBOX_H
 
 #include <stdint.h>
 
 typedef enum : uint8_t {
-    RW_SANDBOX_WORKER,      // Most restrictive: read, write, io_uring, mmap (mdbx)
-    RW_SANDBOX_AUTHMOD,     // Worker + pwrite, fdatasync, flock (sqlite + mdbx write)
-    RW_SANDBOX_MAIN,        // Authmod + socket, bind, listen, pidfd_spawn, signalfd
-} rw_sandbox_profile_t;
+    IOG_SANDBOX_WORKER,      // Most restrictive: read, write, io_uring, mmap (mdbx)
+    IOG_SANDBOX_AUTHMOD,     // Worker + pwrite, fdatasync, flock (sqlite + mdbx write)
+    IOG_SANDBOX_MAIN,        // Authmod + socket, bind, listen, pidfd_spawn, signalfd
+} iog_sandbox_profile_t;
 
-[[nodiscard]] int rw_sandbox_build(rw_sandbox_profile_t profile);
-[[nodiscard]] int rw_sandbox_apply(rw_sandbox_profile_t profile);
+[[nodiscard]] int iog_sandbox_build(iog_sandbox_profile_t profile);
+[[nodiscard]] int iog_sandbox_apply(iog_sandbox_profile_t profile);
 
-#endif // RINGWALL_SECURITY_SANDBOX_H
+#endif // IOGUARD_SECURITY_SANDBOX_H
 ```
 
 **Step 3: Write sandbox.c**
@@ -516,23 +516,23 @@ void test_landlock_worker_allows_read(void);         // fork, apply, open(O_RDON
 **Step 2: Write landlock.h**
 
 ```c
-#ifndef RINGWALL_SECURITY_LANDLOCK_H
-#define RINGWALL_SECURITY_LANDLOCK_H
+#ifndef IOGUARD_SECURITY_LANDLOCK_H
+#define IOGUARD_SECURITY_LANDLOCK_H
 
 #include <stdint.h>
 #include <stdbool.h>
 
 typedef enum : uint8_t {
-    RW_LANDLOCK_WORKER,     // Read-only: mdbx file, /dev/net/tun
-    RW_LANDLOCK_AUTHMOD,    // Read-write: mdbx + sqlite files, /dev/urandom
-} rw_landlock_profile_t;
+    IOG_LANDLOCK_WORKER,     // Read-only: mdbx file, /dev/net/tun
+    IOG_LANDLOCK_AUTHMOD,    // Read-write: mdbx + sqlite files, /dev/urandom
+} iog_landlock_profile_t;
 
-[[nodiscard]] bool rw_landlock_supported(void);
-[[nodiscard]] int rw_landlock_apply(rw_landlock_profile_t profile,
+[[nodiscard]] bool iog_landlock_supported(void);
+[[nodiscard]] int iog_landlock_apply(iog_landlock_profile_t profile,
                                      const char *mdbx_path,
                                      const char *sqlite_path);
 
-#endif // RINGWALL_SECURITY_LANDLOCK_H
+#endif // IOGUARD_SECURITY_LANDLOCK_H
 ```
 
 **Step 3: Write landlock.c**
@@ -576,14 +576,14 @@ Note: Actual nftables operations require CAP_NET_ADMIN. Tests that need root use
 **Step 2: Write firewall.h**
 
 ```c
-#ifndef RINGWALL_SECURITY_FIREWALL_H
-#define RINGWALL_SECURITY_FIREWALL_H
+#ifndef IOGUARD_SECURITY_FIREWALL_H
+#define IOGUARD_SECURITY_FIREWALL_H
 
 #include <stdint.h>
 #include <netinet/in.h>
 
 constexpr size_t IOG_FW_CHAIN_NAME_MAX = 64;
-constexpr char RW_FW_TABLE_NAME[] = "ioguard";
+constexpr char IOG_FW_TABLE_NAME[] = "ioguard";
 
 typedef struct {
     char     chain_name[IOG_FW_CHAIN_NAME_MAX];
@@ -597,7 +597,7 @@ typedef struct {
 [[nodiscard]] int iog_fw_session_create(const iog_fw_session_t *session);
 [[nodiscard]] int iog_fw_session_destroy(const iog_fw_session_t *session);
 
-#endif // RINGWALL_SECURITY_FIREWALL_H
+#endif // IOGUARD_SECURITY_FIREWALL_H
 ```
 
 **Step 3: Write firewall.c**
@@ -606,7 +606,7 @@ Use libmnl + libnftnl:
 - Build nftnl_chain for per-user chain in `ioguard` table
 - Add nftnl_rule for source IP filtering
 - Batch via `mnl_nlmsg_batch_start()` / `mnl_socket_sendto()`
-- Chain naming: `rw_<username>_<ipv4hex>` (max 64 chars)
+- Chain naming: `iog_<username>_<ipv4hex>` (max 64 chars)
 
 **Step 4: Add to CMakeLists.txt, build, test, commit**
 
@@ -630,10 +630,10 @@ git commit -m "feat: nftables per-user firewall chains via libmnl+libnftnl (6 te
 
 Each target: `LLVMFuzzerTestOneInput(data, size)` entry point.
 
-- `fuzz_cstp.c`: feed random bytes to `rw_cstp_decode()`, verify no crash
+- `fuzz_cstp.c`: feed random bytes to `iog_cstp_decode()`, verify no crash
 - `fuzz_http.c`: feed to llhttp parser callbacks, verify no crash
 - `fuzz_toml.c`: feed to `toml_parse()`, verify no crash and proper cleanup
-- `fuzz_ipc.c`: feed to protobuf-c `rw_ipc__auth_request__unpack()`, verify no crash
+- `fuzz_ipc.c`: feed to protobuf-c `iog_ipc__auth_request__unpack()`, verify no crash
 - `fuzz_session_key.c`: feed 32+ bytes to `iog_mdbx_session_lookup()` against empty DB
 
 **Step 2: Update CMakeLists.txt fuzz section**
@@ -642,10 +642,10 @@ The existing fuzz section uses `file(GLOB FUZZ_SOURCES tests/fuzz/fuzz_*.c)` and
 
 ```cmake
 if(BUILD_FUZZ)
-    # fuzz_cstp needs rw_cstp
-    target_link_libraries(fuzz_cstp PRIVATE rw_cstp)
+    # fuzz_cstp needs iog_cstp
+    target_link_libraries(fuzz_cstp PRIVATE iog_cstp)
     # fuzz_http needs llhttp
-    target_link_libraries(fuzz_http PRIVATE rw_http)
+    target_link_libraries(fuzz_http PRIVATE iog_http)
     # etc.
 endif()
 ```
@@ -654,7 +654,7 @@ Actually, the glob approach won't handle per-target linking. Replace with explic
 
 ```cmake
 if(BUILD_FUZZ)
-    macro(rw_add_fuzz FUZZ_NAME FUZZ_SRC)
+    macro(iog_add_fuzz FUZZ_NAME FUZZ_SRC)
         add_executable(${FUZZ_NAME} ${FUZZ_SRC})
         target_compile_options(${FUZZ_NAME} PRIVATE -fsanitize=fuzzer,address)
         target_link_options(${FUZZ_NAME} PRIVATE -fsanitize=fuzzer,address)
@@ -662,12 +662,12 @@ if(BUILD_FUZZ)
         target_include_directories(${FUZZ_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
     endmacro()
 
-    rw_add_fuzz(fuzz_cstp tests/fuzz/fuzz_cstp.c rw_cstp)
-    rw_add_fuzz(fuzz_http tests/fuzz/fuzz_http.c rw_http)
-    rw_add_fuzz(fuzz_toml tests/fuzz/fuzz_toml.c iog_config)
-    rw_add_fuzz(fuzz_ipc tests/fuzz/fuzz_ipc.c rw_ipc)
+    iog_add_fuzz(fuzz_cstp tests/fuzz/fuzz_cstp.c iog_cstp)
+    iog_add_fuzz(fuzz_http tests/fuzz/fuzz_http.c iog_http)
+    iog_add_fuzz(fuzz_toml tests/fuzz/fuzz_toml.c iog_config)
+    iog_add_fuzz(fuzz_ipc tests/fuzz/fuzz_ipc.c iog_ipc)
     if(TARGET iog_mdbx)
-        rw_add_fuzz(fuzz_session_key tests/fuzz/fuzz_session_key.c iog_mdbx)
+        iog_add_fuzz(fuzz_session_key tests/fuzz/fuzz_session_key.c iog_mdbx)
     endif()
 endif()
 ```
@@ -712,7 +712,7 @@ void test_crash_recovery_mdbx(void);                 // fork, write, SIGKILL, re
 **Step 2: Add to CMakeLists.txt**
 
 ```cmake
-rw_add_test(test_storage tests/integration/test_storage.c iog_mdbx iog_sqlite iog_migrate)
+iog_add_test(test_storage tests/integration/test_storage.c iog_mdbx iog_sqlite iog_migrate)
 ```
 
 **Step 3: Build, run, commit**
@@ -793,7 +793,7 @@ git commit -m "chore: Sprint 5 complete — storage & security hardening"
 
 **Reference:**
 - `docs/tmp/draft/guide-to-the-secure-implementation-of-libmdbx-sqlite.md` — DB security guide
-- `docs/plans/2026-03-08-ringwall-rebranding-and-s5-design.md` — approved design
+- `docs/plans/2026-03-08-ioguard-rebranding-and-s5-design.md` — approved design
 - `.claude/skills/wolfsentry-idps/SKILL.md` — wolfSentry API patterns
 - `.claude/skills/security-coding/SKILL.md` — security coding standards
 

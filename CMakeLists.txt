@@ -231,18 +231,18 @@ if(TOML_FOUND)
 endif()
 
 # Generate protobuf-c sources
-set(PROTO_SRC ${CMAKE_SOURCE_DIR}/src/ipc/proto/rw_ipc.proto)
+set(PROTO_SRC ${CMAKE_SOURCE_DIR}/src/ipc/proto/iog_ipc.proto)
 if(EXISTS ${PROTO_SRC})
     add_custom_command(
-        OUTPUT ${PROTO_GEN_DIR}/rw_ipc.pb-c.h ${PROTO_GEN_DIR}/rw_ipc.pb-c.c
+        OUTPUT ${PROTO_GEN_DIR}/iog_ipc.pb-c.h ${PROTO_GEN_DIR}/iog_ipc.pb-c.c
         COMMAND ${PROTOC_C} --c_out=${PROTO_GEN_DIR}
                 --proto_path=${CMAKE_SOURCE_DIR}/src/ipc/proto
                 ${PROTO_SRC}
         DEPENDS ${PROTO_SRC}
-        COMMENT "Generating protobuf-c sources from rw_ipc.proto"
+        COMMENT "Generating protobuf-c sources from iog_ipc.proto"
     )
-    add_custom_target(proto_gen DEPENDS ${PROTO_GEN_DIR}/rw_ipc.pb-c.h)
-    set(PROTO_GEN_SOURCES ${PROTO_GEN_DIR}/rw_ipc.pb-c.c)
+    add_custom_target(proto_gen DEPENDS ${PROTO_GEN_DIR}/iog_ipc.pb-c.h)
+    set(PROTO_GEN_SOURCES ${PROTO_GEN_DIR}/iog_ipc.pb-c.c)
 else()
     set(PROTO_GEN_SOURCES "")
 endif()
@@ -273,15 +273,15 @@ else()
     message(WARNING "iohttpparser not found — HTTP parser will not build")
 endif()
 
-add_library(rw_http STATIC src/network/http.c)
-target_include_directories(rw_http PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_http STATIC src/network/http.c)
+target_include_directories(iog_http PUBLIC ${CMAKE_SOURCE_DIR}/src)
 if(IOHTTPPARSER_FOUND)
-    target_include_directories(rw_http PUBLIC ${IOHTTPPARSER_INCLUDE_DIR})
-    target_link_libraries(rw_http PUBLIC ${IOHTTPPARSER_LIBRARY})
+    target_include_directories(iog_http PUBLIC ${IOHTTPPARSER_INCLUDE_DIR})
+    target_link_libraries(iog_http PUBLIC ${IOHTTPPARSER_LIBRARY})
 else()
-    message(WARNING "rw_http: iohttpparser not found — linking will fail")
+    message(WARNING "iog_http: iohttpparser not found — linking will fail")
 endif()
-target_compile_definitions(rw_http PUBLIC _GNU_SOURCE)
+target_compile_definitions(iog_http PUBLIC _GNU_SOURCE)
 
 add_library(iog_core STATIC src/core/process.c)
 target_include_directories(iog_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
@@ -304,51 +304,51 @@ endif()
 # --- Crypto / TLS libraries ---
 # wolfSSL backend
 if(WOLFSSL_FOUND)
-    add_library(rw_crypto STATIC
+    add_library(iog_crypto STATIC
         src/crypto/tls_wolfssl.c
         src/crypto/tls_abstract.c
         src/crypto/priority_parser.c
         src/crypto/session_cache.c
     )
-    target_compile_definitions(rw_crypto PUBLIC _GNU_SOURCE USE_WOLFSSL)
-    target_compile_definitions(rw_crypto PRIVATE
+    target_compile_definitions(iog_crypto PUBLIC _GNU_SOURCE USE_WOLFSSL)
+    target_compile_definitions(iog_crypto PRIVATE
         CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-    target_include_directories(rw_crypto PUBLIC
+    target_include_directories(iog_crypto PUBLIC
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/crypto
         ${WOLFSSL_INCLUDE_DIRS}
     )
-    target_link_libraries(rw_crypto PUBLIC ${WOLFSSL_LIBRARIES} pthread)
-    target_link_directories(rw_crypto PUBLIC ${WOLFSSL_LIBRARY_DIRS})
-    message(STATUS "rw_crypto (wolfSSL backend) configured")
+    target_link_libraries(iog_crypto PUBLIC ${WOLFSSL_LIBRARIES} pthread)
+    target_link_directories(iog_crypto PUBLIC ${WOLFSSL_LIBRARY_DIRS})
+    message(STATUS "iog_crypto (wolfSSL backend) configured")
 endif()
 
 # GnuTLS backend
 if(GNUTLS_FOUND)
-    add_library(rw_crypto_gnutls STATIC
+    add_library(iog_crypto_gnutls STATIC
         src/crypto/tls_gnutls.c
         src/crypto/tls_abstract.c
         src/crypto/session_cache.c
     )
-    target_compile_definitions(rw_crypto_gnutls PUBLIC _GNU_SOURCE USE_GNUTLS)
-    target_include_directories(rw_crypto_gnutls PUBLIC
+    target_compile_definitions(iog_crypto_gnutls PUBLIC _GNU_SOURCE USE_GNUTLS)
+    target_include_directories(iog_crypto_gnutls PUBLIC
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/crypto
         ${GNUTLS_INCLUDE_DIRS}
     )
-    target_link_libraries(rw_crypto_gnutls PUBLIC ${GNUTLS_LIBRARIES} pthread)
-    target_link_directories(rw_crypto_gnutls PUBLIC ${GNUTLS_LIBRARY_DIRS})
-    message(STATUS "rw_crypto_gnutls (GnuTLS backend) configured")
+    target_link_libraries(iog_crypto_gnutls PUBLIC ${GNUTLS_LIBRARIES} pthread)
+    target_link_directories(iog_crypto_gnutls PUBLIC ${GNUTLS_LIBRARY_DIRS})
+    message(STATUS "iog_crypto_gnutls (GnuTLS backend) configured")
 endif()
 
 # --- PAM authentication backend ---
 find_library(PAM_LIBRARY pam)
 if(PAM_LIBRARY)
-    add_library(rw_pam STATIC src/auth/pam.c)
-    target_link_libraries(rw_pam PRIVATE ${PAM_LIBRARY})
-    target_compile_definitions(rw_pam PRIVATE _GNU_SOURCE)
-    target_include_directories(rw_pam PUBLIC ${CMAKE_SOURCE_DIR}/src)
-    message(STATUS "rw_pam (PAM authentication backend) configured")
+    add_library(iog_pam STATIC src/auth/pam.c)
+    target_link_libraries(iog_pam PRIVATE ${PAM_LIBRARY})
+    target_compile_definitions(iog_pam PRIVATE _GNU_SOURCE)
+    target_include_directories(iog_pam PUBLIC ${CMAKE_SOURCE_DIR}/src)
+    message(STATUS "iog_pam (PAM authentication backend) configured")
 endif()
 
 # --- Storage libraries (needed by sec-mod) ---
@@ -482,15 +482,15 @@ if(STUMPLESS_FOUND)
 endif()
 
 # --- Sprint 7: Prometheus metrics ---
-add_library(rw_metrics STATIC src/metrics/prometheus.c)
-target_include_directories(rw_metrics PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_metrics STATIC src/metrics/prometheus.c)
+target_include_directories(iog_metrics PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 # --- sec-mod authentication process ---
-if(TARGET rw_pam)
+if(TARGET iog_pam)
     add_library(iog_secmod STATIC src/core/secmod.c)
     target_include_directories(iog_secmod PUBLIC ${CMAKE_SOURCE_DIR}/src)
     target_compile_definitions(iog_secmod PRIVATE _GNU_SOURCE)
-    target_link_libraries(iog_secmod PUBLIC iog_ipc iog_session rw_pam iog_config)
+    target_link_libraries(iog_secmod PUBLIC iog_ipc iog_session iog_pam iog_config)
     if(TARGET iog_mdbx)
         target_link_libraries(iog_secmod PUBLIC iog_mdbx)
     endif()
@@ -528,7 +528,7 @@ if(BUILD_TESTING)
         add_library(unity STATIC ${UNITY_SRC_DIR}/unity.c)
         target_include_directories(unity PUBLIC ${UNITY_INCLUDE_DIR} ${UNITY_INCLUDE_DIR}/unity)
 
-        macro(rw_add_test TEST_NAME TEST_SRC)
+        macro(iog_add_test TEST_NAME TEST_SRC)
             add_executable(${TEST_NAME} ${TEST_SRC})
             target_link_libraries(${TEST_NAME} PRIVATE unity ${ARGN})
             target_compile_definitions(${TEST_NAME} PRIVATE
@@ -537,54 +537,54 @@ if(BUILD_TESTING)
         endmacro()
 
         # Sprint 1 tests
-        rw_add_test(test_memory tests/unit/test_memory.c iog_memory)
-        rw_add_test(test_io_uring tests/unit/test_io_uring.c iog_io)
-        rw_add_test(test_io_callback tests/unit/test_io_callback.c iog_io)
-        rw_add_test(test_fdpass tests/unit/test_fdpass.c iog_fdpass)
-        rw_add_test(test_main_bootstrap tests/unit/test_main_bootstrap.c iog_main_helpers)
-        rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c iog_ipc)
-        rw_add_test(test_ipc_messages tests/unit/test_ipc_messages.c iog_ipc)
-        rw_add_test(test_config_toml tests/unit/test_config_toml.c iog_config)
-        rw_add_test(test_process tests/unit/test_process.c iog_core)
+        iog_add_test(test_memory tests/unit/test_memory.c iog_memory)
+        iog_add_test(test_io_uring tests/unit/test_io_uring.c iog_io)
+        iog_add_test(test_io_callback tests/unit/test_io_callback.c iog_io)
+        iog_add_test(test_fdpass tests/unit/test_fdpass.c iog_fdpass)
+        iog_add_test(test_main_bootstrap tests/unit/test_main_bootstrap.c iog_main_helpers)
+        iog_add_test(test_ipc_transport tests/unit/test_ipc_transport.c iog_ipc)
+        iog_add_test(test_ipc_messages tests/unit/test_ipc_messages.c iog_ipc)
+        iog_add_test(test_config_toml tests/unit/test_config_toml.c iog_config)
+        iog_add_test(test_process tests/unit/test_process.c iog_core)
         if(EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_ipc_roundtrip.c)
-            rw_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c iog_ipc iog_io)
+            iog_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c iog_ipc iog_io)
         endif()
         if(TARGET iog_secmod AND EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_auth_flow.c)
-            rw_add_test(test_auth_flow tests/integration/test_auth_flow.c iog_secmod iog_ipc iog_session rw_pam iog_config iog_memory)
+            iog_add_test(test_auth_flow tests/integration/test_auth_flow.c iog_secmod iog_ipc iog_session iog_pam iog_config iog_memory)
         endif()
 
         # Sprint 2 crypto tests
-        if(TARGET rw_crypto)
-            rw_add_test(test_tls_wolfssl tests/unit/test_tls_wolfssl.c rw_crypto)
-            rw_add_test(test_priority_parser tests/unit/test_priority_parser.c rw_crypto)
+        if(TARGET iog_crypto)
+            iog_add_test(test_tls_wolfssl tests/unit/test_tls_wolfssl.c iog_crypto)
+            iog_add_test(test_priority_parser tests/unit/test_priority_parser.c iog_crypto)
         endif()
-        if(TARGET rw_crypto_gnutls)
-            rw_add_test(test_tls_gnutls tests/unit/test_tls_gnutls.c rw_crypto_gnutls)
+        if(TARGET iog_crypto_gnutls)
+            iog_add_test(test_tls_gnutls tests/unit/test_tls_gnutls.c iog_crypto_gnutls)
         endif()
 
         # Sprint 2 network tests
-        rw_add_test(test_http tests/unit/test_http.c rw_http)
-        rw_add_test(test_xml_auth tests/unit/test_xml_auth.c iog_xml_auth)
+        iog_add_test(test_http tests/unit/test_http.c iog_http)
+        iog_add_test(test_xml_auth tests/unit/test_xml_auth.c iog_xml_auth)
 
         # Sprint 2 session tests (needs wolfSSL for wolfCrypt RNG)
-        rw_add_test(test_session tests/unit/test_session.c iog_session)
+        iog_add_test(test_session tests/unit/test_session.c iog_session)
         if(WOLFSSL_FOUND)
             target_link_libraries(test_session PRIVATE ${WOLFSSL_LIBRARIES})
             target_link_directories(test_session PRIVATE ${WOLFSSL_LIBRARY_DIRS})
         endif()
 
         # Sprint 2 PAM authentication tests
-        if(TARGET rw_pam)
-            rw_add_test(test_auth_pam tests/unit/test_auth_pam.c rw_pam)
+        if(TARGET iog_pam)
+            iog_add_test(test_auth_pam tests/unit/test_auth_pam.c iog_pam)
         endif()
 
         # Sprint 2 sec-mod authentication process tests
         if(TARGET iog_secmod)
-            rw_add_test(test_secmod tests/unit/test_secmod.c iog_secmod)
+            iog_add_test(test_secmod tests/unit/test_secmod.c iog_secmod)
 
             # Sprint 6 — secmod storage integration
             if(TARGET iog_mdbx AND TARGET iog_sqlite)
-                rw_add_test(test_secmod_storage tests/unit/test_secmod_storage.c
+                iog_add_test(test_secmod_storage tests/unit/test_secmod_storage.c
                     iog_secmod iog_mdbx iog_sqlite)
                 target_link_libraries(test_secmod_storage PRIVATE
                     ${MDBX_LIBRARY} ${SQLITE3_LIBRARY})
@@ -594,86 +594,86 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 3 — CSTP framing
-        add_library(rw_cstp STATIC src/network/cstp.c)
-        target_include_directories(rw_cstp PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        add_library(iog_cstp STATIC src/network/cstp.c)
+        target_include_directories(iog_cstp PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        rw_add_test(test_cstp tests/unit/test_cstp.c rw_cstp)
+        iog_add_test(test_cstp tests/unit/test_cstp.c iog_cstp)
 
         # Sprint 3 — TUN device
-        add_library(rw_tun STATIC src/network/tun.c)
-        target_include_directories(rw_tun PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_tun PUBLIC _GNU_SOURCE)
+        add_library(iog_tun STATIC src/network/tun.c)
+        target_include_directories(iog_tun PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_tun PUBLIC _GNU_SOURCE)
 
-        rw_add_test(test_tun tests/unit/test_tun.c rw_tun)
+        iog_add_test(test_tun tests/unit/test_tun.c iog_tun)
 
         # Sprint 3 — DPD state machine
         add_library(iog_dpd STATIC src/network/dpd.c)
         target_include_directories(iog_dpd PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        rw_add_test(test_dpd tests/unit/test_dpd.c iog_dpd)
+        iog_add_test(test_dpd tests/unit/test_dpd.c iog_dpd)
 
         # Sprint 3 — Worker process context
-        add_library(rw_worker STATIC src/core/worker.c)
-        target_include_directories(rw_worker PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_worker PUBLIC _GNU_SOURCE)
-        target_link_libraries(rw_worker PUBLIC rw_cstp iog_dpd iog_compress)
+        add_library(iog_worker STATIC src/core/worker.c)
+        target_include_directories(iog_worker PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_worker PUBLIC _GNU_SOURCE)
+        target_link_libraries(iog_worker PUBLIC iog_cstp iog_dpd iog_compress)
 
-        rw_add_test(test_worker tests/unit/test_worker.c rw_worker rw_cstp iog_dpd)
+        iog_add_test(test_worker tests/unit/test_worker.c iog_worker iog_cstp iog_dpd)
 
         # Sprint 6 — Worker event loop
         add_library(iog_worker_loop STATIC src/core/worker_loop.c)
         target_include_directories(iog_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
         target_compile_definitions(iog_worker_loop PUBLIC _GNU_SOURCE)
-        target_link_libraries(iog_worker_loop PUBLIC rw_worker iog_io iog_fdpass rw_cstp iog_dpd)
+        target_link_libraries(iog_worker_loop PUBLIC iog_worker iog_io iog_fdpass iog_cstp iog_dpd)
 
-        rw_add_test(test_worker_loop tests/unit/test_worker_loop.c
-            iog_worker_loop iog_io iog_fdpass rw_cstp iog_dpd rw_worker)
+        iog_add_test(test_worker_loop tests/unit/test_worker_loop.c
+            iog_worker_loop iog_io iog_fdpass iog_cstp iog_dpd iog_worker)
 
         # Sprint 6 — Per-connection TLS handshake
         if(WOLFSSL_FOUND)
-            add_library(rw_conn_tls STATIC src/core/conn_tls.c)
-            target_include_directories(rw_conn_tls PUBLIC ${CMAKE_SOURCE_DIR}/src)
-            target_compile_definitions(rw_conn_tls PRIVATE _GNU_SOURCE)
-            target_link_libraries(rw_conn_tls PUBLIC rw_crypto)
+            add_library(iog_conn_tls STATIC src/core/conn_tls.c)
+            target_include_directories(iog_conn_tls PUBLIC ${CMAKE_SOURCE_DIR}/src)
+            target_compile_definitions(iog_conn_tls PRIVATE _GNU_SOURCE)
+            target_link_libraries(iog_conn_tls PUBLIC iog_crypto)
 
-            rw_add_test(test_conn_tls tests/unit/test_conn_tls.c
-                rw_conn_tls rw_crypto)
+            iog_add_test(test_conn_tls tests/unit/test_conn_tls.c
+                iog_conn_tls iog_crypto)
             target_link_libraries(test_conn_tls PRIVATE pthread)
         endif()
 
         # Sprint 6 — CSTP data path (conn_data)
-        add_library(rw_conn_data STATIC src/core/conn_data.c)
-        target_include_directories(rw_conn_data PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_conn_data PRIVATE _GNU_SOURCE)
-        target_link_libraries(rw_conn_data PUBLIC rw_cstp iog_dpd iog_compress)
+        add_library(iog_conn_data STATIC src/core/conn_data.c)
+        target_include_directories(iog_conn_data PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_conn_data PRIVATE _GNU_SOURCE)
+        target_link_libraries(iog_conn_data PUBLIC iog_cstp iog_dpd iog_compress)
 
-        rw_add_test(test_conn_data tests/unit/test_conn_data.c
-            rw_conn_data rw_cstp iog_dpd iog_compress)
+        iog_add_test(test_conn_data tests/unit/test_conn_data.c
+            iog_conn_data iog_cstp iog_dpd iog_compress)
 
         # Sprint 6 — DPD/keepalive timer integration
-        add_library(rw_conn_timer STATIC src/core/conn_timer.c)
-        target_include_directories(rw_conn_timer PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_conn_timer PRIVATE _GNU_SOURCE)
-        target_link_libraries(rw_conn_timer PUBLIC rw_conn_data iog_dpd rw_cstp)
+        add_library(iog_conn_timer STATIC src/core/conn_timer.c)
+        target_include_directories(iog_conn_timer PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_conn_timer PRIVATE _GNU_SOURCE)
+        target_link_libraries(iog_conn_timer PUBLIC iog_conn_data iog_dpd iog_cstp)
 
-        rw_add_test(test_conn_timer tests/unit/test_conn_timer.c
-            rw_conn_timer rw_conn_data rw_cstp iog_dpd iog_compress)
+        iog_add_test(test_conn_timer tests/unit/test_conn_timer.c
+            iog_conn_timer iog_conn_data iog_cstp iog_dpd iog_compress)
 
         # Sprint 3 — Data path integration test
-        rw_add_test(test_data_path tests/integration/test_data_path.c rw_cstp iog_dpd rw_worker iog_io)
+        iog_add_test(test_data_path tests/integration/test_data_path.c iog_cstp iog_dpd iog_worker iog_io)
 
         # Sprint 4 — Compression abstraction
         add_library(iog_compress STATIC src/network/compress.c)
         target_include_directories(iog_compress PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-        rw_add_test(test_compress tests/unit/test_compress.c iog_compress)
+        iog_add_test(test_compress tests/unit/test_compress.c iog_compress)
 
         # Sprint 4 — LZS compression
         add_library(iog_compress_lzs STATIC src/network/compress_lzs.c)
         target_include_directories(iog_compress_lzs PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
         target_link_libraries(iog_compress PUBLIC iog_compress_lzs)
-        rw_add_test(test_compress_lzs tests/unit/test_compress_lzs.c iog_compress_lzs)
+        iog_add_test(test_compress_lzs tests/unit/test_compress_lzs.c iog_compress_lzs)
 
         # Sprint 4 — LZ4 compression
         add_library(iog_compress_lz4 STATIC src/network/compress_lz4.c)
@@ -683,61 +683,61 @@ if(BUILD_TESTING)
         target_link_directories(iog_compress_lz4 PRIVATE ${LZ4_LIBRARY_DIRS})
 
         target_link_libraries(iog_compress PUBLIC iog_compress_lz4)
-        rw_add_test(test_compress_lz4 tests/unit/test_compress_lz4.c iog_compress_lz4)
+        iog_add_test(test_compress_lz4 tests/unit/test_compress_lz4.c iog_compress_lz4)
         target_link_libraries(test_compress_lz4 PRIVATE ${LZ4_LIBRARIES})
         target_link_directories(test_compress_lz4 PRIVATE ${LZ4_LIBRARY_DIRS})
 
         # Sprint 4 — DTLS context management
-        add_library(rw_dtls STATIC src/network/dtls.c)
-        target_include_directories(rw_dtls PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_dtls PUBLIC _GNU_SOURCE)
+        add_library(iog_dtls STATIC src/network/dtls.c)
+        target_include_directories(iog_dtls PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_dtls PUBLIC _GNU_SOURCE)
         if(WOLFSSL_FOUND)
-            target_compile_definitions(rw_dtls PUBLIC USE_WOLFSSL)
-            target_include_directories(rw_dtls PUBLIC ${WOLFSSL_INCLUDE_DIRS})
-            target_link_libraries(rw_dtls PUBLIC ${WOLFSSL_LIBRARIES})
-            target_link_directories(rw_dtls PUBLIC ${WOLFSSL_LIBRARY_DIRS})
+            target_compile_definitions(iog_dtls PUBLIC USE_WOLFSSL)
+            target_include_directories(iog_dtls PUBLIC ${WOLFSSL_INCLUDE_DIRS})
+            target_link_libraries(iog_dtls PUBLIC ${WOLFSSL_LIBRARIES})
+            target_link_directories(iog_dtls PUBLIC ${WOLFSSL_LIBRARY_DIRS})
         endif()
 
-        rw_add_test(test_dtls tests/unit/test_dtls.c rw_dtls)
+        iog_add_test(test_dtls tests/unit/test_dtls.c iog_dtls)
 
         # Sprint 4 — DTLS keying material
-        add_library(rw_dtls_keying STATIC src/network/dtls_keying.c)
-        target_include_directories(rw_dtls_keying PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_dtls_keying PUBLIC _GNU_SOURCE)
+        add_library(iog_dtls_keying STATIC src/network/dtls_keying.c)
+        target_include_directories(iog_dtls_keying PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_dtls_keying PUBLIC _GNU_SOURCE)
 
-        rw_add_test(test_dtls_keying tests/unit/test_dtls_keying.c rw_dtls_keying)
+        iog_add_test(test_dtls_keying tests/unit/test_dtls_keying.c iog_dtls_keying)
 
         # Sprint 4 — Channel state machine
-        add_library(rw_channel STATIC src/network/channel.c)
-        target_include_directories(rw_channel PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_link_libraries(rw_channel PUBLIC iog_dpd iog_compress)
+        add_library(iog_channel STATIC src/network/channel.c)
+        target_include_directories(iog_channel PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_link_libraries(iog_channel PUBLIC iog_dpd iog_compress)
 
-        rw_add_test(test_channel tests/unit/test_channel.c rw_channel iog_dpd iog_compress)
+        iog_add_test(test_channel tests/unit/test_channel.c iog_channel iog_dpd iog_compress)
 
         # Sprint 4 — DTLS HTTP headers
-        add_library(rw_dtls_headers STATIC src/network/dtls_headers.c)
-        target_include_directories(rw_dtls_headers PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_link_libraries(rw_dtls_headers PUBLIC iog_compress)
+        add_library(iog_dtls_headers STATIC src/network/dtls_headers.c)
+        target_include_directories(iog_dtls_headers PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_link_libraries(iog_dtls_headers PUBLIC iog_compress)
 
-        rw_add_test(test_dtls_headers tests/unit/test_dtls_headers.c rw_dtls_headers iog_compress)
+        iog_add_test(test_dtls_headers tests/unit/test_dtls_headers.c iog_dtls_headers iog_compress)
 
         # Sprint 4 — CSTP compression integration
-        rw_add_test(test_compress_cstp tests/unit/test_compress_cstp.c rw_cstp iog_compress rw_worker iog_dpd)
+        iog_add_test(test_compress_cstp tests/unit/test_compress_cstp.c iog_cstp iog_compress iog_worker iog_dpd)
 
         # Sprint 4 — DTLS + channel + compression integration
-        rw_add_test(test_dtls_channel tests/integration/test_dtls_channel.c
-            rw_channel iog_compress rw_cstp iog_dpd rw_dtls_headers rw_dtls_keying rw_worker)
+        iog_add_test(test_dtls_channel tests/integration/test_dtls_channel.c
+            iog_channel iog_compress iog_cstp iog_dpd iog_dtls_headers iog_dtls_keying iog_worker)
 
         # Sprint 5 — libmdbx session store tests
         if(TARGET iog_mdbx)
-            rw_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c iog_mdbx)
+            iog_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c iog_mdbx)
             target_link_libraries(test_storage_mdbx PRIVATE ${MDBX_LIBRARY})
             target_include_directories(test_storage_mdbx PRIVATE ${MDBX_INCLUDE_DIR})
         endif()
 
         # Sprint 5 — SQLite control plane tests
         if(TARGET iog_sqlite)
-            rw_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c
+            iog_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c
                 iog_sqlite)
             target_link_libraries(test_storage_sqlite PRIVATE ${SQLITE3_LIBRARY})
             target_include_directories(test_storage_sqlite PRIVATE
@@ -757,7 +757,7 @@ if(BUILD_TESTING)
             target_link_libraries(iog_wolfsentry PUBLIC ${WOLFSENTRY_LIBRARY})
             target_compile_definitions(iog_wolfsentry PUBLIC _GNU_SOURCE)
 
-            rw_add_test(test_wolfsentry tests/unit/test_wolfsentry.c
+            iog_add_test(test_wolfsentry tests/unit/test_wolfsentry.c
                 iog_wolfsentry)
             target_link_libraries(test_wolfsentry PRIVATE ${WOLFSENTRY_LIBRARY})
             target_include_directories(test_wolfsentry PRIVATE
@@ -780,13 +780,13 @@ if(BUILD_TESTING)
         find_path(SECCOMP_INCLUDE_DIR seccomp.h)
 
         if(SECCOMP_LIBRARY AND SECCOMP_INCLUDE_DIR)
-            add_library(rw_sandbox STATIC src/security/sandbox.c)
-            target_include_directories(rw_sandbox PUBLIC
+            add_library(iog_sandbox STATIC src/security/sandbox.c)
+            target_include_directories(iog_sandbox PUBLIC
                 ${CMAKE_SOURCE_DIR}/src ${SECCOMP_INCLUDE_DIR})
-            target_link_libraries(rw_sandbox PUBLIC ${SECCOMP_LIBRARY})
-            target_compile_definitions(rw_sandbox PUBLIC _GNU_SOURCE)
+            target_link_libraries(iog_sandbox PUBLIC ${SECCOMP_LIBRARY})
+            target_compile_definitions(iog_sandbox PUBLIC _GNU_SOURCE)
 
-            rw_add_test(test_sandbox tests/unit/test_sandbox.c rw_sandbox)
+            iog_add_test(test_sandbox tests/unit/test_sandbox.c iog_sandbox)
             target_link_libraries(test_sandbox PRIVATE ${SECCOMP_LIBRARY})
             message(STATUS "Found libseccomp: ${SECCOMP_LIBRARY}")
         else()
@@ -794,11 +794,11 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 5 — Landlock filesystem isolation
-        add_library(rw_landlock STATIC src/security/landlock.c)
-        target_include_directories(rw_landlock PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_landlock PUBLIC _GNU_SOURCE)
+        add_library(iog_landlock STATIC src/security/landlock.c)
+        target_include_directories(iog_landlock PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_landlock PUBLIC _GNU_SOURCE)
 
-        rw_add_test(test_landlock tests/unit/test_landlock.c rw_landlock)
+        iog_add_test(test_landlock tests/unit/test_landlock.c iog_landlock)
 
         # Sprint 5 — nftables per-user firewall
         if(LIBMNL_FOUND AND LIBNFTNL_FOUND)
@@ -812,7 +812,7 @@ if(BUILD_TESTING)
                 ${LIBMNL_LIBRARY_DIRS} ${LIBNFTNL_LIBRARY_DIRS})
             target_compile_definitions(iog_firewall PUBLIC _GNU_SOURCE)
 
-            rw_add_test(test_firewall tests/unit/test_firewall.c iog_firewall)
+            iog_add_test(test_firewall tests/unit/test_firewall.c iog_firewall)
             target_link_libraries(test_firewall PRIVATE
                 ${LIBMNL_LIBRARIES} ${LIBNFTNL_LIBRARIES})
             target_link_directories(test_firewall PRIVATE
@@ -823,29 +823,29 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 6 — End-to-end VPN flow integration test
-        rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
-            rw_conn_data rw_conn_timer rw_shutdown rw_worker
-            rw_cstp iog_dpd iog_compress)
+        iog_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
+            iog_conn_data iog_conn_timer iog_shutdown iog_worker
+            iog_cstp iog_dpd iog_compress)
 
         # Sprint 6 — Graceful shutdown
-        add_library(rw_shutdown STATIC src/core/shutdown.c)
-        target_include_directories(rw_shutdown PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_shutdown PRIVATE _GNU_SOURCE)
-        target_link_libraries(rw_shutdown PUBLIC rw_worker rw_cstp)
+        add_library(iog_shutdown STATIC src/core/shutdown.c)
+        target_include_directories(iog_shutdown PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_shutdown PRIVATE _GNU_SOURCE)
+        target_link_libraries(iog_shutdown PUBLIC iog_worker iog_cstp)
 
-        rw_add_test(test_shutdown tests/unit/test_shutdown.c
-            rw_shutdown rw_worker rw_cstp iog_dpd iog_compress)
+        iog_add_test(test_shutdown tests/unit/test_shutdown.c
+            iog_shutdown iog_worker iog_cstp iog_dpd iog_compress)
 
         # Sprint 6 — Security activation hooks
-        if(TARGET rw_sandbox AND TARGET rw_landlock AND TARGET iog_firewall)
-            add_library(rw_security_hooks STATIC src/core/security_hooks.c)
-            target_include_directories(rw_security_hooks PUBLIC ${CMAKE_SOURCE_DIR}/src)
-            target_compile_definitions(rw_security_hooks PRIVATE _GNU_SOURCE)
-            target_link_libraries(rw_security_hooks PUBLIC
-                rw_sandbox rw_landlock iog_firewall iog_config)
+        if(TARGET iog_sandbox AND TARGET iog_landlock AND TARGET iog_firewall)
+            add_library(iog_security_hooks STATIC src/core/security_hooks.c)
+            target_include_directories(iog_security_hooks PUBLIC ${CMAKE_SOURCE_DIR}/src)
+            target_compile_definitions(iog_security_hooks PRIVATE _GNU_SOURCE)
+            target_link_libraries(iog_security_hooks PUBLIC
+                iog_sandbox iog_landlock iog_firewall iog_config)
 
-            rw_add_test(test_security_hooks tests/unit/test_security_hooks.c
-                rw_security_hooks rw_sandbox rw_landlock iog_firewall iog_config)
+            iog_add_test(test_security_hooks tests/unit/test_security_hooks.c
+                iog_security_hooks iog_sandbox iog_landlock iog_firewall iog_config)
         endif()
 
         # Sprint 5 — Schema migration
@@ -854,7 +854,7 @@ if(BUILD_TESTING)
             target_include_directories(iog_migrate PUBLIC ${CMAKE_SOURCE_DIR}/src)
             target_link_libraries(iog_migrate PUBLIC iog_sqlite iog_mdbx)
 
-            rw_add_test(test_storage_migrate tests/unit/test_storage_migrate.c
+            iog_add_test(test_storage_migrate tests/unit/test_storage_migrate.c
                 iog_migrate iog_sqlite iog_mdbx)
         else()
             message(WARNING "iog_sqlite or iog_mdbx missing — skipping storage/migrate")
@@ -862,7 +862,7 @@ if(BUILD_TESTING)
 
         # Sprint 5 — Storage integration test
         if(TARGET iog_mdbx AND TARGET iog_sqlite AND TARGET iog_migrate)
-            rw_add_test(test_storage tests/integration/test_storage.c
+            iog_add_test(test_storage tests/integration/test_storage.c
                 iog_mdbx iog_sqlite iog_migrate)
         endif()
 
@@ -870,16 +870,16 @@ if(BUILD_TESTING)
         add_library(iog_ipam STATIC src/network/ipam.c)
         target_include_directories(iog_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
         target_compile_definitions(iog_ipam PRIVATE _GNU_SOURCE)
-        rw_add_test(test_ipam tests/unit/test_ipam.c iog_ipam)
+        iog_add_test(test_ipam tests/unit/test_ipam.c iog_ipam)
 
         # Sprint 6 — Split DNS configuration
-        add_library(rw_dns STATIC src/network/dns.c)
-        target_include_directories(rw_dns PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_dns PRIVATE _GNU_SOURCE)
-        rw_add_test(test_dns tests/unit/test_dns.c rw_dns)
+        add_library(iog_dns STATIC src/network/dns.c)
+        target_include_directories(iog_dns PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_dns PRIVATE _GNU_SOURCE)
+        iog_add_test(test_dns tests/unit/test_dns.c iog_dns)
 
         # Sprint 7 — TOTP test
-        rw_add_test(test_totp tests/unit/test_totp.c iog_totp)
+        iog_add_test(test_totp tests/unit/test_totp.c iog_totp)
         if(WOLFSSL_FOUND)
             target_include_directories(test_totp PRIVATE ${WOLFSSL_INCLUDE_DIRS})
             target_link_directories(test_totp PRIVATE ${WOLFSSL_LIBRARY_DIRS})
@@ -887,7 +887,7 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 7 — Vault test
-        rw_add_test(test_vault tests/unit/test_vault.c iog_vault)
+        iog_add_test(test_vault tests/unit/test_vault.c iog_vault)
         if(WOLFSSL_FOUND)
             target_include_directories(test_vault PRIVATE ${WOLFSSL_INCLUDE_DIRS})
             target_link_directories(test_vault PRIVATE ${WOLFSSL_LIBRARY_DIRS})
@@ -895,16 +895,16 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 7 — Auth backend registry test
-        rw_add_test(test_auth_backend tests/unit/test_auth_backend.c iog_auth_backend)
+        iog_add_test(test_auth_backend tests/unit/test_auth_backend.c iog_auth_backend)
 
         # Sprint 7 — RADIUS authentication test
-        rw_add_test(test_auth_radius tests/unit/test_auth_radius.c iog_auth_radius iog_auth_backend)
+        iog_add_test(test_auth_radius tests/unit/test_auth_radius.c iog_auth_radius iog_auth_backend)
 
         # Sprint 7 — LDAP authentication test
-        rw_add_test(test_auth_ldap tests/unit/test_auth_ldap.c iog_auth_ldap iog_auth_backend)
+        iog_add_test(test_auth_ldap tests/unit/test_auth_ldap.c iog_auth_ldap iog_auth_backend)
 
         # Sprint 7 — Certificate authentication test
-        rw_add_test(test_auth_cert tests/unit/test_auth_cert.c iog_auth_cert iog_auth_backend)
+        iog_add_test(test_auth_cert tests/unit/test_auth_cert.c iog_auth_cert iog_auth_backend)
         if(WOLFSSL_FOUND)
             target_include_directories(test_auth_cert PRIVATE ${WOLFSSL_INCLUDE_DIRS})
             target_link_directories(test_auth_cert PRIVATE ${WOLFSSL_LIBRARY_DIRS})
@@ -912,7 +912,7 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 7 — Structured logging test
-        rw_add_test(test_log tests/unit/test_log.c iog_log)
+        iog_add_test(test_log tests/unit/test_log.c iog_log)
         if(STUMPLESS_FOUND)
             target_compile_definitions(test_log PRIVATE USE_STUMPLESS)
             target_include_directories(test_log PRIVATE ${STUMPLESS_INCLUDE_DIR})
@@ -920,11 +920,11 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 7 — Prometheus metrics test
-        rw_add_test(test_prometheus tests/unit/test_prometheus.c rw_metrics)
+        iog_add_test(test_prometheus tests/unit/test_prometheus.c iog_metrics)
 
         # Sprint 7 — MFA integration test
         if(TARGET iog_secmod AND TARGET iog_totp AND TARGET iog_vault AND TARGET iog_sqlite)
-            rw_add_test(test_auth_mfa tests/integration/test_auth_mfa.c
+            iog_add_test(test_auth_mfa tests/integration/test_auth_mfa.c
                 iog_secmod iog_totp iog_vault iog_sqlite)
             target_link_libraries(test_auth_mfa PRIVATE
                 ${SQLITE3_LIBRARY})
@@ -937,7 +937,7 @@ if(BUILD_TESTING)
             endif()
         endif()
 
-        message(STATUS "Unit test infrastructure ready (rw_add_test macro)")
+        message(STATUS "Unit test infrastructure ready (iog_add_test macro)")
     else()
         message(WARNING "Unity testing framework not found - skipping unit tests")
     endif()
@@ -952,7 +952,7 @@ if(BUILD_FUZZ)
         message(FATAL_ERROR "Fuzzing requires Clang (LibFuzzer)")
     endif()
 
-    macro(rw_add_fuzz FUZZ_NAME FUZZ_SRC)
+    macro(iog_add_fuzz FUZZ_NAME FUZZ_SRC)
         add_executable(${FUZZ_NAME} ${FUZZ_SRC})
         target_compile_options(${FUZZ_NAME} PRIVATE -fsanitize=fuzzer,address)
         target_link_options(${FUZZ_NAME} PRIVATE -fsanitize=fuzzer,address)
@@ -961,12 +961,12 @@ if(BUILD_FUZZ)
         target_compile_definitions(${FUZZ_NAME} PRIVATE _GNU_SOURCE)
     endmacro()
 
-    rw_add_fuzz(fuzz_cstp tests/fuzz/fuzz_cstp.c rw_cstp)
-    rw_add_fuzz(fuzz_http tests/fuzz/fuzz_http.c rw_http)
-    rw_add_fuzz(fuzz_toml tests/fuzz/fuzz_toml.c iog_config)
-    rw_add_fuzz(fuzz_ipc tests/fuzz/fuzz_ipc.c iog_ipc)
+    iog_add_fuzz(fuzz_cstp tests/fuzz/fuzz_cstp.c iog_cstp)
+    iog_add_fuzz(fuzz_http tests/fuzz/fuzz_http.c iog_http)
+    iog_add_fuzz(fuzz_toml tests/fuzz/fuzz_toml.c iog_config)
+    iog_add_fuzz(fuzz_ipc tests/fuzz/fuzz_ipc.c iog_ipc)
     if(TARGET iog_mdbx)
-        rw_add_fuzz(fuzz_session_key tests/fuzz/fuzz_session_key.c iog_mdbx)
+        iog_add_fuzz(fuzz_session_key tests/fuzz/fuzz_session_key.c iog_mdbx)
     endif()
 
     message(STATUS "Building fuzzing targets (LibFuzzer)")

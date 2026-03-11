@@ -6,8 +6,8 @@
  * statements with parameter binding — no string interpolation of user data.
  */
 
-#ifndef RINGWALL_STORAGE_SQLITE_H
-#define RINGWALL_STORAGE_SQLITE_H
+#ifndef IOGUARD_STORAGE_SQLITE_H
+#define IOGUARD_STORAGE_SQLITE_H
 
 #include <sqlite3.h>
 #include <stddef.h>
@@ -35,7 +35,7 @@ typedef struct {
     char result[16];
     char details[1024];  /* JSON */
     char session_id[65]; /* hex */
-} rw_audit_entry_t;
+} iog_audit_entry_t;
 
 typedef struct {
     sqlite3 *db;
@@ -87,7 +87,7 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
  * @param entry Audit entry to insert.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry);
+[[nodiscard]] int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const iog_audit_entry_t *entry);
 
 /**
  * @brief Query audit log entries by username (most recent first).
@@ -99,7 +99,7 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
  * @return 0 on success, negative errno on error.
  */
 [[nodiscard]] int iog_sqlite_audit_query_by_username(iog_sqlite_ctx_t *ctx, const char *username,
-                                                    rw_audit_entry_t *out, size_t max_entries,
+                                                    iog_audit_entry_t *out, size_t max_entries,
                                                     size_t *count);
 
 /**
@@ -143,4 +143,4 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
  */
 [[nodiscard]] int iog_sqlite_user_totp_clear(iog_sqlite_ctx_t *ctx, const char *username);
 
-#endif /* RINGWALL_STORAGE_SQLITE_H */
+#endif /* IOGUARD_STORAGE_SQLITE_H */

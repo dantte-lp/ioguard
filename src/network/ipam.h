@@ -1,5 +1,5 @@
-#ifndef RINGWALL_NETWORK_IPAM_H
-#define RINGWALL_NETWORK_IPAM_H
+#ifndef IOGUARD_NETWORK_IPAM_H
+#define IOGUARD_NETWORK_IPAM_H
 
 #include <netinet/in.h>
 #include <stddef.h>
@@ -140,4 +140,4 @@ void iog_ipam_destroy(iog_ipam_t *ipam);
  */
 void iog_ipam_get_stats(const iog_ipam_t *ipam, iog_ipam_stats_t *stats);
 
-#endif /* RINGWALL_NETWORK_IPAM_H */
+#endif /* IOGUARD_NETWORK_IPAM_H */

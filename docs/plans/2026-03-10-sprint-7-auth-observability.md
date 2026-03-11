@@ -181,7 +181,7 @@ typedef struct {
     size_t size;
     size_t head;
     size_t tail;
-} rw_cipher_buf_t;
+} iog_cipher_buf_t;
 ```
 
 **Step 4: Implement TLS decrypt in on_tls_recv**
@@ -195,7 +195,7 @@ memcpy(conn->cipher_in.data + conn->cipher_in.tail,
 conn->cipher_in.tail += conn->recv_len;
 
 /* Attempt TLS decryption */
-uint8_t plaintext[RW_CSTP_MAX_PAYLOAD];
+uint8_t plaintext[IOG_CSTP_MAX_PAYLOAD];
 int n = wolfSSL_read(conn->tls_session, plaintext, sizeof(plaintext));
 int err = wolfSSL_get_error(conn->tls_session, n);
 
@@ -294,21 +294,21 @@ void test_auth_backend_list_returns_registered(void)
 **Step 3: Implement auth_backend.h**
 
 ```c
-#ifndef RINGWALL_AUTH_BACKEND_H
-#define RINGWALL_AUTH_BACKEND_H
+#ifndef IOGUARD_AUTH_BACKEND_H
+#define IOGUARD_AUTH_BACKEND_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t RW_AUTH_BACKEND_NAME_MAX = 32;
-constexpr size_t RW_AUTH_BACKEND_MAX = 16;
+constexpr size_t IOG_AUTH_BACKEND_NAME_MAX = 32;
+constexpr size_t IOG_AUTH_BACKEND_MAX = 16;
 
 typedef enum {
-    RW_AUTH_OK = 0,
-    RW_AUTH_DENY = -1,
-    RW_AUTH_ERR = -2,
-    RW_AUTH_MFA_REQUIRED = -3,
-    RW_AUTH_ACCOUNT_LOCKED = -4,
+    IOG_AUTH_OK = 0,
+    IOG_AUTH_DENY = -1,
+    IOG_AUTH_ERR = -2,
+    IOG_AUTH_MFA_REQUIRED = -3,
+    IOG_AUTH_ACCOUNT_LOCKED = -4,
 } iog_auth_status_t;
 
 typedef struct {
@@ -347,7 +347,7 @@ void iog_auth_backend_cleanup(void);
 
 **Step 4: Implement auth_backend.c**
 
-Static array of `RW_AUTH_BACKEND_MAX` pointers. `register` copies pointer, `find` does linear scan by name.
+Static array of `IOG_AUTH_BACKEND_MAX` pointers. `register` copies pointer, `find` does linear scan by name.
 
 **Step 5: Run tests and verify pass**
 
@@ -387,8 +387,8 @@ void test_radius_parse_accept_extracts_framed_ip(void);
 **Step 3: Implement radius.h**
 
 ```c
-#ifndef RINGWALL_AUTH_RADIUS_H
-#define RINGWALL_AUTH_RADIUS_H
+#ifndef IOGUARD_AUTH_RADIUS_H
+#define IOGUARD_AUTH_RADIUS_H
 
 #include "auth/auth_backend.h"
 
@@ -399,10 +399,10 @@ typedef struct {
     uint32_t timeout_ms;        /* request timeout (default 5000) */
     uint32_t retries;           /* retry count (default 3) */
     char nas_identifier[64];    /* NAS-Identifier */
-} rw_radius_config_t;
+} iog_radius_config_t;
 
-[[nodiscard]] int rw_radius_init(const rw_radius_config_t *cfg);
-void rw_radius_destroy(void);
+[[nodiscard]] int iog_radius_init(const iog_radius_config_t *cfg);
+void iog_radius_destroy(void);
 
 /* Returns the backend descriptor for registration */
 const iog_auth_backend_t *iog_radius_backend(void);
@@ -485,8 +485,8 @@ void test_ldap_config_validates_uri_scheme(void);
 **Step 3: Implement ldap_auth.h**
 
 ```c
-#ifndef RINGWALL_AUTH_LDAP_H
-#define RINGWALL_AUTH_LDAP_H
+#ifndef IOGUARD_AUTH_LDAP_H
+#define IOGUARD_AUTH_LDAP_H
 
 #include "auth/auth_backend.h"
 
@@ -499,10 +499,10 @@ typedef struct {
     bool use_starttls;          /* enable StartTLS on ldap:// connections */
     uint32_t timeout_ms;        /* search/bind timeout (default 5000) */
     char ca_cert_path[256];     /* CA cert for TLS verification */
-} rw_ldap_config_t;
+} iog_ldap_config_t;
 
-[[nodiscard]] int rw_ldap_init(const rw_ldap_config_t *cfg);
-void rw_ldap_destroy(void);
+[[nodiscard]] int iog_ldap_init(const iog_ldap_config_t *cfg);
+void iog_ldap_destroy(void);
 const iog_auth_backend_t *iog_ldap_backend(void);
 
 #endif
@@ -578,8 +578,8 @@ void test_cert_auth_verify_eku_client_auth(void);
 **Step 3: Implement cert_auth.h**
 
 ```c
-#ifndef RINGWALL_AUTH_CERT_H
-#define RINGWALL_AUTH_CERT_H
+#ifndef IOGUARD_AUTH_CERT_H
+#define IOGUARD_AUTH_CERT_H
 
 #include "auth/auth_backend.h"
 
@@ -590,14 +590,14 @@ typedef struct {
     char template_oid[128];     /* MS AD template OID filter (optional, e.g. 1.3.6.1.4.1.311.20.2) */
     char template_name[64];     /* Required template name (e.g. "VPN-User") */
     char username_field[32];    /* CN, SAN:email, SAN:UPN (default: CN) */
-} rw_cert_auth_config_t;
+} iog_cert_auth_config_t;
 
-[[nodiscard]] int rw_cert_auth_init(const rw_cert_auth_config_t *cfg);
-void rw_cert_auth_destroy(void);
+[[nodiscard]] int iog_cert_auth_init(const iog_cert_auth_config_t *cfg);
+void iog_cert_auth_destroy(void);
 const iog_auth_backend_t *iog_cert_auth_backend(void);
 
 /* Helper: extract username from X.509 certificate */
-[[nodiscard]] int rw_cert_extract_username(const uint8_t *der, size_t der_len,
+[[nodiscard]] int iog_cert_extract_username(const uint8_t *der, size_t der_len,
                                             const char *field, char *out, size_t out_size);
 #endif
 ```
@@ -618,7 +618,7 @@ wolfSSL_X509_NAME_get_text_by_NID(subject, NID_commonName, cn_buf, cn_buf_sz);
 
 /* Verify callback (set on TLS context): */
 wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                       rw_cert_verify_cb);
+                       iog_cert_verify_cb);
 ```
 
 **Step 5: Run tests and verify pass**
@@ -653,7 +653,7 @@ git commit -m "feat(auth): add certificate authentication backend via wolfSSL"
 | `HPE_PAUSED_UPGRADE` | Check `req.method == IHTP_METHOD_CONNECT` |
 | `parser->method` (int) | `req.method` (`ihtp_method_t` enum) |
 | `HTTP_POST`, `HTTP_CONNECT` | `IHTP_METHOD_POST`, `IHTP_METHOD_CONNECT` |
-| `rw_http_parser_t` (stateful) | Accumulate in buffer, parse whole request |
+| `iog_http_parser_t` (stateful) | Accumulate in buffer, parse whole request |
 | Headers: NUL-terminated strings | Headers: `{ptr, len}` pairs (NOT NUL-terminated) |
 
 **Step 1: Write adapter test for iohttpparser**
@@ -672,53 +672,53 @@ Expected: 7 PASS (baseline).
 Replace llhttp types:
 
 ```c
-#ifndef RINGWALL_NETWORK_HTTP_H
-#define RINGWALL_NETWORK_HTTP_H
+#ifndef IOGUARD_NETWORK_HTTP_H
+#define IOGUARD_NETWORK_HTTP_H
 
 #include <iohttpparser/ihtp_parser.h>
 #include <iohttpparser/ihtp_body.h>
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr uint32_t RW_HTTP_MAX_HEADERS = 32;
-constexpr size_t RW_HTTP_MAX_URL = 512;
-constexpr size_t RW_HTTP_MAX_HEADER_NAME = 128;
-constexpr size_t RW_HTTP_MAX_HEADER_VALUE = 1024;
-constexpr size_t RW_HTTP_MAX_BODY = 8192;
+constexpr uint32_t IOG_HTTP_MAX_HEADERS = 32;
+constexpr size_t IOG_HTTP_MAX_URL = 512;
+constexpr size_t IOG_HTTP_MAX_HEADER_NAME = 128;
+constexpr size_t IOG_HTTP_MAX_HEADER_VALUE = 1024;
+constexpr size_t IOG_HTTP_MAX_BODY = 8192;
 
 typedef struct {
-    char name[RW_HTTP_MAX_HEADER_NAME];
-    char value[RW_HTTP_MAX_HEADER_VALUE];
-} rw_http_header_t;
+    char name[IOG_HTTP_MAX_HEADER_NAME];
+    char value[IOG_HTTP_MAX_HEADER_VALUE];
+} iog_http_header_t;
 
 typedef struct {
     uint8_t method;     /* ihtp_method_t (was llhttp_method_t) */
-    char url[RW_HTTP_MAX_URL];
+    char url[IOG_HTTP_MAX_URL];
     size_t url_len;
-    rw_http_header_t headers[RW_HTTP_MAX_HEADERS];
+    iog_http_header_t headers[IOG_HTTP_MAX_HEADERS];
     uint32_t header_count;
-    char body[RW_HTTP_MAX_BODY];
+    char body[IOG_HTTP_MAX_BODY];
     size_t body_len;
     bool headers_complete;
     bool message_complete;
     bool is_upgrade;
-} rw_http_request_t;
+} iog_http_request_t;
 
 /* Parser context: accumulation buffer for incremental parsing */
 typedef struct {
-    char buf[RW_HTTP_MAX_URL + RW_HTTP_MAX_HEADERS * (RW_HTTP_MAX_HEADER_NAME + RW_HTTP_MAX_HEADER_VALUE) + RW_HTTP_MAX_BODY + 1024];
+    char buf[IOG_HTTP_MAX_URL + IOG_HTTP_MAX_HEADERS * (IOG_HTTP_MAX_HEADER_NAME + IOG_HTTP_MAX_HEADER_VALUE) + IOG_HTTP_MAX_BODY + 1024];
     size_t buf_len;
-    rw_http_request_t request;
+    iog_http_request_t request;
     bool headers_parsed;
     ihtp_fixed_decoder_t body_decoder;
-} rw_http_parser_t;
+} iog_http_parser_t;
 
-[[nodiscard]] int rw_http_parser_init(rw_http_parser_t *p);
-void rw_http_parser_reset(rw_http_parser_t *p);
-[[nodiscard]] int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len);
-const char *rw_http_get_header(const rw_http_request_t *req, const char *name);
-[[nodiscard]] int rw_http_format_response(char *buf, size_t buf_size, int status_code,
-                                          const rw_http_header_t *headers, uint32_t header_count,
+[[nodiscard]] int iog_http_parser_init(iog_http_parser_t *p);
+void iog_http_parser_reset(iog_http_parser_t *p);
+[[nodiscard]] int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len);
+const char *iog_http_get_header(const iog_http_request_t *req, const char *name);
+[[nodiscard]] int iog_http_format_response(char *buf, size_t buf_size, int status_code,
+                                          const iog_http_header_t *headers, uint32_t header_count,
                                           const char *body, size_t body_len);
 
 #endif
@@ -729,7 +729,7 @@ const char *rw_http_get_header(const rw_http_request_t *req, const char *name);
 Core parsing logic change — from callback-driven to pull-based:
 
 ```c
-int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
+int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len)
 {
     /* Accumulate data */
     size_t space = sizeof(p->buf) - p->buf_len;
@@ -745,15 +745,15 @@ int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
         if (st == IHTP_INCOMPLETE) return 0;   /* need more data */
         if (st != IHTP_OK) return -EPROTO;
 
-        /* Copy parsed results into rw_http_request_t */
+        /* Copy parsed results into iog_http_request_t */
         p->request.method = (uint8_t)req.method;
         /* Copy URL (ihtp gives ptr+len, NOT NUL-terminated): */
-        size_t url_copy = req.path_len < RW_HTTP_MAX_URL - 1 ? req.path_len : RW_HTTP_MAX_URL - 1;
+        size_t url_copy = req.path_len < IOG_HTTP_MAX_URL - 1 ? req.path_len : IOG_HTTP_MAX_URL - 1;
         memcpy(p->request.url, req.path, url_copy);
         p->request.url[url_copy] = '\0';
         p->request.url_len = url_copy;
         /* Copy headers (ptr+len → NUL-terminated strings): */
-        for (size_t i = 0; i < req.num_headers && i < RW_HTTP_MAX_HEADERS; i++) {
+        for (size_t i = 0; i < req.num_headers && i < IOG_HTTP_MAX_HEADERS; i++) {
             /* ... bounded copy of name and value ... */
         }
         p->request.header_count = (uint32_t)req.num_headers;
@@ -777,7 +777,7 @@ int rw_http_parse(rw_http_parser_t *p, const char *data, size_t len)
 }
 ```
 
-Keep `rw_http_format_response()` and `rw_http_get_header()` unchanged — they don't depend on the parser library.
+Keep `iog_http_format_response()` and `iog_http_get_header()` unchanged — they don't depend on the parser library.
 
 **Step 5: Update test_http.c method enum references**
 
@@ -785,19 +785,19 @@ Replace `HTTP_POST` → `IHTP_METHOD_POST`, `HTTP_CONNECT` → `IHTP_METHOD_CONN
 
 **Step 6: Update fuzz_http.c**
 
-Minimal change — same API (`rw_http_parser_init` / `rw_http_parse`).
+Minimal change — same API (`iog_http_parser_init` / `iog_http_parse`).
 
 **Step 7: Update CMakeLists.txt**
 
 Replace:
 ```cmake
-target_link_libraries(rw_http PUBLIC llhttp)
+target_link_libraries(iog_http PUBLIC llhttp)
 ```
 With:
 ```cmake
-target_link_libraries(rw_http PUBLIC iohttpparser)
+target_link_libraries(iog_http PUBLIC iohttpparser)
 ```
-Add iohttpparser include path. Keep llhttp as a findable library for backward compat but don't link it to `rw_http`.
+Add iohttpparser include path. Keep llhttp as a findable library for backward compat but don't link it to `iog_http`.
 
 **Step 8: Run all 7 tests**
 
@@ -840,8 +840,8 @@ void test_log_severity_levels(void);
 **Step 3: Implement iog_log.h**
 
 ```c
-#ifndef RINGWALL_LOG_H
-#define RINGWALL_LOG_H
+#ifndef IOGUARD_LOG_H
+#define IOGUARD_LOG_H
 
 #include <stddef.h>
 
@@ -944,53 +944,53 @@ void test_prom_format_includes_help_type(void);
 **Step 3: Implement prometheus.h**
 
 ```c
-#ifndef RINGWALL_METRICS_PROMETHEUS_H
-#define RINGWALL_METRICS_PROMETHEUS_H
+#ifndef IOGUARD_METRICS_PROMETHEUS_H
+#define IOGUARD_METRICS_PROMETHEUS_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct rw_prom_registry rw_prom_registry_t;
+typedef struct iog_prom_registry iog_prom_registry_t;
 
 typedef struct {
     _Atomic uint64_t value;
     const char *name;
     const char *help;
-} rw_prom_counter_t;
+} iog_prom_counter_t;
 
 typedef struct {
     _Atomic int64_t value;   /* stored as fixed-point * 1000 for sub-integer precision */
     const char *name;
     const char *help;
-} rw_prom_gauge_t;
+} iog_prom_gauge_t;
 
-constexpr size_t RW_PROM_HISTOGRAM_BUCKETS = 12;
+constexpr size_t IOG_PROM_HISTOGRAM_BUCKETS = 12;
 
 typedef struct {
     const char *name;
     const char *help;
-    double boundaries[RW_PROM_HISTOGRAM_BUCKETS];
-    _Atomic uint64_t bucket_counts[RW_PROM_HISTOGRAM_BUCKETS + 1]; /* +1 for +Inf */
+    double boundaries[IOG_PROM_HISTOGRAM_BUCKETS];
+    _Atomic uint64_t bucket_counts[IOG_PROM_HISTOGRAM_BUCKETS + 1]; /* +1 for +Inf */
     _Atomic uint64_t sum_us;  /* sum in microseconds */
     _Atomic uint64_t count;
-} rw_prom_histogram_t;
+} iog_prom_histogram_t;
 
-[[nodiscard]] int rw_prom_registry_create(rw_prom_registry_t **out);
-void rw_prom_registry_destroy(rw_prom_registry_t *reg);
+[[nodiscard]] int iog_prom_registry_create(iog_prom_registry_t **out);
+void iog_prom_registry_destroy(iog_prom_registry_t *reg);
 
-[[nodiscard]] int rw_prom_register_counter(rw_prom_registry_t *reg, rw_prom_counter_t *counter);
-[[nodiscard]] int rw_prom_register_gauge(rw_prom_registry_t *reg, rw_prom_gauge_t *gauge);
-[[nodiscard]] int rw_prom_register_histogram(rw_prom_registry_t *reg, rw_prom_histogram_t *hist);
+[[nodiscard]] int iog_prom_register_counter(iog_prom_registry_t *reg, iog_prom_counter_t *counter);
+[[nodiscard]] int iog_prom_register_gauge(iog_prom_registry_t *reg, iog_prom_gauge_t *gauge);
+[[nodiscard]] int iog_prom_register_histogram(iog_prom_registry_t *reg, iog_prom_histogram_t *hist);
 
-void rw_prom_counter_inc(rw_prom_counter_t *counter);
-void rw_prom_counter_add(rw_prom_counter_t *counter, uint64_t n);
-void rw_prom_gauge_set(rw_prom_gauge_t *gauge, int64_t val);
-void rw_prom_gauge_inc(rw_prom_gauge_t *gauge);
-void rw_prom_gauge_dec(rw_prom_gauge_t *gauge);
-void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value);
+void iog_prom_counter_inc(iog_prom_counter_t *counter);
+void iog_prom_counter_add(iog_prom_counter_t *counter, uint64_t n);
+void iog_prom_gauge_set(iog_prom_gauge_t *gauge, int64_t val);
+void iog_prom_gauge_inc(iog_prom_gauge_t *gauge);
+void iog_prom_gauge_dec(iog_prom_gauge_t *gauge);
+void iog_prom_histogram_observe(iog_prom_histogram_t *hist, double value);
 
 /* Format all metrics as Prometheus text exposition (OpenMetrics compatible) */
-[[nodiscard]] ssize_t rw_prom_format(const rw_prom_registry_t *reg, char *buf, size_t buf_size);
+[[nodiscard]] ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_size);
 
 #endif
 ```
@@ -999,11 +999,11 @@ void rw_prom_histogram_observe(rw_prom_histogram_t *hist, double value);
 
 Key implementation details:
 - Registry holds arrays of pointers to counter/gauge/histogram (max 64 each).
-- `rw_prom_format()` writes:
+- `iog_prom_format()` writes:
   ```
-  # HELP rw_connections_total Total VPN connections
-  # TYPE rw_connections_total counter
-  rw_connections_total 42
+  # HELP iog_connections_total Total VPN connections
+  # TYPE iog_connections_total counter
+  iog_connections_total 42
   ```
 - Histogram format includes `_bucket{le="..."}`, `_sum`, `_count` lines.
 - All metric operations are `_Atomic` — safe for lock-free reads from metrics endpoint.
@@ -1012,17 +1012,17 @@ Key implementation details:
 
 | Name | Type | Description |
 |------|------|-------------|
-| `rw_connections_total` | counter | Total VPN connections accepted |
-| `rw_auth_attempts_total` | counter | Authentication attempts |
-| `rw_auth_failures_total` | counter | Authentication failures |
-| `rw_bytes_rx_total` | counter | Total bytes received |
-| `rw_bytes_tx_total` | counter | Total bytes transmitted |
-| `rw_active_sessions` | gauge | Currently active VPN sessions |
+| `iog_connections_total` | counter | Total VPN connections accepted |
+| `iog_auth_attempts_total` | counter | Authentication attempts |
+| `iog_auth_failures_total` | counter | Authentication failures |
+| `iog_bytes_rx_total` | counter | Total bytes received |
+| `iog_bytes_tx_total` | counter | Total bytes transmitted |
+| `iog_active_sessions` | gauge | Currently active VPN sessions |
 | `iog_memory_bytes` | gauge | Process memory usage |
-| `rw_fd_count` | gauge | Open file descriptors |
+| `iog_fd_count` | gauge | Open file descriptors |
 | `iog_ipam_pool_utilization` | gauge | IPAM pool utilization (0.0-1.0) |
-| `rw_tls_handshake_seconds` | histogram | TLS handshake duration |
-| `rw_auth_duration_seconds` | histogram | Authentication processing time |
+| `iog_tls_handshake_seconds` | histogram | TLS handshake duration |
+| `iog_auth_duration_seconds` | histogram | Authentication processing time |
 
 **Step 5: Run tests and verify pass**
 
@@ -1067,13 +1067,13 @@ endif()
 
 # Cert auth
 add_library(iog_auth_cert STATIC src/auth/cert_auth.c)
-target_link_libraries(iog_auth_cert PUBLIC iog_auth_backend rw_crypto)
+target_link_libraries(iog_auth_cert PUBLIC iog_auth_backend iog_crypto)
 
 # HTTP (migrate from llhttp to iohttpparser)
 find_library(IOHTTPPARSER_LIBRARY iohttpparser)
-add_library(rw_http STATIC src/network/http.c)
-target_link_libraries(rw_http PUBLIC ${IOHTTPPARSER_LIBRARY})
-target_include_directories(rw_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/include)
+add_library(iog_http STATIC src/network/http.c)
+target_link_libraries(iog_http PUBLIC ${IOHTTPPARSER_LIBRARY})
+target_include_directories(iog_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/include)
 
 # Logging
 find_library(STUMPLESS_LIBRARY stumpless)
@@ -1081,23 +1081,23 @@ add_library(iog_log STATIC src/log/iog_log.c)
 target_link_libraries(iog_log PUBLIC ${STUMPLESS_LIBRARY})
 
 # Metrics
-add_library(rw_metrics STATIC src/metrics/prometheus.c)
-target_include_directories(rw_metrics PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_metrics STATIC src/metrics/prometheus.c)
+target_include_directories(iog_metrics PUBLIC ${CMAKE_SOURCE_DIR}/src)
 ```
 
 **Step 2: Register new tests**
 
 ```cmake
-rw_add_test(test_auth_backend tests/unit/test_auth_backend.c iog_auth_backend)
+iog_add_test(test_auth_backend tests/unit/test_auth_backend.c iog_auth_backend)
 if(TARGET iog_auth_radius)
-    rw_add_test(test_auth_radius tests/unit/test_auth_radius.c iog_auth_radius)
+    iog_add_test(test_auth_radius tests/unit/test_auth_radius.c iog_auth_radius)
 endif()
 if(TARGET iog_auth_ldap)
-    rw_add_test(test_auth_ldap tests/unit/test_auth_ldap.c iog_auth_ldap)
+    iog_add_test(test_auth_ldap tests/unit/test_auth_ldap.c iog_auth_ldap)
 endif()
-rw_add_test(test_auth_cert tests/unit/test_auth_cert.c iog_auth_cert)
-rw_add_test(test_log tests/unit/test_log.c iog_log)
-rw_add_test(test_prometheus tests/unit/test_prometheus.c rw_metrics)
+iog_add_test(test_auth_cert tests/unit/test_auth_cert.c iog_auth_cert)
+iog_add_test(test_log tests/unit/test_log.c iog_log)
+iog_add_test(test_prometheus tests/unit/test_prometheus.c iog_metrics)
 ```
 
 **Step 3: Add iohttpparser to container (if needed)**

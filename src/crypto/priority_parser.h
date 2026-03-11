@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RINGWALL_PRIORITY_PARSER_H
-#define RINGWALL_PRIORITY_PARSER_H
+#ifndef IOGUARD_PRIORITY_PARSER_H
+#define IOGUARD_PRIORITY_PARSER_H
 
 /**
  * GnuTLS Priority String Parser for ioguard
@@ -527,4 +527,4 @@ void wolfssl_config_init(wolfssl_config_t *wolfssl_cfg);
 [[nodiscard]] size_t wolfssl_config_dump(const wolfssl_config_t *wolfssl_cfg, char *buffer,
                                          size_t buffer_len);
 
-#endif // RINGWALL_PRIORITY_PARSER_H
+#endif // IOGUARD_PRIORITY_PARSER_H

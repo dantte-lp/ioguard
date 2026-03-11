@@ -6,8 +6,8 @@
  * No handshake logic — just context setup with cipher suites and MTU.
  */
 
-#ifndef RINGWALL_NETWORK_DTLS_H
-#define RINGWALL_NETWORK_DTLS_H
+#ifndef IOGUARD_NETWORK_DTLS_H
+#define IOGUARD_NETWORK_DTLS_H
 
 #include <stdint.h>
 
@@ -24,26 +24,26 @@ typedef struct {
     const char *ca_file;
     const char *cipher_list;
     bool enable_cookies;
-} rw_dtls_config_t;
+} iog_dtls_config_t;
 
-typedef struct rw_dtls_ctx rw_dtls_ctx_t;
+typedef struct iog_dtls_ctx iog_dtls_ctx_t;
 
 /** Initialize DTLS config with defaults. */
-void rw_dtls_config_init(rw_dtls_config_t *cfg);
+void iog_dtls_config_init(iog_dtls_config_t *cfg);
 
 /** Validate DTLS config. Returns 0 or negative errno. */
-[[nodiscard]] int rw_dtls_config_validate(const rw_dtls_config_t *cfg);
+[[nodiscard]] int iog_dtls_config_validate(const iog_dtls_config_t *cfg);
 
 /** Create DTLS context. Returns nullptr on failure. */
-[[nodiscard]] rw_dtls_ctx_t *rw_dtls_create(const rw_dtls_config_t *cfg);
+[[nodiscard]] iog_dtls_ctx_t *iog_dtls_create(const iog_dtls_config_t *cfg);
 
 /** Destroy DTLS context. */
-void rw_dtls_destroy(rw_dtls_ctx_t *ctx);
+void iog_dtls_destroy(iog_dtls_ctx_t *ctx);
 
 /** Get MTU for DTLS context. */
-[[nodiscard]] uint32_t rw_dtls_get_mtu(const rw_dtls_ctx_t *ctx);
+[[nodiscard]] uint32_t iog_dtls_get_mtu(const iog_dtls_ctx_t *ctx);
 
 /** Cisco-compatible DTLS 1.2 cipher list string. */
-[[nodiscard]] const char *rw_dtls_cisco_ciphers(void);
+[[nodiscard]] const char *iog_dtls_cisco_ciphers(void);
 
-#endif /* RINGWALL_NETWORK_DTLS_H */
+#endif /* IOGUARD_NETWORK_DTLS_H */

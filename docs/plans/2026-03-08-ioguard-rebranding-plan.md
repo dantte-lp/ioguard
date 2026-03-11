@@ -29,73 +29,73 @@ Apply replacements in this order (longest first to prevent double-replacement):
 ```bash
 # In src/ — all .c and .h files
 find src/ -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i \
-    -e 's/RINGWALL_/RINGWALL_/g' \
-    -e 's/ringwall_/ringwall_/g' \
-    -e 's/ringwall/ringwall/g' \
-    -e 's/RW_COMPRESS/RW_COMPRESS/g' \
-    -e 's/RW_CSTP/RW_CSTP/g' \
-    -e 's/RW_DPD/RW_DPD/g' \
-    -e 's/RW_CHANNEL/RW_CHANNEL/g' \
-    -e 's/RW_DTLS/RW_DTLS/g' \
-    -e 's/RW_TUN/RW_TUN/g' \
-    -e 's/RW_IO/RW_IO/g' \
-    -e 's/RW_IPC/RW_IPC/g' \
-    -e 's/RW_MDBX/RW_MDBX/g' \
-    -e 's/RW_WORKER/RW_WORKER/g' \
-    -e 's/RW_SESSION/RW_SESSION/g' \
-    -e 's/RW_CONFIG/RW_CONFIG/g' \
-    -e 's/RW_HTTP/RW_HTTP/g' \
-    -e 's/RW_XML/RW_XML/g' \
-    -e 's/RW_PAM/RW_PAM/g' \
-    -e 's/RW_SECMOD/RW_SECMOD/g' \
-    -e 's/RW_MEMORY/RW_MEMORY/g' \
-    -e 's/RW_LOG/RW_LOG/g' \
-    -e 's/rw_compress/rw_compress/g' \
-    -e 's/rw_cstp/rw_cstp/g' \
-    -e 's/rw_dpd/rw_dpd/g' \
-    -e 's/rw_channel/rw_channel/g' \
-    -e 's/rw_dtls/rw_dtls/g' \
-    -e 's/rw_tun/rw_tun/g' \
-    -e 's/rw_io/rw_io/g' \
-    -e 's/rw_ipc/rw_ipc/g' \
-    -e 's/rw_mdbx/rw_mdbx/g' \
-    -e 's/rw_worker/rw_worker/g' \
+    -e 's/IOGUARD_/IOGUARD_/g' \
+    -e 's/ioguard_/ioguard_/g' \
+    -e 's/ioguard/ioguard/g' \
+    -e 's/IOG_COMPRESS/IOG_COMPRESS/g' \
+    -e 's/IOG_CSTP/IOG_CSTP/g' \
+    -e 's/IOG_DPD/IOG_DPD/g' \
+    -e 's/IOG_CHANNEL/IOG_CHANNEL/g' \
+    -e 's/IOG_DTLS/IOG_DTLS/g' \
+    -e 's/IOG_TUN/IOG_TUN/g' \
+    -e 's/IOG_IO/IOG_IO/g' \
+    -e 's/IOG_IPC/IOG_IPC/g' \
+    -e 's/IOG_MDBX/IOG_MDBX/g' \
+    -e 's/IOG_WORKER/IOG_WORKER/g' \
+    -e 's/IOG_SESSION/IOG_SESSION/g' \
+    -e 's/IOG_CONFIG/IOG_CONFIG/g' \
+    -e 's/IOG_HTTP/IOG_HTTP/g' \
+    -e 's/IOG_XML/IOG_XML/g' \
+    -e 's/IOG_PAM/IOG_PAM/g' \
+    -e 's/IOG_SECMOD/IOG_SECMOD/g' \
+    -e 's/IOG_MEMORY/IOG_MEMORY/g' \
+    -e 's/IOG_LOG/IOG_LOG/g' \
+    -e 's/iog_compress/iog_compress/g' \
+    -e 's/iog_cstp/iog_cstp/g' \
+    -e 's/iog_dpd/iog_dpd/g' \
+    -e 's/iog_channel/iog_channel/g' \
+    -e 's/iog_dtls/iog_dtls/g' \
+    -e 's/iog_tun/iog_tun/g' \
+    -e 's/iog_io/iog_io/g' \
+    -e 's/iog_ipc/iog_ipc/g' \
+    -e 's/iog_mdbx/iog_mdbx/g' \
+    -e 's/iog_worker/iog_worker/g' \
     -e 's/iog_session/iog_session/g' \
     -e 's/iog_config/iog_config/g' \
-    -e 's/rw_http/rw_http/g' \
-    -e 's/rw_xml/rw_xml/g' \
-    -e 's/rw_pam/rw_pam/g' \
-    -e 's/rw_secmod/rw_secmod/g' \
+    -e 's/iog_http/iog_http/g' \
+    -e 's/iog_xml/iog_xml/g' \
+    -e 's/iog_pam/iog_pam/g' \
+    -e 's/iog_secmod/iog_secmod/g' \
     -e 's/iog_memory/iog_memory/g' \
-    -e 's/rw_log/rw_log/g' \
-    -e 's/rw_lzs/rw_lzs/g' \
-    -e 's/rw_lz4/rw_lz4/g' \
-    -e 's/rw_add_test/rw_add_test/g' \
-    -e 's/rw_metrics/rw_metrics/g' \
-    -e 's/rw_core/rw_core/g' \
-    -e 's/rw_crypto/rw_crypto/g' \
+    -e 's/iog_log/iog_log/g' \
+    -e 's/iog_lzs/iog_lzs/g' \
+    -e 's/iog_lz4/iog_lz4/g' \
+    -e 's/iog_add_test/iog_add_test/g' \
+    -e 's/iog_metrics/iog_metrics/g' \
+    -e 's/iog_core/iog_core/g' \
+    -e 's/iog_crypto/iog_crypto/g' \
     {} +
 ```
 
-**CRITICAL**: Do NOT replace bare `rw_` with `rw_` globally — use the module-specific patterns above to avoid corrupting unrelated tokens.
+**CRITICAL**: Do NOT replace bare `iog_` with `iog_` globally — use the module-specific patterns above to avoid corrupting unrelated tokens.
 
 **Step 2: Handle the protobuf file**
 
 ```bash
-sed -i 's/rw_ipc/rw_ipc/g' src/ipc/proto/rw_ipc.proto
+sed -i 's/iog_ipc/iog_ipc/g' src/ipc/proto/iog_ipc.proto
 ```
 
 **Step 3: Rename the proto file**
 
 ```bash
-git mv src/ipc/proto/rw_ipc.proto src/ipc/proto/rw_ipc.proto
+git mv src/ipc/proto/iog_ipc.proto src/ipc/proto/iog_ipc.proto
 ```
 
-**Step 4: Verify no ringwall/rw_ remnants in src/**
+**Step 4: Verify no ioguard/iog_ remnants in src/**
 
 ```bash
-grep -rn "ioguard\|IOGUARD\|rw_" src/ --include="*.c" --include="*.h" --include="*.proto"
-# Expected: 0 matches (or only false positives like "rw_" inside string literals if any)
+grep -rn "ioguard\|IOGUARD\|iog_" src/ --include="*.c" --include="*.h" --include="*.proto"
+# Expected: 0 matches (or only false positives like "iog_" inside string literals if any)
 ```
 
 ---
@@ -109,56 +109,56 @@ grep -rn "ioguard\|IOGUARD\|rw_" src/ --include="*.c" --include="*.h" --include=
 
 ```bash
 find tests/ -type f -name "*.c" -exec sed -i \
-    -e 's/RINGWALL_/RINGWALL_/g' \
-    -e 's/ringwall_/ringwall_/g' \
-    -e 's/ringwall/ringwall/g' \
-    -e 's/RW_COMPRESS/RW_COMPRESS/g' \
-    -e 's/RW_CSTP/RW_CSTP/g' \
-    -e 's/RW_DPD/RW_DPD/g' \
-    -e 's/RW_CHANNEL/RW_CHANNEL/g' \
-    -e 's/RW_DTLS/RW_DTLS/g' \
-    -e 's/RW_TUN/RW_TUN/g' \
-    -e 's/RW_IO/RW_IO/g' \
-    -e 's/RW_IPC/RW_IPC/g' \
-    -e 's/RW_WORKER/RW_WORKER/g' \
-    -e 's/RW_SESSION/RW_SESSION/g' \
-    -e 's/RW_CONFIG/RW_CONFIG/g' \
-    -e 's/RW_HTTP/RW_HTTP/g' \
-    -e 's/RW_XML/RW_XML/g' \
-    -e 's/RW_PAM/RW_PAM/g' \
-    -e 's/RW_SECMOD/RW_SECMOD/g' \
-    -e 's/RW_MEMORY/RW_MEMORY/g' \
-    -e 's/RW_LOG/RW_LOG/g' \
-    -e 's/rw_compress/rw_compress/g' \
-    -e 's/rw_cstp/rw_cstp/g' \
-    -e 's/rw_dpd/rw_dpd/g' \
-    -e 's/rw_channel/rw_channel/g' \
-    -e 's/rw_dtls/rw_dtls/g' \
-    -e 's/rw_tun/rw_tun/g' \
-    -e 's/rw_io/rw_io/g' \
-    -e 's/rw_ipc/rw_ipc/g' \
-    -e 's/rw_worker/rw_worker/g' \
+    -e 's/IOGUARD_/IOGUARD_/g' \
+    -e 's/ioguard_/ioguard_/g' \
+    -e 's/ioguard/ioguard/g' \
+    -e 's/IOG_COMPRESS/IOG_COMPRESS/g' \
+    -e 's/IOG_CSTP/IOG_CSTP/g' \
+    -e 's/IOG_DPD/IOG_DPD/g' \
+    -e 's/IOG_CHANNEL/IOG_CHANNEL/g' \
+    -e 's/IOG_DTLS/IOG_DTLS/g' \
+    -e 's/IOG_TUN/IOG_TUN/g' \
+    -e 's/IOG_IO/IOG_IO/g' \
+    -e 's/IOG_IPC/IOG_IPC/g' \
+    -e 's/IOG_WORKER/IOG_WORKER/g' \
+    -e 's/IOG_SESSION/IOG_SESSION/g' \
+    -e 's/IOG_CONFIG/IOG_CONFIG/g' \
+    -e 's/IOG_HTTP/IOG_HTTP/g' \
+    -e 's/IOG_XML/IOG_XML/g' \
+    -e 's/IOG_PAM/IOG_PAM/g' \
+    -e 's/IOG_SECMOD/IOG_SECMOD/g' \
+    -e 's/IOG_MEMORY/IOG_MEMORY/g' \
+    -e 's/IOG_LOG/IOG_LOG/g' \
+    -e 's/iog_compress/iog_compress/g' \
+    -e 's/iog_cstp/iog_cstp/g' \
+    -e 's/iog_dpd/iog_dpd/g' \
+    -e 's/iog_channel/iog_channel/g' \
+    -e 's/iog_dtls/iog_dtls/g' \
+    -e 's/iog_tun/iog_tun/g' \
+    -e 's/iog_io/iog_io/g' \
+    -e 's/iog_ipc/iog_ipc/g' \
+    -e 's/iog_worker/iog_worker/g' \
     -e 's/iog_session/iog_session/g' \
     -e 's/iog_config/iog_config/g' \
-    -e 's/rw_http/rw_http/g' \
-    -e 's/rw_xml/rw_xml/g' \
-    -e 's/rw_pam/rw_pam/g' \
-    -e 's/rw_secmod/rw_secmod/g' \
+    -e 's/iog_http/iog_http/g' \
+    -e 's/iog_xml/iog_xml/g' \
+    -e 's/iog_pam/iog_pam/g' \
+    -e 's/iog_secmod/iog_secmod/g' \
     -e 's/iog_memory/iog_memory/g' \
-    -e 's/rw_log/rw_log/g' \
-    -e 's/rw_lzs/rw_lzs/g' \
-    -e 's/rw_lz4/rw_lz4/g' \
-    -e 's/rw_add_test/rw_add_test/g' \
-    -e 's/rw_metrics/rw_metrics/g' \
-    -e 's/rw_core/rw_core/g' \
-    -e 's/rw_crypto/rw_crypto/g' \
+    -e 's/iog_log/iog_log/g' \
+    -e 's/iog_lzs/iog_lzs/g' \
+    -e 's/iog_lz4/iog_lz4/g' \
+    -e 's/iog_add_test/iog_add_test/g' \
+    -e 's/iog_metrics/iog_metrics/g' \
+    -e 's/iog_core/iog_core/g' \
+    -e 's/iog_crypto/iog_crypto/g' \
     {} +
 ```
 
 **Step 2: Verify no remnants in tests/**
 
 ```bash
-grep -rn "ioguard\|IOGUARD\|rw_" tests/ --include="*.c"
+grep -rn "ioguard\|IOGUARD\|iog_" tests/ --include="*.c"
 # Expected: 0 matches
 ```
 
@@ -176,46 +176,46 @@ Apply replacements:
 
 ```bash
 sed -i \
-    -e 's/ringwall/ringwall/g' \
-    -e 's/rw_add_test/rw_add_test/g' \
-    -e 's/rw_io/rw_io/g' \
+    -e 's/ioguard/ioguard/g' \
+    -e 's/iog_add_test/iog_add_test/g' \
+    -e 's/iog_io/iog_io/g' \
     -e 's/iog_memory/iog_memory/g' \
     -e 's/iog_config/iog_config/g' \
-    -e 's/rw_ipc/rw_ipc/g' \
-    -e 's/rw_xml_auth/rw_xml_auth/g' \
-    -e 's/rw_http/rw_http/g' \
-    -e 's/rw_core/rw_core/g' \
+    -e 's/iog_ipc/iog_ipc/g' \
+    -e 's/iog_xml_auth/iog_xml_auth/g' \
+    -e 's/iog_http/iog_http/g' \
+    -e 's/iog_core/iog_core/g' \
     -e 's/iog_session/iog_session/g' \
-    -e 's/rw_crypto/rw_crypto/g' \
-    -e 's/rw_pam/rw_pam/g' \
-    -e 's/rw_secmod/rw_secmod/g' \
-    -e 's/rw_cstp/rw_cstp/g' \
-    -e 's/rw_tun/rw_tun/g' \
-    -e 's/rw_dpd/rw_dpd/g' \
-    -e 's/rw_worker/rw_worker/g' \
-    -e 's/rw_compress/rw_compress/g' \
-    -e 's/rw_compress_lzs/rw_compress_lzs/g' \
-    -e 's/rw_compress_lz4/rw_compress_lz4/g' \
-    -e 's/rw_dtls/rw_dtls/g' \
-    -e 's/rw_dtls_keying/rw_dtls_keying/g' \
-    -e 's/rw_channel/rw_channel/g' \
-    -e 's/rw_dtls_headers/rw_dtls_headers/g' \
+    -e 's/iog_crypto/iog_crypto/g' \
+    -e 's/iog_pam/iog_pam/g' \
+    -e 's/iog_secmod/iog_secmod/g' \
+    -e 's/iog_cstp/iog_cstp/g' \
+    -e 's/iog_tun/iog_tun/g' \
+    -e 's/iog_dpd/iog_dpd/g' \
+    -e 's/iog_worker/iog_worker/g' \
+    -e 's/iog_compress/iog_compress/g' \
+    -e 's/iog_compress_lzs/iog_compress_lzs/g' \
+    -e 's/iog_compress_lz4/iog_compress_lz4/g' \
+    -e 's/iog_dtls/iog_dtls/g' \
+    -e 's/iog_dtls_keying/iog_dtls_keying/g' \
+    -e 's/iog_channel/iog_channel/g' \
+    -e 's/iog_dtls_headers/iog_dtls_headers/g' \
     CMakeLists.txt
 ```
 
 Also update the proto file reference:
 ```bash
-sed -i 's/rw_ipc\.proto/rw_ipc.proto/g; s/rw_ipc\.pb-c/rw_ipc.pb-c/g' CMakeLists.txt
+sed -i 's/iog_ipc\.proto/iog_ipc.proto/g; s/iog_ipc\.pb-c/iog_ipc.pb-c/g' CMakeLists.txt
 ```
 
-**Step 2: Verify CMakeLists.txt has no rw_ remnants**
+**Step 2: Verify CMakeLists.txt has no iog_ remnants**
 
 ```bash
-grep -n "rw_\|ioguard" CMakeLists.txt
+grep -n "iog_\|ioguard" CMakeLists.txt
 # Expected: 0 matches
 ```
 
-**Step 3: CMakePresets.json needs no changes** (no ringwall/rw_ references)
+**Step 3: CMakePresets.json needs no changes** (no ioguard/iog_ references)
 
 ---
 
@@ -234,8 +234,8 @@ find deploy/ -type f \( -name "*.sh" -o -name "*.yml" -o -name "*.yaml" -o -name
     -e 's/ioguard-build/ioguard-build/g' \
     -e 's/ioguard-test/ioguard-test/g' \
     -e 's/ioguard-ci/ioguard-ci/g' \
-    -e 's/ringwall/ringwall/g' \
-    -e 's/RINGWALL/RINGWALL/g' \
+    -e 's/ioguard/ioguard/g' \
+    -e 's/IOGUARD/IOGUARD/g' \
     {} +
 ```
 
@@ -260,24 +260,24 @@ grep -rn "ioguard\|IOGUARD" deploy/
 
 ```bash
 # Top-level md files
-sed -i 's/ringwall/ringwall/g; s/RINGWALL/RINGWALL/g; s/rw_/rw_/g; s/RW_/RW_/g; s/iogctl/iogctl/g' \
+sed -i 's/ioguard/ioguard/g; s/IOGUARD/IOGUARD/g; s/iog_/iog_/g; s/IOG_/IOG_/g; s/iogctl/iogctl/g' \
     README.md CLAUDE.md REBRAND.md
 
 # docs/ (excluding tmp/)
 find docs/ -path "docs/tmp" -prune -o -name "*.md" -print -exec sed -i \
-    -e 's/ringwall/ringwall/g' \
-    -e 's/RINGWALL/RINGWALL/g' \
-    -e 's/rw_/rw_/g' \
-    -e 's/RW_/RW_/g' \
+    -e 's/ioguard/ioguard/g' \
+    -e 's/IOGUARD/IOGUARD/g' \
+    -e 's/iog_/iog_/g' \
+    -e 's/IOG_/IOG_/g' \
     -e 's/iogctl/iogctl/g' \
     {} +
 
 # .claude/skills/
 find .claude/skills/ -name "*.md" -exec sed -i \
-    -e 's/ringwall/ringwall/g' \
-    -e 's/RINGWALL/RINGWALL/g' \
-    -e 's/rw_/rw_/g' \
-    -e 's/RW_/RW_/g' \
+    -e 's/ioguard/ioguard/g' \
+    -e 's/IOGUARD/IOGUARD/g' \
+    -e 's/iog_/iog_/g' \
+    -e 's/IOG_/IOG_/g' \
     -e 's/iogctl/iogctl/g' \
     {} +
 ```
@@ -286,8 +286,8 @@ find .claude/skills/ -name "*.md" -exec sed -i \
 
 ```bash
 find .github/ -type f -name "*.md" -o -name "*.yml" | xargs sed -i \
-    -e 's/ringwall/ringwall/g' \
-    -e 's/RINGWALL/RINGWALL/g'
+    -e 's/ioguard/ioguard/g' \
+    -e 's/IOGUARD/IOGUARD/g'
 ```
 
 **Step 3: Verify**
@@ -303,11 +303,11 @@ grep -rn "ioguard\|IOGUARD" README.md CLAUDE.md docs/ .claude/ .github/ --includ
 
 **Files:**
 - Modify: `/root/.claude/projects/-opt/memory/MEMORY.md`
-- Modify: `docs/plans/2026-03-08-ringwall-rebranding-and-s5-design.md` (update ioguard refs in design doc itself)
+- Modify: `docs/plans/2026-03-08-ioguard-rebranding-and-s5-design.md` (update ioguard refs in design doc itself)
 
 **Step 1: Update MEMORY.md**
 
-Replace `ioguard` with `ioguard`, `rw_` with `rw_`, `RW_` with `RW_` throughout the memory file. Update the project name and all function prefix references.
+Replace `ioguard` with `ioguard`, `iog_` with `iog_`, `IOG_` with `IOG_` throughout the memory file. Update the project name and all function prefix references.
 
 **Step 2: Update the design doc's path references**
 
@@ -337,13 +337,13 @@ podman exec -it ioguard-dev bash -c "cd /opt/projects/repositories/ioguard && \
 Common issues:
 - Generated protobuf files reference old names (clean build should regenerate)
 - Include paths in headers may reference old filenames
-- String literals containing `rw_` patterns that shouldn't have been renamed
+- String literals containing `iog_` patterns that shouldn't have been renamed
 
 **Step 4: Final remnant check**
 
 ```bash
 grep -rn "ioguard\|IOGUARD" src/ tests/ CMakeLists.txt --include="*.c" --include="*.h" --include="*.proto" --include="*.txt"
-grep -rn '"rw_' src/ tests/ --include="*.c" --include="*.h"
+grep -rn '"iog_' src/ tests/ --include="*.c" --include="*.h"
 # Expected: 0 matches for both
 ```
 
@@ -370,8 +370,8 @@ Naming convention:
 - Server: ioguard (ring = io_uring, wall = security)
 - CLI: iogctl
 - DB tool: rwdb
-- Function prefix: rw_ (replaces rw_)
-- Include guards: RINGWALL_* (replaces RINGWALL_*)
+- Function prefix: iog_ (replaces iog_)
+- Include guards: IOGUARD_* (replaces IOGUARD_*)
 - Config: ioguard.toml, /etc/ioguard/
 
 See https://github.com/dantte-lp/ioguard/issues/11
@@ -392,7 +392,7 @@ mutation {
     repositoryId: "<REPO_NODE_ID>",
     name: "ioguard",
     description: "Modern io_uring-powered OpenConnect VPN server (C23, wolfSSL, Linux)",
-    homepageUrl: "https://ringwall.dev"
+    homepageUrl: "https://ioguard.dev"
   }) {
     repository {
       name
@@ -448,7 +448,7 @@ gh issue close 11 --repo dantte-lp/ioguard --comment "Completed. Project renamed
 
 After all tasks:
 1. `grep -rn "ioguard\|IOGUARD" src/ tests/ CMakeLists.txt` — 0 matches
-2. `grep -rn '"rw_' src/ tests/` — 0 matches
+2. `grep -rn '"iog_' src/ tests/` — 0 matches
 3. `cmake --build --preset clang-debug` — builds clean
 4. `ctest --preset clang-debug` — all tests pass
 5. `gh repo view dantte-lp/ioguard` — repo renamed

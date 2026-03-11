@@ -15,7 +15,7 @@
  * Module state
  * --------------------------------------------------------------------------- */
 
-static rw_radius_config_t g_cfg;
+static iog_radius_config_t g_cfg;
 
 #ifdef USE_RADCLI
 static rc_handle *g_rh;
@@ -27,33 +27,33 @@ static bool g_initialized;
  * Configuration helpers
  * --------------------------------------------------------------------------- */
 
-int rw_radius_config_defaults(rw_radius_config_t *cfg)
+int iog_radius_config_defaults(iog_radius_config_t *cfg)
 {
     if (cfg == nullptr) {
         return -EINVAL;
     }
 
     if (cfg->timeout_ms == 0) {
-        cfg->timeout_ms = RW_RADIUS_DEFAULT_TIMEOUT_MS;
+        cfg->timeout_ms = IOG_RADIUS_DEFAULT_TIMEOUT_MS;
     }
     if (cfg->retries == 0) {
-        cfg->retries = RW_RADIUS_DEFAULT_RETRIES;
+        cfg->retries = IOG_RADIUS_DEFAULT_RETRIES;
     }
 
     return 0;
 }
 
-int rw_radius_config_validate(const rw_radius_config_t *cfg)
+int iog_radius_config_validate(const iog_radius_config_t *cfg)
 {
     if (cfg == nullptr) {
         return -EINVAL;
     }
 
-    if (strnlen(cfg->server, RW_RADIUS_SERVER_MAX) == 0) {
+    if (strnlen(cfg->server, IOG_RADIUS_SERVER_MAX) == 0) {
         return -EINVAL;
     }
 
-    if (strnlen(cfg->secret, RW_RADIUS_SECRET_MAX) == 0) {
+    if (strnlen(cfg->secret, IOG_RADIUS_SECRET_MAX) == 0) {
         return -EINVAL;
     }
 
@@ -129,23 +129,23 @@ static int parse_accept(VALUE_PAIR *received, iog_auth_response_t *resp)
  * Backend interface
  * --------------------------------------------------------------------------- */
 
-int rw_radius_init(const void *config)
+int iog_radius_init(const void *config)
 {
     if (config == nullptr) {
         return -EINVAL;
     }
 
-    const rw_radius_config_t *cfg = config;
+    const iog_radius_config_t *cfg = config;
 
     /* Copy and apply defaults */
     memcpy(&g_cfg, cfg, sizeof(g_cfg));
 
-    int ret = rw_radius_config_defaults(&g_cfg);
+    int ret = iog_radius_config_defaults(&g_cfg);
     if (ret != 0) {
         return ret;
     }
 
-    ret = rw_radius_config_validate(&g_cfg);
+    ret = iog_radius_config_validate(&g_cfg);
     if (ret != 0) {
         explicit_bzero(&g_cfg, sizeof(g_cfg));
         return ret;
@@ -270,7 +270,7 @@ static iog_auth_status_t radius_authenticate(const iog_auth_request_t *req,
 #endif /* USE_RADCLI */
 }
 
-void rw_radius_destroy(void)
+void iog_radius_destroy(void)
 {
     if (!g_initialized) {
         return;
@@ -289,9 +289,9 @@ void rw_radius_destroy(void)
 
 static const iog_auth_backend_t g_radius_backend = {
     .name = "radius",
-    .init = rw_radius_init,
+    .init = iog_radius_init,
     .authenticate = radius_authenticate,
-    .destroy = rw_radius_destroy,
+    .destroy = iog_radius_destroy,
 };
 
 const struct iog_auth_backend *iog_radius_backend(void)

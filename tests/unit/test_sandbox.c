@@ -25,7 +25,7 @@ void tearDown(void)
 void test_sandbox_worker_filter_build(void)
 {
     int count = 0;
-    int rc = rw_sandbox_build(RW_SANDBOX_WORKER, &count);
+    int rc = iog_sandbox_build(IOG_SANDBOX_WORKER, &count);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_GREATER_THAN(0, count);
 }
@@ -33,7 +33,7 @@ void test_sandbox_worker_filter_build(void)
 void test_sandbox_authmod_filter_build(void)
 {
     int count = 0;
-    int rc = rw_sandbox_build(RW_SANDBOX_AUTHMOD, &count);
+    int rc = iog_sandbox_build(IOG_SANDBOX_AUTHMOD, &count);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_GREATER_THAN(0, count);
 }
@@ -41,7 +41,7 @@ void test_sandbox_authmod_filter_build(void)
 void test_sandbox_main_filter_build(void)
 {
     int count = 0;
-    int rc = rw_sandbox_build(RW_SANDBOX_MAIN, &count);
+    int rc = iog_sandbox_build(IOG_SANDBOX_MAIN, &count);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_GREATER_THAN(0, count);
 }
@@ -50,13 +50,13 @@ void test_sandbox_filter_syscall_count(void)
 {
     int worker_count = 0, authmod_count = 0, main_count = 0;
 
-    int rc = rw_sandbox_build(RW_SANDBOX_WORKER, &worker_count);
+    int rc = iog_sandbox_build(IOG_SANDBOX_WORKER, &worker_count);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rc = rw_sandbox_build(RW_SANDBOX_AUTHMOD, &authmod_count);
+    rc = iog_sandbox_build(IOG_SANDBOX_AUTHMOD, &authmod_count);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rc = rw_sandbox_build(RW_SANDBOX_MAIN, &main_count);
+    rc = iog_sandbox_build(IOG_SANDBOX_MAIN, &main_count);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     /* Each profile is a strict superset. */
@@ -79,7 +79,7 @@ void test_sandbox_worker_blocks_execve(void)
 
     if (pid == 0) {
         /* Child: apply sandbox, then try execve (should be killed). */
-        int rc = rw_sandbox_apply(RW_SANDBOX_WORKER);
+        int rc = iog_sandbox_apply(IOG_SANDBOX_WORKER);
         if (rc != 0) {
             _exit(99);
         }
@@ -116,7 +116,7 @@ void test_sandbox_worker_allows_read(void)
             _exit(97);
         }
 
-        int rc = rw_sandbox_apply(RW_SANDBOX_WORKER);
+        int rc = iog_sandbox_apply(IOG_SANDBOX_WORKER);
         if (rc != 0) {
             _exit(99);
         }

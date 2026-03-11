@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd /opt/projects/repositories/ioguard
-rg -n "\brw_mdbx_|\brw_migrate\b|\brw_vault\b|\brw_totp\b|\bRW_MDBX_|RINGWALL_STORAGE_MDBX_H|RINGWALL_STORAGE_MIGRATE_H|RINGWALL_AUTH_TOTP_H|struct rw_vault|typedef struct rw_vault|TARGET rw_mdbx|TARGET rw_totp|TARGET rw_vault" \
+rg -n "\brw_mdbx_|\brw_migrate\b|\brw_vault\b|\brw_totp\b|\bRW_MDBX_|IOGUARD_STORAGE_MDBX_H|IOGUARD_STORAGE_MIGRATE_H|IOGUARD_AUTH_TOTP_H|struct iog_vault|typedef struct iog_vault|TARGET iog_mdbx|TARGET iog_totp|TARGET iog_vault" \
   .claude/skills/storage-patterns/SKILL.md \
   docs/plans/2026-03-08-sprint-5-storage-security.md \
   docs/plans/2026-03-08-sprint-6-vertical-integration.md \

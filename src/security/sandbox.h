@@ -16,7 +16,7 @@ typedef enum : uint8_t {
     IOG_SANDBOX_WORKER,  /**< Most restrictive: read, write, io_uring, mmap */
     IOG_SANDBOX_AUTHMOD, /**< Worker + pwrite, fdatasync, flock, IPC sockets */
     IOG_SANDBOX_MAIN,    /**< Authmod + socket, bind, listen, pidfd_spawn */
-} rw_sandbox_profile_t;
+} iog_sandbox_profile_t;
 
 /**
  * @brief Build a seccomp filter and return the count of allowed syscalls.
@@ -24,7 +24,7 @@ typedef enum : uint8_t {
  * @param out_count  On success, receives the number of allowed syscalls.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_sandbox_build(rw_sandbox_profile_t profile, int *out_count);
+[[nodiscard]] int iog_sandbox_build(iog_sandbox_profile_t profile, int *out_count);
 
 /**
  * @brief Build and apply a seccomp filter to the calling thread.
@@ -34,6 +34,6 @@ typedef enum : uint8_t {
  * After this call returns successfully the filter is active and
  * any disallowed syscall will kill the process (SCMP_ACT_KILL_PROCESS).
  */
-[[nodiscard]] int rw_sandbox_apply(rw_sandbox_profile_t profile);
+[[nodiscard]] int iog_sandbox_apply(iog_sandbox_profile_t profile);
 
 #endif /* IOGUARD_SECURITY_SANDBOX_H */

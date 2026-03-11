@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <string.h>
 
-int rw_cstp_encode(uint8_t *buf, size_t buf_size, rw_cstp_type_t type, const uint8_t *payload,
+int iog_cstp_encode(uint8_t *buf, size_t buf_size, iog_cstp_type_t type, const uint8_t *payload,
                    size_t payload_len)
 {
     if (payload_len > IOG_CSTP_MAX_PAYLOAD) {
@@ -27,7 +27,7 @@ int rw_cstp_encode(uint8_t *buf, size_t buf_size, rw_cstp_type_t type, const uin
     return (int)total;
 }
 
-int rw_cstp_decode(const uint8_t *buf, size_t buf_len, rw_cstp_packet_t *pkt)
+int iog_cstp_decode(const uint8_t *buf, size_t buf_len, iog_cstp_packet_t *pkt)
 {
     if (buf_len < IOG_CSTP_HEADER_SIZE) {
         return -EAGAIN;
@@ -44,14 +44,14 @@ int rw_cstp_decode(const uint8_t *buf, size_t buf_len, rw_cstp_packet_t *pkt)
         return -EAGAIN;
     }
 
-    pkt->type = (rw_cstp_type_t)buf[0];
+    pkt->type = (iog_cstp_type_t)buf[0];
     pkt->payload_len = payload_len;
     pkt->payload = (payload_len > 0) ? buf + IOG_CSTP_HEADER_SIZE : nullptr;
 
     return (int)total;
 }
 
-const char *rw_cstp_type_name(rw_cstp_type_t type)
+const char *iog_cstp_type_name(iog_cstp_type_t type)
 {
     switch (type) {
     case IOG_CSTP_DATA:

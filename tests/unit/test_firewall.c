@@ -49,8 +49,8 @@ void test_firewall_chain_name_format(void)
     int ret = iog_fw_chain_name(&s, name, sizeof(name));
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    /* Must start with "rw_" */
-    TEST_ASSERT_EQUAL_STRING_LEN("rw_", name, 3);
+    /* Must start with "iog_" */
+    TEST_ASSERT_EQUAL_STRING_LEN("iog_", name, 3);
 
     /* Must contain the username */
     TEST_ASSERT_NOT_NULL(strstr(name, "alice"));
@@ -62,7 +62,7 @@ void test_firewall_chain_name_format(void)
     iog_fw_session_t s6 = make_ipv6_session();
     ret = iog_fw_chain_name(&s6, name, sizeof(name));
     TEST_ASSERT_EQUAL_INT(0, ret);
-    TEST_ASSERT_EQUAL_STRING_LEN("rw_", name, 3);
+    TEST_ASSERT_EQUAL_STRING_LEN("iog_", name, 3);
     TEST_ASSERT_NOT_NULL(strstr(name, "bob"));
 
     /* Null checks */

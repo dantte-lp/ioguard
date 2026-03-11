@@ -125,9 +125,9 @@ void iog_io_prep_timeout(iog_io_ctx_t *ctx, uint64_t ms, iog_io_cb cb);
 typedef struct {
     const char *name;
     int (*init)(const char *config);
-    int (*authenticate)(const rw_auth_request_t *req, rw_auth_result_t *res);
+    int (*authenticate)(const iog_auth_request_t *req, iog_auth_result_t *res);
     void (*cleanup)(void);
-} rw_auth_plugin_t;
+} iog_auth_plugin_t;
 ```
 
 ## 3. Data Flow and Protocol Handling
@@ -183,10 +183,10 @@ All I/O via io_uring:
 
 ```c
 typedef enum {
-    RW_CHANNEL_CSTP_ONLY,      // DTLS not established
-    RW_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control
-    RW_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back
-} rw_channel_state_t;
+    IOG_CHANNEL_CSTP_ONLY,      // DTLS not established
+    IOG_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control
+    IOG_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back
+} iog_channel_state_t;
 ```
 
 - Data prefers DTLS (lower overhead, UDP)
@@ -245,7 +245,7 @@ typedef struct {
     size_t   max_rx_buffer;        // per-connection receive buffer
     uint64_t idle_timeout_ms;
     uint32_t max_routes_per_user;
-} rw_worker_limits_t;
+} iog_worker_limits_t;
 ```
 
 ### Sandbox Failures

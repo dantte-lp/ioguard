@@ -286,7 +286,7 @@ int iog_sqlite_user_lookup(iog_sqlite_ctx_t *ctx, const char *username, iog_user
     return 0;
 }
 
-int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry)
+int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const iog_audit_entry_t *entry)
 {
     if (ctx == nullptr || entry == nullptr) {
         return -EINVAL;
@@ -314,7 +314,7 @@ int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry
 }
 
 int iog_sqlite_audit_query_by_username(iog_sqlite_ctx_t *ctx, const char *username,
-                                      rw_audit_entry_t *out, size_t max_entries, size_t *count)
+                                      iog_audit_entry_t *out, size_t max_entries, size_t *count)
 {
     if (ctx == nullptr || username == nullptr || out == nullptr || count == nullptr) {
         return -EINVAL;
@@ -330,7 +330,7 @@ int iog_sqlite_audit_query_by_username(iog_sqlite_ctx_t *ctx, const char *userna
     *count = 0;
     int rc;
     while ((rc = sqlite3_step(stmt)) == SQLITE_ROW && *count < max_entries) {
-        rw_audit_entry_t *e = &out[*count];
+        iog_audit_entry_t *e = &out[*count];
         memset(e, 0, sizeof(*e));
         safe_copy(e->event_type, sizeof(e->event_type), (const char *)sqlite3_column_text(stmt, 0));
         safe_copy(e->username, sizeof(e->username), (const char *)sqlite3_column_text(stmt, 1));
