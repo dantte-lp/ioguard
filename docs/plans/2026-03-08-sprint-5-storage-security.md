@@ -94,8 +94,8 @@ void test_mdbx_geometry_limits(void);               // verify max size <= 1 GB
 **Step 2: Write mdbx.h**
 
 ```c
-#ifndef RINGWALL_STORAGE_MDBX_H
-#define RINGWALL_STORAGE_MDBX_H
+#ifndef IOGUARD_STORAGE_MDBX_H
+#define IOGUARD_STORAGE_MDBX_H
 
 #include <mdbx.h>
 #include <stdint.h>
@@ -103,12 +103,12 @@ void test_mdbx_geometry_limits(void);               // verify max size <= 1 GB
 #include <time.h>
 
 constexpr size_t RW_SESSION_ID_LEN = 32;
-constexpr size_t RW_MDBX_MAX_READERS = 128;
-constexpr size_t RW_MDBX_MAX_DBS = 8;
-constexpr size_t RW_MDBX_SIZE_LOWER = 1 * 1024 * 1024;       // 1 MB
-constexpr size_t RW_MDBX_SIZE_UPPER = 1024 * 1024 * 1024;    // 1 GB
-constexpr size_t RW_MDBX_GROWTH_STEP = 16 * 1024 * 1024;     // 16 MB
-constexpr size_t RW_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024; // 64 MB
+constexpr size_t IOG_MDBX_MAX_READERS = 128;
+constexpr size_t IOG_MDBX_MAX_DBS = 8;
+constexpr size_t IOG_MDBX_SIZE_LOWER = 1 * 1024 * 1024;       // 1 MB
+constexpr size_t IOG_MDBX_SIZE_UPPER = 1024 * 1024 * 1024;    // 1 GB
+constexpr size_t IOG_MDBX_GROWTH_STEP = 16 * 1024 * 1024;     // 16 MB
+constexpr size_t IOG_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024; // 64 MB
 
 typedef struct {
     uint8_t  session_id[RW_SESSION_ID_LEN];
@@ -127,32 +127,32 @@ typedef struct {
 typedef struct {
     MDBX_env *env;
     MDBX_dbi  dbi_sessions;
-} rw_mdbx_ctx_t;
+} iog_mdbx_ctx_t;
 
-[[nodiscard]] int rw_mdbx_init(rw_mdbx_ctx_t *ctx, const char *path);
-void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
+[[nodiscard]] int iog_mdbx_init(iog_mdbx_ctx_t *ctx, const char *path);
+void iog_mdbx_close(iog_mdbx_ctx_t *ctx);
 
-[[nodiscard]] int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx, const rw_session_record_t *session);
-[[nodiscard]] int rw_mdbx_session_lookup(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN],
+[[nodiscard]] int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx, const rw_session_record_t *session);
+[[nodiscard]] int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN],
                                           rw_session_record_t *out);
-[[nodiscard]] int rw_mdbx_session_delete(rw_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN]);
-[[nodiscard]] int rw_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count);
+[[nodiscard]] int iog_mdbx_session_delete(iog_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN]);
+[[nodiscard]] int iog_mdbx_session_count(iog_mdbx_ctx_t *ctx, uint32_t *count);
 
-typedef int (*rw_mdbx_session_iter_fn)(const rw_session_record_t *session, void *userdata);
-[[nodiscard]] int rw_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, rw_mdbx_session_iter_fn fn, void *userdata);
+typedef int (*iog_mdbx_session_iter_fn)(const rw_session_record_t *session, void *userdata);
+[[nodiscard]] int iog_mdbx_session_iterate(iog_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn, void *userdata);
 
-#endif // RINGWALL_STORAGE_MDBX_H
+#endif // IOGUARD_STORAGE_MDBX_H
 ```
 
 **Step 3: Write mdbx.c**
 
 Key implementation details:
-- `rw_mdbx_init()`: create env, set geometry (1MB-1GB), set maxreaders(128), set maxdbs(8), open with `MDBX_NOSUBDIR | MDBX_SAFE_NOSYNC | MDBX_COALESCE | MDBX_LIFORECLAIM`, permissions 0600, set HSR callback, open "sessions" sub-db in a write txn
-- `rw_mdbx_session_create()`: write txn, `mdbx_put()` with `MDBX_NOOVERWRITE`, commit
-- `rw_mdbx_session_lookup()`: read-only txn, `mdbx_get()`, `memcpy()` data before abort
-- `rw_mdbx_session_delete()`: write txn, `mdbx_del()`, commit
-- `rw_mdbx_session_count()`: read-only txn, `mdbx_dbi_stat()`, return `ms_entries`
-- `rw_mdbx_session_iterate()`: read-only txn, cursor, `MDBX_NEXT` loop, memcpy each record
+- `iog_mdbx_init()`: create env, set geometry (1MB-1GB), set maxreaders(128), set maxdbs(8), open with `MDBX_NOSUBDIR | MDBX_SAFE_NOSYNC | MDBX_COALESCE | MDBX_LIFORECLAIM`, permissions 0600, set HSR callback, open "sessions" sub-db in a write txn
+- `iog_mdbx_session_create()`: write txn, `mdbx_put()` with `MDBX_NOOVERWRITE`, commit
+- `iog_mdbx_session_lookup()`: read-only txn, `mdbx_get()`, `memcpy()` data before abort
+- `iog_mdbx_session_delete()`: write txn, `mdbx_del()`, commit
+- `iog_mdbx_session_count()`: read-only txn, `mdbx_dbi_stat()`, return `ms_entries`
+- `iog_mdbx_session_iterate()`: read-only txn, cursor, `MDBX_NEXT` loop, memcpy each record
 - HSR callback: check `kill(pid, 0)`, evict dead readers
 
 **Step 4: Add to CMakeLists.txt**
@@ -161,13 +161,13 @@ Key implementation details:
 # Sprint 5 — libmdbx session store
 pkg_check_modules(MDBX REQUIRED mdbx)
 
-add_library(rw_mdbx STATIC src/storage/mdbx.c)
-target_include_directories(rw_mdbx PUBLIC ${CMAKE_SOURCE_DIR}/src ${MDBX_INCLUDE_DIRS})
-target_link_libraries(rw_mdbx PUBLIC ${MDBX_LIBRARIES})
-target_link_directories(rw_mdbx PUBLIC ${MDBX_LIBRARY_DIRS})
-target_compile_definitions(rw_mdbx PUBLIC _GNU_SOURCE)
+add_library(iog_mdbx STATIC src/storage/mdbx.c)
+target_include_directories(iog_mdbx PUBLIC ${CMAKE_SOURCE_DIR}/src ${MDBX_INCLUDE_DIRS})
+target_link_libraries(iog_mdbx PUBLIC ${MDBX_LIBRARIES})
+target_link_directories(iog_mdbx PUBLIC ${MDBX_LIBRARY_DIRS})
+target_compile_definitions(iog_mdbx PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c rw_mdbx)
+rw_add_test(test_storage_mdbx tests/unit/test_storage_mdbx.c iog_mdbx)
 ```
 
 **Step 5: Build and run**
@@ -316,19 +316,19 @@ void test_mdbx_format_check_current(void);           // current version -> succe
 **Step 2: Write migrate.h**
 
 ```c
-#ifndef RINGWALL_STORAGE_MIGRATE_H
-#define RINGWALL_STORAGE_MIGRATE_H
+#ifndef IOGUARD_STORAGE_MIGRATE_H
+#define IOGUARD_STORAGE_MIGRATE_H
 
 #include "storage/sqlite.h"
 #include "storage/mdbx.h"
 
 constexpr uint32_t IOG_SQLITE_SCHEMA_VERSION = 1;
-constexpr uint32_t RW_MDBX_FORMAT_VERSION = 1;
+constexpr uint32_t IOG_MDBX_FORMAT_VERSION = 1;
 
 [[nodiscard]] int iog_sqlite_migrate(sqlite3 *db);
-[[nodiscard]] int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx);
+[[nodiscard]] int iog_mdbx_check_format(iog_mdbx_ctx_t *ctx);
 
-#endif // RINGWALL_STORAGE_MIGRATE_H
+#endif // IOGUARD_STORAGE_MIGRATE_H
 ```
 
 **Step 3: Write migrate.c**
@@ -634,7 +634,7 @@ Each target: `LLVMFuzzerTestOneInput(data, size)` entry point.
 - `fuzz_http.c`: feed to llhttp parser callbacks, verify no crash
 - `fuzz_toml.c`: feed to `toml_parse()`, verify no crash and proper cleanup
 - `fuzz_ipc.c`: feed to protobuf-c `rw_ipc__auth_request__unpack()`, verify no crash
-- `fuzz_session_key.c`: feed 32+ bytes to `rw_mdbx_session_lookup()` against empty DB
+- `fuzz_session_key.c`: feed 32+ bytes to `iog_mdbx_session_lookup()` against empty DB
 
 **Step 2: Update CMakeLists.txt fuzz section**
 
@@ -666,8 +666,8 @@ if(BUILD_FUZZ)
     rw_add_fuzz(fuzz_http tests/fuzz/fuzz_http.c rw_http)
     rw_add_fuzz(fuzz_toml tests/fuzz/fuzz_toml.c rw_config)
     rw_add_fuzz(fuzz_ipc tests/fuzz/fuzz_ipc.c rw_ipc)
-    if(TARGET rw_mdbx)
-        rw_add_fuzz(fuzz_session_key tests/fuzz/fuzz_session_key.c rw_mdbx)
+    if(TARGET iog_mdbx)
+        rw_add_fuzz(fuzz_session_key tests/fuzz/fuzz_session_key.c iog_mdbx)
     endif()
 endif()
 ```
@@ -712,7 +712,7 @@ void test_crash_recovery_mdbx(void);                 // fork, write, SIGKILL, re
 **Step 2: Add to CMakeLists.txt**
 
 ```cmake
-rw_add_test(test_storage tests/integration/test_storage.c rw_mdbx iog_sqlite rw_migrate)
+rw_add_test(test_storage tests/integration/test_storage.c iog_mdbx iog_sqlite iog_migrate)
 ```
 
 **Step 3: Build, run, commit**

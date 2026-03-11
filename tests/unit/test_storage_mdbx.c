@@ -7,7 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 
-static rw_mdbx_ctx_t ctx;
+static iog_mdbx_ctx_t ctx;
 static char db_path[256];
 
 static void make_session(iog_session_record_t *s, uint8_t id_byte)
@@ -34,13 +34,13 @@ void setUp(void)
     snprintf(lck_path, sizeof(lck_path), "%s-lck", db_path);
     unlink(lck_path);
 
-    int rc = rw_mdbx_init(&ctx, db_path);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_mdbx_init failed in setUp");
+    int rc = iog_mdbx_init(&ctx, db_path);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_mdbx_init failed in setUp");
 }
 
 void tearDown(void)
 {
-    rw_mdbx_close(&ctx);
+    iog_mdbx_close(&ctx);
     unlink(db_path);
     char lck_path[280];
     snprintf(lck_path, sizeof(lck_path), "%s-lck", db_path);
@@ -54,10 +54,10 @@ void test_mdbx_env_create_and_close(void)
     /* setUp already created and opened the env; just verify it's non-null. */
     TEST_ASSERT_NOT_NULL(ctx.env);
     /* Close and re-open to exercise the full lifecycle. */
-    rw_mdbx_close(&ctx);
+    iog_mdbx_close(&ctx);
     TEST_ASSERT_NULL(ctx.env);
 
-    int rc = rw_mdbx_init(&ctx, db_path);
+    int rc = iog_mdbx_init(&ctx, db_path);
     TEST_ASSERT_EQUAL_INT(0, rc);
     TEST_ASSERT_NOT_NULL(ctx.env);
 }
@@ -176,8 +176,8 @@ void test_mdbx_geometry_limits(void)
     MDBX_envinfo info;
     int rc = mdbx_env_info_ex(ctx.env, nullptr, &info, sizeof(info));
     TEST_ASSERT_EQUAL_INT(MDBX_SUCCESS, rc);
-    TEST_ASSERT_LESS_OR_EQUAL(RW_MDBX_SIZE_UPPER, info.mi_geo.upper);
-    TEST_ASSERT_GREATER_OR_EQUAL(RW_MDBX_SIZE_LOWER, info.mi_geo.lower);
+    TEST_ASSERT_LESS_OR_EQUAL(IOG_MDBX_SIZE_UPPER, info.mi_geo.upper);
+    TEST_ASSERT_GREATER_OR_EQUAL(IOG_MDBX_SIZE_LOWER, info.mi_geo.lower);
 }
 
 int main(void)

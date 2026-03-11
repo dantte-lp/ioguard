@@ -341,7 +341,7 @@ int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *confi
             iog_session_store_destroy(ctx->sessions);
             return -ENOMEM;
         }
-        ret = rw_mdbx_init(ctx->mdbx, config->storage.mdbx_path);
+        ret = iog_mdbx_init(ctx->mdbx, config->storage.mdbx_path);
         if (ret < 0) {
             free(ctx->mdbx);
             ctx->mdbx = nullptr;
@@ -355,7 +355,7 @@ int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *confi
         ctx->sqlite = calloc(1, sizeof(*ctx->sqlite));
         if (ctx->sqlite == nullptr) {
             if (ctx->mdbx != nullptr) {
-                rw_mdbx_close(ctx->mdbx);
+                iog_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
             iog_session_store_destroy(ctx->sessions);
@@ -366,7 +366,7 @@ int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *confi
             free(ctx->sqlite);
             ctx->sqlite = nullptr;
             if (ctx->mdbx != nullptr) {
-                rw_mdbx_close(ctx->mdbx);
+                iog_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
             iog_session_store_destroy(ctx->sessions);
@@ -383,7 +383,7 @@ int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *confi
                 free(ctx->sqlite);
             }
             if (ctx->mdbx != nullptr) {
-                rw_mdbx_close(ctx->mdbx);
+                iog_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
             iog_session_store_destroy(ctx->sessions);
@@ -486,7 +486,7 @@ void iog_secmod_destroy(iog_secmod_ctx_t *ctx)
     }
 
     if (ctx->mdbx != nullptr) {
-        rw_mdbx_close(ctx->mdbx);
+        iog_mdbx_close(ctx->mdbx);
         free(ctx->mdbx);
     }
 

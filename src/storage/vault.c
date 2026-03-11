@@ -12,7 +12,7 @@
 #    include <wolfssl/wolfcrypt/random.h>
 #endif
 
-struct rw_vault {
+struct iog_vault {
     uint8_t key[IOG_VAULT_KEY_SIZE];
 #ifdef USE_WOLFSSL
     WC_RNG rng;

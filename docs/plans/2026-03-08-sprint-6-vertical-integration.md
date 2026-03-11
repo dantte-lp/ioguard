@@ -562,7 +562,7 @@ git commit -m "feat: worker io_uring event loop with fd-pass connection accept (
 - Create: `tests/unit/test_secmod_storage.c`
 - Modify: `CMakeLists.txt`
 
-**Why:** Auth-mod currently uses `rw_session_store_t` (in-memory, max 1024). Replace with `rw_mdbx_ctx_t` (persistent, scalable) and add `iog_sqlite_ctx_t` for audit logging. This connects S2 (auth) with S5 (storage).
+**Why:** Auth-mod currently uses `rw_session_store_t` (in-memory, max 1024). Replace with `iog_mdbx_ctx_t` (persistent, scalable) and add `iog_sqlite_ctx_t` for audit logging. This connects S2 (auth) with S5 (storage).
 
 **Step 1: Write failing tests**
 
@@ -587,7 +587,7 @@ Add storage fields to context:
 typedef struct {
     int ipc_fd;
     rw_pam_config_t pam_cfg;
-    rw_mdbx_ctx_t mdbx;            /* replaces rw_session_store_t */
+    iog_mdbx_ctx_t mdbx;            /* replaces rw_session_store_t */
     iog_sqlite_ctx_t sqlite;         /* audit logging + user management */
     const rw_config_t *config;
     bool running;
@@ -596,13 +596,13 @@ typedef struct {
 
 **Step 3: Update secmod.c**
 
-- `iog_secmod_init()`: call `rw_mdbx_init()` + `iog_sqlite_init()`, remove `rw_session_store_create()`
-- Auth success handler: `rw_mdbx_session_create()` instead of in-memory store, then `iog_sqlite_audit_insert()`
-- Session validate: `rw_mdbx_session_lookup()` instead of in-memory lookup
-- Disconnect: `rw_mdbx_session_delete()` + audit entry
+- `iog_secmod_init()`: call `iog_mdbx_init()` + `iog_sqlite_init()`, remove `rw_session_store_create()`
+- Auth success handler: `iog_mdbx_session_create()` instead of in-memory store, then `iog_sqlite_audit_insert()`
+- Session validate: `iog_mdbx_session_lookup()` instead of in-memory lookup
+- Disconnect: `iog_mdbx_session_delete()` + audit entry
 - `iog_secmod_destroy()`: close both stores
 
-**Step 4: Update CMakeLists.txt** — link iog_secmod against rw_mdbx and iog_sqlite
+**Step 4: Update CMakeLists.txt** — link iog_secmod against iog_mdbx and iog_sqlite
 
 **Step 5: Build, test, commit**
 
@@ -1112,7 +1112,7 @@ void test_vpn_flow_multiple_clients(void);           /* 3 clients, independent d
 rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
     iog_worker_loop rw_conn_data rw_conn_tls rw_conn_timer rw_security_hooks
     rw_worker iog_io rw_fdpass rw_cstp rw_dpd rw_compress iog_secmod
-    rw_mdbx iog_sqlite rw_migrate ${WOLFSSL_LIBRARIES})
+    iog_mdbx iog_sqlite iog_migrate ${WOLFSSL_LIBRARIES})
 ```
 
 **Step 3: Build, run, commit**

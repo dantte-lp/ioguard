@@ -51,7 +51,7 @@ static int hsr_callback(const MDBX_env *env, const MDBX_txn *txn, mdbx_pid_t pid
     return 0; /* still alive, do nothing */
 }
 
-int rw_mdbx_init(rw_mdbx_ctx_t *ctx, const char *path)
+int iog_mdbx_init(iog_mdbx_ctx_t *ctx, const char *path)
 {
     if (ctx == nullptr || path == nullptr) {
         return -EINVAL;
@@ -64,22 +64,22 @@ int rw_mdbx_init(rw_mdbx_ctx_t *ctx, const char *path)
         return mdbx_rc_to_errno(rc);
     }
 
-    rc = mdbx_env_set_geometry(ctx->env, (intptr_t)RW_MDBX_SIZE_LOWER, /* lower */
+    rc = mdbx_env_set_geometry(ctx->env, (intptr_t)IOG_MDBX_SIZE_LOWER, /* lower */
                                -1,                                     /* now = default */
-                               (intptr_t)RW_MDBX_SIZE_UPPER,           /* upper */
-                               (intptr_t)RW_MDBX_GROWTH_STEP,          /* growth */
-                               (intptr_t)RW_MDBX_SHRINK_THRESHOLD,     /* shrink */
+                               (intptr_t)IOG_MDBX_SIZE_UPPER,           /* upper */
+                               (intptr_t)IOG_MDBX_GROWTH_STEP,          /* growth */
+                               (intptr_t)IOG_MDBX_SHRINK_THRESHOLD,     /* shrink */
                                -1);                                    /* pagesize = default */
     if (rc != MDBX_SUCCESS) {
         goto err_close;
     }
 
-    rc = mdbx_env_set_maxreaders(ctx->env, RW_MDBX_MAX_READERS);
+    rc = mdbx_env_set_maxreaders(ctx->env, IOG_MDBX_MAX_READERS);
     if (rc != MDBX_SUCCESS) {
         goto err_close;
     }
 
-    rc = mdbx_env_set_maxdbs(ctx->env, RW_MDBX_MAX_DBS);
+    rc = mdbx_env_set_maxdbs(ctx->env, IOG_MDBX_MAX_DBS);
     if (rc != MDBX_SUCCESS) {
         goto err_close;
     }
@@ -121,7 +121,7 @@ err_close:
     return mdbx_rc_to_errno(rc);
 }
 
-void rw_mdbx_close(rw_mdbx_ctx_t *ctx)
+void iog_mdbx_close(iog_mdbx_ctx_t *ctx)
 {
     if (ctx == nullptr || ctx->env == nullptr) {
         return;
@@ -131,7 +131,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx)
     ctx->env = nullptr;
 }
 
-int iog_mdbx_session_create(rw_mdbx_ctx_t *ctx, const iog_session_record_t *session)
+int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx, const iog_session_record_t *session)
 {
     if (ctx == nullptr || ctx->env == nullptr || session == nullptr) {
         return -EINVAL;
@@ -156,7 +156,7 @@ int iog_mdbx_session_create(rw_mdbx_ctx_t *ctx, const iog_session_record_t *sess
     return mdbx_rc_to_errno(rc);
 }
 
-int iog_mdbx_session_lookup(rw_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN],
+int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN],
                            iog_session_record_t *out)
 {
     if (ctx == nullptr || ctx->env == nullptr || session_id == nullptr || out == nullptr) {
@@ -182,7 +182,7 @@ int iog_mdbx_session_lookup(rw_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SES
     return err;
 }
 
-int iog_mdbx_session_delete(rw_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN])
+int iog_mdbx_session_delete(iog_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN])
 {
     if (ctx == nullptr || ctx->env == nullptr || session_id == nullptr) {
         return -EINVAL;
@@ -206,7 +206,7 @@ int iog_mdbx_session_delete(rw_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SES
     return mdbx_rc_to_errno(rc);
 }
 
-int iog_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count)
+int iog_mdbx_session_count(iog_mdbx_ctx_t *ctx, uint32_t *count)
 {
     if (ctx == nullptr || ctx->env == nullptr || count == nullptr) {
         return -EINVAL;
@@ -229,7 +229,7 @@ int iog_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count)
     return err;
 }
 
-int iog_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn, void *userdata)
+int iog_mdbx_session_iterate(iog_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn, void *userdata)
 {
     if (ctx == nullptr || ctx->env == nullptr || fn == nullptr) {
         return -EINVAL;

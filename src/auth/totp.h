@@ -1,5 +1,5 @@
-#ifndef RINGWALL_AUTH_TOTP_H
-#define RINGWALL_AUTH_TOTP_H
+#ifndef IOGUARD_AUTH_TOTP_H
+#define IOGUARD_AUTH_TOTP_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -79,4 +79,4 @@ constexpr size_t IOG_TOTP_SECRET_B32_MAX = 64;
                                         const char *issuer, const char *account, char *uri_out,
                                         size_t uri_size);
 
-#endif /* RINGWALL_AUTH_TOTP_H */
+#endif /* IOGUARD_AUTH_TOTP_H */

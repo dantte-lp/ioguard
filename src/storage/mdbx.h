@@ -7,20 +7,20 @@
  * behaviour.
  */
 
-#ifndef RINGWALL_STORAGE_MDBX_H
-#define RINGWALL_STORAGE_MDBX_H
+#ifndef IOGUARD_STORAGE_MDBX_H
+#define IOGUARD_STORAGE_MDBX_H
 
 #include <mdbx.h>
 #include <stdint.h>
 #include <time.h>
 
 constexpr size_t IOG_SESSION_ID_LEN = 32;
-constexpr size_t RW_MDBX_MAX_READERS = 128;
-constexpr size_t RW_MDBX_MAX_DBS = 8;
-constexpr size_t RW_MDBX_SIZE_LOWER = 1 * 1024 * 1024;
-constexpr size_t RW_MDBX_SIZE_UPPER = 1024 * 1024 * 1024;
-constexpr size_t RW_MDBX_GROWTH_STEP = 16 * 1024 * 1024;
-constexpr size_t RW_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024;
+constexpr size_t IOG_MDBX_MAX_READERS = 128;
+constexpr size_t IOG_MDBX_MAX_DBS = 8;
+constexpr size_t IOG_MDBX_SIZE_LOWER = 1 * 1024 * 1024;
+constexpr size_t IOG_MDBX_SIZE_UPPER = 1024 * 1024 * 1024;
+constexpr size_t IOG_MDBX_GROWTH_STEP = 16 * 1024 * 1024;
+constexpr size_t IOG_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024;
 
 /** VPN session record stored in libmdbx. */
 typedef struct {
@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     MDBX_env *env;
     MDBX_dbi dbi_sessions;
-} rw_mdbx_ctx_t;
+} iog_mdbx_ctx_t;
 
 /**
  * @brief Initialise an MDBX environment and open the "sessions" sub-database.
@@ -49,13 +49,13 @@ typedef struct {
  * @param path Filesystem path for the MDBX data file (NOSUBDIR mode).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_mdbx_init(rw_mdbx_ctx_t *ctx, const char *path);
+[[nodiscard]] int iog_mdbx_init(iog_mdbx_ctx_t *ctx, const char *path);
 
 /**
  * @brief Close the MDBX environment and release resources.
- * @param ctx  Context previously initialised with rw_mdbx_init().
+ * @param ctx  Context previously initialised with iog_mdbx_init().
  */
-void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
+void iog_mdbx_close(iog_mdbx_ctx_t *ctx);
 
 /**
  * @brief Create a new session record (fails if the key already exists).
@@ -63,7 +63,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param session Session record to store (session_id is the key).
  * @return 0 on success, -EEXIST if key exists, other negative errno on error.
  */
-[[nodiscard]] int iog_mdbx_session_create(rw_mdbx_ctx_t *ctx, const iog_session_record_t *session);
+[[nodiscard]] int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx, const iog_session_record_t *session);
 
 /**
  * @brief Look up a session by its 32-byte ID.
@@ -72,7 +72,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param out        Output record (copied before txn ends).
  * @return 0 on success, -ENOENT if not found, other negative errno on error.
  */
-[[nodiscard]] int iog_mdbx_session_lookup(rw_mdbx_ctx_t *ctx,
+[[nodiscard]] int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx,
                                          const uint8_t session_id[IOG_SESSION_ID_LEN],
                                          iog_session_record_t *out);
 
@@ -82,7 +82,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param session_id 32-byte session identifier.
  * @return 0 on success, -ENOENT if not found, other negative errno on error.
  */
-[[nodiscard]] int iog_mdbx_session_delete(rw_mdbx_ctx_t *ctx,
+[[nodiscard]] int iog_mdbx_session_delete(iog_mdbx_ctx_t *ctx,
                                          const uint8_t session_id[IOG_SESSION_ID_LEN]);
 
 /**
@@ -91,7 +91,7 @@ void rw_mdbx_close(rw_mdbx_ctx_t *ctx);
  * @param count Output count.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int iog_mdbx_session_count(rw_mdbx_ctx_t *ctx, uint32_t *count);
+[[nodiscard]] int iog_mdbx_session_count(iog_mdbx_ctx_t *ctx, uint32_t *count);
 
 /** Per-session callback for iog_mdbx_session_iterate(). Return non-zero to stop. */
 typedef int (*iog_mdbx_session_iter_fn)(const iog_session_record_t *session, void *userdata);
@@ -104,7 +104,7 @@ typedef int (*iog_mdbx_session_iter_fn)(const iog_session_record_t *session, voi
  * @return 0 on success (all records visited), negative errno on error,
  *         or the non-zero value returned by fn if iteration was stopped.
  */
-[[nodiscard]] int iog_mdbx_session_iterate(rw_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn,
+[[nodiscard]] int iog_mdbx_session_iterate(iog_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn,
                                           void *userdata);
 
-#endif /* RINGWALL_STORAGE_MDBX_H */
+#endif /* IOGUARD_STORAGE_MDBX_H */

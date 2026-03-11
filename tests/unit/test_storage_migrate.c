@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 static iog_sqlite_ctx_t sql_ctx;
-static rw_mdbx_ctx_t mdbx_ctx;
+static iog_mdbx_ctx_t mdbx_ctx;
 static char mdbx_path[256];
 
 void setUp(void)
@@ -21,14 +21,14 @@ void setUp(void)
     snprintf(lck_path, sizeof(lck_path), "%s-lck", mdbx_path);
     unlink(lck_path);
 
-    rc = rw_mdbx_init(&mdbx_ctx, mdbx_path);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_mdbx_init failed in setUp");
+    rc = iog_mdbx_init(&mdbx_ctx, mdbx_path);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_mdbx_init failed in setUp");
 }
 
 void tearDown(void)
 {
     iog_sqlite_close(&sql_ctx);
-    rw_mdbx_close(&mdbx_ctx);
+    iog_mdbx_close(&mdbx_ctx);
 
     unlink(mdbx_path);
     char lck_path[280];
@@ -81,17 +81,17 @@ void test_migrate_version_check(void)
 void test_mdbx_format_check_fresh(void)
 {
     /* First call on a fresh env should set the version and succeed. */
-    int rc = rw_mdbx_check_format(&mdbx_ctx);
+    int rc = iog_mdbx_check_format(&mdbx_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 }
 
 void test_mdbx_format_check_current(void)
 {
     /* Set version, then verify it passes on second check. */
-    int rc = rw_mdbx_check_format(&mdbx_ctx);
+    int rc = iog_mdbx_check_format(&mdbx_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rc = rw_mdbx_check_format(&mdbx_ctx);
+    rc = iog_mdbx_check_format(&mdbx_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 }
 

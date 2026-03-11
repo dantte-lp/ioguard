@@ -20,14 +20,14 @@
  *
  * Storage:
  * - iog_session_store_t: in-memory session cache (always available)
- * - rw_mdbx_ctx_t: persistent session store (if mdbx_path configured)
+ * - iog_mdbx_ctx_t: persistent session store (if mdbx_path configured)
  * - iog_sqlite_ctx_t: audit log + user management (if sqlite_path configured)
  */
 typedef struct {
     int ipc_fd;
     rw_pam_config_t pam_cfg;
     iog_session_store_t *sessions;
-    rw_mdbx_ctx_t *mdbx;     /* persistent sessions (nullable) */
+    iog_mdbx_ctx_t *mdbx;     /* persistent sessions (nullable) */
     iog_sqlite_ctx_t *sqlite; /* audit + users (nullable) */
     iog_vault_t *vault;       /* field-level encryption (nullable) */
     const iog_config_t *config;

@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-static rw_mdbx_ctx_t mdbx_ctx;
+static iog_mdbx_ctx_t mdbx_ctx;
 static iog_sqlite_ctx_t sql_ctx;
 static char mdbx_path[256];
 
@@ -55,11 +55,11 @@ void setUp(void)
     snprintf(lck_path, sizeof(lck_path), "%s-lck", mdbx_path);
     unlink(lck_path);
 
-    int rc = rw_mdbx_init(&mdbx_ctx, mdbx_path);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_mdbx_init failed in setUp");
+    int rc = iog_mdbx_init(&mdbx_ctx, mdbx_path);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_mdbx_init failed in setUp");
 
-    rc = rw_mdbx_check_format(&mdbx_ctx);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_mdbx_check_format failed in setUp");
+    rc = iog_mdbx_check_format(&mdbx_ctx);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_mdbx_check_format failed in setUp");
 
     rc = iog_sqlite_init(&sql_ctx, ":memory:");
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_sqlite_init failed in setUp");
@@ -71,7 +71,7 @@ void setUp(void)
 void tearDown(void)
 {
     iog_sqlite_close(&sql_ctx);
-    rw_mdbx_close(&mdbx_ctx);
+    iog_mdbx_close(&mdbx_ctx);
 
     unlink(mdbx_path);
     char lck_path[280];
@@ -200,7 +200,7 @@ void test_ban_flow_mdbx_to_sqlite(void)
 void test_crash_recovery_mdbx(void)
 {
     /* Close mdbx in parent before forking — child will open its own. */
-    rw_mdbx_close(&mdbx_ctx);
+    iog_mdbx_close(&mdbx_ctx);
 
     /* Known session ID for verification */
     const uint8_t crash_id = 0xCC;
@@ -210,8 +210,8 @@ void test_crash_recovery_mdbx(void)
 
     if (pid == 0) {
         /* Child process: open mdbx, create session, commit, then die */
-        rw_mdbx_ctx_t child_ctx;
-        int rc = rw_mdbx_init(&child_ctx, mdbx_path);
+        iog_mdbx_ctx_t child_ctx;
+        int rc = iog_mdbx_init(&child_ctx, mdbx_path);
         if (rc != 0) {
             _exit(99);
         }
@@ -221,12 +221,12 @@ void test_crash_recovery_mdbx(void)
 
         rc = iog_mdbx_session_create(&child_ctx, &sess);
         if (rc != 0) {
-            rw_mdbx_close(&child_ctx);
+            iog_mdbx_close(&child_ctx);
             _exit(98);
         }
 
         /* Close ensures commit is durable */
-        rw_mdbx_close(&child_ctx);
+        iog_mdbx_close(&child_ctx);
 
         /* SIGKILL self to simulate crash after commit */
         kill(getpid(), SIGKILL);
@@ -241,8 +241,8 @@ void test_crash_recovery_mdbx(void)
     TEST_ASSERT_EQUAL_INT(SIGKILL, WTERMSIG(status));
 
     /* Reopen mdbx and verify the committed session survived */
-    int rc = rw_mdbx_init(&mdbx_ctx, mdbx_path);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_mdbx_init failed after crash recovery");
+    int rc = iog_mdbx_init(&mdbx_ctx, mdbx_path);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_mdbx_init failed after crash recovery");
 
     iog_session_record_t out;
     memset(&out, 0, sizeof(out));

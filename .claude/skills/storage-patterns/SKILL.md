@@ -30,12 +30,12 @@ via IPC (protobuf-c over `SOCK_SEQPACKET`).
 ### Environment Setup
 
 ```c
-constexpr size_t RW_MDBX_SIZE_LOWER      = 1 * 1024 * 1024;   /* 1 MB */
-constexpr size_t RW_MDBX_SIZE_UPPER      = 1024 * 1024 * 1024; /* 1 GB */
-constexpr size_t RW_MDBX_GROWTH_STEP     = 16 * 1024 * 1024;   /* 16 MB */
-constexpr size_t RW_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024;  /* 64 MB */
-constexpr size_t RW_MDBX_MAX_READERS     = 128;
-constexpr size_t RW_MDBX_MAX_DBS         = 8;
+constexpr size_t IOG_MDBX_SIZE_LOWER      = 1 * 1024 * 1024;   /* 1 MB */
+constexpr size_t IOG_MDBX_SIZE_UPPER      = 1024 * 1024 * 1024; /* 1 GB */
+constexpr size_t IOG_MDBX_GROWTH_STEP     = 16 * 1024 * 1024;   /* 16 MB */
+constexpr size_t IOG_MDBX_SHRINK_THRESHOLD = 64 * 1024 * 1024;  /* 64 MB */
+constexpr size_t IOG_MDBX_MAX_READERS     = 128;
+constexpr size_t IOG_MDBX_MAX_DBS         = 8;
 ```
 
 Open with `MDBX_NOSUBDIR | MDBX_SAFE_NOSYNC | MDBX_LIFORECLAIM`, mode `0600`.
@@ -60,7 +60,7 @@ static int hsr_callback(const MDBX_env *env, const MDBX_txn *txn,
 ### Read Transaction (Worker — read-only)
 
 ```c
-int rw_mdbx_session_lookup(rw_mdbx_ctx_t *ctx,
+int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx,
                             const uint8_t session_id[RW_SESSION_ID_LEN],
                             rw_session_record_t *out)
 {
@@ -85,7 +85,7 @@ int rw_mdbx_session_lookup(rw_mdbx_ctx_t *ctx,
 ### Write Transaction (auth-mod only)
 
 ```c
-int rw_mdbx_session_create(rw_mdbx_ctx_t *ctx,
+int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx,
                              const rw_session_record_t *session)
 {
     MDBX_txn *txn = nullptr;
@@ -220,23 +220,23 @@ static void safe_copy(char *dst, size_t dst_sz, const char *src)
 ```c
 void test_mdbx_session_create_and_lookup(void)
 {
-    rw_mdbx_ctx_t ctx;
+    iog_mdbx_ctx_t ctx;
     char path[] = "/tmp/rw_test_mdbx_XXXXXX";
     int fd = mkstemp(path);
     close(fd);
     unlink(path);  /* MDBX creates its own file */
 
-    TEST_ASSERT_EQUAL_INT(0, rw_mdbx_init(&ctx, path));
+    TEST_ASSERT_EQUAL_INT(0, iog_mdbx_init(&ctx, path));
 
     rw_session_record_t session = {0};
     memset(session.session_id, 0xAA, RW_SESSION_ID_LEN);
-    TEST_ASSERT_EQUAL_INT(0, rw_mdbx_session_create(&ctx, &session));
+    TEST_ASSERT_EQUAL_INT(0, iog_mdbx_session_create(&ctx, &session));
 
     rw_session_record_t out = {0};
-    TEST_ASSERT_EQUAL_INT(0, rw_mdbx_session_lookup(&ctx, session.session_id, &out));
+    TEST_ASSERT_EQUAL_INT(0, iog_mdbx_session_lookup(&ctx, session.session_id, &out));
     TEST_ASSERT_EQUAL_MEMORY(session.session_id, out.session_id, RW_SESSION_ID_LEN);
 
-    rw_mdbx_close(&ctx);
+    iog_mdbx_close(&ctx);
     unlink(path);
     /* Also remove lock file */
     char lock[PATH_MAX];

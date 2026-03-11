@@ -131,7 +131,7 @@ static int mdbx_rc_to_errno(int rc)
     }
 }
 
-int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx)
+int iog_mdbx_check_format(iog_mdbx_ctx_t *ctx)
 {
     if (ctx == nullptr || ctx->env == nullptr) {
         return -EINVAL;
@@ -157,7 +157,7 @@ int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx)
     rc = mdbx_get(txn, dbi_meta, &key, &data);
     if (rc == MDBX_NOTFOUND) {
         /* First run — store the current format version. */
-        uint32_t ver = RW_MDBX_FORMAT_VERSION;
+        uint32_t ver = IOG_MDBX_FORMAT_VERSION;
         MDBX_val val = {.iov_base = &ver, .iov_len = sizeof(ver)};
         rc = mdbx_put(txn, dbi_meta, &key, &val, 0);
         if (rc != MDBX_SUCCESS) {
@@ -184,7 +184,7 @@ int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx)
     memcpy(&stored_version, data.iov_base, sizeof(stored_version));
     mdbx_txn_abort(txn);
 
-    if (stored_version != RW_MDBX_FORMAT_VERSION) {
+    if (stored_version != IOG_MDBX_FORMAT_VERSION) {
         return -EPROTO;
     }
 

@@ -6,14 +6,14 @@
  * and format version tracking for the libmdbx session store.
  */
 
-#ifndef RINGWALL_STORAGE_MIGRATE_H
-#define RINGWALL_STORAGE_MIGRATE_H
+#ifndef IOGUARD_STORAGE_MIGRATE_H
+#define IOGUARD_STORAGE_MIGRATE_H
 
 #include "storage/mdbx.h"
 #include "storage/sqlite.h"
 
 constexpr uint32_t IOG_SQLITE_SCHEMA_VERSION = 1;
-constexpr uint32_t RW_MDBX_FORMAT_VERSION = 1;
+constexpr uint32_t IOG_MDBX_FORMAT_VERSION = 1;
 
 /**
  * @brief Run schema migrations on the SQLite database.
@@ -31,12 +31,12 @@ constexpr uint32_t RW_MDBX_FORMAT_VERSION = 1;
  * @brief Verify or initialise the libmdbx format version.
  *
  * Opens (or creates) a "meta" sub-database and checks the "format_version"
- * key.  On first run the key is set to RW_MDBX_FORMAT_VERSION.  On
+ * key.  On first run the key is set to IOG_MDBX_FORMAT_VERSION.  On
  * subsequent runs the stored version must match; a mismatch returns -EPROTO.
  *
  * @param ctx  Initialised MDBX context.
  * @return 0 on success, -EPROTO on version mismatch, other negative errno on error.
  */
-[[nodiscard]] int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx);
+[[nodiscard]] int iog_mdbx_check_format(iog_mdbx_ctx_t *ctx);
 
-#endif /* RINGWALL_STORAGE_MIGRATE_H */
+#endif /* IOGUARD_STORAGE_MIGRATE_H */

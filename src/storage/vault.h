@@ -18,7 +18,7 @@ constexpr size_t IOG_VAULT_TAG_SIZE = 16;
 constexpr size_t IOG_VAULT_OVERHEAD = IOG_VAULT_IV_SIZE + IOG_VAULT_TAG_SIZE;
 
 /** Opaque vault context. */
-typedef struct rw_vault iog_vault_t;
+typedef struct iog_vault iog_vault_t;
 
 /**
  * @brief Initialize vault with a master key loaded from file.

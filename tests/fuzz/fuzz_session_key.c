@@ -19,13 +19,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Build a unique temp path per process (reused across iterations) */
     static char db_path[256];
-    static rw_mdbx_ctx_t ctx;
+    static iog_mdbx_ctx_t ctx;
     static bool initialised = false;
 
     if (!initialised) {
         snprintf(db_path, sizeof(db_path), "/tmp/fuzz_mdbx_%d.dat", (int)getpid());
 
-        int rc = rw_mdbx_init(&ctx, db_path);
+        int rc = iog_mdbx_init(&ctx, db_path);
         if (rc != 0) {
             return 0;
         }
