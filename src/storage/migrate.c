@@ -19,7 +19,7 @@ static const char *const SQL_GET_VERSION = "SELECT MAX(version) FROM schema_vers
 
 static const char *const SQL_INSERT_VERSION = "INSERT INTO schema_version (version) VALUES (?)";
 
-int rw_sqlite_migrate(rw_sqlite_ctx_t *ctx)
+int iog_sqlite_migrate(iog_sqlite_ctx_t *ctx)
 {
     if (ctx == nullptr || ctx->db == nullptr) {
         return -EINVAL;
@@ -63,14 +63,14 @@ int rw_sqlite_migrate(rw_sqlite_ctx_t *ctx)
     sqlite3_finalize(stmt);
 
     /* Already at current version — nothing to do. */
-    if (current_version >= RW_SQLITE_SCHEMA_VERSION) {
+    if (current_version >= IOG_SQLITE_SCHEMA_VERSION) {
         sqlite3_exec(ctx->db, "COMMIT", nullptr, nullptr, nullptr);
         return 0;
     }
 
     /*
      * Apply migrations in order.  Version 1 is the base schema which
-     * rw_sqlite_init() already creates (users, audit_log, ban_list),
+     * iog_sqlite_init() already creates (users, audit_log, ban_list),
      * so there is no DDL to run here — just record the version.
      */
 
@@ -80,7 +80,7 @@ int rw_sqlite_migrate(rw_sqlite_ctx_t *ctx)
         goto rollback;
     }
 
-    rc = sqlite3_bind_int(stmt, 1, (int)RW_SQLITE_SCHEMA_VERSION);
+    rc = sqlite3_bind_int(stmt, 1, (int)IOG_SQLITE_SCHEMA_VERSION);
     if (rc != SQLITE_OK) {
         sqlite3_finalize(stmt);
         goto rollback;
@@ -131,7 +131,7 @@ static int mdbx_rc_to_errno(int rc)
     }
 }
 
-int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx)
+int iog_mdbx_check_format(iog_mdbx_ctx_t *ctx)
 {
     if (ctx == nullptr || ctx->env == nullptr) {
         return -EINVAL;
@@ -157,7 +157,7 @@ int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx)
     rc = mdbx_get(txn, dbi_meta, &key, &data);
     if (rc == MDBX_NOTFOUND) {
         /* First run — store the current format version. */
-        uint32_t ver = RW_MDBX_FORMAT_VERSION;
+        uint32_t ver = IOG_MDBX_FORMAT_VERSION;
         MDBX_val val = {.iov_base = &ver, .iov_len = sizeof(ver)};
         rc = mdbx_put(txn, dbi_meta, &key, &val, 0);
         if (rc != MDBX_SUCCESS) {
@@ -184,7 +184,7 @@ int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx)
     memcpy(&stored_version, data.iov_base, sizeof(stored_version));
     mdbx_txn_abort(txn);
 
-    if (stored_version != RW_MDBX_FORMAT_VERSION) {
+    if (stored_version != IOG_MDBX_FORMAT_VERSION) {
         return -EPROTO;
     }
 

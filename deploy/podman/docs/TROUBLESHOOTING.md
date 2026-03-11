@@ -444,15 +444,15 @@ podman network inspect ocserv-net
 
 **Symptom**:
 ```
-Error: volume ringwall_dev-home not found
+Error: volume ioguard_dev-home not found
 ```
 
 **Solutions**:
 
 1. Create volumes:
 ```bash
-podman volume create ringwall_dev-home
-podman volume create ringwall_build-cache
+podman volume create ioguard_dev-home
+podman volume create ioguard_build-cache
 ```
 
 2. Or use compose:
@@ -487,7 +487,7 @@ sudo ./scripts/backup-volumes.sh
 
 3. Fix volume ownership:
 ```bash
-podman volume inspect ringwall_dev-home
+podman volume inspect ioguard_dev-home
 # Check Mountpoint, then:
 sudo chown -R $USER:$USER <mountpoint>
 ```

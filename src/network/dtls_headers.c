@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int rw_dtls_build_headers(char *buf, size_t buf_size, const char *master_secret_hex,
+int iog_dtls_build_headers(char *buf, size_t buf_size, const char *master_secret_hex,
                           const char *cipher_suite, const char *accept_encoding)
 {
     if (!buf || !master_secret_hex || !cipher_suite) {
@@ -26,10 +26,10 @@ int rw_dtls_build_headers(char *buf, size_t buf_size, const char *master_secret_
 
     /* Append compression if negotiated */
     if (accept_encoding && strlen(accept_encoding) > 0) {
-        rw_compress_type_t ct = rw_compress_negotiate(accept_encoding);
-        if (ct != RW_COMPRESS_NONE) {
+        iog_compress_type_t ct = iog_compress_negotiate(accept_encoding);
+        if (ct != IOG_COMPRESS_NONE) {
             int extra = snprintf(buf + n, buf_size - (size_t)n, "X-DTLS-Accept-Encoding: %s\r\n",
-                                 rw_compress_type_name(ct));
+                                 iog_compress_type_name(ct));
             if (extra < 0) {
                 return -EIO;
             }
@@ -43,7 +43,7 @@ int rw_dtls_build_headers(char *buf, size_t buf_size, const char *master_secret_
     return n;
 }
 
-rw_compress_type_t rw_dtls_parse_accept_encoding(const char *header)
+iog_compress_type_t iog_dtls_parse_accept_encoding(const char *header)
 {
-    return rw_compress_negotiate(header);
+    return iog_compress_negotiate(header);
 }

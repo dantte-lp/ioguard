@@ -6,8 +6,8 @@
  * and connection tracking in front of TLS handshake.
  */
 
-#ifndef RINGWALL_SECURITY_WOLFSENTRY_H
-#define RINGWALL_SECURITY_WOLFSENTRY_H
+#ifndef IOGUARD_SECURITY_WOLFSENTRY_H
+#define IOGUARD_SECURITY_WOLFSENTRY_H
 
 #include <netinet/in.h>
 #include <stdint.h>
@@ -16,27 +16,27 @@
 /** Opaque wrapper around a wolfSentry context. */
 typedef struct {
     struct wolfsentry_context *ws_ctx;
-} rw_wolfsentry_ctx_t;
+} iog_wolfsentry_ctx_t;
 
 /** Result of a connection check. */
 typedef enum : uint8_t {
-    RW_WS_ACCEPT = 0,
-    RW_WS_REJECT = 1,
-    RW_WS_ERROR = 2,
-} rw_ws_result_t;
+    IOG_WS_ACCEPT = 0,
+    IOG_WS_REJECT = 1,
+    IOG_WS_ERROR = 2,
+} iog_ws_result_t;
 
 /**
  * @brief Initialize a wolfSentry context with default configuration.
  * @param ctx Pointer to context wrapper (caller-allocated).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_wolfsentry_init(rw_wolfsentry_ctx_t *ctx);
+[[nodiscard]] int iog_wolfsentry_init(iog_wolfsentry_ctx_t *ctx);
 
 /**
  * @brief Shut down and free a wolfSentry context.
  * @param ctx Context to close; ws_ctx set to nullptr on return.
  */
-void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
+void iog_wolfsentry_close(iog_wolfsentry_ctx_t *ctx);
 
 /**
  * @brief Load JSON configuration into the wolfSentry context.
@@ -45,7 +45,7 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param json_len Length of @p json in bytes.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_wolfsentry_load_json(rw_wolfsentry_ctx_t *ctx, const char *json,
+[[nodiscard]] int iog_wolfsentry_load_json(iog_wolfsentry_ctx_t *ctx, const char *json,
                                           size_t json_len);
 
 /**
@@ -57,9 +57,9 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param local_addr  Pointer to binary local address (4 or 16 bytes).
  * @param local_port  Local port in host byte order.
  * @param protocol    IP protocol number (e.g. IPPROTO_TCP).
- * @return RW_WS_ACCEPT, RW_WS_REJECT, or RW_WS_ERROR.
+ * @return IOG_WS_ACCEPT, IOG_WS_REJECT, or IOG_WS_ERROR.
  */
-[[nodiscard]] rw_ws_result_t rw_wolfsentry_check_connection(rw_wolfsentry_ctx_t *ctx, int af,
+[[nodiscard]] iog_ws_result_t iog_wolfsentry_check_connection(iog_wolfsentry_ctx_t *ctx, int af,
                                                             const void *remote_addr,
                                                             uint16_t remote_port,
                                                             const void *local_addr,
@@ -72,7 +72,7 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param addr Pointer to binary address (4 or 16 bytes).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr);
+[[nodiscard]] int iog_wolfsentry_ban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr);
 
 /**
  * @brief Remove a ban for an IP address.
@@ -81,6 +81,6 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx);
  * @param addr Pointer to binary address (4 or 16 bytes).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_wolfsentry_unban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr);
+[[nodiscard]] int iog_wolfsentry_unban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr);
 
-#endif /* RINGWALL_SECURITY_WOLFSENTRY_H */
+#endif /* IOGUARD_SECURITY_WOLFSENTRY_H */

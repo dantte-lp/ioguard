@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Project renamed from wolfguard to ioguard (`rw_` prefix, `RINGWALL_` guards).
+- Project renamed from wolfguard to ioguard (`iog_` prefix, `IOGUARD_` guards).
 - License changed from GPLv2 to GPLv3 (wolfSSL dependency requirement).
 
 [Unreleased]: https://github.com/dantte-lp/ioguard/commits/master

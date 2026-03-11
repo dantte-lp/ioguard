@@ -376,7 +376,7 @@ fi
 # Create tarball
 echo 'Creating tarball...'
 cd \$ARTIFACTS
-tar czf ringwall-\$(date +%Y%m%d).tar.gz bin/ lib/ share/
+tar czf ioguard-\$(date +%Y%m%d).tar.gz bin/ lib/ share/
 
 echo '================================================'
 echo 'Build completed successfully!'

@@ -226,8 +226,8 @@ install: all
 	@install -d $(LIBDIR)
 	@install -m 644 $(BACKEND_LIB) $(LIBDIR)/
 	@echo "  INSTALL $(INCLUDEDIR)/tls_abstract.h"
-	@install -d $(INCLUDEDIR)/ringwall
-	@install -m 644 src/crypto/tls_abstract.h $(INCLUDEDIR)/ringwall/
+	@install -d $(INCLUDEDIR)/ioguard
+	@install -m 644 src/crypto/tls_abstract.h $(INCLUDEDIR)/ioguard/
 
 # ============================================================================
 # Dependency Tracking

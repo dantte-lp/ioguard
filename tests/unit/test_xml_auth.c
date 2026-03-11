@@ -20,8 +20,8 @@ void test_xml_parse_init_request(void)
                       "<device-id>linux-64</device-id>"
                       "</config-auth>";
 
-    rw_xml_auth_request_t req;
-    int ret = rw_xml_parse_auth_request(xml, strlen(xml), &req);
+    iog_xml_auth_request_t req;
+    int ret = iog_xml_parse_auth_request(xml, strlen(xml), &req);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_STRING("init", req.auth_type);
     TEST_ASSERT_EQUAL_STRING("linux-64", req.device_id);
@@ -42,8 +42,8 @@ void test_xml_parse_auth_credentials(void)
                       "</auth>"
                       "</config-auth>";
 
-    rw_xml_auth_request_t req;
-    int ret = rw_xml_parse_auth_request(xml, strlen(xml), &req);
+    iog_xml_auth_request_t req;
+    int ret = iog_xml_parse_auth_request(xml, strlen(xml), &req);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_STRING("auth-request", req.auth_type);
     TEST_ASSERT_TRUE(req.has_username);
@@ -63,8 +63,8 @@ void test_xml_parse_group_select(void)
                       "</auth>"
                       "</config-auth>";
 
-    rw_xml_auth_request_t req;
-    int ret = rw_xml_parse_auth_request(xml, strlen(xml), &req);
+    iog_xml_auth_request_t req;
+    int ret = iog_xml_parse_auth_request(xml, strlen(xml), &req);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_STRING("engineering", req.group_select);
 }
@@ -78,8 +78,8 @@ void test_xml_parse_otp(void)
                       "</auth>"
                       "</config-auth>";
 
-    rw_xml_auth_request_t req;
-    int ret = rw_xml_parse_auth_request(xml, strlen(xml), &req);
+    iog_xml_auth_request_t req;
+    int ret = iog_xml_parse_auth_request(xml, strlen(xml), &req);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(req.has_otp);
     TEST_ASSERT_EQUAL_STRING("123456", req.otp);
@@ -92,8 +92,8 @@ void test_xml_parse_session_token(void)
                       "<session-token>tok_abc123def456</session-token>"
                       "</config-auth>";
 
-    rw_xml_auth_request_t req;
-    int ret = rw_xml_parse_auth_request(xml, strlen(xml), &req);
+    iog_xml_auth_request_t req;
+    int ret = iog_xml_parse_auth_request(xml, strlen(xml), &req);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(req.has_session_token);
     TEST_ASSERT_EQUAL_STRING("tok_abc123def456", req.session_token);
@@ -101,13 +101,13 @@ void test_xml_parse_session_token(void)
 
 void test_xml_build_challenge_form(void)
 {
-    rw_xml_auth_response_t resp;
+    iog_xml_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    resp.type = RW_XML_RESP_CHALLENGE;
+    resp.type = IOG_XML_RESP_CHALLENGE;
 
     char buf[4096];
     size_t out_len = 0;
-    int ret = rw_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
+    int ret = iog_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_THAN(0, out_len);
 
@@ -121,14 +121,14 @@ void test_xml_build_challenge_form(void)
 
 void test_xml_build_mfa_challenge(void)
 {
-    rw_xml_auth_response_t resp;
+    iog_xml_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    resp.type = RW_XML_RESP_MFA_CHALLENGE;
+    resp.type = IOG_XML_RESP_MFA_CHALLENGE;
     snprintf(resp.mfa_message, sizeof(resp.mfa_message), "Enter your OTP code");
 
     char buf[4096];
     size_t out_len = 0;
-    int ret = rw_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
+    int ret = iog_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_THAN(0, out_len);
 
@@ -139,14 +139,14 @@ void test_xml_build_mfa_challenge(void)
 
 void test_xml_build_success_response(void)
 {
-    rw_xml_auth_response_t resp;
+    iog_xml_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    resp.type = RW_XML_RESP_SUCCESS;
+    resp.type = IOG_XML_RESP_SUCCESS;
     snprintf(resp.session_token, sizeof(resp.session_token), "session_xyz789");
 
     char buf[4096];
     size_t out_len = 0;
-    int ret = rw_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
+    int ret = iog_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_THAN(0, out_len);
 
@@ -156,16 +156,16 @@ void test_xml_build_success_response(void)
 
 void test_xml_build_failure_response(void)
 {
-    rw_xml_auth_response_t resp;
+    iog_xml_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    resp.type = RW_XML_RESP_FAILURE;
+    resp.type = IOG_XML_RESP_FAILURE;
     snprintf(resp.error_message, sizeof(resp.error_message), "Invalid credentials");
     resp.retry_count = 1;
     resp.max_retries = 3;
 
     char buf[4096];
     size_t out_len = 0;
-    int ret = rw_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
+    int ret = iog_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_GREATER_THAN(0, out_len);
 
@@ -177,9 +177,9 @@ void test_xml_build_failure_response(void)
 
 void test_xml_build_group_select(void)
 {
-    rw_xml_auth_response_t resp;
+    iog_xml_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
-    resp.type = RW_XML_RESP_CHALLENGE;
+    resp.type = IOG_XML_RESP_CHALLENGE;
     resp.group_count = 2;
     snprintf(resp.groups[0].name, sizeof(resp.groups[0].name), "engineering");
     snprintf(resp.groups[0].label, sizeof(resp.groups[0].label), "Engineering VPN");
@@ -188,7 +188,7 @@ void test_xml_build_group_select(void)
 
     char buf[4096];
     size_t out_len = 0;
-    int ret = rw_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
+    int ret = iog_xml_build_auth_response(&resp, buf, sizeof(buf), &out_len);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     TEST_ASSERT_NOT_NULL(strstr(buf, "<select"));
@@ -207,8 +207,8 @@ void test_xml_parse_entity_decode(void)
                       "</auth>"
                       "</config-auth>";
 
-    rw_xml_auth_request_t req;
-    int ret = rw_xml_parse_auth_request(xml, strlen(xml), &req);
+    iog_xml_auth_request_t req;
+    int ret = iog_xml_parse_auth_request(xml, strlen(xml), &req);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_STRING("user&name", req.username);
     TEST_ASSERT_EQUAL_STRING("p<s>s\"w", req.password);
@@ -216,7 +216,7 @@ void test_xml_parse_entity_decode(void)
 
 void test_xml_password_zeroed(void)
 {
-    rw_xml_auth_request_t req;
+    iog_xml_auth_request_t req;
     memset(&req, 0, sizeof(req));
     snprintf(req.password, sizeof(req.password), "supersecret");
     snprintf(req.otp, sizeof(req.otp), "123456");
@@ -227,7 +227,7 @@ void test_xml_password_zeroed(void)
     TEST_ASSERT_EQUAL_STRING("123456", req.otp);
     TEST_ASSERT_EQUAL_STRING("tok_abc", req.session_token);
 
-    rw_xml_auth_request_zero(&req);
+    iog_xml_auth_request_zero(&req);
 
     /* All sensitive fields should be zeroed */
     for (size_t i = 0; i < sizeof(req.password); i++) {
@@ -245,16 +245,16 @@ void test_xml_malformed_xml(void)
 {
     /* No config-auth tag at all */
     const char *garbage = "this is not xml at all";
-    rw_xml_auth_request_t req;
-    int ret = rw_xml_parse_auth_request(garbage, strlen(garbage), &req);
+    iog_xml_auth_request_t req;
+    int ret = iog_xml_parse_auth_request(garbage, strlen(garbage), &req);
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
     /* nullptr input */
-    ret = rw_xml_parse_auth_request(nullptr, 0, &req);
+    ret = iog_xml_parse_auth_request(nullptr, 0, &req);
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
     /* Empty input */
-    ret = rw_xml_parse_auth_request("", 0, &req);
+    ret = iog_xml_parse_auth_request("", 0, &req);
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 }
 

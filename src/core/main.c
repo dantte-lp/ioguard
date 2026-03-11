@@ -15,11 +15,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-constexpr char RW_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
+constexpr char IOG_DEFAULT_CONFIG_PATH[] = "/etc/ioguard/ioguard.toml";
 
-int rw_main_parse_args(int argc, char *argv[], const char **config_path)
+int iog_main_parse_args(int argc, char *argv[], const char **config_path)
 {
-    *config_path = RW_DEFAULT_CONFIG_PATH;
+    *config_path = IOG_DEFAULT_CONFIG_PATH;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--config") == 0 && i + 1 < argc) {
             *config_path = argv[++i];
@@ -30,7 +30,7 @@ int rw_main_parse_args(int argc, char *argv[], const char **config_path)
     return 0;
 }
 
-int rw_main_create_ipc_pair(int sv[2])
+int iog_main_create_ipc_pair(int sv[2])
 {
     if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sv) < 0) {
         return -errno;
@@ -38,7 +38,7 @@ int rw_main_create_ipc_pair(int sv[2])
     return 0;
 }
 
-int rw_main_create_accept_pair(int sv[2])
+int iog_main_create_accept_pair(int sv[2])
 {
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) < 0) {
         return -errno;
@@ -46,7 +46,7 @@ int rw_main_create_accept_pair(int sv[2])
     return 0;
 }
 
-int rw_main_create_signalfd(void)
+int iog_main_create_signalfd(void)
 {
     sigset_t mask;
     sigemptyset(&mask);
@@ -63,20 +63,20 @@ int rw_main_create_signalfd(void)
     return fd;
 }
 
-#ifndef RW_TESTING
+#ifndef IOG_TESTING
 int main(int argc, char *argv[])
 {
     const char *config_path;
-    int rc = rw_main_parse_args(argc, argv, &config_path);
+    int rc = iog_main_parse_args(argc, argv, &config_path);
     if (rc == 1) {
         fprintf(stdout, "Usage: ioguard [--config path]\n");
         return EXIT_SUCCESS;
     }
 
     /* Load configuration */
-    rw_config_t config;
-    rw_config_set_defaults(&config);
-    rc = rw_config_load(config_path, &config);
+    iog_config_t config;
+    iog_config_set_defaults(&config);
+    rc = iog_config_load(config_path, &config);
     if (rc < 0) {
         fprintf(stderr, "Failed to load config: %s\n", strerror(-rc));
         return EXIT_FAILURE;
@@ -84,14 +84,14 @@ int main(int argc, char *argv[])
 
     /* Create IPC socketpair for auth-mod */
     int authmod_sv[2];
-    rc = rw_main_create_ipc_pair(authmod_sv);
+    rc = iog_main_create_ipc_pair(authmod_sv);
     if (rc < 0) {
         goto cleanup_config;
     }
 
     /* Create accept socketpair for worker (fd passing) */
     int worker_sv[2];
-    rc = rw_main_create_accept_pair(worker_sv);
+    rc = iog_main_create_accept_pair(worker_sv);
     if (rc < 0) {
         goto cleanup_authmod_sv;
     }
@@ -106,13 +106,13 @@ int main(int argc, char *argv[])
         close(authmod_sv[0]);
         close(worker_sv[0]);
         close(worker_sv[1]);
-        rw_secmod_ctx_t secmod;
-        rc = rw_secmod_init(&secmod, authmod_sv[1], &config);
+        iog_secmod_ctx_t secmod;
+        rc = iog_secmod_init(&secmod, authmod_sv[1], &config);
         if (rc == 0) {
-            rc = rw_secmod_run(&secmod);
-            rw_secmod_destroy(&secmod);
+            rc = iog_secmod_run(&secmod);
+            iog_secmod_destroy(&secmod);
         }
-        rw_config_free(&config);
+        iog_config_free(&config);
         _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
     }
     close(authmod_sv[1]);
@@ -127,29 +127,29 @@ int main(int argc, char *argv[])
         close(worker_sv[0]);
         close(authmod_sv[0]);
 
-        rw_worker_config_t wcfg;
-        rw_worker_config_init(&wcfg);
-        rw_worker_loop_config_t wlcfg = {
+        iog_worker_config_t wcfg;
+        iog_worker_config_init(&wcfg);
+        iog_worker_loop_config_t wlcfg = {
             .accept_fd = worker_sv[1],
             .ipc_fd = -1,
             .worker_cfg = &wcfg,
         };
 
-        rw_worker_loop_t loop;
-        rc = rw_worker_loop_init(&loop, &wlcfg);
+        iog_worker_loop_t loop;
+        rc = iog_worker_loop_init(&loop, &wlcfg);
         if (rc == 0) {
-            rc = rw_worker_loop_run(&loop);
-            rw_worker_loop_destroy(&loop);
+            rc = iog_worker_loop_run(&loop);
+            iog_worker_loop_destroy(&loop);
         }
 
         close(worker_sv[1]);
-        rw_config_free(&config);
+        iog_config_free(&config);
         _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
     }
     close(worker_sv[1]);
 
     /* Main: signal loop */
-    int sigfd = rw_main_create_signalfd();
+    int sigfd = iog_main_create_signalfd();
     if (sigfd < 0) {
         rc = sigfd;
         goto cleanup_children;
@@ -185,7 +185,7 @@ cleanup_worker_sv:
     close(worker_sv[0]);
 cleanup_authmod_sv:
 cleanup_config:
-    rw_config_free(&config);
+    iog_config_free(&config);
     return rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
-#endif /* RW_TESTING */
+#endif /* IOG_TESTING */

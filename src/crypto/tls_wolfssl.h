@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RINGWALL_TLS_WOLFSSL_H
-#define RINGWALL_TLS_WOLFSSL_H
+#ifndef IOGUARD_TLS_WOLFSSL_H
+#define IOGUARD_TLS_WOLFSSL_H
 
 /**
  * wolfSSL Backend Implementation for TLS Abstraction Layer
@@ -232,4 +232,4 @@ void tls_wolfssl_deinit(void);
  * are defined as static in the implementation file and not exposed in this header.
  */
 
-#endif // RINGWALL_TLS_WOLFSSL_H
+#endif // IOGUARD_TLS_WOLFSSL_H

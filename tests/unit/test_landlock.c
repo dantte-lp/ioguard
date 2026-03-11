@@ -29,7 +29,7 @@ void tearDown(void)
 /** Create temporary directory with test files for fork-based tests. */
 static void create_test_fixtures(void)
 {
-    snprintf(tmp_dir, sizeof(tmp_dir), "/tmp/rw_landlock_test_XXXXXX");
+    snprintf(tmp_dir, sizeof(tmp_dir), "/tmp/iog_landlock_test_XXXXXX");
     TEST_ASSERT_NOT_NULL(mkdtemp(tmp_dir));
 
     snprintf(allowed_file, sizeof(allowed_file), "%s/allowed.dat", tmp_dir);
@@ -60,7 +60,7 @@ void test_landlock_supported(void)
 {
     /* Just verify the function returns without crashing.
      * The result depends on the kernel; either way is valid. */
-    bool supported = rw_landlock_supported();
+    bool supported = iog_landlock_supported();
     if (!supported) {
         TEST_IGNORE_MESSAGE("Landlock not supported on this kernel");
     }
@@ -71,7 +71,7 @@ void test_landlock_supported(void)
 
 void test_landlock_worker_ruleset_build(void)
 {
-    if (!rw_landlock_supported()) {
+    if (!iog_landlock_supported()) {
         TEST_IGNORE_MESSAGE("Landlock not supported on this kernel");
     }
 
@@ -82,7 +82,7 @@ void test_landlock_worker_ruleset_build(void)
     TEST_ASSERT_NOT_EQUAL(-1, pid);
 
     if (pid == 0) {
-        int rc = rw_landlock_apply(RW_LANDLOCK_WORKER, allowed_file, nullptr);
+        int rc = iog_landlock_apply(IOG_LANDLOCK_WORKER, allowed_file, nullptr);
         _exit(rc == 0 ? 0 : 1);
     }
 
@@ -98,7 +98,7 @@ void test_landlock_worker_ruleset_build(void)
 
 void test_landlock_authmod_ruleset_build(void)
 {
-    if (!rw_landlock_supported()) {
+    if (!iog_landlock_supported()) {
         TEST_IGNORE_MESSAGE("Landlock not supported on this kernel");
     }
 
@@ -108,7 +108,7 @@ void test_landlock_authmod_ruleset_build(void)
     TEST_ASSERT_NOT_EQUAL(-1, pid);
 
     if (pid == 0) {
-        int rc = rw_landlock_apply(RW_LANDLOCK_AUTHMOD, allowed_file, blocked_file);
+        int rc = iog_landlock_apply(IOG_LANDLOCK_AUTHMOD, allowed_file, blocked_file);
         _exit(rc == 0 ? 0 : 1);
     }
 
@@ -124,7 +124,7 @@ void test_landlock_authmod_ruleset_build(void)
 
 void test_landlock_worker_blocks_write(void)
 {
-    if (!rw_landlock_supported()) {
+    if (!iog_landlock_supported()) {
         TEST_IGNORE_MESSAGE("Landlock not supported on this kernel");
     }
 
@@ -135,7 +135,7 @@ void test_landlock_worker_blocks_write(void)
 
     if (pid == 0) {
         /* Apply worker profile: only allowed_file readable. */
-        int rc = rw_landlock_apply(RW_LANDLOCK_WORKER, allowed_file, nullptr);
+        int rc = iog_landlock_apply(IOG_LANDLOCK_WORKER, allowed_file, nullptr);
         if (rc != 0) {
             _exit(99);
         }
@@ -166,7 +166,7 @@ void test_landlock_worker_blocks_write(void)
 
 void test_landlock_worker_allows_read(void)
 {
-    if (!rw_landlock_supported()) {
+    if (!iog_landlock_supported()) {
         TEST_IGNORE_MESSAGE("Landlock not supported on this kernel");
     }
 
@@ -176,7 +176,7 @@ void test_landlock_worker_allows_read(void)
     TEST_ASSERT_NOT_EQUAL(-1, pid);
 
     if (pid == 0) {
-        int rc = rw_landlock_apply(RW_LANDLOCK_WORKER, allowed_file, nullptr);
+        int rc = iog_landlock_apply(IOG_LANDLOCK_WORKER, allowed_file, nullptr);
         if (rc != 0) {
             _exit(99);
         }

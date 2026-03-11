@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 
-#include "log/rw_log.h"
+#include "log/iog_log.h"
 
 #include <errno.h>
 #include <stdint.h>
@@ -13,51 +13,51 @@
 #include <stumpless.h>
 #endif
 
-struct rw_logger {
+struct iog_logger {
 #ifdef USE_STUMPLESS
     struct stumpless_target *target;
 #endif
     char *buffer;
     size_t buffer_size;
-    rw_log_level_t min_level;
+    iog_log_level_t min_level;
     size_t write_pos;  /* tracks write position (both paths) */
     size_t read_pos;   /* tracks read position (stumpless path) */
 };
 
-constexpr size_t RW_LOG_MIN_BUFFER = 512;
+constexpr size_t IOG_LOG_MIN_BUFFER = 512;
 
 #ifdef USE_STUMPLESS
 
-static enum stumpless_severity level_to_stumpless(rw_log_level_t level)
+static enum stumpless_severity level_to_stumpless(iog_log_level_t level)
 {
     switch (level) {
-    case RW_LOG_EMERG:
+    case IOG_LOG_EMERG:
         return STUMPLESS_SEVERITY_EMERG;
-    case RW_LOG_ALERT:
+    case IOG_LOG_ALERT:
         return STUMPLESS_SEVERITY_ALERT;
-    case RW_LOG_CRIT:
+    case IOG_LOG_CRIT:
         return STUMPLESS_SEVERITY_CRIT;
-    case RW_LOG_ERR:
+    case IOG_LOG_ERR:
         return STUMPLESS_SEVERITY_ERR;
-    case RW_LOG_WARN:
+    case IOG_LOG_WARN:
         return STUMPLESS_SEVERITY_WARNING;
-    case RW_LOG_NOTICE:
+    case IOG_LOG_NOTICE:
         return STUMPLESS_SEVERITY_NOTICE;
-    case RW_LOG_INFO:
+    case IOG_LOG_INFO:
         return STUMPLESS_SEVERITY_INFO;
-    case RW_LOG_DEBUG:
+    case IOG_LOG_DEBUG:
         return STUMPLESS_SEVERITY_DEBUG;
     }
     return STUMPLESS_SEVERITY_INFO;
 }
 
-[[nodiscard]] int rw_log_init(rw_logger_t **out, size_t buffer_size)
+[[nodiscard]] int iog_log_init(iog_logger_t **out, size_t buffer_size)
 {
-    if (out == nullptr || buffer_size < RW_LOG_MIN_BUFFER) {
+    if (out == nullptr || buffer_size < IOG_LOG_MIN_BUFFER) {
         return -EINVAL;
     }
 
-    rw_logger_t *logger = calloc(1, sizeof(*logger));
+    iog_logger_t *logger = calloc(1, sizeof(*logger));
     if (logger == nullptr) {
         return -ENOMEM;
     }
@@ -69,7 +69,7 @@ static enum stumpless_severity level_to_stumpless(rw_log_level_t level)
     }
 
     logger->buffer_size = buffer_size;
-    logger->min_level = RW_LOG_DEBUG;
+    logger->min_level = IOG_LOG_DEBUG;
 
     logger->target =
         stumpless_open_buffer_target("ioguard", logger->buffer, buffer_size);
@@ -83,7 +83,7 @@ static enum stumpless_severity level_to_stumpless(rw_log_level_t level)
     return 0;
 }
 
-void rw_log_destroy(rw_logger_t *logger)
+void iog_log_destroy(iog_logger_t *logger)
 {
     if (logger == nullptr) {
         return;
@@ -95,7 +95,7 @@ void rw_log_destroy(rw_logger_t *logger)
     free(logger);
 }
 
-[[nodiscard]] int rw_log_write(rw_logger_t *logger, rw_log_level_t level,
+[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level,
                                const char *component, const char *msg)
 {
     if (logger == nullptr || component == nullptr || msg == nullptr) {
@@ -129,7 +129,7 @@ void rw_log_destroy(rw_logger_t *logger)
     return (ret >= 0) ? 0 : -EIO;
 }
 
-[[nodiscard]] int rw_log_write_sd(rw_logger_t *logger, rw_log_level_t level,
+[[nodiscard]] int iog_log_write_sd(iog_logger_t *logger, iog_log_level_t level,
                                   const char *component, const char *msg,
                                   const char *sd_id,
                                   const char *sd_params[][2],
@@ -182,7 +182,7 @@ void rw_log_destroy(rw_logger_t *logger)
     return (ret >= 0) ? 0 : -EIO;
 }
 
-[[nodiscard]] ssize_t rw_log_flush(rw_logger_t *logger, char *out,
+[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out,
                                    size_t out_size)
 {
     if (logger == nullptr || out == nullptr || out_size == 0) {
@@ -206,7 +206,7 @@ void rw_log_destroy(rw_logger_t *logger)
     return (ssize_t)to_copy;
 }
 
-void rw_log_set_level(rw_logger_t *logger, rw_log_level_t min_level)
+void iog_log_set_level(iog_logger_t *logger, iog_log_level_t min_level)
 {
     if (logger == nullptr) {
         return;
@@ -216,24 +216,24 @@ void rw_log_set_level(rw_logger_t *logger, rw_log_level_t min_level)
 
 #else /* !USE_STUMPLESS — stderr fallback */
 
-static const char *level_name(rw_log_level_t level)
+static const char *level_name(iog_log_level_t level)
 {
     static const char *names[] = {
         "EMERG", "ALERT", "CRIT", "ERR", "WARN", "NOTICE", "INFO", "DEBUG",
     };
-    if (level > RW_LOG_DEBUG) {
+    if (level > IOG_LOG_DEBUG) {
         return "UNKNOWN";
     }
     return names[level];
 }
 
-[[nodiscard]] int rw_log_init(rw_logger_t **out, size_t buffer_size)
+[[nodiscard]] int iog_log_init(iog_logger_t **out, size_t buffer_size)
 {
-    if (out == nullptr || buffer_size < RW_LOG_MIN_BUFFER) {
+    if (out == nullptr || buffer_size < IOG_LOG_MIN_BUFFER) {
         return -EINVAL;
     }
 
-    rw_logger_t *logger = calloc(1, sizeof(*logger));
+    iog_logger_t *logger = calloc(1, sizeof(*logger));
     if (logger == nullptr) {
         return -ENOMEM;
     }
@@ -245,14 +245,14 @@ static const char *level_name(rw_log_level_t level)
     }
 
     logger->buffer_size = buffer_size;
-    logger->min_level = RW_LOG_DEBUG;
+    logger->min_level = IOG_LOG_DEBUG;
     logger->write_pos = 0;
 
     *out = logger;
     return 0;
 }
 
-void rw_log_destroy(rw_logger_t *logger)
+void iog_log_destroy(iog_logger_t *logger)
 {
     if (logger == nullptr) {
         return;
@@ -261,7 +261,7 @@ void rw_log_destroy(rw_logger_t *logger)
     free(logger);
 }
 
-static int fallback_append(rw_logger_t *logger, rw_log_level_t level,
+static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
                            const char *component, const char *msg,
                            const char *sd_extra)
 {
@@ -312,7 +312,7 @@ static int fallback_append(rw_logger_t *logger, rw_log_level_t level,
     return 0;
 }
 
-[[nodiscard]] int rw_log_write(rw_logger_t *logger, rw_log_level_t level,
+[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level,
                                const char *component, const char *msg)
 {
     if (logger == nullptr || component == nullptr || msg == nullptr) {
@@ -325,7 +325,7 @@ static int fallback_append(rw_logger_t *logger, rw_log_level_t level,
     return fallback_append(logger, level, component, msg, nullptr);
 }
 
-[[nodiscard]] int rw_log_write_sd(rw_logger_t *logger, rw_log_level_t level,
+[[nodiscard]] int iog_log_write_sd(iog_logger_t *logger, iog_log_level_t level,
                                   const char *component, const char *msg,
                                   const char *sd_id,
                                   const char *sd_params[][2],
@@ -365,7 +365,7 @@ static int fallback_append(rw_logger_t *logger, rw_log_level_t level,
     return fallback_append(logger, level, component, msg, sd_buf);
 }
 
-[[nodiscard]] ssize_t rw_log_flush(rw_logger_t *logger, char *out,
+[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out,
                                    size_t out_size)
 {
     if (logger == nullptr || out == nullptr || out_size == 0) {
@@ -393,7 +393,7 @@ static int fallback_append(rw_logger_t *logger, rw_log_level_t level,
     return (ssize_t)to_copy;
 }
 
-void rw_log_set_level(rw_logger_t *logger, rw_log_level_t min_level)
+void iog_log_set_level(iog_logger_t *logger, iog_log_level_t min_level)
 {
     if (logger == nullptr) {
         return;

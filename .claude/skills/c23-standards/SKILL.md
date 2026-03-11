@@ -29,17 +29,17 @@ description: Use when writing new C code or reviewing code for C23 compliance �
 
 ```c
 // EVERY function that can fail MUST use [[nodiscard]]
-typedef enum [[nodiscard]] rw_result {
-    RW_OK         =  0,
-    RW_ERR_NOMEM  = -1,
-    RW_ERR_IO     = -2,
-    RW_ERR_TLS    = -3,
-    RW_ERR_AUTH   = -4,
-    RW_ERR_INVALID = -5,
-} rw_result_t;
+typedef enum [[nodiscard]] iog_result {
+    IOG_OK         =  0,
+    IOG_ERR_NOMEM  = -1,
+    IOG_ERR_IO     = -2,
+    IOG_ERR_TLS    = -3,
+    IOG_ERR_AUTH   = -4,
+    IOG_ERR_INVALID = -5,
+} iog_result_t;
 
 [[nodiscard]]
-rw_result_t rw_session_create(rw_session_t **out);
+iog_result_t iog_session_create(iog_session_t **out);
 ```
 
 ### nullptr Instead of NULL
@@ -47,7 +47,7 @@ rw_result_t rw_session_create(rw_session_t **out);
 ```c
 // CORRECT
 if (ptr == nullptr) { ... }
-rw_session_t *sess = nullptr;
+iog_session_t *sess = nullptr;
 
 // WRONG — do not use NULL in new code
 if (ptr == NULL) { ... }
@@ -57,12 +57,12 @@ if (ptr == NULL) { ... }
 
 ```c
 // CORRECT — compile-time constants
-constexpr size_t RW_MAX_CLIENTS = 10000;
-constexpr size_t RW_COOKIE_SIZE = 32;
-constexpr size_t RW_MTU_DEFAULT = 1406;
+constexpr size_t IOG_MAX_CLIENTS = 10000;
+constexpr size_t IOG_COOKIE_SIZE = 32;
+constexpr size_t IOG_MTU_DEFAULT = 1406;
 
 // WRONG — runtime overhead
-#define RW_MAX_CLIENTS 10000  // Use constexpr instead
+#define IOG_MAX_CLIENTS 10000  // Use constexpr instead
 ```
 
 ### Checked Integer Arithmetic
@@ -71,11 +71,11 @@ constexpr size_t RW_MTU_DEFAULT = 1406;
 #include <stdckdint.h>
 
 [[nodiscard]]
-static rw_result_t rw_calc_buffer_size(size_t header, size_t payload, size_t *total) {
+static iog_result_t iog_calc_buffer_size(size_t header, size_t payload, size_t *total) {
     if (ckd_add(total, header, payload)) {
-        return RW_ERR_INVALID;  // Overflow
+        return IOG_ERR_INVALID;  // Overflow
     }
-    return RW_OK;
+    return IOG_OK;
 }
 ```
 
@@ -83,14 +83,14 @@ static rw_result_t rw_calc_buffer_size(size_t header, size_t payload, size_t *to
 
 ```c
 // Network protocol values — exact width matters
-typedef enum rw_packet_type : uint8_t {
-    RW_PKT_DATA       = 0x00,
-    RW_PKT_DPD_REQ    = 0x03,
-    RW_PKT_DPD_RESP   = 0x04,
-    RW_PKT_DISCONNECT = 0x05,
-    RW_PKT_KEEPALIVE  = 0x07,
-    RW_PKT_COMPRESSED = 0x08,
-} rw_packet_type_t;
+typedef enum iog_packet_type : uint8_t {
+    IOG_PKT_DATA       = 0x00,
+    IOG_PKT_DPD_REQ    = 0x03,
+    IOG_PKT_DPD_RESP   = 0x04,
+    IOG_PKT_DISCONNECT = 0x05,
+    IOG_PKT_KEEPALIVE  = 0x07,
+    IOG_PKT_COMPRESSED = 0x08,
+} iog_packet_type_t;
 ```
 
 ### typeof for Generic Macros
@@ -98,14 +98,14 @@ typedef enum rw_packet_type : uint8_t {
 ```c
 // Type-safe min/max macros
 // NOTE: ({...}) is a GNU extension (GCC + Clang), not standard C23
-#define rw_min(a, b) ({       \
+#define iog_min(a, b) ({       \
     typeof(a) _a = (a);       \
     typeof(b) _b = (b);       \
     _a < _b ? _a : _b;        \
 })
 
 // Standard C23 typeof usage — type-safe swap
-void rw_swap(typeof(int) *a, typeof(int) *b) {
+void iog_swap(typeof(int) *a, typeof(int) *b) {
     typeof(*a) tmp = *a;
     *a = *b;
     *b = tmp;
@@ -115,14 +115,14 @@ void rw_swap(typeof(int) *a, typeof(int) *b) {
 ### Structure Validation with _Static_assert
 
 ```c
-typedef struct rw_session_cookie {
+typedef struct iog_session_cookie {
     uint8_t  hmac[32];
     uint64_t timestamp;
     uint32_t client_id;
     uint8_t  nonce[16];
-} rw_session_cookie_t;
+} iog_session_cookie_t;
 
-_Static_assert(sizeof(rw_session_cookie_t) == 60,
+_Static_assert(sizeof(iog_session_cookie_t) == 60,
                "Cookie structure size changed — breaks protocol");
 ```
 
@@ -131,14 +131,14 @@ _Static_assert(sizeof(rw_session_cookie_t) == 60,
 ```c
 #include <stdatomic.h>
 
-typedef struct rw_stats {
+typedef struct iog_stats {
     _Atomic size_t active_connections;
     _Atomic size_t total_connections;
     _Atomic uint64_t bytes_sent;
     _Atomic uint64_t bytes_received;
-} rw_stats_t;
+} iog_stats_t;
 
-static void rw_stats_connection_add(rw_stats_t *stats) {
+static void iog_stats_connection_add(iog_stats_t *stats) {
     atomic_fetch_add(&stats->active_connections, 1);
     atomic_fetch_add(&stats->total_connections, 1);
 }
@@ -150,11 +150,11 @@ Use for intentional switch case fall-through, especially in CQE processing:
 
 ```c
 switch (op_type) {
-    case RW_OP_ACCEPT:
-        rw_handle_accept(conn);
+    case IOG_OP_ACCEPT:
+        iog_handle_accept(conn);
         [[fallthrough]];
-    case RW_OP_READ:
-        rw_prep_read(conn);
+    case IOG_OP_READ:
+        iog_prep_read(conn);
         break;
 }
 ```
@@ -164,7 +164,7 @@ switch (op_type) {
 Use for debug-only variables and callback parameters:
 
 ```c
-static void rw_on_timeout([[maybe_unused]] void *ctx, int result) {
+static void iog_on_timeout([[maybe_unused]] void *ctx, int result) {
     // ctx used only in debug builds
 }
 ```
@@ -176,9 +176,9 @@ From `<stdnoreturn.h>`, for exhaustive switches:
 ```c
 #include <stdnoreturn.h>
 switch (state) {
-    case RW_STATE_NEW: ... break;
-    case RW_STATE_ACTIVE: ... break;
-    case RW_STATE_CLOSED: ... break;
+    case IOG_STATE_NEW: ... break;
+    case IOG_STATE_ACTIVE: ... break;
+    case IOG_STATE_CLOSED: ... break;
 }
 unreachable();  // tells compiler all cases handled
 ```
@@ -188,22 +188,22 @@ unreachable();  // tells compiler all cases handled
 For readability of large numeric constants:
 
 ```c
-constexpr size_t RW_MAX_BUFFER = 16'384;
-constexpr uint64_t RW_SESSION_TTL_NS = 3'600'000'000'000ULL;  // 1 hour
+constexpr size_t IOG_MAX_BUFFER = 16'384;
+constexpr uint64_t IOG_SESSION_TTL_NS = 3'600'000'000'000ULL;  // 1 hour
 ```
 
 ### Error Handling Pattern — goto cleanup with [[nodiscard]]
 
 ```c
 [[nodiscard]]
-int rw_session_init(rw_session_t **out) {
-    rw_session_t *s = mi_calloc(1, sizeof(*s));
+int iog_session_init(iog_session_t **out) {
+    iog_session_t *s = mi_calloc(1, sizeof(*s));
     if (s == nullptr) return -ENOMEM;
 
-    int rc = rw_cookie_generate(&s->cookie);
+    int rc = iog_cookie_generate(&s->cookie);
     if (rc < 0) goto cleanup;
 
-    rc = rw_dpd_init(&s->dpd);
+    rc = iog_dpd_init(&s->dpd);
     if (rc < 0) goto cleanup;
 
     *out = s;
@@ -228,12 +228,12 @@ cleanup:
 
 | Element | Convention | Example |
 |---------|-----------|---------|
-| Public function | `rw_module_action` | `rw_session_create()` |
+| Public function | `iog_module_action` | `iog_session_create()` |
 | Internal function | `module_action` | `session_validate()` |
-| Type | `rw_name_t` | `rw_connection_t` |
-| Enum value | `RW_PREFIX_NAME` | `RW_PKT_DATA` |
-| Macro | `RW_UPPER_CASE` | `RW_MAX_CLIENTS` |
-| constexpr | `RW_UPPER_CASE` | `RW_MTU_DEFAULT` |
+| Type | `iog_name_t` | `iog_connection_t` |
+| Enum value | `IOG_PREFIX_NAME` | `IOG_PKT_DATA` |
+| Macro | `IOG_UPPER_CASE` | `IOG_MAX_CLIENTS` |
+| constexpr | `IOG_UPPER_CASE` | `IOG_MTU_DEFAULT` |
 | Local variable | `snake_case` | `client_addr` |
 | Struct member | `snake_case` | `session_id` |
 

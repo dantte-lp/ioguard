@@ -27,14 +27,14 @@ void test_fdpass_send_recv_single_fd(void)
     TEST_ASSERT_EQUAL_INT(0, pipe(pfd));
 
     /* Send read end of pipe */
-    int ret = rw_fdpass_send(sv[0], &pfd[0], 1, nullptr, 0);
+    int ret = iog_fdpass_send(sv[0], &pfd[0], 1, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Receive fd */
     int recv_fd = -1;
     size_t nfds = 0;
     size_t dlen = 0;
-    ret = rw_fdpass_recv(sv[1], &recv_fd, 1, &nfds, nullptr, &dlen);
+    ret = iog_fdpass_recv(sv[1], &recv_fd, 1, &nfds, nullptr, &dlen);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(1, nfds);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, recv_fd);
@@ -50,14 +50,14 @@ void test_fdpass_send_recv_with_data(void)
     TEST_ASSERT_EQUAL_INT(0, pipe(pfd));
 
     const char *payload = "meta";
-    int ret = rw_fdpass_send(sv[0], &pfd[0], 1, payload, 4);
+    int ret = iog_fdpass_send(sv[0], &pfd[0], 1, payload, 4);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     int recv_fd = -1;
     size_t nfds = 0;
     char buf[16] = {0};
     size_t dlen = sizeof(buf);
-    ret = rw_fdpass_recv(sv[1], &recv_fd, 1, &nfds, buf, &dlen);
+    ret = iog_fdpass_recv(sv[1], &recv_fd, 1, &nfds, buf, &dlen);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(1, nfds);
     TEST_ASSERT_EQUAL_UINT(4, dlen);
@@ -79,7 +79,7 @@ void test_fdpass_recv_no_fd(void)
     size_t nfds = 99;
     char buf[16] = {0};
     size_t dlen = sizeof(buf);
-    int ret = rw_fdpass_recv(sv[1], &recv_fd, 1, &nfds, buf, &dlen);
+    int ret = iog_fdpass_recv(sv[1], &recv_fd, 1, &nfds, buf, &dlen);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(0, nfds);
     TEST_ASSERT_EQUAL_INT(-1, recv_fd);
@@ -90,7 +90,7 @@ void test_fdpass_recv_no_fd(void)
 void test_fdpass_invalid_fd(void)
 {
     int bad_fd = -1;
-    int ret = rw_fdpass_send(sv[0], &bad_fd, 1, nullptr, 0);
+    int ret = iog_fdpass_send(sv[0], &bad_fd, 1, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(-EBADF, ret);
 }
 
@@ -101,13 +101,13 @@ void test_fdpass_send_multiple_fds(void)
     TEST_ASSERT_EQUAL_INT(0, pipe(pfd2));
 
     int fds[2] = {pfd1[0], pfd2[0]};
-    int ret = rw_fdpass_send(sv[0], fds, 2, nullptr, 0);
+    int ret = iog_fdpass_send(sv[0], fds, 2, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     int recv_fds[4] = {-1, -1, -1, -1};
     size_t nfds = 0;
     size_t dlen = 0;
-    ret = rw_fdpass_recv(sv[1], recv_fds, 4, &nfds, nullptr, &dlen);
+    ret = iog_fdpass_recv(sv[1], recv_fds, 4, &nfds, nullptr, &dlen);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(2, nfds);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, recv_fds[0]);
@@ -127,13 +127,13 @@ void test_fdpass_received_fd_is_usable(void)
     TEST_ASSERT_EQUAL_INT(0, pipe(pfd));
 
     /* Send write end */
-    int ret = rw_fdpass_send(sv[0], &pfd[1], 1, nullptr, 0);
+    int ret = iog_fdpass_send(sv[0], &pfd[1], 1, nullptr, 0);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     int recv_fd = -1;
     size_t nfds = 0;
     size_t dlen = 0;
-    ret = rw_fdpass_recv(sv[1], &recv_fd, 1, &nfds, nullptr, &dlen);
+    ret = iog_fdpass_recv(sv[1], &recv_fd, 1, &nfds, nullptr, &dlen);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(1, nfds);
 

@@ -12,8 +12,8 @@
 #    include <wolfssl/wolfcrypt/random.h>
 #endif
 
-struct rw_vault {
-    uint8_t key[RW_VAULT_KEY_SIZE];
+struct iog_vault {
+    uint8_t key[IOG_VAULT_KEY_SIZE];
 #ifdef USE_WOLFSSL
     WC_RNG rng;
     bool rng_init;
@@ -37,18 +37,18 @@ static int hex_to_bytes(const char *hex, size_t hex_len, uint8_t *out, size_t ou
     return 0;
 }
 
-int rw_vault_init_from_key(const uint8_t *key, size_t key_len, rw_vault_t **out)
+int iog_vault_init_from_key(const uint8_t *key, size_t key_len, iog_vault_t **out)
 {
-    if (key == nullptr || key_len != RW_VAULT_KEY_SIZE || out == nullptr) {
+    if (key == nullptr || key_len != IOG_VAULT_KEY_SIZE || out == nullptr) {
         return -EINVAL;
     }
 
-    rw_vault_t *v = calloc(1, sizeof(*v));
+    iog_vault_t *v = calloc(1, sizeof(*v));
     if (v == nullptr) {
         return -ENOMEM;
     }
 
-    memcpy(v->key, key, RW_VAULT_KEY_SIZE);
+    memcpy(v->key, key, IOG_VAULT_KEY_SIZE);
 
 #ifdef USE_WOLFSSL
     if (wc_InitRng(&v->rng) != 0) {
@@ -63,7 +63,7 @@ int rw_vault_init_from_key(const uint8_t *key, size_t key_len, rw_vault_t **out)
     return 0;
 }
 
-int rw_vault_init(const char *key_path, rw_vault_t **out)
+int iog_vault_init(const char *key_path, iog_vault_t **out)
 {
     if (key_path == nullptr || out == nullptr) {
         return -EINVAL;
@@ -74,7 +74,7 @@ int rw_vault_init(const char *key_path, rw_vault_t **out)
         return -errno;
     }
 
-    uint8_t key[RW_VAULT_KEY_SIZE];
+    uint8_t key[IOG_VAULT_KEY_SIZE];
     char buf[128];
     size_t n = fread(buf, 1, sizeof(buf) - 1, f);
     fclose(f);
@@ -87,10 +87,10 @@ int rw_vault_init(const char *key_path, rw_vault_t **out)
     }
 
     int ret;
-    if (clean_len == RW_VAULT_KEY_SIZE * 2) {
-        ret = hex_to_bytes(buf, clean_len, key, RW_VAULT_KEY_SIZE);
+    if (clean_len == IOG_VAULT_KEY_SIZE * 2) {
+        ret = hex_to_bytes(buf, clean_len, key, IOG_VAULT_KEY_SIZE);
         if (ret == 0) {
-            ret = rw_vault_init_from_key(key, RW_VAULT_KEY_SIZE, out);
+            ret = iog_vault_init_from_key(key, IOG_VAULT_KEY_SIZE, out);
             explicit_bzero(key, sizeof(key));
             explicit_bzero(buf, sizeof(buf));
             return ret;
@@ -98,9 +98,9 @@ int rw_vault_init(const char *key_path, rw_vault_t **out)
     }
 
     /* Try raw bytes */
-    if (n >= RW_VAULT_KEY_SIZE) {
-        memcpy(key, buf, RW_VAULT_KEY_SIZE);
-        ret = rw_vault_init_from_key(key, RW_VAULT_KEY_SIZE, out);
+    if (n >= IOG_VAULT_KEY_SIZE) {
+        memcpy(key, buf, IOG_VAULT_KEY_SIZE);
+        ret = iog_vault_init_from_key(key, IOG_VAULT_KEY_SIZE, out);
         explicit_bzero(key, sizeof(key));
         explicit_bzero(buf, sizeof(buf));
         return ret;
@@ -110,7 +110,7 @@ int rw_vault_init(const char *key_path, rw_vault_t **out)
     return -EINVAL;
 }
 
-void rw_vault_destroy(rw_vault_t *vault)
+void iog_vault_destroy(iog_vault_t *vault)
 {
     if (vault == nullptr) {
         return;
@@ -126,7 +126,7 @@ void rw_vault_destroy(rw_vault_t *vault)
     free(vault);
 }
 
-int rw_vault_encrypt(rw_vault_t *vault, const uint8_t *plaintext, size_t plain_len, uint8_t *out,
+int iog_vault_encrypt(iog_vault_t *vault, const uint8_t *plaintext, size_t plain_len, uint8_t *out,
                      size_t out_size, size_t *out_len)
 {
     if (vault == nullptr || plaintext == nullptr || out == nullptr || out_len == nullptr) {
@@ -134,7 +134,7 @@ int rw_vault_encrypt(rw_vault_t *vault, const uint8_t *plaintext, size_t plain_l
     }
 
     size_t needed;
-    if (ckd_add(&needed, plain_len, RW_VAULT_OVERHEAD)) {
+    if (ckd_add(&needed, plain_len, IOG_VAULT_OVERHEAD)) {
         return -EOVERFLOW;
     }
     if (out_size < needed) {
@@ -144,13 +144,13 @@ int rw_vault_encrypt(rw_vault_t *vault, const uint8_t *plaintext, size_t plain_l
 #ifdef USE_WOLFSSL
     /* Generate random IV */
     uint8_t *iv = out;
-    int ret = wc_RNG_GenerateBlock(&vault->rng, iv, RW_VAULT_IV_SIZE);
+    int ret = wc_RNG_GenerateBlock(&vault->rng, iv, IOG_VAULT_IV_SIZE);
     if (ret != 0) {
         return -EIO;
     }
 
-    uint8_t *ct = out + RW_VAULT_IV_SIZE;
-    uint8_t *tag = out + RW_VAULT_IV_SIZE + plain_len;
+    uint8_t *ct = out + IOG_VAULT_IV_SIZE;
+    uint8_t *tag = out + IOG_VAULT_IV_SIZE + plain_len;
 
     Aes aes;
     ret = wc_AesInit(&aes, nullptr, INVALID_DEVID);
@@ -158,13 +158,13 @@ int rw_vault_encrypt(rw_vault_t *vault, const uint8_t *plaintext, size_t plain_l
         return -EIO;
     }
 
-    ret = wc_AesGcmSetKey(&aes, vault->key, RW_VAULT_KEY_SIZE);
+    ret = wc_AesGcmSetKey(&aes, vault->key, IOG_VAULT_KEY_SIZE);
     if (ret != 0) {
         goto encrypt_cleanup;
     }
 
-    ret = wc_AesGcmEncrypt(&aes, ct, plaintext, (word32)plain_len, iv, RW_VAULT_IV_SIZE, tag,
-                           RW_VAULT_TAG_SIZE, nullptr, 0);
+    ret = wc_AesGcmEncrypt(&aes, ct, plaintext, (word32)plain_len, iv, IOG_VAULT_IV_SIZE, tag,
+                           IOG_VAULT_TAG_SIZE, nullptr, 0);
 
 encrypt_cleanup:
     wc_AesFree(&aes);
@@ -180,26 +180,26 @@ encrypt_cleanup:
 #endif
 }
 
-int rw_vault_decrypt(rw_vault_t *vault, const uint8_t *cipherblob, size_t blob_len, uint8_t *out,
+int iog_vault_decrypt(iog_vault_t *vault, const uint8_t *cipherblob, size_t blob_len, uint8_t *out,
                      size_t out_size, size_t *out_len)
 {
     if (vault == nullptr || cipherblob == nullptr || out == nullptr || out_len == nullptr) {
         return -EINVAL;
     }
 
-    if (blob_len < RW_VAULT_OVERHEAD) {
+    if (blob_len < IOG_VAULT_OVERHEAD) {
         return -EINVAL;
     }
 
-    size_t plain_len = blob_len - RW_VAULT_OVERHEAD;
+    size_t plain_len = blob_len - IOG_VAULT_OVERHEAD;
     if (out_size < plain_len) {
         return -ENOSPC;
     }
 
 #ifdef USE_WOLFSSL
     const uint8_t *iv = cipherblob;
-    const uint8_t *ct = cipherblob + RW_VAULT_IV_SIZE;
-    const uint8_t *tag = cipherblob + RW_VAULT_IV_SIZE + plain_len;
+    const uint8_t *ct = cipherblob + IOG_VAULT_IV_SIZE;
+    const uint8_t *tag = cipherblob + IOG_VAULT_IV_SIZE + plain_len;
 
     Aes aes;
     int ret = wc_AesInit(&aes, nullptr, INVALID_DEVID);
@@ -207,13 +207,13 @@ int rw_vault_decrypt(rw_vault_t *vault, const uint8_t *cipherblob, size_t blob_l
         return -EIO;
     }
 
-    ret = wc_AesGcmSetKey(&aes, vault->key, RW_VAULT_KEY_SIZE);
+    ret = wc_AesGcmSetKey(&aes, vault->key, IOG_VAULT_KEY_SIZE);
     if (ret != 0) {
         goto decrypt_cleanup;
     }
 
-    ret = wc_AesGcmDecrypt(&aes, out, ct, (word32)plain_len, iv, RW_VAULT_IV_SIZE, tag,
-                           RW_VAULT_TAG_SIZE, nullptr, 0);
+    ret = wc_AesGcmDecrypt(&aes, out, ct, (word32)plain_len, iv, IOG_VAULT_IV_SIZE, tag,
+                           IOG_VAULT_TAG_SIZE, nullptr, 0);
 
 decrypt_cleanup:
     wc_AesFree(&aes);

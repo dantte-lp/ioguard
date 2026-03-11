@@ -2,7 +2,7 @@
 
 ## Goal
 
-Define a consistent replacement scheme for the remaining `ringwall`-era prefixes,
+Define a consistent replacement scheme for the remaining `ioguard`-era prefixes,
 utilities, and operational artifacts.
 
 ## Naming Rules
@@ -36,24 +36,24 @@ utilities, and operational artifacts.
 
 | Current | Recommended | Notes |
 |---|---|---|
-| daemon binary `ringwall` | `ioguard` | External identity should match repo and product name |
+| daemon binary `ioguard` | `ioguard` | External identity should match repo and product name |
 | CLI `rwctl` | `iogctl` | Best short control-plane utility name |
-| C prefix `rw_` | `iog_` | Public and internal C symbol family |
-| macro prefix `RW_` | `IOG_` | Pair with `iog_` |
-| include guards `RINGWALL_...` | `IOGUARD_...` | Full project name is fine here |
-| CMake project `ringwall` | `ioguard` | Human-facing build identity |
-| include dir `include/ringwall/` | `include/ioguard/` | Match package identity |
-| config file `ringwall.toml` | `ioguard.toml` | Predictable with daemon name |
-| config dir `/etc/ringwall/` | `/etc/ioguard/` | Predictable with daemon name |
-| state dir `/var/lib/ringwall/` | `/var/lib/ioguard/` | Predictable with daemon name |
-| images `ringwall-dev/test/build/ci` | `ioguard-dev/test/build/ci` | Match repo/product name |
-| OCI labels `io.ringwall.*` | `io.ioguard.*` | Match repo/product name |
-| logger target `ringwall` | `ioguard` | Human-facing operational identity |
-| nft table `ringwall` | `ioguard` | Operational identity |
-| PAM service `ringwall` | `ioguard` | Consistent admin-facing naming |
-| TOTP issuer `ringwall` | `ioguard` | End-user visible |
-| docs repo `ringwall-docs` | `ioguard-docs` | If that repo is renamed too |
-| client `ringwall-connect` | `ioguard-connect` | Explicit and predictable |
+| C prefix `iog_` | `iog_` | Public and internal C symbol family |
+| macro prefix `IOG_` | `IOG_` | Pair with `iog_` |
+| include guards `IOGUARD_...` | `IOGUARD_...` | Full project name is fine here |
+| CMake project `ioguard` | `ioguard` | Human-facing build identity |
+| include dir `include/ioguard/` | `include/ioguard/` | Match package identity |
+| config file `ioguard.toml` | `ioguard.toml` | Predictable with daemon name |
+| config dir `/etc/ioguard/` | `/etc/ioguard/` | Predictable with daemon name |
+| state dir `/var/lib/ioguard/` | `/var/lib/ioguard/` | Predictable with daemon name |
+| images `ioguard-dev/test/build/ci` | `ioguard-dev/test/build/ci` | Match repo/product name |
+| OCI labels `io.ioguard.*` | `io.ioguard.*` | Match repo/product name |
+| logger target `ioguard` | `ioguard` | Human-facing operational identity |
+| nft table `ioguard` | `ioguard` | Operational identity |
+| PAM service `ioguard` | `ioguard` | Consistent admin-facing naming |
+| TOTP issuer `ioguard` | `ioguard` | End-user visible |
+| docs repo `ioguard-docs` | `ioguard-docs` | If that repo is renamed too |
+| client `ioguard-connect` | `ioguard-connect` | Explicit and predictable |
 
 ## Recommendation
 
@@ -83,11 +83,11 @@ Use this final naming scheme:
    - include directory
    - package metadata
 3. Public API and code prefixes
-   - `rw_` -> `iog_`
-   - `RW_` -> `IOG_`
-   - `RINGWALL_` -> `IOGUARD_`
+   - `iog_` -> `iog_`
+   - `IOG_` -> `IOG_`
+   - `IOGUARD_` -> `IOGUARD_`
 4. Adjacent repositories and clients
-   - `ringwall-docs`
-   - `ringwall-connect`
+   - `ioguard-docs`
+   - `ioguard-connect`
 
 This order minimizes user-visible confusion first, while postponing the highest-churn ABI and source-wide symbol rename until the project is ready for it.

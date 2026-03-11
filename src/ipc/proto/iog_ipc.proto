@@ -1,5 +1,5 @@
 syntax = "proto3";
-package rw_ipc;
+package iog_ipc;
 
 enum MsgType {
     MSG_TYPE_UNKNOWN = 0;

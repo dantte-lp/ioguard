@@ -9,7 +9,7 @@
 ## 1. Execution Order
 
 1. **Rebrand** — single atomic commit renaming ioguard -> ioguard across entire codebase
-2. **S5** — Storage & Security Hardening (all new code uses `rw_*` prefix)
+2. **S5** — Storage & Security Hardening (all new code uses `iog_*` prefix)
 
 ---
 
@@ -20,17 +20,17 @@
 | Old | New | Scope |
 |-----|-----|-------|
 | `ioguard` | `ioguard` | Binary, strings, paths, comments, filenames |
-| `rw_` | `rw_` | Function/variable prefixes |
-| `RW_` | `RW_` | Enum values, macros, constexpr |
-| `RINGWALL_` | `RINGWALL_` | Include guards |
+| `iog_` | `iog_` | Function/variable prefixes |
+| `IOG_` | `IOG_` | Enum values, macros, constexpr |
+| `IOGUARD_` | `IOGUARD_` | Include guards |
 | `iogctl` | `iogctl` | CLI binary |
 | `ioguard.toml` | `ioguard.toml` | Config files |
 | `/etc/ioguard/` | `/etc/ioguard/` | System paths |
-| `localhost/ringwall-*` | `localhost/ringwall-*` | Container images |
+| `localhost/ioguard-*` | `localhost/ioguard-*` | Container images |
 
 ### 2.2 Scope
 
-- ~55 source files (`.c`, `.h`) with ~572 occurrences of `rw_`/`ioguard`
+- ~55 source files (`.c`, `.h`) with ~572 occurrences of `iog_`/`ioguard`
 - ~32 test files with ~739 occurrences
 - CMakeLists.txt, CMakePresets.json
 - deploy/podman/ (Dockerfiles, scripts, Makefile)
@@ -46,7 +46,7 @@ Approach:
 2. `git mv` for file/directory renames
 3. Verify build: `cmake --preset clang-debug && cmake --build --preset clang-debug`
 4. Verify tests: `ctest --preset clang-debug`
-5. Verify no remnants: `grep -r "ioguard\|IOGUARD\|rw_" --include="*.c" --include="*.h" src/ tests/`
+5. Verify no remnants: `grep -r "ioguard\|IOGUARD\|iog_" --include="*.c" --include="*.h" src/ tests/`
 
 ### 2.4 GitHub Operations (gh api graphql)
 
@@ -71,7 +71,7 @@ DATA PLANE (per-packet, nanoseconds)     CONTROL PLANE (per-connection, millisec
 +--------------------------+             +-------------------+
 |  libmdbx                 |             |  SQLite (WAL)     |
 |  /var/lib/ioguard/      |             |  /var/lib/        |
-|    sessions.mdbx         |             |    ringwall/      |
+|    sessions.mdbx         |             |    ioguard/      |
 |                          |             |    control.db     |
 |  sub-db: sessions        |             |                   |
 |  sub-db: ratelimits      |             |  users            |
@@ -167,7 +167,7 @@ Add to Containerfile:
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | New name | ioguard | ring=io_uring, wall=security; no conflicts |
-| Function prefix | `rw_` | Avoids WireGuard `wg` conflict |
+| Function prefix | `iog_` | Avoids WireGuard `wg` conflict |
 | Rename strategy | Single atomic commit | Pre-release, no external users |
 | Rename timing | Before S5 | Avoid double-renaming new S5 code |
 | DB sprint | S5 | DB is infrastructure S6 auth depends on |

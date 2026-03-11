@@ -37,7 +37,7 @@ static int addr_bytes_for_af(int af)
     }
 }
 
-int rw_wolfsentry_init(rw_wolfsentry_ctx_t *ctx)
+int iog_wolfsentry_init(iog_wolfsentry_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return -EINVAL;
@@ -73,7 +73,7 @@ int rw_wolfsentry_init(rw_wolfsentry_ctx_t *ctx)
     return 0;
 }
 
-void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx)
+void iog_wolfsentry_close(iog_wolfsentry_ctx_t *ctx)
 {
     if (ctx == nullptr || ctx->ws_ctx == nullptr) {
         return;
@@ -89,7 +89,7 @@ void rw_wolfsentry_close(rw_wolfsentry_ctx_t *ctx)
     WOLFSENTRY_THREAD_TAILER(WOLFSENTRY_THREAD_FLAG_NONE);
 }
 
-int rw_wolfsentry_load_json(rw_wolfsentry_ctx_t *ctx, const char *json, size_t json_len)
+int iog_wolfsentry_load_json(iog_wolfsentry_ctx_t *ctx, const char *json, size_t json_len)
 {
     if (ctx == nullptr || ctx->ws_ctx == nullptr) {
         return -EINVAL;
@@ -118,24 +118,24 @@ int rw_wolfsentry_load_json(rw_wolfsentry_ctx_t *ctx, const char *json, size_t j
     return 0;
 }
 
-rw_ws_result_t rw_wolfsentry_check_connection(rw_wolfsentry_ctx_t *ctx, int af,
+iog_ws_result_t iog_wolfsentry_check_connection(iog_wolfsentry_ctx_t *ctx, int af,
                                               const void *remote_addr, uint16_t remote_port,
                                               const void *local_addr, uint16_t local_port,
                                               int protocol)
 {
     if (ctx == nullptr || ctx->ws_ctx == nullptr) {
-        return RW_WS_ERROR;
+        return IOG_WS_ERROR;
     }
 
     int addr_bits = addr_bits_for_af(af);
     int addr_bytes = addr_bytes_for_af(af);
     if (addr_bits < 0) {
-        return RW_WS_ERROR;
+        return IOG_WS_ERROR;
     }
 
     WOLFSENTRY_THREAD_HEADER(WOLFSENTRY_THREAD_FLAG_NONE);
     if (_thread_context_ret < 0) {
-        return RW_WS_ERROR;
+        return IOG_WS_ERROR;
     }
 
     WOLFSENTRY_SOCKADDR(128) remote_sa;
@@ -178,17 +178,17 @@ rw_ws_result_t rw_wolfsentry_check_connection(rw_wolfsentry_ctx_t *ctx, int af,
          * policy is set, we get an error. Treat as ACCEPT (permissive
          * default).
          */
-        return RW_WS_ACCEPT;
+        return IOG_WS_ACCEPT;
     }
 
     if (WOLFSENTRY_MASKIN_BITS(action_results, WOLFSENTRY_ACTION_RES_REJECT)) {
-        return RW_WS_REJECT;
+        return IOG_WS_REJECT;
     }
 
-    return RW_WS_ACCEPT;
+    return IOG_WS_ACCEPT;
 }
 
-int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr)
+int iog_wolfsentry_ban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr)
 {
     if (ctx == nullptr || ctx->ws_ctx == nullptr || addr == nullptr) {
         return -EINVAL;
@@ -253,7 +253,7 @@ int rw_wolfsentry_ban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr)
     return 0;
 }
 
-int rw_wolfsentry_unban_ip(rw_wolfsentry_ctx_t *ctx, int af, const void *addr)
+int iog_wolfsentry_unban_ip(iog_wolfsentry_ctx_t *ctx, int af, const void *addr)
 {
     if (ctx == nullptr || ctx->ws_ctx == nullptr || addr == nullptr) {
         return -EINVAL;

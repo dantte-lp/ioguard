@@ -16,14 +16,14 @@
  * ============================================================================ */
 
 /* Write an audit entry to SQLite (best-effort, non-fatal) */
-static void secmod_audit_log(rw_secmod_ctx_t *ctx, const char *event_type, const char *username,
+static void secmod_audit_log(iog_secmod_ctx_t *ctx, const char *event_type, const char *username,
                              const char *source_ip, const char *result)
 {
     if (ctx->sqlite == nullptr) {
         return;
     }
 
-    rw_audit_entry_t entry;
+    iog_audit_entry_t entry;
     memset(&entry, 0, sizeof(entry));
     snprintf(entry.event_type, sizeof(entry.event_type), "%s", event_type);
     if (username != nullptr) {
@@ -34,59 +34,59 @@ static void secmod_audit_log(rw_secmod_ctx_t *ctx, const char *event_type, const
     }
     snprintf(entry.result, sizeof(entry.result), "%s", result);
 
-    (void)rw_sqlite_audit_insert(ctx->sqlite, &entry);
+    (void)iog_sqlite_audit_insert(ctx->sqlite, &entry);
 }
 
 /* Persist session to mdbx (if available) */
-static int secmod_persist_session(rw_secmod_ctx_t *ctx, const rw_session_t *session)
+static int secmod_persist_session(iog_secmod_ctx_t *ctx, const iog_session_t *session)
 {
     if (ctx->mdbx == nullptr) {
         return 0;
     }
 
-    rw_session_record_t record;
+    iog_session_record_t record;
     memset(&record, 0, sizeof(record));
-    memcpy(record.session_id, session->cookie, RW_SESSION_ID_LEN);
+    memcpy(record.session_id, session->cookie, IOG_SESSION_ID_LEN);
     snprintf(record.username, sizeof(record.username), "%s", session->username);
     snprintf(record.groupname, sizeof(record.groupname), "%s", session->group);
     record.created_at = session->created;
     record.expires_at = session->created + (time_t)session->ttl_seconds;
 
-    return rw_mdbx_session_create(ctx->mdbx, &record);
+    return iog_mdbx_session_create(ctx->mdbx, &record);
 }
 
 /* Delete session from mdbx (if available) — used during disconnect handling */
-[[maybe_unused]] static int secmod_delete_session(rw_secmod_ctx_t *ctx, const uint8_t *cookie)
+[[maybe_unused]] static int secmod_delete_session(iog_secmod_ctx_t *ctx, const uint8_t *cookie)
 {
     if (ctx->mdbx == nullptr) {
         return 0;
     }
-    return rw_mdbx_session_delete(ctx->mdbx, cookie);
+    return iog_mdbx_session_delete(ctx->mdbx, cookie);
 }
 
 /* Build and send an auth response over IPC. */
-static int secmod_send_auth_response(int fd, const rw_ipc_auth_response_t *resp)
+static int secmod_send_auth_response(int fd, const iog_ipc_auth_response_t *resp)
 {
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-    ssize_t packed = rw_ipc_pack_auth_response(resp, buf, sizeof(buf));
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
+    ssize_t packed = iog_ipc_pack_auth_response(resp, buf, sizeof(buf));
 
     if (packed < 0) {
         return (int)packed;
     }
-    return rw_ipc_send(fd, buf, (size_t)packed);
+    return iog_ipc_send(fd, buf, (size_t)packed);
 }
 
 /* Create a session and populate the response fields. */
-static int secmod_create_session_response(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
-                                          rw_ipc_auth_response_t *resp)
+static int secmod_create_session_response(iog_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req,
+                                          iog_ipc_auth_response_t *resp)
 {
-    rw_session_t *session = nullptr;
-    int ret = rw_session_create(ctx->sessions, req->username, req->group,
+    iog_session_t *session = nullptr;
+    int ret = iog_session_create(ctx->sessions, req->username, req->group,
                                 ctx->config->auth.cookie_timeout, &session);
     if (ret == 0 && session != nullptr) {
         resp->success = true;
         resp->session_cookie = session->cookie;
-        resp->session_cookie_len = RW_SESSION_COOKIE_SIZE;
+        resp->session_cookie_len = IOG_SESSION_COOKIE_SIZE;
         resp->session_ttl = session->ttl_seconds;
         resp->assigned_ip = session->assigned_ip;
         resp->dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
@@ -107,10 +107,10 @@ static int secmod_create_session_response(rw_secmod_ctx_t *ctx, rw_ipc_auth_requ
 }
 
 /* Handle TOTP second-factor validation. Returns 0 on success, <0 on failure. */
-static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
-                              rw_ipc_auth_response_t *resp)
+static int secmod_handle_totp(iog_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req,
+                              iog_ipc_auth_response_t *resp)
 {
-    rw_user_record_t user;
+    iog_user_record_t user;
     memset(&user, 0, sizeof(user));
 
     if (req->otp == nullptr || req->otp[0] == '\0') {
@@ -119,7 +119,7 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
         return -EINVAL;
     }
 
-    int ret = rw_sqlite_user_lookup(ctx->sqlite, req->username, &user);
+    int ret = iog_sqlite_user_lookup(ctx->sqlite, req->username, &user);
     if (ret < 0) {
         resp->success = false;
         resp->error_msg = "user lookup failed";
@@ -135,10 +135,10 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
     }
 
     /* Decrypt the TOTP secret via vault */
-    uint8_t decrypted[RW_TOTP_SECRET_SIZE + 16];
+    uint8_t decrypted[IOG_TOTP_SECRET_SIZE + 16];
     size_t dec_len = 0;
 
-    ret = rw_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len, decrypted,
+    ret = iog_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len, decrypted,
                            sizeof(decrypted), &dec_len);
     explicit_bzero(&user, sizeof(user));
 
@@ -162,7 +162,7 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
     }
 
     uint32_t otp_code = (uint32_t)otp_val;
-    ret = rw_totp_validate(decrypted, dec_len, otp_code, (uint64_t)time(nullptr), 1);
+    ret = iog_totp_validate(decrypted, dec_len, otp_code, (uint64_t)time(nullptr), 1);
     explicit_bzero(decrypted, sizeof(decrypted));
 
     if (ret < 0) {
@@ -178,15 +178,15 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req,
 }
 
 /* Handle an authentication request (username + password, or OTP second factor). */
-static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
+static int secmod_handle_auth(iog_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req)
 {
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
     /* Check ban list before attempting auth */
     if (ctx->sqlite != nullptr && req->source_ip != nullptr) {
         bool banned = false;
-        int bret = rw_sqlite_ban_check(ctx->sqlite, req->source_ip, &banned);
+        int bret = iog_sqlite_ban_check(ctx->sqlite, req->source_ip, &banned);
         if (bret == 0 && banned) {
             resp.success = false;
             resp.error_msg = "IP address is banned";
@@ -204,13 +204,13 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
     }
 
     /* Primary authentication via PAM */
-    rw_auth_result_t result = rw_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
-    if (result == RW_AUTH_SUCCESS) {
+    iog_auth_result_t result = iog_pam_authenticate(&ctx->pam_cfg, req->username, req->password);
+    if (result == IOG_AUTH_SUCCESS) {
         /* Check if user has TOTP enabled */
         if (ctx->sqlite != nullptr && ctx->vault != nullptr) {
-            rw_user_record_t user;
+            iog_user_record_t user;
             memset(&user, 0, sizeof(user));
-            int lret = rw_sqlite_user_lookup(ctx->sqlite, req->username, &user);
+            int lret = iog_sqlite_user_lookup(ctx->sqlite, req->username, &user);
             if (lret == 0 && user.totp_enabled && user.totp_secret_len > 0) {
                 /* TOTP required — signal challenge, do not create session yet */
                 explicit_bzero(&user, sizeof(user));
@@ -237,18 +237,18 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, rw_ipc_auth_request_t *req)
 }
 
 /* Handle a session validation request (cookie lookup). */
-static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_validate_t *req)
+static int secmod_handle_session_validate(iog_secmod_ctx_t *ctx, iog_ipc_session_validate_t *req)
 {
-    rw_ipc_auth_response_t resp;
+    iog_ipc_auth_response_t resp;
     memset(&resp, 0, sizeof(resp));
 
-    rw_session_t *session = nullptr;
-    int ret = rw_session_validate(ctx->sessions, req->cookie, req->cookie_len, &session);
+    iog_session_t *session = nullptr;
+    int ret = iog_session_validate(ctx->sessions, req->cookie, req->cookie_len, &session);
 
     if (ret == 0 && session != nullptr) {
         resp.success = true;
         resp.session_cookie = session->cookie;
-        resp.session_cookie_len = RW_SESSION_COOKIE_SIZE;
+        resp.session_cookie_len = IOG_SESSION_COOKIE_SIZE;
         resp.session_ttl = session->ttl_seconds;
         resp.assigned_ip = session->assigned_ip;
         resp.dns_server = (ctx->config->network.dns_count > 0) ? ctx->config->network.dns[0]
@@ -266,25 +266,25 @@ static int secmod_handle_session_validate(rw_secmod_ctx_t *ctx, rw_ipc_session_v
 constexpr size_t SECMOD_CLEANUP_BATCH = 64;
 
 typedef struct {
-    uint8_t ids[SECMOD_CLEANUP_BATCH][RW_SESSION_ID_LEN];
+    uint8_t ids[SECMOD_CLEANUP_BATCH][IOG_SESSION_ID_LEN];
     size_t count;
 } secmod_expired_batch_t;
 
-static int expired_session_collect(const rw_session_record_t *session, void *userdata)
+static int expired_session_collect(const iog_session_record_t *session, void *userdata)
 {
     secmod_expired_batch_t *batch = userdata;
     time_t now = time(nullptr);
 
     if (session->expires_at > 0 && session->expires_at < now) {
         if (batch->count < SECMOD_CLEANUP_BATCH) {
-            memcpy(batch->ids[batch->count], session->session_id, RW_SESSION_ID_LEN);
+            memcpy(batch->ids[batch->count], session->session_id, IOG_SESSION_ID_LEN);
             batch->count++;
         }
     }
     return 0;
 }
 
-static void secmod_cleanup_expired_mdbx(rw_secmod_ctx_t *ctx)
+static void secmod_cleanup_expired_mdbx(iog_secmod_ctx_t *ctx)
 {
     if (ctx->mdbx == nullptr) {
         return;
@@ -294,11 +294,11 @@ static void secmod_cleanup_expired_mdbx(rw_secmod_ctx_t *ctx)
     memset(&batch, 0, sizeof(batch));
 
     /* Pass 1: collect expired IDs (read-only txn inside iterate) */
-    (void)rw_mdbx_session_iterate(ctx->mdbx, expired_session_collect, &batch);
+    (void)iog_mdbx_session_iterate(ctx->mdbx, expired_session_collect, &batch);
 
     /* Pass 2: delete collected sessions (separate write txns) */
     for (size_t i = 0; i < batch.count; i++) {
-        (void)rw_mdbx_session_delete(ctx->mdbx, batch.ids[i]);
+        (void)iog_mdbx_session_delete(ctx->mdbx, batch.ids[i]);
     }
 }
 
@@ -306,7 +306,7 @@ static void secmod_cleanup_expired_mdbx(rw_secmod_ctx_t *ctx)
  * Public API
  * ============================================================================ */
 
-int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
+int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *config)
 {
     if (ctx == nullptr || config == nullptr) {
         return -EINVAL;
@@ -319,7 +319,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
 
     /* Initialise PAM with the configured auth method (service name) */
     const char *service = (config->auth.method[0] != '\0') ? config->auth.method : nullptr;
-    int ret = rw_pam_init(&ctx->pam_cfg, service);
+    int ret = iog_pam_init(&ctx->pam_cfg, service);
     if (ret != 0) {
         return ret;
     }
@@ -327,9 +327,9 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
     /* Create in-memory session store */
     uint32_t max = config->server.max_clients;
     if (max == 0) {
-        max = RW_SESSION_MAX_SESSIONS;
+        max = IOG_SESSION_MAX_SESSIONS;
     }
-    ctx->sessions = rw_session_store_create(max);
+    ctx->sessions = iog_session_store_create(max);
     if (ctx->sessions == nullptr) {
         return -ENOMEM;
     }
@@ -338,14 +338,14 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
     if (config->storage.mdbx_path[0] != '\0') {
         ctx->mdbx = calloc(1, sizeof(*ctx->mdbx));
         if (ctx->mdbx == nullptr) {
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return -ENOMEM;
         }
-        ret = rw_mdbx_init(ctx->mdbx, config->storage.mdbx_path);
+        ret = iog_mdbx_init(ctx->mdbx, config->storage.mdbx_path);
         if (ret < 0) {
             free(ctx->mdbx);
             ctx->mdbx = nullptr;
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return ret;
         }
     }
@@ -355,38 +355,38 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
         ctx->sqlite = calloc(1, sizeof(*ctx->sqlite));
         if (ctx->sqlite == nullptr) {
             if (ctx->mdbx != nullptr) {
-                rw_mdbx_close(ctx->mdbx);
+                iog_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return -ENOMEM;
         }
-        ret = rw_sqlite_init(ctx->sqlite, config->storage.sqlite_path);
+        ret = iog_sqlite_init(ctx->sqlite, config->storage.sqlite_path);
         if (ret < 0) {
             free(ctx->sqlite);
             ctx->sqlite = nullptr;
             if (ctx->mdbx != nullptr) {
-                rw_mdbx_close(ctx->mdbx);
+                iog_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return ret;
         }
     }
 
     /* Initialize vault for field-level encryption (TOTP secrets) */
     if (config->storage.vault_key_path[0] != '\0') {
-        ret = rw_vault_init(config->storage.vault_key_path, &ctx->vault);
+        ret = iog_vault_init(config->storage.vault_key_path, &ctx->vault);
         if (ret < 0) {
             if (ctx->sqlite != nullptr) {
-                rw_sqlite_close(ctx->sqlite);
+                iog_sqlite_close(ctx->sqlite);
                 free(ctx->sqlite);
             }
             if (ctx->mdbx != nullptr) {
-                rw_mdbx_close(ctx->mdbx);
+                iog_mdbx_close(ctx->mdbx);
                 free(ctx->mdbx);
             }
-            rw_session_store_destroy(ctx->sessions);
+            iog_session_store_destroy(ctx->sessions);
             return ret;
         }
     }
@@ -394,45 +394,45 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
     return 0;
 }
 
-int rw_secmod_handle_message(rw_secmod_ctx_t *ctx, const uint8_t *data, size_t len)
+int iog_secmod_handle_message(iog_secmod_ctx_t *ctx, const uint8_t *data, size_t len)
 {
     if (ctx == nullptr || data == nullptr || len == 0) {
         return -EINVAL;
     }
 
-    rw_ipc_auth_request_t auth_req;
+    iog_ipc_auth_request_t auth_req;
     memset(&auth_req, 0, sizeof(auth_req));
 
-    int ret = rw_ipc_unpack_auth_request(data, len, &auth_req);
+    int ret = iog_ipc_unpack_auth_request(data, len, &auth_req);
 
     if (ret == 0 && auth_req.username != nullptr) {
         ret = secmod_handle_auth(ctx, &auth_req);
-        rw_ipc_free_auth_request(&auth_req);
+        iog_ipc_free_auth_request(&auth_req);
         return ret;
     }
 
     if (ret == 0) {
-        rw_ipc_free_auth_request(&auth_req);
+        iog_ipc_free_auth_request(&auth_req);
     }
 
-    rw_ipc_session_validate_t sv_req;
+    iog_ipc_session_validate_t sv_req;
     memset(&sv_req, 0, sizeof(sv_req));
 
-    ret = rw_ipc_unpack_session_validate(data, len, &sv_req);
+    ret = iog_ipc_unpack_session_validate(data, len, &sv_req);
     if (ret == 0 && sv_req.cookie != nullptr && sv_req.cookie_len > 0) {
         ret = secmod_handle_session_validate(ctx, &sv_req);
-        rw_ipc_free_session_validate(&sv_req);
+        iog_ipc_free_session_validate(&sv_req);
         return ret;
     }
 
     if (ret == 0) {
-        rw_ipc_free_session_validate(&sv_req);
+        iog_ipc_free_session_validate(&sv_req);
     }
 
     return -EPROTO;
 }
 
-int rw_secmod_run(rw_secmod_ctx_t *ctx)
+int iog_secmod_run(iog_secmod_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return -EINVAL;
@@ -452,51 +452,51 @@ int rw_secmod_run(rw_secmod_ctx_t *ctx)
         }
 
         if (ret > 0 && (pfd.revents & POLLIN)) {
-            uint8_t buf[RW_IPC_MAX_MSG_SIZE];
-            ssize_t n = rw_ipc_recv(ctx->ipc_fd, buf, sizeof(buf));
+            uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
+            ssize_t n = iog_ipc_recv(ctx->ipc_fd, buf, sizeof(buf));
 
             if (n > 0) {
-                (void)rw_secmod_handle_message(ctx, buf, (size_t)n);
+                (void)iog_secmod_handle_message(ctx, buf, (size_t)n);
             }
         }
 
         /* Periodic cleanup of expired sessions */
-        rw_session_cleanup_expired(ctx->sessions);
+        iog_session_cleanup_expired(ctx->sessions);
         secmod_cleanup_expired_mdbx(ctx);
     }
 
     return 0;
 }
 
-void rw_secmod_stop(rw_secmod_ctx_t *ctx)
+void iog_secmod_stop(iog_secmod_ctx_t *ctx)
 {
     if (ctx != nullptr) {
         ctx->running = false;
     }
 }
 
-void rw_secmod_destroy(rw_secmod_ctx_t *ctx)
+void iog_secmod_destroy(iog_secmod_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return;
     }
 
     if (ctx->sessions != nullptr) {
-        rw_session_store_destroy(ctx->sessions);
+        iog_session_store_destroy(ctx->sessions);
     }
 
     if (ctx->mdbx != nullptr) {
-        rw_mdbx_close(ctx->mdbx);
+        iog_mdbx_close(ctx->mdbx);
         free(ctx->mdbx);
     }
 
     if (ctx->sqlite != nullptr) {
-        rw_sqlite_close(ctx->sqlite);
+        iog_sqlite_close(ctx->sqlite);
         free(ctx->sqlite);
     }
 
     if (ctx->vault != nullptr) {
-        rw_vault_destroy(ctx->vault);
+        iog_vault_destroy(ctx->vault);
     }
 
     explicit_bzero(ctx, sizeof(*ctx));

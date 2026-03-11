@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_WORKER_LOOP_H
-#define RINGWALL_CORE_WORKER_LOOP_H
+#ifndef IOGUARD_CORE_WORKER_LOOP_H
+#define IOGUARD_CORE_WORKER_LOOP_H
 
 #include "core/worker.h"
 #include "io/uring.h"
@@ -9,23 +9,23 @@
 /**
  * @brief Worker event loop context.
  *
- * Wraps rw_worker_t (connection pool) with an io_uring event loop.
+ * Wraps iog_worker_t (connection pool) with an io_uring event loop.
  * Receives new client fds from main via accept_fd (SCM_RIGHTS).
  * Drives TLS handshake, CSTP framing, and TUN I/O per connection.
  */
 typedef struct {
-    rw_worker_t *worker;
-    rw_io_ctx_t *io;
+    iog_worker_t *worker;
+    iog_io_ctx_t *io;
     int accept_fd; /* unix socket: main passes client fds here */
     int ipc_fd;    /* IPC to auth-mod */
     bool running;
-} rw_worker_loop_t;
+} iog_worker_loop_t;
 
 typedef struct {
     int accept_fd;
     int ipc_fd;
-    const rw_worker_config_t *worker_cfg;
-} rw_worker_loop_config_t;
+    const iog_worker_config_t *worker_cfg;
+} iog_worker_loop_config_t;
 
 /**
  * @brief Initialize worker event loop.
@@ -33,14 +33,14 @@ typedef struct {
  * @param cfg   Configuration specifying accept_fd, ipc_fd, worker config.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *cfg);
+[[nodiscard]] int iog_worker_loop_init(iog_worker_loop_t *loop, const iog_worker_loop_config_t *cfg);
 
 /**
- * @brief Run worker event loop (blocking). Returns on rw_worker_loop_stop().
+ * @brief Run worker event loop (blocking). Returns on iog_worker_loop_stop().
  * @param loop  Worker loop context.
  * @return 0 on clean stop, negative errno on error.
  */
-[[nodiscard]] int rw_worker_loop_run(rw_worker_loop_t *loop);
+[[nodiscard]] int iog_worker_loop_run(iog_worker_loop_t *loop);
 
 /**
  * @brief Process one iteration of the event loop.
@@ -51,18 +51,18 @@ typedef struct {
  * @param loop  Worker loop context.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_worker_loop_process_events(rw_worker_loop_t *loop);
+[[nodiscard]] int iog_worker_loop_process_events(iog_worker_loop_t *loop);
 
 /**
  * @brief Signal worker event loop to stop.
  * @param loop  Worker loop context.
  */
-void rw_worker_loop_stop(rw_worker_loop_t *loop);
+void iog_worker_loop_stop(iog_worker_loop_t *loop);
 
 /**
  * @brief Destroy worker event loop and free resources.
  * @param loop  Worker loop context.
  */
-void rw_worker_loop_destroy(rw_worker_loop_t *loop);
+void iog_worker_loop_destroy(iog_worker_loop_t *loop);
 
-#endif /* RINGWALL_CORE_WORKER_LOOP_H */
+#endif /* IOGUARD_CORE_WORKER_LOOP_H */

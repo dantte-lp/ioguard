@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_SECURITY_HOOKS_H
-#define RINGWALL_CORE_SECURITY_HOOKS_H
+#ifndef IOGUARD_CORE_SECURITY_HOOKS_H
+#define IOGUARD_CORE_SECURITY_HOOKS_H
 
 #include "config/config.h"
 #include "security/firewall.h"
@@ -15,7 +15,7 @@
  * @param is_worker  true for worker, false for auth-mod.
  * @return Appropriate sandbox profile enum.
  */
-[[nodiscard]] rw_sandbox_profile_t rw_security_select_sandbox(bool is_worker);
+[[nodiscard]] iog_sandbox_profile_t iog_security_select_sandbox(bool is_worker);
 
 /**
  * @brief Select landlock profile for a process role.
@@ -23,7 +23,7 @@
  * @param is_worker  true for worker, false for auth-mod.
  * @return Appropriate landlock profile enum.
  */
-[[nodiscard]] rw_landlock_profile_t rw_security_select_landlock(bool is_worker);
+[[nodiscard]] iog_landlock_profile_t iog_security_select_landlock(bool is_worker);
 
 /**
  * @brief Apply process-level security restrictions.
@@ -35,7 +35,7 @@
  * @param config     Server configuration.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_security_apply_process(bool is_worker, const rw_config_t *config);
+[[nodiscard]] int iog_security_apply_process(bool is_worker, const iog_config_t *config);
 
 /**
  * @brief Build firewall session descriptor for per-user rules.
@@ -46,7 +46,7 @@
  * @param ip       Assigned IP (network byte order for IPv4).
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int rw_security_build_fw_session(rw_fw_session_t *session, const char *username,
+[[nodiscard]] int iog_security_build_fw_session(iog_fw_session_t *session, const char *username,
                                                int af, uint32_t ip);
 
 /**
@@ -57,7 +57,7 @@
  * @param ip        Assigned IP address.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_security_session_create(const char *username, int af, uint32_t ip);
+[[nodiscard]] int iog_security_session_create(const char *username, int af, uint32_t ip);
 
 /**
  * @brief Remove per-session firewall rules on disconnect.
@@ -67,6 +67,6 @@
  * @param ip        Previously assigned IP address.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_security_session_destroy(const char *username, int af, uint32_t ip);
+[[nodiscard]] int iog_security_session_destroy(const char *username, int af, uint32_t ip);
 
-#endif /* RINGWALL_CORE_SECURITY_HOOKS_H */
+#endif /* IOGUARD_CORE_SECURITY_HOOKS_H */

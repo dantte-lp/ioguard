@@ -6,14 +6,14 @@
 #include <string.h>
 #include <unistd.h>
 
-static rw_sqlite_ctx_t sql_ctx;
-static rw_mdbx_ctx_t mdbx_ctx;
+static iog_sqlite_ctx_t sql_ctx;
+static iog_mdbx_ctx_t mdbx_ctx;
 static char mdbx_path[256];
 
 void setUp(void)
 {
-    int rc = rw_sqlite_init(&sql_ctx, ":memory:");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_sqlite_init failed in setUp");
+    int rc = iog_sqlite_init(&sql_ctx, ":memory:");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_sqlite_init failed in setUp");
 
     snprintf(mdbx_path, sizeof(mdbx_path), "/tmp/test_migrate_%d.db", getpid());
     unlink(mdbx_path);
@@ -21,14 +21,14 @@ void setUp(void)
     snprintf(lck_path, sizeof(lck_path), "%s-lck", mdbx_path);
     unlink(lck_path);
 
-    rc = rw_mdbx_init(&mdbx_ctx, mdbx_path);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "rw_mdbx_init failed in setUp");
+    rc = iog_mdbx_init(&mdbx_ctx, mdbx_path);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, rc, "iog_mdbx_init failed in setUp");
 }
 
 void tearDown(void)
 {
-    rw_sqlite_close(&sql_ctx);
-    rw_mdbx_close(&mdbx_ctx);
+    iog_sqlite_close(&sql_ctx);
+    iog_mdbx_close(&mdbx_ctx);
 
     unlink(mdbx_path);
     char lck_path[280];
@@ -41,24 +41,24 @@ void tearDown(void)
 void test_migrate_fresh_db(void)
 {
     /* Fresh in-memory DB should migrate to current version. */
-    int rc = rw_sqlite_migrate(&sql_ctx);
+    int rc = iog_sqlite_migrate(&sql_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 }
 
 void test_migrate_idempotent(void)
 {
     /* Running migrate twice should succeed without error. */
-    int rc = rw_sqlite_migrate(&sql_ctx);
+    int rc = iog_sqlite_migrate(&sql_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rc = rw_sqlite_migrate(&sql_ctx);
+    rc = iog_sqlite_migrate(&sql_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 }
 
 void test_migrate_version_check(void)
 {
     /* After migration, verify the version is recorded correctly. */
-    int rc = rw_sqlite_migrate(&sql_ctx);
+    int rc = iog_sqlite_migrate(&sql_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
     /* Query schema_version directly to verify. */
@@ -72,7 +72,7 @@ void test_migrate_version_check(void)
     TEST_ASSERT_EQUAL_INT(SQLITE_INTEGER, sqlite3_column_type(stmt, 0));
 
     int version = sqlite3_column_int(stmt, 0);
-    TEST_ASSERT_EQUAL_INT((int)RW_SQLITE_SCHEMA_VERSION, version);
+    TEST_ASSERT_EQUAL_INT((int)IOG_SQLITE_SCHEMA_VERSION, version);
     sqlite3_finalize(stmt);
 }
 
@@ -81,17 +81,17 @@ void test_migrate_version_check(void)
 void test_mdbx_format_check_fresh(void)
 {
     /* First call on a fresh env should set the version and succeed. */
-    int rc = rw_mdbx_check_format(&mdbx_ctx);
+    int rc = iog_mdbx_check_format(&mdbx_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 }
 
 void test_mdbx_format_check_current(void)
 {
     /* Set version, then verify it passes on second check. */
-    int rc = rw_mdbx_check_format(&mdbx_ctx);
+    int rc = iog_mdbx_check_format(&mdbx_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 
-    rc = rw_mdbx_check_format(&mdbx_ctx);
+    rc = iog_mdbx_check_format(&mdbx_ctx);
     TEST_ASSERT_EQUAL_INT(0, rc);
 }
 

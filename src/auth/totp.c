@@ -29,13 +29,13 @@ static int base32_char_value(char c)
     return -1;
 }
 
-ssize_t rw_base32_decode(const char *encoded, uint8_t *out, size_t out_size)
+ssize_t iog_base32_decode(const char *encoded, uint8_t *out, size_t out_size)
 {
     if (encoded == nullptr || out == nullptr) {
         return -EINVAL;
     }
 
-    size_t len = strnlen(encoded, RW_TOTP_SECRET_B32_MAX + 1);
+    size_t len = strnlen(encoded, IOG_TOTP_SECRET_B32_MAX + 1);
 
     /* Strip trailing padding */
     while (len > 0 && encoded[len - 1] == '=') {
@@ -81,7 +81,7 @@ ssize_t rw_base32_decode(const char *encoded, uint8_t *out, size_t out_size)
     return (ssize_t)out_idx;
 }
 
-int rw_totp_generate(const uint8_t *secret, size_t secret_len, uint64_t time_step,
+int iog_totp_generate(const uint8_t *secret, size_t secret_len, uint64_t time_step,
                      uint32_t *code_out)
 {
     if (secret == nullptr || secret_len == 0 || code_out == nullptr) {
@@ -139,21 +139,21 @@ hmac_err:
 #endif
 }
 
-int rw_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code, uint64_t time_now,
+int iog_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code, uint64_t time_now,
                      uint32_t window)
 {
     if (secret == nullptr || secret_len == 0) {
         return -EINVAL;
     }
 
-    uint64_t current_counter = time_now / RW_TOTP_TIME_STEP;
+    uint64_t current_counter = time_now / IOG_TOTP_TIME_STEP;
 
     for (uint32_t i = 0; i <= window; i++) {
         uint32_t candidate = 0;
         int ret;
 
         /* Check current counter (or forward drift for i>0) */
-        ret = rw_totp_generate(secret, secret_len, current_counter + i, &candidate);
+        ret = iog_totp_generate(secret, secret_len, current_counter + i, &candidate);
         if (ret != 0) {
             return ret;
         }
@@ -163,7 +163,7 @@ int rw_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code, ui
 
         /* Check backward drift (i>0 only, guard underflow) */
         if (i > 0 && current_counter >= i) {
-            ret = rw_totp_generate(secret, secret_len, current_counter - i, &candidate);
+            ret = iog_totp_generate(secret, secret_len, current_counter - i, &candidate);
             if (ret != 0) {
                 return ret;
             }
@@ -216,7 +216,7 @@ static ssize_t base32_encode(const uint8_t *data, size_t data_len, char *out, si
     return (ssize_t)idx;
 }
 
-int rw_totp_generate_secret(uint8_t *secret, size_t secret_len)
+int iog_totp_generate_secret(uint8_t *secret, size_t secret_len)
 {
     if (secret == nullptr || secret_len == 0) {
         return -EINVAL;
@@ -242,7 +242,7 @@ int rw_totp_generate_secret(uint8_t *secret, size_t secret_len)
 #endif
 }
 
-ssize_t rw_totp_build_uri(const uint8_t *secret, size_t secret_len, const char *issuer,
+ssize_t iog_totp_build_uri(const uint8_t *secret, size_t secret_len, const char *issuer,
                           const char *account, char *uri_out, size_t uri_size)
 {
     if (secret == nullptr || secret_len == 0 || issuer == nullptr || account == nullptr ||
@@ -251,7 +251,7 @@ ssize_t rw_totp_build_uri(const uint8_t *secret, size_t secret_len, const char *
     }
 
     /* Base32-encode the secret */
-    char b32[RW_TOTP_SECRET_B32_MAX];
+    char b32[IOG_TOTP_SECRET_B32_MAX];
     ssize_t b32_len = base32_encode(secret, secret_len, b32, sizeof(b32));
     if (b32_len < 0) {
         explicit_bzero(b32, sizeof(b32));

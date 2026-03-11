@@ -70,18 +70,18 @@ static int add_path_rule(int ruleset_fd, const char *path, __u64 access)
 
 /* ---- Public API ---- */
 
-bool rw_landlock_supported(void)
+bool iog_landlock_supported(void)
 {
     int abi = landlock_create_ruleset(nullptr, 0, LANDLOCK_CREATE_RULESET_VERSION);
     return abi >= 1;
 }
 
-int rw_landlock_apply(rw_landlock_profile_t profile, const char *mdbx_path, const char *sqlite_path)
+int iog_landlock_apply(iog_landlock_profile_t profile, const char *mdbx_path, const char *sqlite_path)
 {
     if (mdbx_path == nullptr) {
         return -EINVAL;
     }
-    if (profile == RW_LANDLOCK_AUTHMOD && sqlite_path == nullptr) {
+    if (profile == IOG_LANDLOCK_AUTHMOD && sqlite_path == nullptr) {
         return -EINVAL;
     }
 
@@ -103,7 +103,7 @@ int rw_landlock_apply(rw_landlock_profile_t profile, const char *mdbx_path, cons
     int rc = 0;
 
     switch (profile) {
-    case RW_LANDLOCK_WORKER:
+    case IOG_LANDLOCK_WORKER:
         /* Read-only access to mdbx file. */
         rc = add_path_rule(ruleset_fd, mdbx_path, LANDLOCK_ACCESS_FS_READ_FILE);
         if (rc < 0) {
@@ -117,7 +117,7 @@ int rw_landlock_apply(rw_landlock_profile_t profile, const char *mdbx_path, cons
         }
         break;
 
-    case RW_LANDLOCK_AUTHMOD:
+    case IOG_LANDLOCK_AUTHMOD:
         /* Read-write access to mdbx file. */
         rc = add_path_rule(ruleset_fd, mdbx_path,
                            LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_WRITE_FILE);

@@ -23,7 +23,7 @@ openssl genrsa -out "${CERT_DIR}/ca-key.pem" 4096 2>/dev/null
 echo "  [2/5] Generating CA certificate (10 year validity)..."
 openssl req -new -x509 -days 3650 -key "${CERT_DIR}/ca-key.pem" \
     -out "${CERT_DIR}/ca-cert.pem" \
-    -subj "/C=US/ST=Test/L=Test/O=ringwall/OU=Testing/CN=Test CA" \
+    -subj "/C=US/ST=Test/L=Test/O=ioguard/OU=Testing/CN=Test CA" \
     2>/dev/null
 
 # Generate server key and CSR
@@ -33,7 +33,7 @@ openssl genrsa -out "${CERT_DIR}/server-key.pem" 2048 2>/dev/null
 echo "  [4/5] Generating server certificate signing request..."
 openssl req -new -key "${CERT_DIR}/server-key.pem" \
     -out "${CERT_DIR}/server-csr.pem" \
-    -subj "/C=US/ST=Test/L=Test/O=ringwall/OU=Testing/CN=localhost" \
+    -subj "/C=US/ST=Test/L=Test/O=ioguard/OU=Testing/CN=localhost" \
     2>/dev/null
 
 # Create extension file for Subject Alternative Names

@@ -28,9 +28,9 @@
 
 /**
  * Build the chain name into @p out.
- * Format: rw_<username>_<hex-ip>
+ * Format: iog_<username>_<hex-ip>
  */
-int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size)
+int iog_fw_chain_name(const iog_fw_session_t *session, char *out, size_t out_size)
 {
     if (session == nullptr || out == nullptr || out_size == 0) {
         return -EINVAL;
@@ -40,12 +40,12 @@ int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size)
 
     if (session->af == AF_INET) {
         const uint8_t *a = (const uint8_t *)&session->assigned_ipv4;
-        ret = snprintf(out, out_size, "rw_%.48s_%02x%02x%02x%02x", session->username, a[0], a[1],
+        ret = snprintf(out, out_size, "iog_%.48s_%02x%02x%02x%02x", session->username, a[0], a[1],
                        a[2], a[3]);
     } else if (session->af == AF_INET6) {
         const uint8_t *b = session->assigned_ipv6.s6_addr;
         ret = snprintf(out, out_size,
-                       "rw_%.24s_"
+                       "iog_%.24s_"
                        "%02x%02x%02x%02x%02x%02x%02x%02x"
                        "%02x%02x%02x%02x%02x%02x%02x%02x",
                        session->username, b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8],
@@ -67,7 +67,7 @@ int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size)
  * Equivalent to:  ip saddr <assigned_ipv4> accept
  *            or:  ip6 saddr <assigned_ipv6> accept
  */
-static int rule_add_src_match(struct nftnl_rule *rule, const rw_fw_session_t *session)
+static int rule_add_src_match(struct nftnl_rule *rule, const iog_fw_session_t *session)
 {
     /*
      * Expression 1: payload — load source address from network header.
@@ -131,7 +131,7 @@ static int rule_add_src_match(struct nftnl_rule *rule, const rw_fw_session_t *se
  * Build a nftnl_rule struct for source IP accept.
  * Caller must free with nftnl_rule_free().
  */
-static struct nftnl_rule *build_accept_rule(const rw_fw_session_t *session, const char *chain_name)
+static struct nftnl_rule *build_accept_rule(const iog_fw_session_t *session, const char *chain_name)
 {
     uint32_t family = (session->af == AF_INET) ? NFPROTO_IPV4 : NFPROTO_IPV6;
 
@@ -141,7 +141,7 @@ static struct nftnl_rule *build_accept_rule(const rw_fw_session_t *session, cons
     }
 
     nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, family);
-    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, RW_FW_TABLE_NAME);
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, IOG_FW_TABLE_NAME);
     nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, chain_name);
 
     int ret = rule_add_src_match(rule, session);
@@ -157,7 +157,7 @@ static struct nftnl_rule *build_accept_rule(const rw_fw_session_t *session, cons
  * Build a nftnl_chain struct for the per-user chain.
  * Caller must free with nftnl_chain_free().
  */
-static struct nftnl_chain *build_chain(const rw_fw_session_t *session, const char *chain_name)
+static struct nftnl_chain *build_chain(const iog_fw_session_t *session, const char *chain_name)
 {
     uint32_t family = (session->af == AF_INET) ? NFPROTO_IPV4 : NFPROTO_IPV6;
 
@@ -167,7 +167,7 @@ static struct nftnl_chain *build_chain(const rw_fw_session_t *session, const cha
     }
 
     nftnl_chain_set_u32(chain, NFTNL_CHAIN_FAMILY, family);
-    nftnl_chain_set_str(chain, NFTNL_CHAIN_TABLE, RW_FW_TABLE_NAME);
+    nftnl_chain_set_str(chain, NFTNL_CHAIN_TABLE, IOG_FW_TABLE_NAME);
     nftnl_chain_set_str(chain, NFTNL_CHAIN_NAME, chain_name);
 
     return chain;
@@ -182,24 +182,24 @@ static uint32_t seq_next(void)
 
 /* ---- Public batch builders ---- */
 
-int rw_fw_build_create_batch(const rw_fw_session_t *session, void **batch_buf, size_t *batch_len)
+int iog_fw_build_create_batch(const iog_fw_session_t *session, void **batch_buf, size_t *batch_len)
 {
     if (session == nullptr || batch_buf == nullptr || batch_len == nullptr) {
         return -EINVAL;
     }
 
-    char chain_name[RW_FW_CHAIN_NAME_MAX];
-    int ret = rw_fw_chain_name(session, chain_name, sizeof(chain_name));
+    char chain_name[IOG_FW_CHAIN_NAME_MAX];
+    int ret = iog_fw_chain_name(session, chain_name, sizeof(chain_name));
     if (ret < 0) {
         return ret;
     }
 
-    char *buf = calloc(1, RW_FW_BATCH_BUF_SIZE);
+    char *buf = calloc(1, IOG_FW_BATCH_BUF_SIZE);
     if (buf == nullptr) {
         return -ENOMEM;
     }
 
-    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, RW_FW_BATCH_BUF_SIZE);
+    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, IOG_FW_BATCH_BUF_SIZE);
     if (batch == nullptr) {
         free(buf);
         return -ENOMEM;
@@ -254,24 +254,24 @@ int rw_fw_build_create_batch(const rw_fw_session_t *session, void **batch_buf, s
     return 0;
 }
 
-int rw_fw_build_destroy_batch(const rw_fw_session_t *session, void **batch_buf, size_t *batch_len)
+int iog_fw_build_destroy_batch(const iog_fw_session_t *session, void **batch_buf, size_t *batch_len)
 {
     if (session == nullptr || batch_buf == nullptr || batch_len == nullptr) {
         return -EINVAL;
     }
 
-    char chain_name[RW_FW_CHAIN_NAME_MAX];
-    int ret = rw_fw_chain_name(session, chain_name, sizeof(chain_name));
+    char chain_name[IOG_FW_CHAIN_NAME_MAX];
+    int ret = iog_fw_chain_name(session, chain_name, sizeof(chain_name));
     if (ret < 0) {
         return ret;
     }
 
-    char *buf = calloc(1, RW_FW_BATCH_BUF_SIZE);
+    char *buf = calloc(1, IOG_FW_BATCH_BUF_SIZE);
     if (buf == nullptr) {
         return -ENOMEM;
     }
 
-    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, RW_FW_BATCH_BUF_SIZE);
+    struct mnl_nlmsg_batch *batch = mnl_nlmsg_batch_start(buf, IOG_FW_BATCH_BUF_SIZE);
     if (batch == nullptr) {
         free(buf);
         return -ENOMEM;
@@ -292,7 +292,7 @@ int rw_fw_build_destroy_batch(const rw_fw_session_t *session, void **batch_buf, 
     }
 
     nftnl_rule_set_u32(rule, NFTNL_RULE_FAMILY, family);
-    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, RW_FW_TABLE_NAME);
+    nftnl_rule_set_str(rule, NFTNL_RULE_TABLE, IOG_FW_TABLE_NAME);
     nftnl_rule_set_str(rule, NFTNL_RULE_CHAIN, chain_name);
 
     struct nlmsghdr *nlh = nftnl_nlmsg_build_hdr(
@@ -356,7 +356,7 @@ static int send_batch(const void *buf, size_t len)
 
 /* ---- Public API ---- */
 
-int rw_fw_session_create(const rw_fw_session_t *session)
+int iog_fw_session_create(const iog_fw_session_t *session)
 {
     if (geteuid() != 0) {
         return -EPERM;
@@ -365,7 +365,7 @@ int rw_fw_session_create(const rw_fw_session_t *session)
     void *buf = nullptr;
     size_t len = 0;
 
-    int ret = rw_fw_build_create_batch(session, &buf, &len);
+    int ret = iog_fw_build_create_batch(session, &buf, &len);
     if (ret < 0) {
         return ret;
     }
@@ -375,7 +375,7 @@ int rw_fw_session_create(const rw_fw_session_t *session)
     return ret;
 }
 
-int rw_fw_session_destroy(const rw_fw_session_t *session)
+int iog_fw_session_destroy(const iog_fw_session_t *session)
 {
     if (geteuid() != 0) {
         return -EPERM;
@@ -384,7 +384,7 @@ int rw_fw_session_destroy(const rw_fw_session_t *session)
     void *buf = nullptr;
     size_t len = 0;
 
-    int ret = rw_fw_build_destroy_batch(session, &buf, &len);
+    int ret = iog_fw_build_destroy_batch(session, &buf, &len);
     if (ret < 0) {
         return ret;
     }

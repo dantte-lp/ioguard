@@ -48,7 +48,7 @@ static int pam_conversation(int num_msg, const struct pam_message **msg, struct 
     return PAM_SUCCESS;
 }
 
-int rw_pam_init(rw_pam_config_t *cfg, const char *service)
+int iog_pam_init(iog_pam_config_t *cfg, const char *service)
 {
     if (cfg == nullptr) {
         return -EINVAL;
@@ -65,17 +65,17 @@ int rw_pam_init(rw_pam_config_t *cfg, const char *service)
     return 0;
 }
 
-rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg, const char *username,
+iog_auth_result_t iog_pam_authenticate(const iog_pam_config_t *cfg, const char *username,
                                      const char *password)
 {
     if (cfg == nullptr || username == nullptr || password == nullptr) {
-        return RW_AUTH_ERROR;
+        return IOG_AUTH_ERROR;
     }
 
     /* Make a mutable copy of the password for the conversation function */
     char *pw_copy = strdup(password);
     if (pw_copy == nullptr) {
-        return RW_AUTH_ERROR;
+        return IOG_AUTH_ERROR;
     }
 
     struct pam_conv conv = {
@@ -88,12 +88,12 @@ rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg, const char *use
     if (ret != PAM_SUCCESS) {
         explicit_bzero(pw_copy, strlen(pw_copy));
         free(pw_copy);
-        return RW_AUTH_ERROR;
+        return IOG_AUTH_ERROR;
     }
 
     ret = pam_authenticate(pamh, 0);
 
-    rw_auth_result_t result;
+    iog_auth_result_t result;
     if (ret == PAM_SUCCESS) {
         /* Authentication passed; check account status */
         ret = pam_acct_mgmt(pamh, 0);
@@ -102,21 +102,21 @@ rw_auth_result_t rw_pam_authenticate(const rw_pam_config_t *cfg, const char *use
     /* Map PAM return codes to our result type */
     switch (ret) {
     case PAM_SUCCESS:
-        result = RW_AUTH_SUCCESS;
+        result = IOG_AUTH_SUCCESS;
         break;
     case PAM_AUTH_ERR:
     case PAM_USER_UNKNOWN:
     case PAM_MAXTRIES:
-        result = RW_AUTH_FAILURE;
+        result = IOG_AUTH_FAILURE;
         break;
     case PAM_ACCT_EXPIRED:
-        result = RW_AUTH_ACCOUNT_EXPIRED;
+        result = IOG_AUTH_ACCOUNT_EXPIRED;
         break;
     case PAM_NEW_AUTHTOK_REQD:
-        result = RW_AUTH_PASSWORD_EXPIRED;
+        result = IOG_AUTH_PASSWORD_EXPIRED;
         break;
     default:
-        result = RW_AUTH_ERROR;
+        result = IOG_AUTH_ERROR;
         break;
     }
 

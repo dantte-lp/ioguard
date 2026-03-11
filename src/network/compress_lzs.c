@@ -100,48 +100,48 @@ static int br_read_bits(bit_reader_t *br, int nbits)
     return (int)val;
 }
 
-void rw_lzs_init(rw_lzs_ctx_t *ctx)
+void iog_lzs_init(iog_lzs_ctx_t *ctx)
 {
     memset(ctx, 0, sizeof(*ctx));
 }
 
-void rw_lzs_reset(rw_lzs_ctx_t *ctx)
+void iog_lzs_reset(iog_lzs_ctx_t *ctx)
 {
     memset(ctx->window, 0, sizeof(ctx->window));
     ctx->window_pos = 0;
 }
 
-static void window_add(rw_lzs_ctx_t *ctx, uint8_t byte)
+static void window_add(iog_lzs_ctx_t *ctx, uint8_t byte)
 {
-    ctx->window[ctx->window_pos % RW_LZS_WINDOW_SIZE] = byte;
+    ctx->window[ctx->window_pos % IOG_LZS_WINDOW_SIZE] = byte;
     ctx->window_pos++;
 }
 
 /* Find longest match in sliding window */
-static int find_match(const rw_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len,
+static int find_match(const iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len,
                       size_t *match_offset, size_t *match_len)
 {
     size_t best_len = 0;
     size_t best_off = 0;
-    size_t win_used = ctx->window_pos < RW_LZS_WINDOW_SIZE ? ctx->window_pos : RW_LZS_WINDOW_SIZE;
+    size_t win_used = ctx->window_pos < IOG_LZS_WINDOW_SIZE ? ctx->window_pos : IOG_LZS_WINDOW_SIZE;
 
     for (size_t off = 1; off <= win_used; off++) {
-        size_t wi = (ctx->window_pos - off) % RW_LZS_WINDOW_SIZE;
+        size_t wi = (ctx->window_pos - off) % IOG_LZS_WINDOW_SIZE;
         size_t len = 0;
-        while (len < in_len && len < RW_LZS_MAX_MATCH) {
-            size_t ci = (wi + len) % RW_LZS_WINDOW_SIZE;
+        while (len < in_len && len < IOG_LZS_MAX_MATCH) {
+            size_t ci = (wi + len) % IOG_LZS_WINDOW_SIZE;
             if (ctx->window[ci] != in[len]) {
                 break;
             }
             len++;
         }
-        if (len >= RW_LZS_MIN_MATCH && len > best_len) {
+        if (len >= IOG_LZS_MIN_MATCH && len > best_len) {
             best_len = len;
             best_off = off;
         }
     }
 
-    if (best_len >= RW_LZS_MIN_MATCH) {
+    if (best_len >= IOG_LZS_MIN_MATCH) {
         *match_offset = best_off;
         *match_len = best_len;
         return 1;
@@ -178,7 +178,7 @@ static int encode_length(bit_writer_t *bw, size_t length)
     }
 }
 
-int rw_lzs_compress(rw_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
+int iog_lzs_compress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
                     size_t out_size)
 {
     if (!ctx || !in || !out) {
@@ -251,7 +251,7 @@ int rw_lzs_compress(rw_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t
     return (int)bw_bytes_written(&bw);
 }
 
-int rw_lzs_decompress(rw_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
+int iog_lzs_decompress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
                       size_t out_size)
 {
     if (!ctx || !in || !out) {
@@ -323,7 +323,7 @@ int rw_lzs_decompress(rw_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8
 
             /* Copy from window */
             for (size_t i = 0; i < length; i++) {
-                size_t wi = (ctx->window_pos - (size_t)offset) % RW_LZS_WINDOW_SIZE;
+                size_t wi = (ctx->window_pos - (size_t)offset) % IOG_LZS_WINDOW_SIZE;
                 if (out_pos >= out_size) {
                     return -ENOSPC;
                 }

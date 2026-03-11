@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RINGWALL_SESSION_CACHE_H
-#define RINGWALL_SESSION_CACHE_H
+#ifndef IOGUARD_SESSION_CACHE_H
+#define IOGUARD_SESSION_CACHE_H
 
 /**
  * In-Memory TLS Session Cache Implementation
@@ -219,4 +219,4 @@ static inline void session_cache_cleanup(session_cache_t **cache_ptr)
     }
 }
 
-#endif // RINGWALL_SESSION_CACHE_H
+#endif // IOGUARD_SESSION_CACHE_H

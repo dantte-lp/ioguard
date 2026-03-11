@@ -108,10 +108,10 @@ Every I/O operation in ioguard goes through io_uring. There is no libuv, no epol
 
 ```c
 // src/io/uring.h
-rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags);
-void rw_io_prep_accept(rw_io_ctx_t *ctx, int fd, rw_io_cb cb);
-void rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb cb);
-void rw_io_prep_timeout(rw_io_ctx_t *ctx, uint64_t ms, rw_io_cb cb);
+iog_io_ctx_t *iog_io_init(uint32_t queue_depth, uint32_t flags);
+void iog_io_prep_accept(iog_io_ctx_t *ctx, int fd, iog_io_cb cb);
+void iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb);
+void iog_io_prep_timeout(iog_io_ctx_t *ctx, uint64_t ms, iog_io_cb cb);
 ```
 
 ---
@@ -184,10 +184,10 @@ Dead Peer Detection runs on both CSTP and DTLS channels with three states:
 
 ```c
 typedef enum {
-    RW_CHANNEL_CSTP_ONLY,      // DTLS not established or not supported
-    RW_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control only
-    RW_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back to CSTP
-} rw_channel_state_t;
+    IOG_CHANNEL_CSTP_ONLY,      // DTLS not established or not supported
+    IOG_CHANNEL_DTLS_PRIMARY,   // DTLS active, CSTP for control only
+    IOG_CHANNEL_DTLS_FALLBACK,  // DTLS failed DPD, falling back to CSTP
+} iog_channel_state_t;
 ```
 
 - DPD probes every 30 seconds.

@@ -16,20 +16,20 @@
 static constexpr char DEFAULT_USERNAME_FIELD[] = "CN";
 
 /** Module state: configuration copy and initialization flag. */
-static rw_cert_auth_config_t g_cert_cfg;
+static iog_cert_auth_config_t g_cert_cfg;
 static bool g_cert_initialized = false;
 
 /**
  * Validate that the config has required fields set.
  */
-static int validate_config(const rw_cert_auth_config_t *config)
+static int validate_config(const iog_cert_auth_config_t *config)
 {
     if (config == nullptr) {
         return -EINVAL;
     }
 
     /* CA cert path is required */
-    if (strnlen(config->ca_cert_path, RW_CERT_PATH_MAX) == 0) {
+    if (strnlen(config->ca_cert_path, IOG_CERT_PATH_MAX) == 0) {
         return -EINVAL;
     }
 
@@ -39,9 +39,9 @@ static int validate_config(const rw_cert_auth_config_t *config)
 /**
  * Apply default values to any unset optional fields.
  */
-static void apply_defaults(rw_cert_auth_config_t *cfg)
+static void apply_defaults(iog_cert_auth_config_t *cfg)
 {
-    if (strnlen(cfg->username_field, RW_CERT_USERNAME_FIELD_MAX) == 0) {
+    if (strnlen(cfg->username_field, IOG_CERT_USERNAME_FIELD_MAX) == 0) {
         memcpy(cfg->username_field, DEFAULT_USERNAME_FIELD, sizeof(DEFAULT_USERNAME_FIELD));
     }
 }
@@ -49,39 +49,39 @@ static void apply_defaults(rw_cert_auth_config_t *cfg)
 /**
  * Authenticate using the client certificate from the request.
  */
-static rw_auth_status_t cert_authenticate(const rw_auth_request_t *req,
-                                           rw_auth_response_t *resp)
+static iog_auth_status_t cert_authenticate(const iog_auth_request_t *req,
+                                           iog_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     if (!g_cert_initialized) {
-        return RW_AUTH_STATUS_ERROR;
+        return IOG_AUTH_STATUS_ERROR;
     }
 
     /* Client cert is required for this backend */
     if (req->client_cert == nullptr || req->client_cert_len == 0) {
-        resp->status = RW_AUTH_STATUS_FAILURE;
-        return RW_AUTH_STATUS_FAILURE;
+        resp->status = IOG_AUTH_STATUS_FAILURE;
+        return IOG_AUTH_STATUS_FAILURE;
     }
 
     /* Extract username from the certificate */
-    char username[RW_CERT_USERNAME_MAX];
-    int ret = rw_cert_extract_username(req->client_cert, req->client_cert_len,
+    char username[IOG_CERT_USERNAME_MAX];
+    int ret = iog_cert_extract_username(req->client_cert, req->client_cert_len,
                                        g_cert_cfg.username_field, username, sizeof(username));
     if (ret != 0) {
-        resp->status = RW_AUTH_STATUS_FAILURE;
-        return RW_AUTH_STATUS_FAILURE;
+        resp->status = IOG_AUTH_STATUS_FAILURE;
+        return IOG_AUTH_STATUS_FAILURE;
     }
 
     /* Authentication succeeded — username was extracted and cert was parsed */
-    resp->status = RW_AUTH_STATUS_SUCCESS;
+    resp->status = IOG_AUTH_STATUS_SUCCESS;
     resp->groups[0] = '\0';
     resp->framed_ip = 0;
     resp->has_framed_ipv6 = false;
 
-    return RW_AUTH_STATUS_SUCCESS;
+    return IOG_AUTH_STATUS_SUCCESS;
 }
 
 /**
@@ -89,20 +89,20 @@ static rw_auth_status_t cert_authenticate(const rw_auth_request_t *req,
  */
 static int cert_backend_init(const void *config)
 {
-    return rw_cert_auth_init((const rw_cert_auth_config_t *)config);
+    return iog_cert_auth_init((const iog_cert_auth_config_t *)config);
 }
 
 /**
  * Static backend descriptor for registration with the auth framework.
  */
-static const rw_auth_backend_t cert_backend = {
+static const iog_auth_backend_t cert_backend = {
     .name = "cert",
     .init = cert_backend_init,
     .authenticate = cert_authenticate,
-    .destroy = rw_cert_auth_destroy,
+    .destroy = iog_cert_auth_destroy,
 };
 
-int rw_cert_auth_init(const rw_cert_auth_config_t *config)
+int iog_cert_auth_init(const iog_cert_auth_config_t *config)
 {
     int ret = validate_config(config);
     if (ret != 0) {
@@ -120,7 +120,7 @@ int rw_cert_auth_init(const rw_cert_auth_config_t *config)
     return 0;
 }
 
-void rw_cert_auth_destroy(void)
+void iog_cert_auth_destroy(void)
 {
     if (g_cert_initialized) {
         explicit_bzero(&g_cert_cfg, sizeof(g_cert_cfg));
@@ -128,12 +128,12 @@ void rw_cert_auth_destroy(void)
     }
 }
 
-const rw_auth_backend_t *rw_cert_auth_backend(void)
+const iog_auth_backend_t *iog_cert_auth_backend(void)
 {
     return &cert_backend;
 }
 
-int rw_cert_extract_username(const uint8_t *der, size_t der_len, const char *field, char *out,
+int iog_cert_extract_username(const uint8_t *der, size_t der_len, const char *field, char *out,
                              size_t out_size)
 {
     if (der == nullptr || field == nullptr || out == nullptr || out_size == 0) {

@@ -5,14 +5,14 @@
 #include <time.h>
 
 /* Initial capacity for the active completions tracking array */
-constexpr uint32_t RW_IO_ACTIVE_INIT_CAP = 16;
+constexpr uint32_t IOG_IO_ACTIVE_INIT_CAP = 16;
 
 /* Track a completion in the active array (for cancel-by-user_data) */
-static int io_active_add(rw_io_ctx_t *ctx, rw_io_completion_t *comp)
+static int io_active_add(iog_io_ctx_t *ctx, iog_io_completion_t *comp)
 {
     if (ctx->active_count == ctx->active_cap) {
-        uint32_t new_cap = (ctx->active_cap == 0) ? RW_IO_ACTIVE_INIT_CAP : ctx->active_cap * 2;
-        rw_io_completion_t **new_arr = realloc(ctx->active, new_cap * sizeof(*new_arr));
+        uint32_t new_cap = (ctx->active_cap == 0) ? IOG_IO_ACTIVE_INIT_CAP : ctx->active_cap * 2;
+        iog_io_completion_t **new_arr = realloc(ctx->active, new_cap * sizeof(*new_arr));
         if (new_arr == nullptr) {
             return -ENOMEM;
         }
@@ -24,7 +24,7 @@ static int io_active_add(rw_io_ctx_t *ctx, rw_io_completion_t *comp)
 }
 
 /* Remove a completion from the active array */
-static void io_active_remove(rw_io_ctx_t *ctx, rw_io_completion_t *comp)
+static void io_active_remove(iog_io_ctx_t *ctx, iog_io_completion_t *comp)
 {
     for (uint32_t i = 0; i < ctx->active_count; i++) {
         if (ctx->active[i] == comp) {
@@ -37,7 +37,7 @@ static void io_active_remove(rw_io_ctx_t *ctx, rw_io_completion_t *comp)
 }
 
 /* Find a completion by user_data */
-static rw_io_completion_t *io_active_find(rw_io_ctx_t *ctx, void *user_data)
+static iog_io_completion_t *io_active_find(iog_io_ctx_t *ctx, void *user_data)
 {
     for (uint32_t i = 0; i < ctx->active_count; i++) {
         if (ctx->active[i]->user_data == user_data) {
@@ -63,13 +63,13 @@ static void timeout_cb(int res, void *user_data)
     *flag = 1;
 }
 
-rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags)
+iog_io_ctx_t *iog_io_init(uint32_t queue_depth, uint32_t flags)
 {
     if (queue_depth == 0) {
         return nullptr;
     }
 
-    rw_io_ctx_t *ctx = calloc(1, sizeof(*ctx));
+    iog_io_ctx_t *ctx = calloc(1, sizeof(*ctx));
     if (ctx == nullptr) {
         return nullptr;
     }
@@ -85,7 +85,7 @@ rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags)
     return ctx;
 }
 
-void rw_io_destroy(rw_io_ctx_t *ctx)
+void iog_io_destroy(iog_io_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return;
@@ -95,7 +95,7 @@ void rw_io_destroy(rw_io_ctx_t *ctx)
     free(ctx);
 }
 
-int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
+int iog_io_run_once(iog_io_ctx_t *ctx, uint32_t timeout_ms)
 {
     struct io_uring_cqe *cqe;
     int ret;
@@ -123,7 +123,7 @@ int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
     unsigned head;
     io_uring_for_each_cqe(&ctx->ring, head, cqe)
     {
-        rw_io_completion_t *comp = io_uring_cqe_get_data(cqe);
+        iog_io_completion_t *comp = io_uring_cqe_get_data(cqe);
         if (comp != nullptr) {
             io_active_remove(ctx, comp);
             comp->cb(cqe->res, comp->user_data);
@@ -136,11 +136,11 @@ int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
     return processed;
 }
 
-int rw_io_run(rw_io_ctx_t *ctx)
+int iog_io_run(iog_io_ctx_t *ctx)
 {
     ctx->running = true;
     while (ctx->running) {
-        int ret = rw_io_run_once(ctx, 1000);
+        int ret = iog_io_run_once(ctx, 1000);
         if (ret < 0) {
             return ret;
         }
@@ -148,19 +148,19 @@ int rw_io_run(rw_io_ctx_t *ctx)
     return 0;
 }
 
-void rw_io_stop(rw_io_ctx_t *ctx)
+void iog_io_stop(iog_io_ctx_t *ctx)
 {
     ctx->running = false;
 }
 
-int rw_io_submit_nop(rw_io_ctx_t *ctx, int *completed)
+int iog_io_submit_nop(iog_io_ctx_t *ctx, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -173,14 +173,14 @@ int rw_io_submit_nop(rw_io_ctx_t *ctx, int *completed)
     return 0;
 }
 
-int rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
+int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -193,14 +193,14 @@ int rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *comple
     return 0;
 }
 
-int rw_io_prep_send(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
+int iog_io_prep_send(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -213,14 +213,14 @@ int rw_io_prep_send(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *
     return 0;
 }
 
-int rw_io_prep_read(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
+int iog_io_prep_read(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -233,14 +233,14 @@ int rw_io_prep_read(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, int *comple
     return 0;
 }
 
-int rw_io_prep_write(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
+int iog_io_prep_write(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -253,7 +253,7 @@ int rw_io_prep_write(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, int 
     return 0;
 }
 
-int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
+int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -262,7 +262,7 @@ int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 
     /* Allocate completion + timespec together */
     typedef struct {
-        rw_io_completion_t comp;
+        iog_io_completion_t comp;
         struct __kernel_timespec ts;
     } timeout_data_t;
 
@@ -283,7 +283,7 @@ int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 
 /* --- Callback-based operations --- */
 
-int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb cb,
+int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
@@ -291,7 +291,7 @@ int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -309,7 +309,7 @@ int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb
     return 0;
 }
 
-int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, rw_io_cb cb,
+int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, iog_io_cb cb,
                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
@@ -317,7 +317,7 @@ int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, rw
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -335,7 +335,7 @@ int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, rw
     return 0;
 }
 
-int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb cb,
+int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
@@ -343,7 +343,7 @@ int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -361,7 +361,7 @@ int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len, rw_io_cb
     return 0;
 }
 
-int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, rw_io_cb cb,
+int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, iog_io_cb cb,
                         void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
@@ -369,7 +369,7 @@ int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, r
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -387,15 +387,15 @@ int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len, r
     return 0;
 }
 
-int rw_io_prep_accept_cb(rw_io_ctx_t *ctx, int fd, struct sockaddr *addr, socklen_t *addrlen,
-                         rw_io_cb cb, void *user_data)
+int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd, struct sockaddr *addr, socklen_t *addrlen,
+                         iog_io_cb cb, void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -413,7 +413,7 @@ int rw_io_prep_accept_cb(rw_io_ctx_t *ctx, int fd, struct sockaddr *addr, sockle
     return 0;
 }
 
-int rw_io_add_timeout_cb(rw_io_ctx_t *ctx, uint64_t timeout_ms, rw_io_cb cb, void *user_data)
+int iog_io_add_timeout_cb(iog_io_ctx_t *ctx, uint64_t timeout_ms, iog_io_cb cb, void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -422,7 +422,7 @@ int rw_io_add_timeout_cb(rw_io_ctx_t *ctx, uint64_t timeout_ms, rw_io_cb cb, voi
 
     /* Allocate completion + timespec together */
     typedef struct {
-        rw_io_completion_t comp;
+        iog_io_completion_t comp;
         struct __kernel_timespec ts;
     } timeout_data_t;
 
@@ -446,10 +446,10 @@ int rw_io_add_timeout_cb(rw_io_ctx_t *ctx, uint64_t timeout_ms, rw_io_cb cb, voi
     return 0;
 }
 
-int rw_io_cancel(rw_io_ctx_t *ctx, void *user_data)
+int iog_io_cancel(iog_io_ctx_t *ctx, void *user_data)
 {
     /* Find the completion tracking entry by user_data */
-    rw_io_completion_t *comp = io_active_find(ctx, user_data);
+    iog_io_completion_t *comp = io_active_find(ctx, user_data);
     if (comp == nullptr) {
         return -ENOENT;
     }

@@ -79,3 +79,7 @@ latex/
 
 # Archived documentation
 docs/tmp/
+
+# Python helpers
+__pycache__/
+*.pyc

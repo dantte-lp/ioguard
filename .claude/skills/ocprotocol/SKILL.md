@@ -71,7 +71,7 @@ typedef struct {
     uint8_t session_id[32];
     uint8_t master_secret[48];   // MUST be zeroed after DTLS setup
     char cipher_suite[64];
-} rw_dtls_params_t;
+} iog_dtls_params_t;
 ```
 
 ## Authentication (AggAuth Protocol)
@@ -264,7 +264,7 @@ MTU: `link_MTU - IP_hdr(20/40) - UDP_hdr(8) - DTLS_overhead(~29-37)`
 
 ### Single-Port Classification (dev/MVP)
 
-VPN client detection algorithm (`rw_classify_connection()`):
+VPN client detection algorithm (`iog_classify_connection()`):
 
 ```
 Incoming TLS connection on port 443
@@ -297,12 +297,12 @@ Incoming TLS connection on port 443
 
 ```
 SIGTERM received
-  1. rw_listener_stop()        — stop accepting new connections
-  2. rw_cstp_disconnect_all()  — send DISCONNECT (type 0x05) to all clients
-  3. rw_worker_drain(timeout)  — drain active VPN tunnels (30s default, configurable)
+  1. iog_listener_stop()        — stop accepting new connections
+  2. iog_cstp_disconnect_all()  — send DISCONNECT (type 0x05) to all clients
+  3. iog_worker_drain(timeout)  — drain active VPN tunnels (30s default, configurable)
      └─ uses IORING_OP_TIMEOUT for drain timer
-  4. rw_tun_close_all()        — close TUN devices
-  5. rw_authmod_shutdown()     — finish pending auth, close libmdbx/SQLite handles
+  4. iog_tun_close_all()        — close TUN devices
+  5. iog_authmod_shutdown()     — finish pending auth, close libmdbx/SQLite handles
   6. exit(0)
 
 SIGQUIT received

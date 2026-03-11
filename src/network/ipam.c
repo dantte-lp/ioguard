@@ -155,7 +155,7 @@ static struct in6_addr host_addr_v6(const struct in6_addr *network, uint32_t off
 }
 
 /* Find the offset of an address within a pool, or -1 */
-static int32_t find_offset_v4(const rw_ipam_pool_t *pool, const struct in_addr *addr)
+static int32_t find_offset_v4(const iog_ipam_pool_t *pool, const struct in_addr *addr)
 {
     uint32_t net = ntohl(pool->network.v4.s_addr);
     uint32_t a = ntohl(addr->s_addr);
@@ -169,7 +169,7 @@ static int32_t find_offset_v4(const rw_ipam_pool_t *pool, const struct in_addr *
     return (int32_t)offset;
 }
 
-static int32_t find_offset_v6(const rw_ipam_pool_t *pool, const struct in6_addr *addr)
+static int32_t find_offset_v6(const iog_ipam_pool_t *pool, const struct in6_addr *addr)
 {
     /* Compute addr - network, check it's within range */
     const uint8_t *net = pool->network.v6.s6_addr;
@@ -196,13 +196,13 @@ static int32_t find_offset_v6(const rw_ipam_pool_t *pool, const struct in6_addr 
 }
 
 /* Check if an IPv4 address falls within a pool's CIDR range */
-static bool addr_in_pool_v4(const rw_ipam_pool_t *pool, const struct in_addr *addr)
+static bool addr_in_pool_v4(const iog_ipam_pool_t *pool, const struct in_addr *addr)
 {
     return (addr->s_addr & pool->netmask.v4.s_addr) ==
            (pool->network.v4.s_addr & pool->netmask.v4.s_addr);
 }
 
-static bool addr_in_pool_v6(const rw_ipam_pool_t *pool, const struct in6_addr *addr)
+static bool addr_in_pool_v6(const iog_ipam_pool_t *pool, const struct in6_addr *addr)
 {
     for (int i = 0; i < 16; i++) {
         if ((addr->s6_addr[i] & pool->netmask.v6.s6_addr[i]) !=
@@ -217,7 +217,7 @@ static bool addr_in_pool_v6(const rw_ipam_pool_t *pool, const struct in6_addr *a
  * Public API
  * ============================================================================ */
 
-int rw_ipam_init(rw_ipam_t *ipam)
+int iog_ipam_init(iog_ipam_t *ipam)
 {
     if (ipam == nullptr) {
         return -EINVAL;
@@ -226,7 +226,7 @@ int rw_ipam_init(rw_ipam_t *ipam)
     return 0;
 }
 
-void rw_ipam_destroy(rw_ipam_t *ipam)
+void iog_ipam_destroy(iog_ipam_t *ipam)
 {
     if (ipam == nullptr) {
         return;
@@ -238,12 +238,12 @@ void rw_ipam_destroy(rw_ipam_t *ipam)
     ipam->pool_count = 0;
 }
 
-int rw_ipam_add_pool(rw_ipam_t *ipam, const char *cidr)
+int iog_ipam_add_pool(iog_ipam_t *ipam, const char *cidr)
 {
     if (ipam == nullptr || cidr == nullptr) {
         return -EINVAL;
     }
-    if (ipam->pool_count >= RW_IPAM_MAX_POOLS) {
+    if (ipam->pool_count >= IOG_IPAM_MAX_POOLS) {
         return -ENOSPC;
     }
 
@@ -270,7 +270,7 @@ int rw_ipam_add_pool(rw_ipam_t *ipam, const char *cidr)
         return -ENOMEM;
     }
 
-    rw_ipam_pool_t *pool = &ipam->pools[ipam->pool_count];
+    iog_ipam_pool_t *pool = &ipam->pools[ipam->pool_count];
     pool->af = af;
     pool->prefix_len = prefix_len;
     pool->total_hosts = hosts;
@@ -289,7 +289,7 @@ int rw_ipam_add_pool(rw_ipam_t *ipam, const char *cidr)
     return 0;
 }
 
-int rw_ipam_check_collisions(const rw_ipam_t *ipam)
+int iog_ipam_check_collisions(const iog_ipam_t *ipam)
 {
     if (ipam == nullptr) {
         return -EINVAL;
@@ -307,7 +307,7 @@ int rw_ipam_check_collisions(const rw_ipam_t *ipam)
         }
 
         for (uint32_t i = 0; i < ipam->pool_count; i++) {
-            const rw_ipam_pool_t *pool = &ipam->pools[i];
+            const iog_ipam_pool_t *pool = &ipam->pools[i];
             if (ifa->ifa_addr->sa_family != pool->af) {
                 continue;
             }
@@ -333,14 +333,14 @@ done:
     return result;
 }
 
-int rw_ipam_alloc_ipv4(rw_ipam_t *ipam, struct in_addr *out)
+int iog_ipam_alloc_ipv4(iog_ipam_t *ipam, struct in_addr *out)
 {
     if (ipam == nullptr || out == nullptr) {
         return -EINVAL;
     }
 
     for (uint32_t i = 0; i < ipam->pool_count; i++) {
-        rw_ipam_pool_t *pool = &ipam->pools[i];
+        iog_ipam_pool_t *pool = &ipam->pools[i];
         if (pool->af != AF_INET || pool->used_count >= pool->total_hosts) {
             continue;
         }
@@ -358,14 +358,14 @@ int rw_ipam_alloc_ipv4(rw_ipam_t *ipam, struct in_addr *out)
     return -ENOSPC;
 }
 
-int rw_ipam_alloc_ipv6(rw_ipam_t *ipam, struct in6_addr *out)
+int iog_ipam_alloc_ipv6(iog_ipam_t *ipam, struct in6_addr *out)
 {
     if (ipam == nullptr || out == nullptr) {
         return -EINVAL;
     }
 
     for (uint32_t i = 0; i < ipam->pool_count; i++) {
-        rw_ipam_pool_t *pool = &ipam->pools[i];
+        iog_ipam_pool_t *pool = &ipam->pools[i];
         if (pool->af != AF_INET6 || pool->used_count >= pool->total_hosts) {
             continue;
         }
@@ -383,14 +383,14 @@ int rw_ipam_alloc_ipv6(rw_ipam_t *ipam, struct in6_addr *out)
     return -ENOSPC;
 }
 
-int rw_ipam_free_ipv4(rw_ipam_t *ipam, const struct in_addr *addr)
+int iog_ipam_free_ipv4(iog_ipam_t *ipam, const struct in_addr *addr)
 {
     if (ipam == nullptr || addr == nullptr) {
         return -EINVAL;
     }
 
     for (uint32_t i = 0; i < ipam->pool_count; i++) {
-        rw_ipam_pool_t *pool = &ipam->pools[i];
+        iog_ipam_pool_t *pool = &ipam->pools[i];
         if (pool->af != AF_INET) {
             continue;
         }
@@ -408,14 +408,14 @@ int rw_ipam_free_ipv4(rw_ipam_t *ipam, const struct in_addr *addr)
     return -ENOENT;
 }
 
-int rw_ipam_free_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr)
+int iog_ipam_free_ipv6(iog_ipam_t *ipam, const struct in6_addr *addr)
 {
     if (ipam == nullptr || addr == nullptr) {
         return -EINVAL;
     }
 
     for (uint32_t i = 0; i < ipam->pool_count; i++) {
-        rw_ipam_pool_t *pool = &ipam->pools[i];
+        iog_ipam_pool_t *pool = &ipam->pools[i];
         if (pool->af != AF_INET6) {
             continue;
         }
@@ -433,14 +433,14 @@ int rw_ipam_free_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr)
     return -ENOENT;
 }
 
-int rw_ipam_reserve_ipv4(rw_ipam_t *ipam, const struct in_addr *addr)
+int iog_ipam_reserve_ipv4(iog_ipam_t *ipam, const struct in_addr *addr)
 {
     if (ipam == nullptr || addr == nullptr) {
         return -EINVAL;
     }
 
     for (uint32_t i = 0; i < ipam->pool_count; i++) {
-        rw_ipam_pool_t *pool = &ipam->pools[i];
+        iog_ipam_pool_t *pool = &ipam->pools[i];
         if (pool->af != AF_INET) {
             continue;
         }
@@ -459,14 +459,14 @@ int rw_ipam_reserve_ipv4(rw_ipam_t *ipam, const struct in_addr *addr)
     return 0; /* not in any pool — external RADIUS assignment, OK */
 }
 
-int rw_ipam_reserve_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr)
+int iog_ipam_reserve_ipv6(iog_ipam_t *ipam, const struct in6_addr *addr)
 {
     if (ipam == nullptr || addr == nullptr) {
         return -EINVAL;
     }
 
     for (uint32_t i = 0; i < ipam->pool_count; i++) {
-        rw_ipam_pool_t *pool = &ipam->pools[i];
+        iog_ipam_pool_t *pool = &ipam->pools[i];
         if (pool->af != AF_INET6) {
             continue;
         }
@@ -485,7 +485,7 @@ int rw_ipam_reserve_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr)
     return 0; /* not in any pool — external assignment */
 }
 
-void rw_ipam_get_stats(const rw_ipam_t *ipam, rw_ipam_stats_t *stats)
+void iog_ipam_get_stats(const iog_ipam_t *ipam, iog_ipam_stats_t *stats)
 {
     if (ipam == nullptr || stats == nullptr) {
         return;

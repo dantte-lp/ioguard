@@ -16,8 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RINGWALL_TLS_GNUTLS_H
-#define RINGWALL_TLS_GNUTLS_H
+#ifndef IOGUARD_TLS_GNUTLS_H
+#define IOGUARD_TLS_GNUTLS_H
 
 /**
  * GnuTLS Backend Implementation for TLS Abstraction Layer
@@ -120,4 +120,4 @@ struct tls_private_key {
 [[nodiscard]] ssize_t tls_gnutls_pull_wrapper(gnutls_transport_ptr_t ptr, void *data, size_t len);
 [[nodiscard]] int tls_gnutls_pull_timeout_wrapper(gnutls_transport_ptr_t ptr, unsigned int ms);
 
-#endif /* RINGWALL_TLS_GNUTLS_H */
+#endif /* IOGUARD_TLS_GNUTLS_H */

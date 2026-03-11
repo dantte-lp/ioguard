@@ -185,7 +185,7 @@ volumes-clean: ## Remove all named volumes (WARNING: data loss!)
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		podman volume rm -f ringwall_dev-home ringwall_build-cache ringwall_test-results ringwall_ci-reports || true; \
+		podman volume rm -f ioguard_dev-home ioguard_build-cache ioguard_test-results ioguard_ci-reports || true; \
 		echo "$(GREEN)Volumes cleaned$(NC)"; \
 	else \
 		echo "$(YELLOW)Aborted$(NC)"; \

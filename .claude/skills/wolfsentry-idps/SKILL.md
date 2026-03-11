@@ -9,7 +9,7 @@ description: Use when implementing firewall rules, rate limiting, connection tra
 Always fetch latest docs: library ID `/wolfssl/wolfsentry`
 
 ## Full Documentation
-See `/opt/projects/repositories/ioguard-docs/docs/ringwall/architecture/wolfsentry-integration.md`
+See `/opt/projects/repositories/ioguard-docs/docs/ioguard/architecture/wolfsentry-integration.md`
 
 ## Overview
 
@@ -46,9 +46,9 @@ wolfSentry checks EVERY incoming connection BEFORE TLS handshake:
 static struct wolfsentry_context *ws_ctx = nullptr;
 
 [[nodiscard]]
-static int rw_wolfsentry_init(const char *config_path) {
+static int iog_wolfsentry_init(const char *config_path) {
     struct wolfsentry_eventconfig default_config = {
-        .route_private_data_size = sizeof(rw_route_data_t),
+        .route_private_data_size = sizeof(iog_route_data_t),
         .max_connection_count = 10000,
         .penalty_box_duration = 300,  // 5 minutes
     };
@@ -105,7 +105,7 @@ static void on_new_connection(uv_stream_t *server, int status) {
     }
 
     // Connection allowed — proceed with TLS handshake
-    rw_start_tls_handshake(client);
+    iog_start_tls_handshake(client);
 }
 ```
 
@@ -180,8 +180,8 @@ wolfSentry handles pre-authentication firewall. For authenticated per-user rules
 
 // Create per-user nftables chain after authentication
 [[nodiscard]]
-static int rw_create_user_chain(const char *username, uint32_t client_ip) {
-    // 1. Create named chain: ringwall_user_<username>
+static int iog_create_user_chain(const char *username, uint32_t client_ip) {
+    // 1. Create named chain: ioguard_user_<username>
     // 2. Add rules based on user's group policy
     // 3. Jump from main chain to user chain for this IP
     // 4. Cleanup on disconnect

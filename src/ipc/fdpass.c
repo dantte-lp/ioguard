@@ -5,12 +5,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data, size_t data_len)
+int iog_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data, size_t data_len)
 {
     if (sock_fd < 0) {
         return -EBADF;
     }
-    if (fds == nullptr || nfds == 0 || nfds > RW_FDPASS_MAX_FDS) {
+    if (fds == nullptr || nfds == 0 || nfds > IOG_FDPASS_MAX_FDS) {
         return -EINVAL;
     }
 
@@ -31,7 +31,7 @@ int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data, s
     /* Build control message for SCM_RIGHTS */
     size_t cmsg_len = CMSG_SPACE(nfds * sizeof(int));
     union {
-        char buf[CMSG_SPACE(RW_FDPASS_MAX_FDS * sizeof(int))];
+        char buf[CMSG_SPACE(IOG_FDPASS_MAX_FDS * sizeof(int))];
         struct cmsghdr align;
     } cmsg_buf;
     memset(&cmsg_buf, 0, sizeof(cmsg_buf));
@@ -57,7 +57,7 @@ int rw_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data, s
     return 0;
 }
 
-int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out, void *data,
+int iog_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out, void *data,
                    size_t *data_len)
 {
     if (sock_fd < 0) {
@@ -82,7 +82,7 @@ int rw_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out, 
 
     /* Control message buffer */
     union {
-        char buf[CMSG_SPACE(RW_FDPASS_MAX_FDS * sizeof(int))];
+        char buf[CMSG_SPACE(IOG_FDPASS_MAX_FDS * sizeof(int))];
         struct cmsghdr align;
     } cmsg_buf;
     memset(&cmsg_buf, 0, sizeof(cmsg_buf));

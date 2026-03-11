@@ -6,34 +6,34 @@
  * Decode is zero-copy: the returned payload pointer references the input buffer.
  */
 
-#ifndef RINGWALL_NETWORK_CSTP_H
-#define RINGWALL_NETWORK_CSTP_H
+#ifndef IOGUARD_NETWORK_CSTP_H
+#define IOGUARD_NETWORK_CSTP_H
 
 #include <stddef.h>
 #include <stdint.h>
 
 /** CSTP frame header size in bytes. */
-constexpr size_t RW_CSTP_HEADER_SIZE = 4;
+constexpr size_t IOG_CSTP_HEADER_SIZE = 4;
 
 /** Maximum CSTP payload size. */
-constexpr size_t RW_CSTP_MAX_PAYLOAD = 16384;
+constexpr size_t IOG_CSTP_MAX_PAYLOAD = 16384;
 
 /** CSTP packet types per OpenConnect protocol. */
 typedef enum : uint8_t {
-    RW_CSTP_DATA = 0x00,
-    RW_CSTP_DPD_REQ = 0x03,
-    RW_CSTP_DPD_RESP = 0x04,
-    RW_CSTP_DISCONNECT = 0x05,
-    RW_CSTP_KEEPALIVE = 0x07,
-    RW_CSTP_COMPRESSED = 0x08,
-} rw_cstp_type_t;
+    IOG_CSTP_DATA = 0x00,
+    IOG_CSTP_DPD_REQ = 0x03,
+    IOG_CSTP_DPD_RESP = 0x04,
+    IOG_CSTP_DISCONNECT = 0x05,
+    IOG_CSTP_KEEPALIVE = 0x07,
+    IOG_CSTP_COMPRESSED = 0x08,
+} iog_cstp_type_t;
 
 /** Decoded CSTP packet (zero-copy: payload points into decode buffer). */
 typedef struct {
-    rw_cstp_type_t type;
+    iog_cstp_type_t type;
     uint32_t payload_len;
     const uint8_t *payload;
-} rw_cstp_packet_t;
+} iog_cstp_packet_t;
 
 /**
  * @brief Encode a CSTP packet into buf.
@@ -45,7 +45,7 @@ typedef struct {
  * @return Bytes written (>= 4) on success, -ENOSPC if buffer too small,
  *         -EINVAL if payload too large.
  */
-[[nodiscard]] int rw_cstp_encode(uint8_t *buf, size_t buf_size, rw_cstp_type_t type,
+[[nodiscard]] int iog_cstp_encode(uint8_t *buf, size_t buf_size, iog_cstp_type_t type,
                                  const uint8_t *payload, size_t payload_len);
 
 /**
@@ -55,13 +55,13 @@ typedef struct {
  * @param pkt Output packet (pkt->payload points into buf).
  * @return Bytes consumed on success, -EAGAIN if incomplete, -EINVAL if invalid.
  */
-[[nodiscard]] int rw_cstp_decode(const uint8_t *buf, size_t buf_len, rw_cstp_packet_t *pkt);
+[[nodiscard]] int iog_cstp_decode(const uint8_t *buf, size_t buf_len, iog_cstp_packet_t *pkt);
 
 /**
  * @brief Get human-readable name for a CSTP packet type.
  * @param type Packet type value.
  * @return Static string with the type name, or "UNKNOWN".
  */
-const char *rw_cstp_type_name(rw_cstp_type_t type);
+const char *iog_cstp_type_name(iog_cstp_type_t type);
 
-#endif /* RINGWALL_NETWORK_CSTP_H */
+#endif /* IOGUARD_NETWORK_CSTP_H */

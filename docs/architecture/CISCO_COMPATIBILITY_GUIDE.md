@@ -93,7 +93,7 @@ X-AnyConnect-STRAP-Pubkey: <optional-public-key>
 
 **Minimum for compatibility** (C23):
 ```c
-// File: ringwall/src/http/routes.c
+// File: ioguard/src/http/routes.c
 #include <stdint.h>
 #include <stdbool.h>
 #include "http_server.h"
@@ -1202,7 +1202,7 @@ CONNECT /tunnel        # Tunnel establishment
 ### 17.1 Session Cookie Management (C23)
 
 ```c
-// File: ringwall/src/auth/session_cookie.c
+// File: ioguard/src/auth/session_cookie.c
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -1324,7 +1324,7 @@ int verify_session_cookie(
 ### 17.2 DPD (Dead Peer Detection) Implementation (C23)
 
 ```c
-// File: ringwall/src/tunnel/dpd.c
+// File: ioguard/src/tunnel/dpd.c
 #include <stdint.h>
 #include <time.h>
 #include <stdbool.h>
@@ -1452,7 +1452,7 @@ uint32_t perform_mtu_discovery(mtu_dpd_manager_t *mgr, tunnel_t *tunnel) {
 ### 17.3 Reconnection Manager (C23)
 
 ```c
-// File: ringwall/src/tunnel/reconnect.c
+// File: ioguard/src/tunnel/reconnect.c
 #include <stdint.h>
 #include <time.h>
 #include <stdbool.h>
@@ -1572,7 +1572,7 @@ static int dtls_only_reconnect(
 ### 17.4 Split DNS Matcher (C23)
 
 ```c
-// File: ringwall/src/dns/split_dns.c
+// File: ioguard/src/dns/split_dns.c
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
@@ -1705,7 +1705,7 @@ int add_split_dns_domain(
 ### 17.5 Always-On VPN Validation (C23)
 
 ```c
-// File: ringwall/src/auth/always_on.c
+// File: ioguard/src/auth/always_on.c
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>

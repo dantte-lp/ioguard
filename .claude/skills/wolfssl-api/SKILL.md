@@ -16,14 +16,14 @@ Always fetch latest docs: library ID `/wolfssl/wolfssl`
 #include <wolfssl/ssl.h>
 
 [[nodiscard]]
-static int rw_tls_init(void) {
+static int iog_tls_init(void) {
     if (wolfSSL_Init() != WOLFSSL_SUCCESS) {
         return -1;
     }
     return 0;
 }
 
-static void rw_tls_cleanup(void) {
+static void iog_tls_cleanup(void) {
     wolfSSL_Cleanup();
 }
 ```
@@ -32,7 +32,7 @@ static void rw_tls_cleanup(void) {
 
 ```c
 [[nodiscard]]
-static WOLFSSL_CTX *rw_create_ctx(bool is_server, bool use_dtls) {
+static WOLFSSL_CTX *iog_create_ctx(bool is_server, bool use_dtls) {
     WOLFSSL_METHOD *method;
 
     if (use_dtls) {
@@ -75,23 +75,23 @@ typedef struct {
     size_t   size;      // allocated capacity
     size_t   head;      // read position
     size_t   tail;      // write position
-} rw_cipher_buf_t;
+} iog_cipher_buf_t;
 
 typedef struct {
-    rw_cipher_buf_t cipher_in;    // io_uring recv target
-    rw_cipher_buf_t cipher_out;   // io_uring send source
-} rw_tls_io_t;
+    iog_cipher_buf_t cipher_in;    // io_uring recv target
+    iog_cipher_buf_t cipher_out;   // io_uring send source
+} iog_tls_io_t;
 ```
 
 ### I/O Callbacks
 
 ```c
-wolfSSL_CTX_SetIORecv(ctx, rw_tls_recv_cb);
-wolfSSL_CTX_SetIOSend(ctx, rw_tls_send_cb);
+wolfSSL_CTX_SetIORecv(ctx, iog_tls_recv_cb);
+wolfSSL_CTX_SetIOSend(ctx, iog_tls_send_cb);
 
 // Recv callback: reads from cipher_in buffer (NOT from socket)
-static int rw_tls_recv_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
-    rw_tls_io_t *io = (rw_tls_io_t *)ctx;
+static int iog_tls_recv_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
+    iog_tls_io_t *io = (iog_tls_io_t *)ctx;
     size_t avail = io->cipher_in.tail - io->cipher_in.head;
     if (avail == 0) {
         return WOLFSSL_CBIO_ERR_WANT_READ;  // need more data from io_uring recv
@@ -103,8 +103,8 @@ static int rw_tls_recv_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
 }
 
 // Send callback: writes to cipher_out buffer (NOT to socket)
-static int rw_tls_send_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
-    rw_tls_io_t *io = (rw_tls_io_t *)ctx;
+static int iog_tls_send_cb(WOLFSSL *ssl, char *buf, int sz, void *ctx) {
+    iog_tls_io_t *io = (iog_tls_io_t *)ctx;
     size_t space = io->cipher_out.size - io->cipher_out.tail;
     if (space == 0) {
         return WOLFSSL_CBIO_ERR_WANT_WRITE;  // need io_uring send to drain
@@ -208,12 +208,12 @@ if (ret != WOLFSSL_SUCCESS) {
     int err = wolfSSL_get_error(ssl, ret);
     if (err == WOLFSSL_ERROR_WANT_READ || err == WOLFSSL_ERROR_WANT_WRITE) {
         // Non-blocking, retry later
-        return RW_WANT_IO;
+        return IOG_WANT_IO;
     }
     char errbuf[WOLFSSL_MAX_ERROR_SZ];
     wolfSSL_ERR_error_string(err, errbuf);
     // Log error
-    return RW_ERROR;
+    return IOG_ERROR;
 }
 ```
 
@@ -290,7 +290,7 @@ wolfSSL_set_session_id(dtls_ssl, session_id, 32);
 
 ```c
 // Custom verify callback for multi-cert scenarios
-static int rw_verify_callback(int preverify, WOLFSSL_X509_STORE_CTX *ctx) {
+static int iog_verify_callback(int preverify, WOLFSSL_X509_STORE_CTX *ctx) {
     WOLFSSL_X509 *cert = wolfSSL_X509_STORE_CTX_get_current_cert(ctx);
     // 1. Check validity period
     // 2. Check Enhanced Key Usage (Client Authentication)
@@ -301,7 +301,7 @@ static int rw_verify_callback(int preverify, WOLFSSL_X509_STORE_CTX *ctx) {
 
 wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_PEER |
                              WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                       rw_verify_callback);
+                       iog_verify_callback);
 ```
 
 ## Post-Quantum Crypto (wolfSSL 5.8.4+)
