@@ -22,7 +22,7 @@ static void safe_copy(char *dst, const char *src, size_t dst_size)
     dst[len] = '\0';
 }
 
-void rw_config_set_defaults(rw_config_t *cfg)
+void iog_config_set_defaults(iog_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
     safe_copy(cfg->server.listen_address, "0.0.0.0", sizeof(cfg->server.listen_address));
@@ -44,7 +44,7 @@ void rw_config_set_defaults(rw_config_t *cfg)
 
 #ifdef USE_TOML
 
-static void parse_server(toml_table_t *tbl, rw_config_server_t *srv)
+static void parse_server(toml_table_t *tbl, iog_config_server_t *srv)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "listen-address");
@@ -70,7 +70,7 @@ static void parse_server(toml_table_t *tbl, rw_config_server_t *srv)
     }
 }
 
-static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
+static void parse_auth(toml_table_t *tbl, iog_config_auth_t *auth)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "method");
@@ -101,11 +101,11 @@ static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
     }
 }
 
-static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
+static void parse_network(toml_table_t *tbl, iog_config_network_t *net)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "ipv4-pool");
-    if (d.ok && net->ipv4_pool_count < RW_CONFIG_MAX_POOLS) {
+    if (d.ok && net->ipv4_pool_count < IOG_CONFIG_MAX_POOLS) {
         safe_copy(net->ipv4_pools[net->ipv4_pool_count], d.u.s, sizeof(net->ipv4_pools[0]));
         net->ipv4_pool_count++;
         free(d.u.s);
@@ -124,8 +124,8 @@ static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
     if (dns_arr != nullptr) {
         int nelem = toml_array_nelem(dns_arr);
         size_t n = nelem > 0 ? (size_t)nelem : 0;
-        if (n > RW_CONFIG_MAX_DNS) {
-            n = RW_CONFIG_MAX_DNS;
+        if (n > IOG_CONFIG_MAX_DNS) {
+            n = IOG_CONFIG_MAX_DNS;
         }
         for (size_t i = 0; i < n; i++) {
             d = toml_string_at(dns_arr, i);
@@ -138,7 +138,7 @@ static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
     }
 }
 
-static void parse_tls(toml_table_t *tbl, rw_config_tls_t *tls)
+static void parse_tls(toml_table_t *tbl, iog_config_tls_t *tls)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "cert-file");
@@ -163,7 +163,7 @@ static void parse_tls(toml_table_t *tbl, rw_config_tls_t *tls)
     }
 }
 
-static void parse_storage(toml_table_t *tbl, rw_config_storage_t *storage)
+static void parse_storage(toml_table_t *tbl, iog_config_storage_t *storage)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "mdbx-path");
@@ -183,7 +183,7 @@ static void parse_storage(toml_table_t *tbl, rw_config_storage_t *storage)
     }
 }
 
-static void parse_security(toml_table_t *tbl, rw_config_security_t *sec)
+static void parse_security(toml_table_t *tbl, iog_config_security_t *sec)
 {
     toml_datum_t d;
     d = toml_bool_in(tbl, "seccomp");
@@ -201,9 +201,9 @@ static void parse_security(toml_table_t *tbl, rw_config_security_t *sec)
     }
 }
 
-int rw_config_load(const char *path, rw_config_t *cfg)
+int iog_config_load(const char *path, iog_config_t *cfg)
 {
-    rw_config_set_defaults(cfg);
+    iog_config_set_defaults(cfg);
 
     FILE *fp = fopen(path, "r");
     if (fp == nullptr) {
@@ -249,16 +249,16 @@ int rw_config_load(const char *path, rw_config_t *cfg)
 
 #else
 
-int rw_config_load(const char *path, rw_config_t *cfg)
+int iog_config_load(const char *path, iog_config_t *cfg)
 {
     (void)path;
-    rw_config_set_defaults(cfg);
+    iog_config_set_defaults(cfg);
     return -ENOTSUP;
 }
 
 #endif
 
-void rw_config_free(rw_config_t *cfg)
+void iog_config_free(iog_config_t *cfg)
 {
     (void)cfg;
 }

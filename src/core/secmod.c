@@ -306,7 +306,7 @@ static void secmod_cleanup_expired_mdbx(rw_secmod_ctx_t *ctx)
  * Public API
  * ============================================================================ */
 
-int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config)
+int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *config)
 {
     if (ctx == nullptr || config == nullptr) {
         return -EINVAL;

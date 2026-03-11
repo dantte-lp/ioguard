@@ -30,7 +30,7 @@ typedef struct {
     rw_mdbx_ctx_t *mdbx;     /* persistent sessions (nullable) */
     rw_sqlite_ctx_t *sqlite; /* audit + users (nullable) */
     rw_vault_t *vault;       /* field-level encryption (nullable) */
-    const rw_config_t *config;
+    const iog_config_t *config;
     bool running;
 } rw_secmod_ctx_t;
 
@@ -42,7 +42,7 @@ typedef struct {
  * @param config  Server configuration (must outlive ctx).
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const rw_config_t *config);
+[[nodiscard]] int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *config);
 
 /**
  * @brief Run the sec-mod event loop (blocking).

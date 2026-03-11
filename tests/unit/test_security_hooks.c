@@ -22,16 +22,16 @@ void tearDown(void)
 void test_hooks_sandbox_profile_selection(void)
 {
     /* Worker gets most restrictive profile */
-    TEST_ASSERT_EQUAL_INT(RW_SANDBOX_WORKER, rw_security_select_sandbox(true));
+    TEST_ASSERT_EQUAL_INT(IOG_SANDBOX_WORKER, rw_security_select_sandbox(true));
 
     /* Auth-mod gets slightly less restrictive */
-    TEST_ASSERT_EQUAL_INT(RW_SANDBOX_AUTHMOD, rw_security_select_sandbox(false));
+    TEST_ASSERT_EQUAL_INT(IOG_SANDBOX_AUTHMOD, rw_security_select_sandbox(false));
 }
 
 void test_hooks_landlock_profile_selection(void)
 {
-    TEST_ASSERT_EQUAL_INT(RW_LANDLOCK_WORKER, rw_security_select_landlock(true));
-    TEST_ASSERT_EQUAL_INT(RW_LANDLOCK_AUTHMOD, rw_security_select_landlock(false));
+    TEST_ASSERT_EQUAL_INT(IOG_LANDLOCK_WORKER, rw_security_select_landlock(true));
+    TEST_ASSERT_EQUAL_INT(IOG_LANDLOCK_AUTHMOD, rw_security_select_landlock(false));
 }
 
 void test_hooks_apply_process_null_config(void)
@@ -42,8 +42,8 @@ void test_hooks_apply_process_null_config(void)
 void test_hooks_apply_process_disabled(void)
 {
     /* With both seccomp and landlock disabled, should succeed without doing anything */
-    rw_config_t config;
-    rw_config_set_defaults(&config);
+    iog_config_t config;
+    iog_config_set_defaults(&config);
     config.security.seccomp = false;
     config.security.landlock = false;
 

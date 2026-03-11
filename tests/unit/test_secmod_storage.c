@@ -13,7 +13,7 @@
 #include "storage/mdbx.h"
 #include "storage/sqlite.h"
 
-static rw_config_t config;
+static iog_config_t config;
 static char mdbx_path[PATH_MAX];
 static char sqlite_path[PATH_MAX];
 static char mdbx_lock_path[PATH_MAX];
@@ -32,7 +32,7 @@ void setUp(void)
     close(fd);
     unlink(sqlite_path); /* sqlite creates its own file */
 
-    rw_config_set_defaults(&config);
+    iog_config_set_defaults(&config);
     snprintf(config.storage.mdbx_path, sizeof(config.storage.mdbx_path), "%s", mdbx_path);
     snprintf(config.storage.sqlite_path, sizeof(config.storage.sqlite_path), "%s", sqlite_path);
 }

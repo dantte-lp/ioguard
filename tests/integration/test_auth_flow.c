@@ -12,14 +12,14 @@
 
 static iog_ipc_channel_t ch;
 static rw_secmod_ctx_t ctx;
-static rw_config_t config;
+static iog_config_t config;
 
 void setUp(void)
 {
     memset(&ch, 0, sizeof(ch));
     memset(&ctx, 0, sizeof(ctx));
 
-    rw_config_set_defaults(&config);
+    iog_config_set_defaults(&config);
 
     int ret = iog_ipc_create_pair(&ch);
     TEST_ASSERT_EQUAL_INT(0, ret);

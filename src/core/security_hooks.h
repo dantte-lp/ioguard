@@ -35,7 +35,7 @@
  * @param config     Server configuration.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_security_apply_process(bool is_worker, const rw_config_t *config);
+[[nodiscard]] int rw_security_apply_process(bool is_worker, const iog_config_t *config);
 
 /**
  * @brief Build firewall session descriptor for per-user rules.

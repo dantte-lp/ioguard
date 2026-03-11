@@ -74,9 +74,9 @@ int main(int argc, char *argv[])
     }
 
     /* Load configuration */
-    rw_config_t config;
-    rw_config_set_defaults(&config);
-    rc = rw_config_load(config_path, &config);
+    iog_config_t config;
+    iog_config_set_defaults(&config);
+    rc = iog_config_load(config_path, &config);
     if (rc < 0) {
         fprintf(stderr, "Failed to load config: %s\n", strerror(-rc));
         return EXIT_FAILURE;
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
             rc = rw_secmod_run(&secmod);
             rw_secmod_destroy(&secmod);
         }
-        rw_config_free(&config);
+        iog_config_free(&config);
         _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
     }
     close(authmod_sv[1]);
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
         }
 
         close(worker_sv[1]);
-        rw_config_free(&config);
+        iog_config_free(&config);
         _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
     }
     close(worker_sv[1]);
@@ -185,7 +185,7 @@ cleanup_worker_sv:
     close(worker_sv[0]);
 cleanup_authmod_sv:
 cleanup_config:
-    rw_config_free(&config);
+    iog_config_free(&config);
     return rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 #endif /* IOG_TESTING */

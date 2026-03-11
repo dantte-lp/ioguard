@@ -6,15 +6,15 @@
 
 rw_sandbox_profile_t rw_security_select_sandbox(bool is_worker)
 {
-    return is_worker ? RW_SANDBOX_WORKER : RW_SANDBOX_AUTHMOD;
+    return is_worker ? IOG_SANDBOX_WORKER : IOG_SANDBOX_AUTHMOD;
 }
 
 rw_landlock_profile_t rw_security_select_landlock(bool is_worker)
 {
-    return is_worker ? RW_LANDLOCK_WORKER : RW_LANDLOCK_AUTHMOD;
+    return is_worker ? IOG_LANDLOCK_WORKER : IOG_LANDLOCK_AUTHMOD;
 }
 
-int rw_security_apply_process(bool is_worker, const rw_config_t *config)
+int rw_security_apply_process(bool is_worker, const iog_config_t *config)
 {
     if (config == nullptr) {
         return -EINVAL;

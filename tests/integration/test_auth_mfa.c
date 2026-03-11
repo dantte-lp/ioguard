@@ -36,7 +36,7 @@
 
 static iog_ipc_channel_t ch;
 static rw_secmod_ctx_t ctx;
-static rw_config_t config;
+static iog_config_t config;
 static char vault_key_path[PATH_MAX];
 
 /* Fixed 32-byte test key (hex-encoded in file) */
@@ -144,7 +144,7 @@ void setUp(void)
     TEST_ASSERT_EQUAL_INT(0, write_hex_key_file(vault_key_path, test_key, IOG_VAULT_KEY_SIZE));
 
     /* Configure: in-memory SQLite, vault key, no mdbx */
-    rw_config_set_defaults(&config);
+    iog_config_set_defaults(&config);
     snprintf(config.storage.sqlite_path, sizeof(config.storage.sqlite_path), ":memory:");
     snprintf(config.storage.vault_key_path, sizeof(config.storage.vault_key_path), "%s",
              vault_key_path);
