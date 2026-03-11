@@ -12,7 +12,7 @@
 #include "storage/mdbx.h"
 #include "storage/sqlite.h"
 
-constexpr uint32_t RW_SQLITE_SCHEMA_VERSION = 1;
+constexpr uint32_t IOG_SQLITE_SCHEMA_VERSION = 1;
 constexpr uint32_t RW_MDBX_FORMAT_VERSION = 1;
 
 /**
@@ -25,7 +25,7 @@ constexpr uint32_t RW_MDBX_FORMAT_VERSION = 1;
  * @param ctx  Initialised SQLite context.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_sqlite_migrate(rw_sqlite_ctx_t *ctx);
+[[nodiscard]] int iog_sqlite_migrate(iog_sqlite_ctx_t *ctx);
 
 /**
  * @brief Verify or initialise the libmdbx format version.

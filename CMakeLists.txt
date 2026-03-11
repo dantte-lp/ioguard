@@ -374,11 +374,11 @@ find_library(SQLITE3_LIBRARY sqlite3
     PATHS /usr/local/lib /usr/local/lib64 /usr/lib64)
 
 if(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
-    add_library(rw_sqlite STATIC src/storage/sqlite.c)
-    target_include_directories(rw_sqlite PUBLIC
+    add_library(iog_sqlite STATIC src/storage/sqlite.c)
+    target_include_directories(iog_sqlite PUBLIC
         ${CMAKE_SOURCE_DIR}/src ${SQLITE3_INCLUDE_DIR})
-    target_link_libraries(rw_sqlite PUBLIC ${SQLITE3_LIBRARY})
-    target_compile_definitions(rw_sqlite PUBLIC _GNU_SOURCE)
+    target_link_libraries(iog_sqlite PUBLIC ${SQLITE3_LIBRARY})
+    target_compile_definitions(iog_sqlite PUBLIC _GNU_SOURCE)
     message(STATUS "Found SQLite3: ${SQLITE3_LIBRARY}")
 else()
     message(WARNING "SQLite3 not found — skipping storage/sqlite")
@@ -473,12 +473,12 @@ else()
     message(STATUS "stumpless not found — logging uses stderr fallback")
 endif()
 
-add_library(rw_log STATIC src/log/rw_log.c)
-target_include_directories(rw_log PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_log STATIC src/log/iog_log.c)
+target_include_directories(iog_log PUBLIC ${CMAKE_SOURCE_DIR}/src)
 if(STUMPLESS_FOUND)
-    target_compile_definitions(rw_log PRIVATE USE_STUMPLESS)
-    target_include_directories(rw_log PRIVATE ${STUMPLESS_INCLUDE_DIR})
-    target_link_libraries(rw_log PRIVATE ${STUMPLESS_LIBRARY})
+    target_compile_definitions(iog_log PRIVATE USE_STUMPLESS)
+    target_include_directories(iog_log PRIVATE ${STUMPLESS_INCLUDE_DIR})
+    target_link_libraries(iog_log PRIVATE ${STUMPLESS_LIBRARY})
 endif()
 
 # --- Sprint 7: Prometheus metrics ---
@@ -494,8 +494,8 @@ if(TARGET rw_pam)
     if(TARGET rw_mdbx)
         target_link_libraries(rw_secmod PUBLIC rw_mdbx)
     endif()
-    if(TARGET rw_sqlite)
-        target_link_libraries(rw_secmod PUBLIC rw_sqlite)
+    if(TARGET iog_sqlite)
+        target_link_libraries(rw_secmod PUBLIC iog_sqlite)
     endif()
     if(TARGET rw_totp)
         target_link_libraries(rw_secmod PUBLIC rw_totp)
@@ -583,9 +583,9 @@ if(BUILD_TESTING)
             rw_add_test(test_secmod tests/unit/test_secmod.c rw_secmod)
 
             # Sprint 6 — secmod storage integration
-            if(TARGET rw_mdbx AND TARGET rw_sqlite)
+            if(TARGET rw_mdbx AND TARGET iog_sqlite)
                 rw_add_test(test_secmod_storage tests/unit/test_secmod_storage.c
-                    rw_secmod rw_mdbx rw_sqlite)
+                    rw_secmod rw_mdbx iog_sqlite)
                 target_link_libraries(test_secmod_storage PRIVATE
                     ${MDBX_LIBRARY} ${SQLITE3_LIBRARY})
                 target_include_directories(test_secmod_storage PRIVATE
@@ -736,9 +736,9 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 5 — SQLite control plane tests
-        if(TARGET rw_sqlite)
+        if(TARGET iog_sqlite)
             rw_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c
-                rw_sqlite)
+                iog_sqlite)
             target_link_libraries(test_storage_sqlite PRIVATE ${SQLITE3_LIBRARY})
             target_include_directories(test_storage_sqlite PRIVATE
                 ${SQLITE3_INCLUDE_DIR})
@@ -849,21 +849,21 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 5 — Schema migration
-        if(TARGET rw_sqlite AND TARGET rw_mdbx)
+        if(TARGET iog_sqlite AND TARGET rw_mdbx)
             add_library(rw_migrate STATIC src/storage/migrate.c)
             target_include_directories(rw_migrate PUBLIC ${CMAKE_SOURCE_DIR}/src)
-            target_link_libraries(rw_migrate PUBLIC rw_sqlite rw_mdbx)
+            target_link_libraries(rw_migrate PUBLIC iog_sqlite rw_mdbx)
 
             rw_add_test(test_storage_migrate tests/unit/test_storage_migrate.c
-                rw_migrate rw_sqlite rw_mdbx)
+                rw_migrate iog_sqlite rw_mdbx)
         else()
-            message(WARNING "rw_sqlite or rw_mdbx missing — skipping storage/migrate")
+            message(WARNING "iog_sqlite or rw_mdbx missing — skipping storage/migrate")
         endif()
 
         # Sprint 5 — Storage integration test
-        if(TARGET rw_mdbx AND TARGET rw_sqlite AND TARGET rw_migrate)
+        if(TARGET rw_mdbx AND TARGET iog_sqlite AND TARGET rw_migrate)
             rw_add_test(test_storage tests/integration/test_storage.c
-                rw_mdbx rw_sqlite rw_migrate)
+                rw_mdbx iog_sqlite rw_migrate)
         endif()
 
         # Sprint 6 — IPAM (IP address pool management)
@@ -912,7 +912,7 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 7 — Structured logging test
-        rw_add_test(test_log tests/unit/test_log.c rw_log)
+        rw_add_test(test_log tests/unit/test_log.c iog_log)
         if(STUMPLESS_FOUND)
             target_compile_definitions(test_log PRIVATE USE_STUMPLESS)
             target_include_directories(test_log PRIVATE ${STUMPLESS_INCLUDE_DIR})
@@ -923,9 +923,9 @@ if(BUILD_TESTING)
         rw_add_test(test_prometheus tests/unit/test_prometheus.c rw_metrics)
 
         # Sprint 7 — MFA integration test
-        if(TARGET rw_secmod AND TARGET rw_totp AND TARGET rw_vault AND TARGET rw_sqlite)
+        if(TARGET rw_secmod AND TARGET rw_totp AND TARGET rw_vault AND TARGET iog_sqlite)
             rw_add_test(test_auth_mfa tests/integration/test_auth_mfa.c
-                rw_secmod rw_totp rw_vault rw_sqlite)
+                rw_secmod rw_totp rw_vault iog_sqlite)
             target_link_libraries(test_auth_mfa PRIVATE
                 ${SQLITE3_LIBRARY})
             target_include_directories(test_auth_mfa PRIVATE

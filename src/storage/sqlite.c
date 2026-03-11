@@ -119,7 +119,7 @@ static void safe_copy(char *dst, size_t dst_sz, const char *src)
 
 /* ---- Public API ---- */
 
-int rw_sqlite_init(rw_sqlite_ctx_t *ctx, const char *path)
+int iog_sqlite_init(iog_sqlite_ctx_t *ctx, const char *path)
 {
     if (ctx == nullptr || path == nullptr) {
         return -EINVAL;
@@ -177,11 +177,11 @@ int rw_sqlite_init(rw_sqlite_ctx_t *ctx, const char *path)
     return 0;
 
 cleanup:
-    rw_sqlite_close(ctx);
+    iog_sqlite_close(ctx);
     return err;
 }
 
-void rw_sqlite_close(rw_sqlite_ctx_t *ctx)
+void iog_sqlite_close(iog_sqlite_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return;
@@ -203,7 +203,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx)
     memset(ctx, 0, sizeof(*ctx));
 }
 
-int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx, const rw_user_record_t *user)
+int iog_sqlite_user_create(iog_sqlite_ctx_t *ctx, const iog_user_record_t *user)
 {
     if (ctx == nullptr || user == nullptr) {
         return -EINVAL;
@@ -242,7 +242,7 @@ int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx, const rw_user_record_t *user)
     return 0;
 }
 
-int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx, const char *username, rw_user_record_t *out)
+int iog_sqlite_user_lookup(iog_sqlite_ctx_t *ctx, const char *username, iog_user_record_t *out)
 {
     if (ctx == nullptr || username == nullptr || out == nullptr) {
         return -EINVAL;
@@ -286,7 +286,7 @@ int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx, const char *username, rw_user_re
     return 0;
 }
 
-int rw_sqlite_audit_insert(rw_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry)
+int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry)
 {
     if (ctx == nullptr || entry == nullptr) {
         return -EINVAL;
@@ -313,7 +313,7 @@ int rw_sqlite_audit_insert(rw_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry)
     return 0;
 }
 
-int rw_sqlite_audit_query_by_username(rw_sqlite_ctx_t *ctx, const char *username,
+int iog_sqlite_audit_query_by_username(iog_sqlite_ctx_t *ctx, const char *username,
                                       rw_audit_entry_t *out, size_t max_entries, size_t *count)
 {
     if (ctx == nullptr || username == nullptr || out == nullptr || count == nullptr) {
@@ -351,7 +351,7 @@ int rw_sqlite_audit_query_by_username(rw_sqlite_ctx_t *ctx, const char *username
     return 0;
 }
 
-int rw_sqlite_ban_check(rw_sqlite_ctx_t *ctx, const char *ip, bool *is_banned)
+int iog_sqlite_ban_check(iog_sqlite_ctx_t *ctx, const char *ip, bool *is_banned)
 {
     if (ctx == nullptr || ip == nullptr || is_banned == nullptr) {
         return -EINVAL;
@@ -375,7 +375,7 @@ int rw_sqlite_ban_check(rw_sqlite_ctx_t *ctx, const char *ip, bool *is_banned)
     return 0;
 }
 
-int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason,
+int iog_sqlite_ban_add(iog_sqlite_ctx_t *ctx, const char *ip, const char *reason,
                       int duration_minutes)
 {
     if (ctx == nullptr || ip == nullptr || reason == nullptr) {
@@ -398,7 +398,7 @@ int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason,
     return 0;
 }
 
-int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
+int iog_sqlite_user_totp_set(iog_sqlite_ctx_t *ctx, const char *username,
                             const uint8_t *encrypted_secret, size_t secret_len,
                             const char *encrypted_recovery)
 {
@@ -431,7 +431,7 @@ int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
     return 0;
 }
 
-int rw_sqlite_user_totp_clear(rw_sqlite_ctx_t *ctx, const char *username)
+int iog_sqlite_user_totp_clear(iog_sqlite_ctx_t *ctx, const char *username)
 {
     if (ctx == nullptr || username == nullptr) {
         return -EINVAL;

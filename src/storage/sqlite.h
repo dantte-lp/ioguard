@@ -24,7 +24,7 @@ typedef struct {
     uint8_t totp_secret[128]; /* encrypted blob (IV+ct+tag) */
     size_t totp_secret_len;   /* 0 if not set */
     char totp_recovery[1024]; /* encrypted JSON, or empty */
-} rw_user_record_t;
+} iog_user_record_t;
 
 typedef struct {
     char event_type[32];
@@ -47,7 +47,7 @@ typedef struct {
     sqlite3_stmt *stmt_ban_add;
     sqlite3_stmt *stmt_user_totp_set;
     sqlite3_stmt *stmt_user_totp_clear;
-} rw_sqlite_ctx_t;
+} iog_sqlite_ctx_t;
 
 /**
  * @brief Initialise SQLite database with hardened settings and prepared statements.
@@ -55,13 +55,13 @@ typedef struct {
  * @param path Database file path, or ":memory:" for in-memory database.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_sqlite_init(rw_sqlite_ctx_t *ctx, const char *path);
+[[nodiscard]] int iog_sqlite_init(iog_sqlite_ctx_t *ctx, const char *path);
 
 /**
  * @brief Close the SQLite database and finalise all prepared statements.
- * @param ctx  Context previously initialised with rw_sqlite_init().
+ * @param ctx  Context previously initialised with iog_sqlite_init().
  */
-void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
+void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
 
 /**
  * @brief Create a new user record.
@@ -69,7 +69,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param user User record to insert.
  * @return 0 on success, -EEXIST if username exists, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx, const rw_user_record_t *user);
+[[nodiscard]] int iog_sqlite_user_create(iog_sqlite_ctx_t *ctx, const iog_user_record_t *user);
 
 /**
  * @brief Look up a user by username.
@@ -78,8 +78,8 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param out      Output record.
  * @return 0 on success, -ENOENT if not found, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx, const char *username,
-                                        rw_user_record_t *out);
+[[nodiscard]] int iog_sqlite_user_lookup(iog_sqlite_ctx_t *ctx, const char *username,
+                                        iog_user_record_t *out);
 
 /**
  * @brief Insert an audit log entry.
@@ -87,7 +87,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param entry Audit entry to insert.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_audit_insert(rw_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry);
+[[nodiscard]] int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry);
 
 /**
  * @brief Query audit log entries by username (most recent first).
@@ -98,7 +98,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param count       Number of entries actually returned.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_audit_query_by_username(rw_sqlite_ctx_t *ctx, const char *username,
+[[nodiscard]] int iog_sqlite_audit_query_by_username(iog_sqlite_ctx_t *ctx, const char *username,
                                                     rw_audit_entry_t *out, size_t max_entries,
                                                     size_t *count);
 
@@ -109,7 +109,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param is_banned Output flag: true if banned and ban has not expired.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_ban_check(rw_sqlite_ctx_t *ctx, const char *ip, bool *is_banned);
+[[nodiscard]] int iog_sqlite_ban_check(iog_sqlite_ctx_t *ctx, const char *ip, bool *is_banned);
 
 /**
  * @brief Add an IP address to the ban list.
@@ -119,7 +119,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param duration_minutes Ban duration in minutes.
  * @return 0 on success, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason,
+[[nodiscard]] int iog_sqlite_ban_add(iog_sqlite_ctx_t *ctx, const char *ip, const char *reason,
                                     int duration_minutes);
 
 /**
@@ -131,7 +131,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param encrypted_recovery Encrypted recovery codes (JSON string).
  * @return 0 on success, -ENOENT if user not found, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_user_totp_set(rw_sqlite_ctx_t *ctx, const char *username,
+[[nodiscard]] int iog_sqlite_user_totp_set(iog_sqlite_ctx_t *ctx, const char *username,
                                           const uint8_t *encrypted_secret, size_t secret_len,
                                           const char *encrypted_recovery);
 
@@ -141,6 +141,6 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
  * @param username User to update.
  * @return 0 on success, -ENOENT if user not found, negative errno on error.
  */
-[[nodiscard]] int rw_sqlite_user_totp_clear(rw_sqlite_ctx_t *ctx, const char *username);
+[[nodiscard]] int iog_sqlite_user_totp_clear(iog_sqlite_ctx_t *ctx, const char *username);
 
 #endif /* RINGWALL_STORAGE_SQLITE_H */

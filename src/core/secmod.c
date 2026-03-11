@@ -34,7 +34,7 @@ static void secmod_audit_log(rw_secmod_ctx_t *ctx, const char *event_type, const
     }
     snprintf(entry.result, sizeof(entry.result), "%s", result);
 
-    (void)rw_sqlite_audit_insert(ctx->sqlite, &entry);
+    (void)iog_sqlite_audit_insert(ctx->sqlite, &entry);
 }
 
 /* Persist session to mdbx (if available) */
@@ -110,7 +110,7 @@ static int secmod_create_session_response(rw_secmod_ctx_t *ctx, iog_ipc_auth_req
 static int secmod_handle_totp(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req,
                               iog_ipc_auth_response_t *resp)
 {
-    rw_user_record_t user;
+    iog_user_record_t user;
     memset(&user, 0, sizeof(user));
 
     if (req->otp == nullptr || req->otp[0] == '\0') {
@@ -119,7 +119,7 @@ static int secmod_handle_totp(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req,
         return -EINVAL;
     }
 
-    int ret = rw_sqlite_user_lookup(ctx->sqlite, req->username, &user);
+    int ret = iog_sqlite_user_lookup(ctx->sqlite, req->username, &user);
     if (ret < 0) {
         resp->success = false;
         resp->error_msg = "user lookup failed";
@@ -186,7 +186,7 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req)
     /* Check ban list before attempting auth */
     if (ctx->sqlite != nullptr && req->source_ip != nullptr) {
         bool banned = false;
-        int bret = rw_sqlite_ban_check(ctx->sqlite, req->source_ip, &banned);
+        int bret = iog_sqlite_ban_check(ctx->sqlite, req->source_ip, &banned);
         if (bret == 0 && banned) {
             resp.success = false;
             resp.error_msg = "IP address is banned";
@@ -208,9 +208,9 @@ static int secmod_handle_auth(rw_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req)
     if (result == RW_AUTH_SUCCESS) {
         /* Check if user has TOTP enabled */
         if (ctx->sqlite != nullptr && ctx->vault != nullptr) {
-            rw_user_record_t user;
+            iog_user_record_t user;
             memset(&user, 0, sizeof(user));
-            int lret = rw_sqlite_user_lookup(ctx->sqlite, req->username, &user);
+            int lret = iog_sqlite_user_lookup(ctx->sqlite, req->username, &user);
             if (lret == 0 && user.totp_enabled && user.totp_secret_len > 0) {
                 /* TOTP required — signal challenge, do not create session yet */
                 explicit_bzero(&user, sizeof(user));
@@ -361,7 +361,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *config)
             iog_session_store_destroy(ctx->sessions);
             return -ENOMEM;
         }
-        ret = rw_sqlite_init(ctx->sqlite, config->storage.sqlite_path);
+        ret = iog_sqlite_init(ctx->sqlite, config->storage.sqlite_path);
         if (ret < 0) {
             free(ctx->sqlite);
             ctx->sqlite = nullptr;
@@ -379,7 +379,7 @@ int rw_secmod_init(rw_secmod_ctx_t *ctx, int ipc_fd, const iog_config_t *config)
         ret = rw_vault_init(config->storage.vault_key_path, &ctx->vault);
         if (ret < 0) {
             if (ctx->sqlite != nullptr) {
-                rw_sqlite_close(ctx->sqlite);
+                iog_sqlite_close(ctx->sqlite);
                 free(ctx->sqlite);
             }
             if (ctx->mdbx != nullptr) {
@@ -491,7 +491,7 @@ void rw_secmod_destroy(rw_secmod_ctx_t *ctx)
     }
 
     if (ctx->sqlite != nullptr) {
-        rw_sqlite_close(ctx->sqlite);
+        iog_sqlite_close(ctx->sqlite);
         free(ctx->sqlite);
     }
 

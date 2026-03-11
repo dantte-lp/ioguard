@@ -24,7 +24,7 @@
 | 6 | LDAP backend (libldap) | `src/auth/ldap.{h,c}` | ~8 new | 45m |
 | 7 | Certificate auth (wolfSSL) | `src/auth/cert_auth.{h,c}` | ~6 new | 30m |
 | 8 | HTTP parser migration (iohttpparser) | `src/network/http.{h,c}` | 7 updated + fuzz | 45m |
-| 9 | Structured logging (stumpless) | `src/log/rw_log.{h,c}` | ~6 new | 45m |
+| 9 | Structured logging (stumpless) | `src/log/iog_log.{h,c}` | ~6 new | 45m |
 | 10 | Prometheus metrics | `src/metrics/prometheus.{h,c}` | ~8 new | 45m |
 | 11 | CMakeLists.txt + container updates | `CMakeLists.txt`, `Containerfile` | build check | 20m |
 
@@ -820,8 +820,8 @@ git commit -m "refactor(network): migrate HTTP parser from llhttp to iohttpparse
 **Goal:** Async structured logging via stumpless buffer target + io_uring WRITEV flush.
 
 **Files:**
-- Create: `src/log/rw_log.h`
-- Create: `src/log/rw_log.c`
+- Create: `src/log/iog_log.h`
+- Create: `src/log/iog_log.c`
 - Test: `tests/unit/test_log.c`
 
 **Step 1: Write failing tests**
@@ -837,7 +837,7 @@ void test_log_severity_levels(void);
 
 **Step 2: Run tests to verify they fail**
 
-**Step 3: Implement rw_log.h**
+**Step 3: Implement iog_log.h**
 
 ```c
 #ifndef RINGWALL_LOG_H
@@ -846,40 +846,40 @@ void test_log_severity_levels(void);
 #include <stddef.h>
 
 typedef enum {
-    RW_LOG_EMERG = 0,
-    RW_LOG_ALERT = 1,
-    RW_LOG_CRIT = 2,
-    RW_LOG_ERR = 3,
-    RW_LOG_WARN = 4,
-    RW_LOG_NOTICE = 5,
-    RW_LOG_INFO = 6,
-    RW_LOG_DEBUG = 7,
-} rw_log_level_t;
+    IOG_LOG_EMERG = 0,
+    IOG_LOG_ALERT = 1,
+    IOG_LOG_CRIT = 2,
+    IOG_LOG_ERR = 3,
+    IOG_LOG_WARN = 4,
+    IOG_LOG_NOTICE = 5,
+    IOG_LOG_INFO = 6,
+    IOG_LOG_DEBUG = 7,
+} iog_log_level_t;
 
-typedef struct rw_logger rw_logger_t;
+typedef struct iog_logger iog_logger_t;
 
-[[nodiscard]] int rw_log_init(rw_logger_t **out, size_t buffer_size);
-void rw_log_destroy(rw_logger_t *logger);
+[[nodiscard]] int iog_log_init(iog_logger_t **out, size_t buffer_size);
+void iog_log_destroy(iog_logger_t *logger);
 
-[[nodiscard]] int rw_log_write(rw_logger_t *logger, rw_log_level_t level,
+[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level,
                                 const char *component, const char *msg);
 
 /* Structured data: RFC 5424 SD-ID with params */
-[[nodiscard]] int rw_log_write_sd(rw_logger_t *logger, rw_log_level_t level,
+[[nodiscard]] int iog_log_write_sd(iog_logger_t *logger, iog_log_level_t level,
                                    const char *component, const char *msg,
                                    const char *sd_id, const char *sd_params[][2],
                                    size_t param_count);
 
 /* Flush buffer contents — returns bytes available for io_uring WRITEV */
-[[nodiscard]] ssize_t rw_log_flush(rw_logger_t *logger, char *out, size_t out_size);
+[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out, size_t out_size);
 
 /* Set minimum log level (messages below this are dropped) */
-void rw_log_set_level(rw_logger_t *logger, rw_log_level_t min_level);
+void iog_log_set_level(iog_logger_t *logger, iog_log_level_t min_level);
 
 #endif
 ```
 
-**Step 4: Implement rw_log.c**
+**Step 4: Implement iog_log.c**
 
 Key stumpless API calls:
 ```c
@@ -911,7 +911,7 @@ size_t read = stumpless_read_buffer(bt, out, out_size);
 **Step 6: Commit**
 
 ```bash
-git add src/log/rw_log.h src/log/rw_log.c tests/unit/test_log.c CMakeLists.txt
+git add src/log/iog_log.h src/log/iog_log.c tests/unit/test_log.c CMakeLists.txt
 git commit -m "feat(log): add structured logging via stumpless with buffer target"
 ```
 
@@ -1077,8 +1077,8 @@ target_include_directories(rw_http PUBLIC ${CMAKE_SOURCE_DIR}/src /usr/local/inc
 
 # Logging
 find_library(STUMPLESS_LIBRARY stumpless)
-add_library(rw_log STATIC src/log/rw_log.c)
-target_link_libraries(rw_log PUBLIC ${STUMPLESS_LIBRARY})
+add_library(iog_log STATIC src/log/iog_log.c)
+target_link_libraries(iog_log PUBLIC ${STUMPLESS_LIBRARY})
 
 # Metrics
 add_library(rw_metrics STATIC src/metrics/prometheus.c)
@@ -1096,7 +1096,7 @@ if(TARGET rw_auth_ldap)
     rw_add_test(test_auth_ldap tests/unit/test_auth_ldap.c rw_auth_ldap)
 endif()
 rw_add_test(test_auth_cert tests/unit/test_auth_cert.c rw_auth_cert)
-rw_add_test(test_log tests/unit/test_log.c rw_log)
+rw_add_test(test_log tests/unit/test_log.c iog_log)
 rw_add_test(test_prometheus tests/unit/test_prometheus.c rw_metrics)
 ```
 

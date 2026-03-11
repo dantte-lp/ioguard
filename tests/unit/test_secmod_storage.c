@@ -108,13 +108,13 @@ void test_secmod_sqlite_audit_insert(void)
     snprintf(entry.source_ip, sizeof(entry.source_ip), "10.0.0.1");
     snprintf(entry.result, sizeof(entry.result), "OK");
 
-    int ret = rw_sqlite_audit_insert(ctx.sqlite, &entry);
+    int ret = iog_sqlite_audit_insert(ctx.sqlite, &entry);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Query audit entries for alice */
     rw_audit_entry_t results[4];
     size_t count = 0;
-    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "alice", results, 4, &count);
+    ret = iog_sqlite_audit_query_by_username(ctx.sqlite, "alice", results, 4, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(1, count);
     TEST_ASSERT_EQUAL_STRING("AUTH", results[0].event_type);
@@ -140,13 +140,13 @@ void test_secmod_auth_failure_audit(void)
     snprintf(entry.source_ip, sizeof(entry.source_ip), "10.0.0.2");
     snprintf(entry.result, sizeof(entry.result), "FAIL");
 
-    int ret = rw_sqlite_audit_insert(ctx.sqlite, &entry);
+    int ret = iog_sqlite_audit_insert(ctx.sqlite, &entry);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Verify the failure was logged */
     rw_audit_entry_t results[4];
     size_t count = 0;
-    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "bob", results, 4, &count);
+    ret = iog_sqlite_audit_query_by_username(ctx.sqlite, "bob", results, 4, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT(1, count);
     TEST_ASSERT_EQUAL_STRING("FAIL", results[0].result);
@@ -256,18 +256,18 @@ void test_secmod_ban_check_before_auth(void)
     TEST_ASSERT_EQUAL_INT(0, rw_secmod_init(&ctx, sv[0], &config));
 
     /* Ban an IP */
-    int ret = rw_sqlite_ban_add(ctx.sqlite, "10.0.0.99", "brute force", 60);
+    int ret = iog_sqlite_ban_add(ctx.sqlite, "10.0.0.99", "brute force", 60);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Verify it's banned */
     bool banned = false;
-    ret = rw_sqlite_ban_check(ctx.sqlite, "10.0.0.99", &banned);
+    ret = iog_sqlite_ban_check(ctx.sqlite, "10.0.0.99", &banned);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_TRUE(banned);
 
     /* Verify another IP is not banned */
     banned = true;
-    ret = rw_sqlite_ban_check(ctx.sqlite, "10.0.0.1", &banned);
+    ret = iog_sqlite_ban_check(ctx.sqlite, "10.0.0.1", &banned);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_FALSE(banned);
 

@@ -226,7 +226,7 @@ typedef struct {
     uint32_t failed_attempts;
     char     locked_until[32];      // ISO 8601 or empty
     bool     totp_enabled;
-} rw_user_record_t;
+} iog_user_record_t;
 
 typedef struct {
     char     event_type[32];
@@ -247,17 +247,17 @@ typedef struct {
     sqlite3_stmt *stmt_ban_check;
     sqlite3_stmt *stmt_ban_add;
     sqlite3_stmt *stmt_failed_increment;
-} rw_sqlite_ctx_t;
+} iog_sqlite_ctx_t;
 
-[[nodiscard]] int rw_sqlite_init(rw_sqlite_ctx_t *ctx, const char *path);
-void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
+[[nodiscard]] int iog_sqlite_init(iog_sqlite_ctx_t *ctx, const char *path);
+void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
 
-[[nodiscard]] int rw_sqlite_user_create(rw_sqlite_ctx_t *ctx, const rw_user_record_t *user);
-[[nodiscard]] int rw_sqlite_user_lookup(rw_sqlite_ctx_t *ctx, const char *username, rw_user_record_t *out);
+[[nodiscard]] int iog_sqlite_user_create(iog_sqlite_ctx_t *ctx, const iog_user_record_t *user);
+[[nodiscard]] int iog_sqlite_user_lookup(iog_sqlite_ctx_t *ctx, const char *username, iog_user_record_t *out);
 
-[[nodiscard]] int rw_sqlite_audit_insert(rw_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry);
-[[nodiscard]] int rw_sqlite_ban_check(rw_sqlite_ctx_t *ctx, const char *ip, bool *is_banned);
-[[nodiscard]] int rw_sqlite_ban_add(rw_sqlite_ctx_t *ctx, const char *ip, const char *reason, int duration_minutes);
+[[nodiscard]] int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const rw_audit_entry_t *entry);
+[[nodiscard]] int iog_sqlite_ban_check(iog_sqlite_ctx_t *ctx, const char *ip, bool *is_banned);
+[[nodiscard]] int iog_sqlite_ban_add(iog_sqlite_ctx_t *ctx, const char *ip, const char *reason, int duration_minutes);
 
 #endif // RINGWALL_STORAGE_SQLITE_H
 ```
@@ -265,7 +265,7 @@ void rw_sqlite_close(rw_sqlite_ctx_t *ctx);
 **Step 3: Write sqlite.c**
 
 Key implementation:
-- `rw_sqlite_init()`: open with `SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX`, apply hardening PRAGMAs (WAL, synchronous=NORMAL, secure_delete=ON, foreign_keys=ON, max_page_count=262144, mmap_size=268435456), disable extensions, disable DQS, create schema tables, prepare all statements with `SQLITE_PREPARE_PERSISTENT`
+- `iog_sqlite_init()`: open with `SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX`, apply hardening PRAGMAs (WAL, synchronous=NORMAL, secure_delete=ON, foreign_keys=ON, max_page_count=262144, mmap_size=268435456), disable extensions, disable DQS, create schema tables, prepare all statements with `SQLITE_PREPARE_PERSISTENT`
 - All queries use prepared statements with parameter binding — NO `sprintf` + `sqlite3_exec` with user data
 - Schema: users, audit_log, ban_list (from the guide document)
 - Each function: `sqlite3_reset()` + `sqlite3_clear_bindings()` before use
@@ -276,12 +276,12 @@ Key implementation:
 # Sprint 5 — SQLite control plane
 find_package(SQLite3 REQUIRED)
 
-add_library(rw_sqlite STATIC src/storage/sqlite.c)
-target_include_directories(rw_sqlite PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(rw_sqlite PUBLIC SQLite::SQLite3)
-target_compile_definitions(rw_sqlite PUBLIC _GNU_SOURCE)
+add_library(iog_sqlite STATIC src/storage/sqlite.c)
+target_include_directories(iog_sqlite PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(iog_sqlite PUBLIC SQLite::SQLite3)
+target_compile_definitions(iog_sqlite PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c rw_sqlite)
+rw_add_test(test_storage_sqlite tests/unit/test_storage_sqlite.c iog_sqlite)
 ```
 
 **Step 5: Build and run**
@@ -322,10 +322,10 @@ void test_mdbx_format_check_current(void);           // current version -> succe
 #include "storage/sqlite.h"
 #include "storage/mdbx.h"
 
-constexpr uint32_t RW_SQLITE_SCHEMA_VERSION = 1;
+constexpr uint32_t IOG_SQLITE_SCHEMA_VERSION = 1;
 constexpr uint32_t RW_MDBX_FORMAT_VERSION = 1;
 
-[[nodiscard]] int rw_sqlite_migrate(sqlite3 *db);
+[[nodiscard]] int iog_sqlite_migrate(sqlite3 *db);
 [[nodiscard]] int rw_mdbx_check_format(rw_mdbx_ctx_t *ctx);
 
 #endif // RINGWALL_STORAGE_MIGRATE_H
@@ -712,7 +712,7 @@ void test_crash_recovery_mdbx(void);                 // fork, write, SIGKILL, re
 **Step 2: Add to CMakeLists.txt**
 
 ```cmake
-rw_add_test(test_storage tests/integration/test_storage.c rw_mdbx rw_sqlite rw_migrate)
+rw_add_test(test_storage tests/integration/test_storage.c rw_mdbx iog_sqlite rw_migrate)
 ```
 
 **Step 3: Build, run, commit**

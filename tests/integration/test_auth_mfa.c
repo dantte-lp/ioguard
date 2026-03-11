@@ -71,17 +71,17 @@ static int write_hex_key_file(const char *path, const uint8_t *key, size_t len)
 /**
  * Create a user in SQLite with TOTP enabled, encrypting the secret via vault.
  */
-static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault, const char *username,
+static int setup_totp_user(iog_sqlite_ctx_t *sqlite, rw_vault_t *vault, const char *username,
                            bool totp_enabled)
 {
     /* Create base user record */
-    rw_user_record_t user;
+    iog_user_record_t user;
     memset(&user, 0, sizeof(user));
     snprintf(user.username, sizeof(user.username), "%s", username);
     snprintf(user.password_hash, sizeof(user.password_hash), "placeholder");
     user.enabled = true;
 
-    int ret = rw_sqlite_user_create(sqlite, &user);
+    int ret = iog_sqlite_user_create(sqlite, &user);
     if (ret < 0) {
         return ret;
     }
@@ -100,7 +100,7 @@ static int setup_totp_user(rw_sqlite_ctx_t *sqlite, rw_vault_t *vault, const cha
     }
 
     /* Store encrypted secret in SQLite */
-    ret = rw_sqlite_user_totp_set(sqlite, username, encrypted, enc_len, "");
+    ret = iog_sqlite_user_totp_set(sqlite, username, encrypted, enc_len, "");
     return ret;
 }
 
@@ -348,7 +348,7 @@ void test_mfa_flow_audit_trail(void)
     /* Verify audit entries exist for dave */
     rw_audit_entry_t entries[8];
     size_t count = 0;
-    ret = rw_sqlite_audit_query_by_username(ctx.sqlite, "dave", entries, 8, &count);
+    ret = iog_sqlite_audit_query_by_username(ctx.sqlite, "dave", entries, 8, &count);
     TEST_ASSERT_EQUAL_INT(0, ret);
     /* At least a TOTP_FAIL and a TOTP OK + AUTH OK should be present */
     TEST_ASSERT_GREATER_OR_EQUAL(2, (int)count);

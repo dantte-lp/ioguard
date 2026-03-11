@@ -562,7 +562,7 @@ git commit -m "feat: worker io_uring event loop with fd-pass connection accept (
 - Create: `tests/unit/test_secmod_storage.c`
 - Modify: `CMakeLists.txt`
 
-**Why:** Auth-mod currently uses `rw_session_store_t` (in-memory, max 1024). Replace with `rw_mdbx_ctx_t` (persistent, scalable) and add `rw_sqlite_ctx_t` for audit logging. This connects S2 (auth) with S5 (storage).
+**Why:** Auth-mod currently uses `rw_session_store_t` (in-memory, max 1024). Replace with `rw_mdbx_ctx_t` (persistent, scalable) and add `iog_sqlite_ctx_t` for audit logging. This connects S2 (auth) with S5 (storage).
 
 **Step 1: Write failing tests**
 
@@ -588,7 +588,7 @@ typedef struct {
     int ipc_fd;
     rw_pam_config_t pam_cfg;
     rw_mdbx_ctx_t mdbx;            /* replaces rw_session_store_t */
-    rw_sqlite_ctx_t sqlite;         /* audit logging + user management */
+    iog_sqlite_ctx_t sqlite;         /* audit logging + user management */
     const rw_config_t *config;
     bool running;
 } rw_secmod_ctx_t;
@@ -596,13 +596,13 @@ typedef struct {
 
 **Step 3: Update secmod.c**
 
-- `rw_secmod_init()`: call `rw_mdbx_init()` + `rw_sqlite_init()`, remove `rw_session_store_create()`
-- Auth success handler: `rw_mdbx_session_create()` instead of in-memory store, then `rw_sqlite_audit_insert()`
+- `rw_secmod_init()`: call `rw_mdbx_init()` + `iog_sqlite_init()`, remove `rw_session_store_create()`
+- Auth success handler: `rw_mdbx_session_create()` instead of in-memory store, then `iog_sqlite_audit_insert()`
 - Session validate: `rw_mdbx_session_lookup()` instead of in-memory lookup
 - Disconnect: `rw_mdbx_session_delete()` + audit entry
 - `rw_secmod_destroy()`: close both stores
 
-**Step 4: Update CMakeLists.txt** — link rw_secmod against rw_mdbx and rw_sqlite
+**Step 4: Update CMakeLists.txt** — link rw_secmod against rw_mdbx and iog_sqlite
 
 **Step 5: Build, test, commit**
 
@@ -1112,7 +1112,7 @@ void test_vpn_flow_multiple_clients(void);           /* 3 clients, independent d
 rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
     rw_worker_loop rw_conn_data rw_conn_tls rw_conn_timer rw_security_hooks
     rw_worker iog_io rw_fdpass rw_cstp rw_dpd rw_compress rw_secmod
-    rw_mdbx rw_sqlite rw_migrate ${WOLFSSL_LIBRARIES})
+    rw_mdbx iog_sqlite rw_migrate ${WOLFSSL_LIBRARIES})
 ```
 
 **Step 3: Build, run, commit**
