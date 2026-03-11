@@ -201,7 +201,7 @@ int err = wolfSSL_get_error(conn->tls_session, n);
 
 if (err == WOLFSSL_ERROR_NONE && n > 0) {
     /* CSTP deframe and forward to TUN */
-    rw_io_prep_write_cb(loop->io, conn->tun_fd,
+    iog_io_prep_write_cb(loop->io, conn->tun_fd,
                         plaintext, (size_t)n, on_tun_write, ctx);
 } else if (err == WOLFSSL_ERROR_WANT_READ) {
     /* Need more ciphertext — re-arm recv (normal) */
@@ -1020,7 +1020,7 @@ Key implementation details:
 | `rw_active_sessions` | gauge | Currently active VPN sessions |
 | `rw_memory_bytes` | gauge | Process memory usage |
 | `rw_fd_count` | gauge | Open file descriptors |
-| `rw_ipam_pool_utilization` | gauge | IPAM pool utilization (0.0-1.0) |
+| `iog_ipam_pool_utilization` | gauge | IPAM pool utilization (0.0-1.0) |
 | `rw_tls_handshake_seconds` | histogram | TLS handshake duration |
 | `rw_auth_duration_seconds` | histogram | Authentication processing time |
 

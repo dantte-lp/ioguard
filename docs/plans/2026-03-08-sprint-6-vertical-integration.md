@@ -27,7 +27,7 @@ ctest --preset clang-debug
 - Create: `tests/unit/test_io_callback.c`
 - Modify: `CMakeLists.txt`
 
-**Why:** Current `rw_io_prep_*` functions take `int *completed` — fine for tests but the worker event loop needs proper callbacks with user_data to chain operations (TLS read → CSTP decode → TUN write).
+**Why:** Current `iog_io_prep_*` functions take `int *completed` — fine for tests but the worker event loop needs proper callbacks with user_data to chain operations (TLS read → CSTP decode → TUN write).
 
 **Step 1: Write failing tests (test_io_callback.c)**
 
@@ -58,35 +58,35 @@ void test_io_multiple_callbacks_concurrent(void); /* 3 concurrent ops, all compl
 /* Callback-based operations — for production event loops.
  * cb is invoked with CQE result (bytes or negative errno) and user_data. */
 
-[[nodiscard]] int rw_io_prep_recv_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
-                                      rw_io_cb cb, void *user_data);
+[[nodiscard]] int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                      iog_io_cb cb, void *user_data);
 
-[[nodiscard]] int rw_io_prep_send_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                      rw_io_cb cb, void *user_data);
+[[nodiscard]] int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                      iog_io_cb cb, void *user_data);
 
-[[nodiscard]] int rw_io_prep_read_cb(rw_io_ctx_t *ctx, int fd, void *buf, size_t len,
-                                      rw_io_cb cb, void *user_data);
+[[nodiscard]] int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                      iog_io_cb cb, void *user_data);
 
-[[nodiscard]] int rw_io_prep_write_cb(rw_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                       rw_io_cb cb, void *user_data);
+[[nodiscard]] int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                       iog_io_cb cb, void *user_data);
 
-[[nodiscard]] int rw_io_prep_accept_cb(rw_io_ctx_t *ctx, int fd,
+[[nodiscard]] int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd,
                                         struct sockaddr *addr, socklen_t *addrlen,
-                                        rw_io_cb cb, void *user_data);
+                                        iog_io_cb cb, void *user_data);
 
-[[nodiscard]] int rw_io_add_timeout_cb(rw_io_ctx_t *ctx, uint64_t timeout_ms,
-                                        rw_io_cb cb, void *user_data);
+[[nodiscard]] int iog_io_add_timeout_cb(iog_io_ctx_t *ctx, uint64_t timeout_ms,
+                                        iog_io_cb cb, void *user_data);
 
-[[nodiscard]] int rw_io_cancel(rw_io_ctx_t *ctx, void *user_data);
+[[nodiscard]] int iog_io_cancel(iog_io_ctx_t *ctx, void *user_data);
 ```
 
 **Step 3: Implement in uring.c**
 
-The internal `rw_io_completion_t` already has `rw_io_cb cb` and `void *user_data` fields. The new functions allocate a completion, set `cb` and `user_data`, prep the SQE, and set `user_data` on the SQE. The existing CQE processing loop in `rw_io_run_once()` already dispatches to `cb(res, user_data)` — just verify it handles the new operations.
+The internal `iog_io_completion_t` already has `iog_io_cb cb` and `void *user_data` fields. The new functions allocate a completion, set `cb` and `user_data`, prep the SQE, and set `user_data` on the SQE. The existing CQE processing loop in `iog_io_run_once()` already dispatches to `cb(res, user_data)` — just verify it handles the new operations.
 
-For `rw_io_cancel()`: use `io_uring_prep_cancel()` targeting the user_data pointer.
+For `iog_io_cancel()`: use `io_uring_prep_cancel()` targeting the user_data pointer.
 
-For `rw_io_prep_accept_cb()`: use `io_uring_prep_accept()`.
+For `iog_io_prep_accept_cb()`: use `io_uring_prep_accept()`.
 
 **Step 4: Build and run**
 
@@ -454,7 +454,7 @@ void test_worker_loop_tun_write(void);             /* write to TUN fd (socketpai
  */
 typedef struct {
     rw_worker_t *worker;
-    rw_io_ctx_t *io;
+    iog_io_ctx_t *io;
     int accept_fd;             /* unix socket: main passes client fds here */
     int ipc_fd;                /* IPC to auth-mod */
     const rw_config_t *config;
@@ -499,11 +499,11 @@ Core loop structure:
 ```c
 int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *cfg)
 {
-    loop->io = rw_io_init(cfg->worker_cfg->queue_depth, 0);
+    loop->io = iog_io_init(cfg->worker_cfg->queue_depth, 0);
     if (!loop->io) return -ENOMEM;
 
     loop->worker = rw_worker_create(cfg->worker_cfg);
-    if (!loop->worker) { rw_io_destroy(loop->io); return -ENOMEM; }
+    if (!loop->worker) { iog_io_destroy(loop->io); return -ENOMEM; }
 
     loop->accept_fd = cfg->accept_fd;
     loop->ipc_fd = cfg->ipc_fd;
@@ -517,11 +517,11 @@ int rw_worker_loop_run(rw_worker_loop_t *loop)
     loop->running = true;
 
     /* Arm accept_fd for incoming fd-pass messages */
-    rw_io_prep_recv_cb(loop->io, loop->accept_fd, loop->accept_buf,
+    iog_io_prep_recv_cb(loop->io, loop->accept_fd, loop->accept_buf,
                         sizeof(loop->accept_buf), on_accept_fd, loop);
 
     while (loop->running) {
-        int rc = rw_io_run_once(loop->io, 1000);
+        int rc = iog_io_run_once(loop->io, 1000);
         if (rc < 0 && rc != -ETIME) return rc;
     }
     return 0;
@@ -539,10 +539,10 @@ The `on_accept_fd` callback:
 ```cmake
 add_library(rw_worker_loop STATIC src/core/worker_loop.c)
 target_include_directories(rw_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(rw_worker_loop PUBLIC rw_worker rw_io rw_fdpass rw_cstp rw_dpd)
+target_link_libraries(rw_worker_loop PUBLIC rw_worker iog_io rw_fdpass rw_cstp rw_dpd)
 target_compile_definitions(rw_worker_loop PUBLIC _GNU_SOURCE)
 
-rw_add_test(test_worker_loop tests/unit/test_worker_loop.c rw_worker_loop rw_io rw_fdpass rw_cstp rw_dpd rw_worker)
+rw_add_test(test_worker_loop tests/unit/test_worker_loop.c rw_worker_loop iog_io rw_fdpass rw_cstp rw_dpd rw_worker)
 ```
 
 **Step 5: Build, test, commit**
@@ -911,7 +911,7 @@ void test_timer_reschedule_after_activity(void);  /* data received → reset idl
 typedef void (*rw_conn_dead_cb)(uint64_t conn_id, void *user_data);
 
 typedef struct {
-    rw_io_ctx_t *io;
+    iog_io_ctx_t *io;
     rw_dpd_ctx_t *dpd;
     rw_conn_data_t *data;
     uint64_t conn_id;
@@ -931,7 +931,7 @@ void rw_conn_timer_on_activity(rw_conn_timer_t *timer);
 
 **Step 3: Implement conn_timer.c**
 
-- `rw_conn_timer_start()`: arm DPD timeout via `rw_io_add_timeout_cb()`, arm keepalive timeout
+- `rw_conn_timer_start()`: arm DPD timeout via `iog_io_add_timeout_cb()`, arm keepalive timeout
 - DPD timeout callback: call `rw_dpd_on_timeout()`, if DEAD → call `on_dead`, else send DPD request, re-arm
 - Keepalive callback: `rw_conn_data_send_keepalive()`, re-arm
 - `on_activity()`: reset idle timer, update DPD last_recv
@@ -1049,7 +1049,7 @@ void test_shutdown_cleanup_no_leaks(void);            /* destroy all contexts, n
 void rw_worker_loop_stop(rw_worker_loop_t *loop)
 {
     loop->running = false;
-    rw_io_stop(loop->io);
+    iog_io_stop(loop->io);
 }
 
 /* Called from run loop when stopping */
@@ -1111,7 +1111,7 @@ void test_vpn_flow_multiple_clients(void);           /* 3 clients, independent d
 ```cmake
 rw_add_test(test_vpn_flow tests/integration/test_vpn_flow.c
     rw_worker_loop rw_conn_data rw_conn_tls rw_conn_timer rw_security_hooks
-    rw_worker rw_io rw_fdpass rw_cstp rw_dpd rw_compress rw_secmod
+    rw_worker iog_io rw_fdpass rw_cstp rw_dpd rw_compress rw_secmod
     rw_mdbx rw_sqlite rw_migrate ${WOLFSSL_LIBRARIES})
 ```
 
@@ -1231,7 +1231,7 @@ void test_ipam_stats_total_and_used(void);          /* verify counts after alloc
 #include <stdint.h>
 #include <netinet/in.h>
 
-constexpr size_t RW_IPAM_MAX_POOLS = 16;
+constexpr size_t IOG_IPAM_MAX_POOLS = 16;
 
 typedef struct {
     int af;                        /* AF_INET or AF_INET6 */
@@ -1247,44 +1247,44 @@ typedef struct {
     uint32_t total_hosts;          /* usable host count (excluding network/broadcast for v4) */
     uint32_t used_count;
     uint8_t *bitmap;               /* 1 bit per host address */
-} rw_ipam_pool_t;
+} iog_ipam_pool_t;
 
 typedef struct {
-    rw_ipam_pool_t pools[RW_IPAM_MAX_POOLS];
+    iog_ipam_pool_t pools[IOG_IPAM_MAX_POOLS];
     uint32_t pool_count;
-} rw_ipam_t;
+} iog_ipam_t;
 
 typedef struct {
     uint32_t total_pools;
     uint32_t total_addresses;
     uint32_t used_addresses;
     uint32_t available_addresses;
-} rw_ipam_stats_t;
+} iog_ipam_stats_t;
 
 /* Lifecycle */
-[[nodiscard]] int rw_ipam_init(rw_ipam_t *ipam);
-void rw_ipam_destroy(rw_ipam_t *ipam);
+[[nodiscard]] int iog_ipam_init(iog_ipam_t *ipam);
+void iog_ipam_destroy(iog_ipam_t *ipam);
 
 /* Pool management */
-[[nodiscard]] int rw_ipam_add_pool(rw_ipam_t *ipam, const char *cidr);
+[[nodiscard]] int iog_ipam_add_pool(iog_ipam_t *ipam, const char *cidr);
 
 /* Collision detection — call after adding pools, before accepting clients.
  * Enumerates server interfaces via getifaddrs(), returns -EEXIST if any
  * pool overlaps an existing server network. */
-[[nodiscard]] int rw_ipam_check_collisions(const rw_ipam_t *ipam);
+[[nodiscard]] int iog_ipam_check_collisions(const iog_ipam_t *ipam);
 
 /* Allocation */
-[[nodiscard]] int rw_ipam_alloc_ipv4(rw_ipam_t *ipam, struct in_addr *out);
-[[nodiscard]] int rw_ipam_alloc_ipv6(rw_ipam_t *ipam, struct in6_addr *out);
-[[nodiscard]] int rw_ipam_free_ipv4(rw_ipam_t *ipam, const struct in_addr *addr);
-[[nodiscard]] int rw_ipam_free_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr);
+[[nodiscard]] int iog_ipam_alloc_ipv4(iog_ipam_t *ipam, struct in_addr *out);
+[[nodiscard]] int iog_ipam_alloc_ipv6(iog_ipam_t *ipam, struct in6_addr *out);
+[[nodiscard]] int iog_ipam_free_ipv4(iog_ipam_t *ipam, const struct in_addr *addr);
+[[nodiscard]] int iog_ipam_free_ipv6(iog_ipam_t *ipam, const struct in6_addr *addr);
 
 /* RADIUS override — reserve a specific address (may be outside pools) */
-[[nodiscard]] int rw_ipam_reserve_ipv4(rw_ipam_t *ipam, const struct in_addr *addr);
-[[nodiscard]] int rw_ipam_reserve_ipv6(rw_ipam_t *ipam, const struct in6_addr *addr);
+[[nodiscard]] int iog_ipam_reserve_ipv4(iog_ipam_t *ipam, const struct in_addr *addr);
+[[nodiscard]] int iog_ipam_reserve_ipv6(iog_ipam_t *ipam, const struct in6_addr *addr);
 
 /* Statistics */
-void rw_ipam_get_stats(const rw_ipam_t *ipam, rw_ipam_stats_t *stats);
+void iog_ipam_get_stats(const iog_ipam_t *ipam, iog_ipam_stats_t *stats);
 
 #endif /* RINGWALL_NETWORK_IPAM_H */
 ```
@@ -1292,11 +1292,11 @@ void rw_ipam_get_stats(const rw_ipam_t *ipam, rw_ipam_stats_t *stats);
 **Step 3: Write ipam.c**
 
 Key implementation details:
-- `rw_ipam_add_pool()`: parse CIDR via `inet_pton()` + prefix extraction, allocate bitmap (`calloc((total_hosts + 7) / 8)`), skip network/broadcast for IPv4
-- `rw_ipam_alloc_ipv4()`: scan bitmap for first zero bit, set it, compute address from `network + offset`, return via `out`
-- `rw_ipam_check_collisions()`: call `getifaddrs()`, for each `AF_INET`/`AF_INET6` interface, check if interface IP falls within any pool's CIDR range. Return `-EEXIST` with logging on overlap
-- `rw_ipam_reserve_ipv4()`: find pool containing address, mark bit. If not in any pool, return 0 (external RADIUS assignment)
-- `rw_ipam_free_ipv4()`: find pool, clear bit, decrement used_count
+- `iog_ipam_add_pool()`: parse CIDR via `inet_pton()` + prefix extraction, allocate bitmap (`calloc((total_hosts + 7) / 8)`), skip network/broadcast for IPv4
+- `iog_ipam_alloc_ipv4()`: scan bitmap for first zero bit, set it, compute address from `network + offset`, return via `out`
+- `iog_ipam_check_collisions()`: call `getifaddrs()`, for each `AF_INET`/`AF_INET6` interface, check if interface IP falls within any pool's CIDR range. Return `-EEXIST` with logging on overlap
+- `iog_ipam_reserve_ipv4()`: find pool containing address, mark bit. If not in any pool, return 0 (external RADIUS assignment)
+- `iog_ipam_free_ipv4()`: find pool, clear bit, decrement used_count
 - Bitmap operations: `bitmap[idx / 8] |= (1 << (idx % 8))` for set, `& ~(...)` for clear
 
 **Step 4: Update config.h**
@@ -1304,9 +1304,9 @@ Key implementation details:
 ```c
 /* Replace single ipv4_pool string with multi-pool support */
 typedef struct {
-    char ipv4_pools[RW_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];  /* CIDR strings */
+    char ipv4_pools[IOG_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];  /* CIDR strings */
     uint32_t ipv4_pool_count;
-    char ipv6_pools[RW_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];
+    char ipv6_pools[IOG_IPAM_MAX_POOLS][RW_CONFIG_MAX_STR];
     uint32_t ipv6_pool_count;
     char dns[RW_CONFIG_MAX_DNS][RW_CONFIG_MAX_STR];
     uint32_t dns_count;
@@ -1319,10 +1319,10 @@ typedef struct {
 
 ```cmake
 # IPAM — IP address pool management
-add_library(rw_ipam STATIC src/network/ipam.c)
-target_include_directories(rw_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_ipam STATIC src/network/ipam.c)
+target_include_directories(iog_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-rw_add_test(test_ipam tests/unit/test_ipam.c rw_ipam)
+rw_add_test(test_ipam tests/unit/test_ipam.c iog_ipam)
 ```
 
 **Step 6: Build and run**

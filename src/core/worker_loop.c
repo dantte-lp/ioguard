@@ -30,7 +30,7 @@ static int arm_connection_recv(rw_worker_loop_t *loop, uint64_t conn_id)
     ctx->loop = loop;
     ctx->conn_id = conn_id;
 
-    int ret = rw_io_prep_recv_cb(loop->io, conn->tls_fd, conn->recv_buf, sizeof(conn->recv_buf),
+    int ret = iog_io_prep_recv_cb(loop->io, conn->tls_fd, conn->recv_buf, sizeof(conn->recv_buf),
                                  on_tls_recv, ctx);
     if (ret < 0) {
         free(ctx);
@@ -67,7 +67,7 @@ static void on_tls_recv(int res, void *user_data)
     /* TODO Task 7: forward plaintext to TUN via CSTP framing */
 
     /* Re-arm recv for next data */
-    int ret = rw_io_prep_recv_cb(ctx->loop->io, conn->tls_fd, conn->recv_buf,
+    int ret = iog_io_prep_recv_cb(ctx->loop->io, conn->tls_fd, conn->recv_buf,
                                  sizeof(conn->recv_buf), on_tls_recv, ctx);
     if (ret < 0) {
         free(ctx);
@@ -122,14 +122,14 @@ int rw_worker_loop_init(rw_worker_loop_t *loop, const rw_worker_loop_config_t *c
 {
     memset(loop, 0, sizeof(*loop));
 
-    loop->io = rw_io_init(cfg->worker_cfg->queue_depth, 0);
+    loop->io = iog_io_init(cfg->worker_cfg->queue_depth, 0);
     if (loop->io == nullptr) {
         return -ENOMEM;
     }
 
     loop->worker = rw_worker_create(cfg->worker_cfg);
     if (loop->worker == nullptr) {
-        rw_io_destroy(loop->io);
+        iog_io_destroy(loop->io);
         loop->io = nullptr;
         return -ENOMEM;
     }
@@ -156,7 +156,7 @@ int rw_worker_loop_process_events(rw_worker_loop_t *loop)
     }
 
     /* Process io_uring events (100ms timeout) */
-    ret = rw_io_run_once(loop->io, 100);
+    ret = iog_io_run_once(loop->io, 100);
     if (ret < 0 && ret != -ETIME) {
         return ret;
     }
@@ -182,7 +182,7 @@ void rw_worker_loop_stop(rw_worker_loop_t *loop)
 {
     loop->running = false;
     if (loop->io != nullptr) {
-        rw_io_stop(loop->io);
+        iog_io_stop(loop->io);
     }
 }
 
@@ -193,7 +193,7 @@ void rw_worker_loop_destroy(rw_worker_loop_t *loop)
         loop->worker = nullptr;
     }
     if (loop->io != nullptr) {
-        rw_io_destroy(loop->io);
+        iog_io_destroy(loop->io);
         loop->io = nullptr;
     }
 }

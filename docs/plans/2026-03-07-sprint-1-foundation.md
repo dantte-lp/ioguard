@@ -118,9 +118,9 @@ pkg_check_modules(PROTOBUF_C REQUIRED libprotobuf-c>=1.5.0)
 Add library targets:
 ```cmake
 # ioguard core libraries
-add_library(rw_io STATIC src/io/uring.c)
-target_link_libraries(rw_io PUBLIC ${LIBURING_LIBRARIES})
-target_include_directories(rw_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
+add_library(iog_io STATIC src/io/uring.c)
+target_link_libraries(iog_io PUBLIC ${LIBURING_LIBRARIES})
+target_include_directories(iog_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
 
 add_library(rw_memory STATIC src/utils/memory.c)
 target_include_directories(rw_memory PUBLIC ${CMAKE_SOURCE_DIR}/src)
@@ -153,10 +153,10 @@ if(BUILD_TESTING AND UNITY_INCLUDE_DIR AND UNITY_SRC_DIR)
         add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
     endmacro()
 
-    rw_add_test(test_io_uring tests/unit/test_io_uring.c rw_io)
+    rw_add_test(test_io_uring tests/unit/test_io_uring.c iog_io)
     rw_add_test(test_memory tests/unit/test_memory.c rw_memory)
     rw_add_test(test_config_toml tests/unit/test_config_toml.c rw_config)
-    rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c rw_ipc rw_io)
+    rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c rw_ipc iog_io)
 endif()
 ```
 
@@ -385,59 +385,59 @@ git commit -m "feat: add memory allocator wrapper with mimalloc support"
 void setUp(void) {}
 void tearDown(void) {}
 
-void test_rw_io_init_creates_context(void)
+void test_iog_io_init_creates_context(void)
 {
-    rw_io_ctx_t *ctx = rw_io_init(64, 0);
+    iog_io_ctx_t *ctx = iog_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
-    rw_io_destroy(ctx);
+    iog_io_destroy(ctx);
 }
 
-void test_rw_io_init_zero_depth_fails(void)
+void test_iog_io_init_zero_depth_fails(void)
 {
-    rw_io_ctx_t *ctx = rw_io_init(0, 0);
+    iog_io_ctx_t *ctx = iog_io_init(0, 0);
     TEST_ASSERT_NULL(ctx);
 }
 
-void test_rw_io_run_once_with_timeout(void)
+void test_iog_io_run_once_with_timeout(void)
 {
-    rw_io_ctx_t *ctx = rw_io_init(64, 0);
+    iog_io_ctx_t *ctx = iog_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
 
     /* Submit a timeout and run once — should complete after ~10ms */
     int fired = 0;
-    int ret = rw_io_add_timeout(ctx, 10, &fired);
+    int ret = iog_io_add_timeout(ctx, 10, &fired);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    ret = rw_io_run_once(ctx, 100); /* wait up to 100ms */
+    ret = iog_io_run_once(ctx, 100); /* wait up to 100ms */
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_INT(1, fired);
 
-    rw_io_destroy(ctx);
+    iog_io_destroy(ctx);
 }
 
-void test_rw_io_nop_completes(void)
+void test_iog_io_nop_completes(void)
 {
-    rw_io_ctx_t *ctx = rw_io_init(64, 0);
+    iog_io_ctx_t *ctx = iog_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
 
     int completed = 0;
-    int ret = rw_io_submit_nop(ctx, &completed);
+    int ret = iog_io_submit_nop(ctx, &completed);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    ret = rw_io_run_once(ctx, 100);
+    ret = iog_io_run_once(ctx, 100);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_INT(1, completed);
 
-    rw_io_destroy(ctx);
+    iog_io_destroy(ctx);
 }
 
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_rw_io_init_creates_context);
-    RUN_TEST(test_rw_io_init_zero_depth_fails);
-    RUN_TEST(test_rw_io_run_once_with_timeout);
-    RUN_TEST(test_rw_io_nop_completes);
+    RUN_TEST(test_iog_io_init_creates_context);
+    RUN_TEST(test_iog_io_init_zero_depth_fails);
+    RUN_TEST(test_iog_io_run_once_with_timeout);
+    RUN_TEST(test_iog_io_nop_completes);
     return UNITY_END();
 }
 ```
@@ -460,20 +460,20 @@ Expected: FAIL — linker errors, functions undefined
 #include <stdint.h>
 
 /* Opaque io_uring event loop context */
-typedef struct rw_io_ctx rw_io_ctx_t;
+typedef struct iog_io_ctx iog_io_ctx_t;
 
 /* Completion callback type.
  * res: CQE result (bytes transferred or negative errno)
  * user_data: pointer passed when operation was submitted */
-typedef void (*rw_io_cb)(int res, void *user_data);
+typedef void (*iog_io_cb)(int res, void *user_data);
 
 /* Internal: completion entry tracking */
 typedef struct {
-    rw_io_cb cb;
+    iog_io_cb cb;
     void    *user_data;
-} rw_io_completion_t;
+} iog_io_completion_t;
 
-struct rw_io_ctx {
+struct iog_io_ctx {
     struct io_uring ring;
     bool            running;
     uint32_t        queue_depth;
@@ -482,31 +482,31 @@ struct rw_io_ctx {
 /* Create io_uring context. Returns nullptr on failure.
  * queue_depth: number of SQE slots (must be > 0, rounded up to power of 2)
  * flags: io_uring setup flags (e.g., IORING_SETUP_COOP_TASKRUN) */
-[[nodiscard]] rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags);
+[[nodiscard]] iog_io_ctx_t *iog_io_init(uint32_t queue_depth, uint32_t flags);
 
 /* Destroy io_uring context and free resources */
-void rw_io_destroy(rw_io_ctx_t *ctx);
+void iog_io_destroy(iog_io_ctx_t *ctx);
 
 /* Run event loop once: submit pending SQEs, wait for at least 1 CQE.
  * timeout_ms: max wait time in milliseconds (0 = no wait, poll only)
  * Returns: number of CQEs processed, or negative errno on error */
-[[nodiscard]] int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms);
+[[nodiscard]] int iog_io_run_once(iog_io_ctx_t *ctx, uint32_t timeout_ms);
 
-/* Run event loop until rw_io_stop() is called.
+/* Run event loop until iog_io_stop() is called.
  * Returns 0 on clean stop, negative errno on error. */
-[[nodiscard]] int rw_io_run(rw_io_ctx_t *ctx);
+[[nodiscard]] int iog_io_run(iog_io_ctx_t *ctx);
 
 /* Signal the event loop to stop after current iteration */
-void rw_io_stop(rw_io_ctx_t *ctx);
+void iog_io_stop(iog_io_ctx_t *ctx);
 
 /* Submit a NOP operation (for testing).
  * completed: pointer to int, set to 1 when CQE arrives */
-[[nodiscard]] int rw_io_submit_nop(rw_io_ctx_t *ctx, int *completed);
+[[nodiscard]] int iog_io_submit_nop(iog_io_ctx_t *ctx, int *completed);
 
 /* Submit a timeout.
  * timeout_ms: duration in milliseconds
  * fired: pointer to int, set to 1 when timeout fires */
-[[nodiscard]] int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired);
+[[nodiscard]] int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired);
 
 #endif /* RINGWALL_IO_URING_H */
 ```
@@ -534,13 +534,13 @@ static void timeout_cb(int res, void *user_data)
     *flag = 1;
 }
 
-rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags)
+iog_io_ctx_t *iog_io_init(uint32_t queue_depth, uint32_t flags)
 {
     if (queue_depth == 0) {
         return nullptr;
     }
 
-    rw_io_ctx_t *ctx = calloc(1, sizeof(*ctx));
+    iog_io_ctx_t *ctx = calloc(1, sizeof(*ctx));
     if (ctx == nullptr) {
         return nullptr;
     }
@@ -556,7 +556,7 @@ rw_io_ctx_t *rw_io_init(uint32_t queue_depth, uint32_t flags)
     return ctx;
 }
 
-void rw_io_destroy(rw_io_ctx_t *ctx)
+void iog_io_destroy(iog_io_ctx_t *ctx)
 {
     if (ctx == nullptr) {
         return;
@@ -565,7 +565,7 @@ void rw_io_destroy(rw_io_ctx_t *ctx)
     free(ctx);
 }
 
-int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
+int iog_io_run_once(iog_io_ctx_t *ctx, uint32_t timeout_ms)
 {
     struct io_uring_cqe *cqe;
     int ret;
@@ -592,7 +592,7 @@ int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
     /* Process all available CQEs */
     unsigned head;
     io_uring_for_each_cqe(&ctx->ring, head, cqe) {
-        rw_io_completion_t *comp = io_uring_cqe_get_data(cqe);
+        iog_io_completion_t *comp = io_uring_cqe_get_data(cqe);
         if (comp != nullptr) {
             comp->cb(cqe->res, comp->user_data);
             free(comp);
@@ -604,11 +604,11 @@ int rw_io_run_once(rw_io_ctx_t *ctx, uint32_t timeout_ms)
     return processed;
 }
 
-int rw_io_run(rw_io_ctx_t *ctx)
+int iog_io_run(iog_io_ctx_t *ctx)
 {
     ctx->running = true;
     while (ctx->running) {
-        int ret = rw_io_run_once(ctx, 1000);
+        int ret = iog_io_run_once(ctx, 1000);
         if (ret < 0) {
             return ret;
         }
@@ -616,19 +616,19 @@ int rw_io_run(rw_io_ctx_t *ctx)
     return 0;
 }
 
-void rw_io_stop(rw_io_ctx_t *ctx)
+void iog_io_stop(iog_io_ctx_t *ctx)
 {
     ctx->running = false;
 }
 
-int rw_io_submit_nop(rw_io_ctx_t *ctx, int *completed)
+int iog_io_submit_nop(iog_io_ctx_t *ctx, int *completed)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    rw_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -641,7 +641,7 @@ int rw_io_submit_nop(rw_io_ctx_t *ctx, int *completed)
     return 0;
 }
 
-int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
+int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -650,7 +650,7 @@ int rw_io_add_timeout(rw_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 
     /* Allocate completion + timespec together */
     typedef struct {
-        rw_io_completion_t comp;
+        iog_io_completion_t comp;
         struct __kernel_timespec ts;
     } timeout_data_t;
 
@@ -703,9 +703,9 @@ Add to `tests/unit/test_io_uring.c`:
 #include <sys/signalfd.h>
 #include <unistd.h>
 
-void test_rw_io_accept_and_recv(void)
+void test_iog_io_accept_and_recv(void)
 {
-    rw_io_ctx_t *ctx = rw_io_init(64, 0);
+    iog_io_ctx_t *ctx = iog_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
 
     /* Create a Unix domain socket pair to test accept+recv */
@@ -720,22 +720,22 @@ void test_rw_io_accept_and_recv(void)
     /* Submit recv on the other end */
     char buf[64] = {0};
     int recv_done = 0;
-    ret = rw_io_prep_recv(ctx, sv[1], buf, sizeof(buf), &recv_done);
+    ret = iog_io_prep_recv(ctx, sv[1], buf, sizeof(buf), &recv_done);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    ret = rw_io_run_once(ctx, 100);
+    ret = iog_io_run_once(ctx, 100);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(1, ret);
     TEST_ASSERT_EQUAL_INT(1, recv_done);
     TEST_ASSERT_EQUAL_STRING("hello", buf);
 
     close(sv[0]);
     close(sv[1]);
-    rw_io_destroy(ctx);
+    iog_io_destroy(ctx);
 }
 
-void test_rw_io_send(void)
+void test_iog_io_send(void)
 {
-    rw_io_ctx_t *ctx = rw_io_init(64, 0);
+    iog_io_ctx_t *ctx = iog_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
 
     int sv[2];
@@ -745,10 +745,10 @@ void test_rw_io_send(void)
     /* Submit send on one end */
     const char *msg = "world";
     int send_done = 0;
-    ret = rw_io_prep_send(ctx, sv[0], msg, 5, &send_done);
+    ret = iog_io_prep_send(ctx, sv[0], msg, 5, &send_done);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    ret = rw_io_run_once(ctx, 100);
+    ret = iog_io_run_once(ctx, 100);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(1, ret);
     TEST_ASSERT_EQUAL_INT(1, send_done);
 
@@ -760,12 +760,12 @@ void test_rw_io_send(void)
 
     close(sv[0]);
     close(sv[1]);
-    rw_io_destroy(ctx);
+    iog_io_destroy(ctx);
 }
 
-void test_rw_io_signalfd(void)
+void test_iog_io_signalfd(void)
 {
-    rw_io_ctx_t *ctx = rw_io_init(64, 0);
+    iog_io_ctx_t *ctx = iog_io_init(64, 0);
     TEST_ASSERT_NOT_NULL(ctx);
 
     /* Block SIGUSR1, create signalfd */
@@ -780,56 +780,56 @@ void test_rw_io_signalfd(void)
     /* Submit read on signalfd */
     struct signalfd_siginfo siginfo;
     int sig_received = 0;
-    int ret = rw_io_prep_read(ctx, sfd, &siginfo, sizeof(siginfo), &sig_received);
+    int ret = iog_io_prep_read(ctx, sfd, &siginfo, sizeof(siginfo), &sig_received);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Send ourselves SIGUSR1 */
     kill(getpid(), SIGUSR1);
 
-    ret = rw_io_run_once(ctx, 100);
+    ret = iog_io_run_once(ctx, 100);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(1, ret);
     TEST_ASSERT_EQUAL_INT(1, sig_received);
     TEST_ASSERT_EQUAL_UINT32(SIGUSR1, siginfo.ssi_signo);
 
     close(sfd);
     sigprocmask(SIG_UNBLOCK, &mask, nullptr);
-    rw_io_destroy(ctx);
+    iog_io_destroy(ctx);
 }
 ```
 
 Also add to `main()`:
 ```c
-RUN_TEST(test_rw_io_accept_and_recv);
-RUN_TEST(test_rw_io_send);
-RUN_TEST(test_rw_io_signalfd);
+RUN_TEST(test_iog_io_accept_and_recv);
+RUN_TEST(test_iog_io_send);
+RUN_TEST(test_iog_io_signalfd);
 ```
 
 **Step 2: Run test to verify new tests fail**
 
-Expected: Linker errors for `rw_io_prep_recv`, `rw_io_prep_send`, `rw_io_prep_read`
+Expected: Linker errors for `iog_io_prep_recv`, `iog_io_prep_send`, `iog_io_prep_read`
 
 **Step 3: Add recv, send, read operations to io/uring.h and io/uring.c**
 
 Add to header:
 ```c
 /* Submit a recv operation on a socket */
-[[nodiscard]] int rw_io_prep_recv(rw_io_ctx_t *ctx, int fd, void *buf,
+[[nodiscard]] int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf,
                                   size_t len, int *completed);
 
 /* Submit a send operation on a socket */
-[[nodiscard]] int rw_io_prep_send(rw_io_ctx_t *ctx, int fd, const void *buf,
+[[nodiscard]] int iog_io_prep_send(iog_io_ctx_t *ctx, int fd, const void *buf,
                                   size_t len, int *completed);
 
 /* Submit a read operation on a file descriptor (TUN, signalfd, etc.) */
-[[nodiscard]] int rw_io_prep_read(rw_io_ctx_t *ctx, int fd, void *buf,
+[[nodiscard]] int iog_io_prep_read(iog_io_ctx_t *ctx, int fd, void *buf,
                                   size_t len, int *completed);
 
 /* Submit a write operation on a file descriptor */
-[[nodiscard]] int rw_io_prep_write(rw_io_ctx_t *ctx, int fd, const void *buf,
+[[nodiscard]] int iog_io_prep_write(iog_io_ctx_t *ctx, int fd, const void *buf,
                                    size_t len, int *completed);
 ```
 
-Implementation follows the same pattern as `rw_io_submit_nop`: allocate `rw_io_completion_t`, set callback that sets `*completed = 1`, prep the SQE, set data.
+Implementation follows the same pattern as `iog_io_submit_nop`: allocate `iog_io_completion_t`, set callback that sets `*completed = 1`, prep the SQE, set data.
 
 **Step 4: Run all tests**
 
@@ -2437,7 +2437,7 @@ int main(void)
 
 Add to CMakeLists.txt:
 ```cmake
-rw_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c rw_ipc rw_io)
+rw_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c rw_ipc iog_io)
 ```
 
 **Step 2: Run integration test**

@@ -251,10 +251,10 @@ void test_worker_loop_tun_write(void)
     /* Write to TUN fd via io_uring and verify on the other end */
     const char *msg = "tun-pkt";
     int completed = 0;
-    ret = rw_io_prep_write(loop.io, conn->tun_fd, msg, 7, &completed);
+    ret = iog_io_prep_write(loop.io, conn->tun_fd, msg, 7, &completed);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    ret = rw_io_run_once(loop.io, 500);
+    ret = iog_io_run_once(loop.io, 500);
     TEST_ASSERT_GREATER_OR_EQUAL_INT(0, ret);
 
     char buf[16] = {0};

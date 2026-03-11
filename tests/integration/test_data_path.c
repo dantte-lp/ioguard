@@ -129,23 +129,23 @@ void test_data_path_socketpair_roundtrip(void)
     TEST_ASSERT_EQUAL_INT((int)(IOG_CSTP_HEADER_SIZE + sizeof(payload)), encoded);
 
     /* 3. Create io_uring context */
-    rw_io_ctx_t *ctx = rw_io_init(8, 0);
+    iog_io_ctx_t *ctx = iog_io_init(8, 0);
     TEST_ASSERT_NOT_NULL(ctx);
 
     /* 4. Submit send to sv[0] */
     int send_done = 0;
-    ret = rw_io_prep_send(ctx, sv[0], send_buf, (size_t)encoded, &send_done);
+    ret = iog_io_prep_send(ctx, sv[0], send_buf, (size_t)encoded, &send_done);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* 5. Submit recv from sv[1] */
     uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     int recv_done = 0;
-    ret = rw_io_prep_recv(ctx, sv[1], recv_buf, sizeof(recv_buf), &recv_done);
+    ret = iog_io_prep_recv(ctx, sv[1], recv_buf, sizeof(recv_buf), &recv_done);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* 6. Process both ops (may need two iterations) */
     for (int i = 0; i < 5 && (!send_done || !recv_done); i++) {
-        ret = rw_io_run_once(ctx, 1000);
+        ret = iog_io_run_once(ctx, 1000);
         TEST_ASSERT_GREATER_OR_EQUAL_INT(0, ret);
     }
     TEST_ASSERT_EQUAL_INT(1, send_done);
@@ -162,7 +162,7 @@ void test_data_path_socketpair_roundtrip(void)
     /* 8. Cleanup */
     close(sv[0]);
     close(sv[1]);
-    rw_io_destroy(ctx);
+    iog_io_destroy(ctx);
 }
 
 /**
@@ -249,10 +249,10 @@ void test_worker_connection_lifecycle(void)
 int main(void)
 {
     /* Probe io_uring availability before running tests */
-    rw_io_ctx_t *probe = rw_io_init(4, 0);
+    iog_io_ctx_t *probe = iog_io_init(4, 0);
     if (probe != nullptr) {
         io_uring_available = true;
-        rw_io_destroy(probe);
+        iog_io_destroy(probe);
     }
 
     UNITY_BEGIN();

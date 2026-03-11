@@ -777,7 +777,7 @@ git commit -m "chore: Sprint 5 complete — storage & security hardening"
 ## Critical Files
 
 **Existing (reuse after rename):**
-- `src/io/uring.h` — `rw_io_*` for I/O operations
+- `src/io/uring.h` — `iog_io_*` for I/O operations
 - `src/core/session.h` — session cookie pattern
 - `src/core/secmod.h` — auth-mod process (will integrate storage)
 - `src/core/worker.h` — worker process (will get read-only mdbx access)

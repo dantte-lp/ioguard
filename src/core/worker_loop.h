@@ -15,7 +15,7 @@
  */
 typedef struct {
     rw_worker_t *worker;
-    rw_io_ctx_t *io;
+    iog_io_ctx_t *io;
     int accept_fd; /* unix socket: main passes client fds here */
     int ipc_fd;    /* IPC to auth-mod */
     bool running;

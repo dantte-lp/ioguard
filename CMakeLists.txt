@@ -208,11 +208,11 @@ include_directories(
 # ioguard core libraries
 # ============================================================================
 
-add_library(rw_io STATIC src/io/uring.c)
-target_link_libraries(rw_io PUBLIC ${LIBURING_LIBRARIES})
-target_link_directories(rw_io PUBLIC ${LIBURING_LIBRARY_DIRS})
-target_include_directories(rw_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
-target_compile_definitions(rw_io PUBLIC _GNU_SOURCE)
+add_library(iog_io STATIC src/io/uring.c)
+target_link_libraries(iog_io PUBLIC ${LIBURING_LIBRARIES})
+target_link_directories(iog_io PUBLIC ${LIBURING_LIBRARY_DIRS})
+target_include_directories(iog_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
+target_compile_definitions(iog_io PUBLIC _GNU_SOURCE)
 
 add_library(rw_memory STATIC src/utils/memory.c)
 target_include_directories(rw_memory PUBLIC ${CMAKE_SOURCE_DIR}/src)
@@ -538,8 +538,8 @@ if(BUILD_TESTING)
 
         # Sprint 1 tests
         rw_add_test(test_memory tests/unit/test_memory.c rw_memory)
-        rw_add_test(test_io_uring tests/unit/test_io_uring.c rw_io)
-        rw_add_test(test_io_callback tests/unit/test_io_callback.c rw_io)
+        rw_add_test(test_io_uring tests/unit/test_io_uring.c iog_io)
+        rw_add_test(test_io_callback tests/unit/test_io_callback.c iog_io)
         rw_add_test(test_fdpass tests/unit/test_fdpass.c rw_fdpass)
         rw_add_test(test_main_bootstrap tests/unit/test_main_bootstrap.c rw_main_helpers)
         rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c rw_ipc)
@@ -547,7 +547,7 @@ if(BUILD_TESTING)
         rw_add_test(test_config_toml tests/unit/test_config_toml.c rw_config)
         rw_add_test(test_process tests/unit/test_process.c rw_core)
         if(EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_ipc_roundtrip.c)
-            rw_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c rw_ipc rw_io)
+            rw_add_test(test_ipc_roundtrip tests/integration/test_ipc_roundtrip.c rw_ipc iog_io)
         endif()
         if(TARGET rw_secmod AND EXISTS ${CMAKE_SOURCE_DIR}/tests/integration/test_auth_flow.c)
             rw_add_test(test_auth_flow tests/integration/test_auth_flow.c rw_secmod rw_ipc rw_session rw_pam rw_config rw_memory)
@@ -624,10 +624,10 @@ if(BUILD_TESTING)
         add_library(rw_worker_loop STATIC src/core/worker_loop.c)
         target_include_directories(rw_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
         target_compile_definitions(rw_worker_loop PUBLIC _GNU_SOURCE)
-        target_link_libraries(rw_worker_loop PUBLIC rw_worker rw_io rw_fdpass rw_cstp rw_dpd)
+        target_link_libraries(rw_worker_loop PUBLIC rw_worker iog_io rw_fdpass rw_cstp rw_dpd)
 
         rw_add_test(test_worker_loop tests/unit/test_worker_loop.c
-            rw_worker_loop rw_io rw_fdpass rw_cstp rw_dpd rw_worker)
+            rw_worker_loop iog_io rw_fdpass rw_cstp rw_dpd rw_worker)
 
         # Sprint 6 — Per-connection TLS handshake
         if(WOLFSSL_FOUND)
@@ -660,7 +660,7 @@ if(BUILD_TESTING)
             rw_conn_timer rw_conn_data rw_cstp rw_dpd rw_compress)
 
         # Sprint 3 — Data path integration test
-        rw_add_test(test_data_path tests/integration/test_data_path.c rw_cstp rw_dpd rw_worker rw_io)
+        rw_add_test(test_data_path tests/integration/test_data_path.c rw_cstp rw_dpd rw_worker iog_io)
 
         # Sprint 4 — Compression abstraction
         add_library(rw_compress STATIC src/network/compress.c)
@@ -867,10 +867,10 @@ if(BUILD_TESTING)
         endif()
 
         # Sprint 6 — IPAM (IP address pool management)
-        add_library(rw_ipam STATIC src/network/ipam.c)
-        target_include_directories(rw_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
-        target_compile_definitions(rw_ipam PRIVATE _GNU_SOURCE)
-        rw_add_test(test_ipam tests/unit/test_ipam.c rw_ipam)
+        add_library(iog_ipam STATIC src/network/ipam.c)
+        target_include_directories(iog_ipam PUBLIC ${CMAKE_SOURCE_DIR}/src)
+        target_compile_definitions(iog_ipam PRIVATE _GNU_SOURCE)
+        rw_add_test(test_ipam tests/unit/test_ipam.c iog_ipam)
 
         # Sprint 6 — Split DNS configuration
         add_library(rw_dns STATIC src/network/dns.c)
