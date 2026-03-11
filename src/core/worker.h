@@ -39,8 +39,8 @@ typedef struct {
     uint64_t conn_id;
     int tls_fd;
     int tun_fd;
-    rw_dpd_ctx_t dpd;
-    rw_compress_ctx_t compress;
+    iog_dpd_ctx_t dpd;
+    iog_compress_ctx_t compress;
     bool active;
     uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     size_t recv_len;

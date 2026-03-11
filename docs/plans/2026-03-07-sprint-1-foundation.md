@@ -980,7 +980,7 @@ typedef struct {
 } rw_ipc_channel_t;
 
 /* Maximum IPC message size (must fit in provided buffers) */
-#define RW_IPC_MAX_MSG_SIZE 4096
+#define IOG_IPC_MAX_MSG_SIZE 4096
 
 /* Create a SOCK_SEQPACKET socketpair for IPC */
 [[nodiscard]] int rw_ipc_create_pair(rw_ipc_channel_t *ch);
@@ -1262,7 +1262,7 @@ void test_pack_unpack_auth_request(void)
         .source_ip = "10.0.0.1",
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = rw_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -1285,7 +1285,7 @@ void test_pack_unpack_auth_response(void)
         .session_ttl = 3600,
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = rw_ipc_pack_auth_response(&resp, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -1308,7 +1308,7 @@ void test_pack_unpack_worker_status(void)
         .pid = 12345,
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = rw_ipc_pack_worker_status(&status, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -2363,7 +2363,7 @@ void test_ipc_roundtrip_auth(void)
         close(ch.parent_fd);
 
         /* Receive auth request */
-        uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+        uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
         ssize_t n = rw_ipc_recv(ch.child_fd, buf, sizeof(buf));
         if (n <= 0) { _exit(1); }
 
@@ -2378,7 +2378,7 @@ void test_ipc_roundtrip_auth(void)
             .session_ttl = 3600,
         };
 
-        uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];
+        uint8_t resp_buf[IOG_IPC_MAX_MSG_SIZE];
         ssize_t packed = rw_ipc_pack_auth_response(&resp, resp_buf, sizeof(resp_buf));
         if (packed <= 0) { _exit(3); }
 
@@ -2398,7 +2398,7 @@ void test_ipc_roundtrip_auth(void)
         .source_ip = "192.168.1.100",
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = rw_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 

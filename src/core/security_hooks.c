@@ -43,7 +43,7 @@ int rw_security_apply_process(bool is_worker, const iog_config_t *config)
     return 0;
 }
 
-int rw_security_build_fw_session(rw_fw_session_t *session, const char *username, int af,
+int iog_security_build_fw_session(iog_fw_session_t *session, const char *username, int af,
                                  uint32_t ip)
 {
     if (session == nullptr || username == nullptr) {
@@ -59,7 +59,7 @@ int rw_security_build_fw_session(rw_fw_session_t *session, const char *username,
     snprintf(session->username, sizeof(session->username), "%s", username);
 
     /* Build chain name from session */
-    int ret = rw_fw_chain_name(session, session->chain_name, sizeof(session->chain_name));
+    int ret = iog_fw_chain_name(session, session->chain_name, sizeof(session->chain_name));
     if (ret < 0) {
         return ret;
     }
@@ -69,22 +69,22 @@ int rw_security_build_fw_session(rw_fw_session_t *session, const char *username,
 
 int rw_security_session_create(const char *username, int af, uint32_t ip)
 {
-    rw_fw_session_t session;
-    int ret = rw_security_build_fw_session(&session, username, af, ip);
+    iog_fw_session_t session;
+    int ret = iog_security_build_fw_session(&session, username, af, ip);
     if (ret < 0) {
         return ret;
     }
 
-    return rw_fw_session_create(&session);
+    return iog_fw_session_create(&session);
 }
 
 int rw_security_session_destroy(const char *username, int af, uint32_t ip)
 {
-    rw_fw_session_t session;
-    int ret = rw_security_build_fw_session(&session, username, af, ip);
+    iog_fw_session_t session;
+    int ret = iog_security_build_fw_session(&session, username, af, ip);
     if (ret < 0) {
         return ret;
     }
 
-    return rw_fw_session_destroy(&session);
+    return iog_fw_session_destroy(&session);
 }

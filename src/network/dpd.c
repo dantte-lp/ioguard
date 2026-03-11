@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-void rw_dpd_init(rw_dpd_ctx_t *ctx, uint32_t interval_s, uint32_t max_retries)
+void iog_dpd_init(iog_dpd_ctx_t *ctx, uint32_t interval_s, uint32_t max_retries)
 {
     memset(ctx, 0, sizeof(*ctx));
     ctx->state = IOG_DPD_IDLE;
@@ -11,7 +11,7 @@ void rw_dpd_init(rw_dpd_ctx_t *ctx, uint32_t interval_s, uint32_t max_retries)
     ctx->max_retries = (max_retries > 0) ? max_retries : IOG_DPD_DEFAULT_MAX_RETRIES;
 }
 
-void rw_dpd_reset(rw_dpd_ctx_t *ctx)
+void iog_dpd_reset(iog_dpd_ctx_t *ctx)
 {
     ctx->state = IOG_DPD_IDLE;
     ctx->retry_count = 0;
@@ -19,7 +19,7 @@ void rw_dpd_reset(rw_dpd_ctx_t *ctx)
     ctx->need_send_response = false;
 }
 
-rw_dpd_state_t rw_dpd_on_timeout(rw_dpd_ctx_t *ctx)
+iog_dpd_state_t iog_dpd_on_timeout(iog_dpd_ctx_t *ctx)
 {
     switch (ctx->state) {
     case IOG_DPD_IDLE:
@@ -42,7 +42,7 @@ rw_dpd_state_t rw_dpd_on_timeout(rw_dpd_ctx_t *ctx)
     return ctx->state;
 }
 
-rw_dpd_state_t rw_dpd_on_response(rw_dpd_ctx_t *ctx, uint16_t sequence)
+iog_dpd_state_t iog_dpd_on_response(iog_dpd_ctx_t *ctx, uint16_t sequence)
 {
     (void)sequence;
     if (ctx->state == IOG_DPD_PENDING) {
@@ -53,7 +53,7 @@ rw_dpd_state_t rw_dpd_on_response(rw_dpd_ctx_t *ctx, uint16_t sequence)
     return ctx->state;
 }
 
-rw_dpd_state_t rw_dpd_on_request(rw_dpd_ctx_t *ctx, uint16_t sequence)
+iog_dpd_state_t iog_dpd_on_request(iog_dpd_ctx_t *ctx, uint16_t sequence)
 {
     (void)sequence;
     ctx->need_send_response = true;
@@ -61,12 +61,12 @@ rw_dpd_state_t rw_dpd_on_request(rw_dpd_ctx_t *ctx, uint16_t sequence)
     return ctx->state;
 }
 
-bool rw_dpd_should_probe(const rw_dpd_ctx_t *ctx, time_t now)
+bool iog_dpd_should_probe(const iog_dpd_ctx_t *ctx, time_t now)
 {
     return (now - ctx->last_send) >= (time_t)ctx->interval_s;
 }
 
-const char *rw_dpd_state_name(rw_dpd_state_t state)
+const char *iog_dpd_state_name(iog_dpd_state_t state)
 {
     switch (state) {
     case IOG_DPD_IDLE:

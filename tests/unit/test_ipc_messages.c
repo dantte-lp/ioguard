@@ -2,7 +2,7 @@
 #include <unity/unity.h>
 #include "ipc/messages.h"
 
-#define RW_IPC_MAX_MSG_SIZE 4096
+#define IOG_IPC_MAX_MSG_SIZE 4096
 
 void setUp(void)
 {
@@ -24,7 +24,7 @@ void test_pack_unpack_auth_request(void)
         .otp = "123456",
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -54,7 +54,7 @@ void test_pack_unpack_auth_response(void)
         .route_count = 2,
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_response(&resp, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -81,7 +81,7 @@ void test_pack_unpack_worker_status(void)
         .pid = 12345,
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_worker_status(&status, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -101,7 +101,7 @@ void test_pack_unpack_session_validate(void)
         .cookie_len = sizeof(test_cookie),
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_session_validate(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -123,7 +123,7 @@ void test_pack_unpack_auth_response_requires_totp(void)
         .requires_totp = true,
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_response(&resp, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -146,7 +146,7 @@ void test_pack_unpack_auth_response_no_totp(void)
         .requires_totp = false,
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_response(&resp, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 

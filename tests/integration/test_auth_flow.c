@@ -52,7 +52,7 @@ void test_auth_flow_failed_auth(void)
         .source_ip = "192.168.1.1",
     };
 
-    uint8_t send_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t send_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_request(&req, send_buf, sizeof(send_buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -61,7 +61,7 @@ void test_auth_flow_failed_auth(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Sec-mod reads from parent_fd (its ipc_fd) */
-    uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t recv_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t n = iog_ipc_recv(ch.parent_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
@@ -70,7 +70,7 @@ void test_auth_flow_failed_auth(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Worker reads response from child_fd */
-    uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t resp_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t resp_n = iog_ipc_recv(ch.child_fd, resp_buf, sizeof(resp_buf));
     TEST_ASSERT_GREATER_THAN(0, resp_n);
 
@@ -101,21 +101,21 @@ void test_auth_flow_response_format(void)
         .source_ip = "10.0.0.1",
     };
 
-    uint8_t send_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t send_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_request(&req, send_buf, sizeof(send_buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
     int ret = iog_ipc_send(ch.child_fd, send_buf, (size_t)packed);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t recv_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t n = iog_ipc_recv(ch.parent_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
     ret = iog_secmod_handle_message(&ctx, recv_buf, (size_t)n);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t resp_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t resp_n = iog_ipc_recv(ch.child_fd, resp_buf, sizeof(resp_buf));
     TEST_ASSERT_GREATER_THAN(0, resp_n);
 
@@ -148,21 +148,21 @@ void test_auth_flow_session_validate_bogus(void)
         .cookie_len = IOG_SESSION_COOKIE_SIZE,
     };
 
-    uint8_t send_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t send_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_session_validate(&sv_req, send_buf, sizeof(send_buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
     int ret = iog_ipc_send(ch.child_fd, send_buf, (size_t)packed);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t recv_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t n = iog_ipc_recv(ch.parent_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
     ret = iog_secmod_handle_message(&ctx, recv_buf, (size_t)n);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t resp_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t resp_n = iog_ipc_recv(ch.child_fd, resp_buf, sizeof(resp_buf));
     TEST_ASSERT_GREATER_THAN(0, resp_n);
 

@@ -21,7 +21,7 @@ typedef struct {
     bool dtls_active;
     uint32_t dtls_fail_count;
     uint32_t dtls_max_fails;
-    rw_compress_type_t compress_type;
+    iog_compress_type_t compress_type;
 } iog_channel_ctx_t;
 
 /** Initialize channel context (starts CSTP_ONLY). */

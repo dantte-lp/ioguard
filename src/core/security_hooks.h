@@ -46,7 +46,7 @@
  * @param ip       Assigned IP (network byte order for IPv4).
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int rw_security_build_fw_session(rw_fw_session_t *session, const char *username,
+[[nodiscard]] int iog_security_build_fw_session(iog_fw_session_t *session, const char *username,
                                                int af, uint32_t ip);
 
 /**

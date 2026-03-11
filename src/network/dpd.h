@@ -7,8 +7,8 @@
  * (need_send_request, need_send_response) to decide what to send.
  */
 
-#ifndef RINGWALL_NETWORK_DPD_H
-#define RINGWALL_NETWORK_DPD_H
+#ifndef IOGUARD_NETWORK_DPD_H
+#define IOGUARD_NETWORK_DPD_H
 
 #include <stdint.h>
 #include <time.h>
@@ -24,7 +24,7 @@ typedef enum : uint8_t {
     IOG_DPD_IDLE,
     IOG_DPD_PENDING,
     IOG_DPD_DEAD,
-} rw_dpd_state_t;
+} iog_dpd_state_t;
 
 /** VPN channel state (CSTP vs DTLS). */
 typedef enum : uint8_t {
@@ -35,7 +35,7 @@ typedef enum : uint8_t {
 
 /** DPD context — pure state machine, no I/O. */
 typedef struct {
-    rw_dpd_state_t state;
+    iog_dpd_state_t state;
     iog_channel_state_t channel;
     uint32_t interval_s;
     uint32_t max_retries;
@@ -45,7 +45,7 @@ typedef struct {
     time_t last_recv;
     bool need_send_response;
     bool need_send_request;
-} rw_dpd_ctx_t;
+} iog_dpd_ctx_t;
 
 /**
  * @brief Initialize DPD context.
@@ -53,10 +53,10 @@ typedef struct {
  * @param interval_s Probe interval (0 = use default 30s).
  * @param max_retries Max retries (0 = use default 3).
  */
-void rw_dpd_init(rw_dpd_ctx_t *ctx, uint32_t interval_s, uint32_t max_retries);
+void iog_dpd_init(iog_dpd_ctx_t *ctx, uint32_t interval_s, uint32_t max_retries);
 
 /** Reset DPD state (e.g., after reconnection). */
-void rw_dpd_reset(rw_dpd_ctx_t *ctx);
+void iog_dpd_reset(iog_dpd_ctx_t *ctx);
 
 /**
  * @brief Handle DPD timeout (interval elapsed without response).
@@ -66,7 +66,7 @@ void rw_dpd_reset(rw_dpd_ctx_t *ctx);
  * @param ctx DPD context.
  * @return New state after transition.
  */
-[[nodiscard]] rw_dpd_state_t rw_dpd_on_timeout(rw_dpd_ctx_t *ctx);
+[[nodiscard]] iog_dpd_state_t iog_dpd_on_timeout(iog_dpd_ctx_t *ctx);
 
 /**
  * @brief Handle DPD response received from peer.
@@ -76,7 +76,7 @@ void rw_dpd_reset(rw_dpd_ctx_t *ctx);
  * @param sequence Sequence number from the response.
  * @return New state after transition.
  */
-[[nodiscard]] rw_dpd_state_t rw_dpd_on_response(rw_dpd_ctx_t *ctx, uint16_t sequence);
+[[nodiscard]] iog_dpd_state_t iog_dpd_on_response(iog_dpd_ctx_t *ctx, uint16_t sequence);
 
 /**
  * @brief Handle DPD request received from peer.
@@ -86,7 +86,7 @@ void rw_dpd_reset(rw_dpd_ctx_t *ctx);
  * @param sequence Sequence number from the request.
  * @return Current state (unchanged).
  */
-[[nodiscard]] rw_dpd_state_t rw_dpd_on_request(rw_dpd_ctx_t *ctx, uint16_t sequence);
+[[nodiscard]] iog_dpd_state_t iog_dpd_on_request(iog_dpd_ctx_t *ctx, uint16_t sequence);
 
 /**
  * @brief Check if DPD probe should be sent (interval elapsed).
@@ -94,14 +94,14 @@ void rw_dpd_reset(rw_dpd_ctx_t *ctx);
  * @param now Current time (time(NULL)).
  * @return true if (now - last_send) >= interval_s.
  */
-[[nodiscard]] bool rw_dpd_should_probe(const rw_dpd_ctx_t *ctx, time_t now);
+[[nodiscard]] bool iog_dpd_should_probe(const iog_dpd_ctx_t *ctx, time_t now);
 
 /**
  * @brief Get human-readable state name.
  * @param state DPD state value.
  * @return Static string with the state name, or "UNKNOWN".
  */
-const char *rw_dpd_state_name(rw_dpd_state_t state);
+const char *iog_dpd_state_name(iog_dpd_state_t state);
 
 /**
  * @brief Get human-readable channel state name.
@@ -110,4 +110,4 @@ const char *rw_dpd_state_name(rw_dpd_state_t state);
  */
 const char *iog_channel_state_name(iog_channel_state_t state);
 
-#endif /* RINGWALL_NETWORK_DPD_H */
+#endif /* IOGUARD_NETWORK_DPD_H */

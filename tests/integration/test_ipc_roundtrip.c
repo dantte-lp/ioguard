@@ -28,7 +28,7 @@ void test_ipc_roundtrip_auth(void)
         /* Child: sec-mod simulator */
         close(ch.parent_fd);
 
-        uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+        uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
         ssize_t n = iog_ipc_recv(ch.child_fd, buf, sizeof(buf));
         if (n <= 0) {
             _exit(1);
@@ -46,7 +46,7 @@ void test_ipc_roundtrip_auth(void)
             .session_ttl = 3600,
         };
 
-        uint8_t resp_buf[RW_IPC_MAX_MSG_SIZE];
+        uint8_t resp_buf[IOG_IPC_MAX_MSG_SIZE];
         ssize_t packed = iog_ipc_pack_auth_response(&resp, resp_buf, sizeof(resp_buf));
         if (packed <= 0) {
             _exit(3);
@@ -69,7 +69,7 @@ void test_ipc_roundtrip_auth(void)
         .source_ip = "192.168.1.100",
     };
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type)
+int iog_compress_init(iog_compress_ctx_t *ctx, iog_compress_type_t type)
 {
     if (!ctx) {
         return -EINVAL;
@@ -19,11 +19,11 @@ int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type)
     case IOG_COMPRESS_NONE:
         return 0;
     case IOG_COMPRESS_LZS: {
-        rw_lzs_ctx_t *lzs = calloc(1, sizeof(*lzs));
+        iog_lzs_ctx_t *lzs = calloc(1, sizeof(*lzs));
         if (!lzs) {
             return -ENOMEM;
         }
-        rw_lzs_init(lzs);
+        iog_lzs_init(lzs);
         ctx->codec_ctx = lzs;
         return 0;
     }
@@ -33,7 +33,7 @@ int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type)
     return -EINVAL;
 }
 
-int rw_compress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
+int iog_compress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
                 size_t out_size)
 {
     if (!ctx || !in || !out) {
@@ -52,7 +52,7 @@ int rw_compress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_
     }
 
     if (ctx->type == IOG_COMPRESS_LZS) {
-        return rw_lzs_compress(ctx->codec_ctx, in, in_len, out, out_size);
+        return iog_lzs_compress(ctx->codec_ctx, in, in_len, out, out_size);
     }
 
     if (ctx->type == IOG_COMPRESS_LZ4) {
@@ -62,7 +62,7 @@ int rw_compress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_
     return -ENOTSUP;
 }
 
-int rw_decompress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
+int iog_decompress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
                   size_t out_size)
 {
     if (!ctx || !in || !out) {
@@ -78,7 +78,7 @@ int rw_decompress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint
     }
 
     if (ctx->type == IOG_COMPRESS_LZS) {
-        return rw_lzs_decompress(ctx->codec_ctx, in, in_len, out, out_size);
+        return iog_lzs_decompress(ctx->codec_ctx, in, in_len, out, out_size);
     }
 
     if (ctx->type == IOG_COMPRESS_LZ4) {
@@ -88,7 +88,7 @@ int rw_decompress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint
     return -ENOTSUP;
 }
 
-void rw_compress_destroy(rw_compress_ctx_t *ctx)
+void iog_compress_destroy(iog_compress_ctx_t *ctx)
 {
     if (!ctx) {
         return;
@@ -100,7 +100,7 @@ void rw_compress_destroy(rw_compress_ctx_t *ctx)
     ctx->type = IOG_COMPRESS_NONE;
 }
 
-const char *rw_compress_type_name(rw_compress_type_t type)
+const char *iog_compress_type_name(iog_compress_type_t type)
 {
     switch (type) {
     case IOG_COMPRESS_NONE:
@@ -113,7 +113,7 @@ const char *rw_compress_type_name(rw_compress_type_t type)
     return "unknown";
 }
 
-rw_compress_type_t rw_compress_negotiate(const char *accept_encoding)
+iog_compress_type_t iog_compress_negotiate(const char *accept_encoding)
 {
     if (!accept_encoding) {
         return IOG_COMPRESS_NONE;

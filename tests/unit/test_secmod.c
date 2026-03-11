@@ -68,7 +68,7 @@ void test_secmod_auth_request_failure(void)
     req.username = "testuser";
     req.password = "wrongpass";
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -77,7 +77,7 @@ void test_secmod_auth_request_failure(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read response from child_fd */
-    uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t recv_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
@@ -100,7 +100,7 @@ void test_secmod_auth_request_sends_response(void)
     req.password = "somepassword";
     req.source_ip = "192.168.1.100";
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_request(&req, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -108,7 +108,7 @@ void test_secmod_auth_request_sends_response(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read the response */
-    uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t recv_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 
@@ -140,7 +140,7 @@ void test_secmod_session_validate_invalid(void)
     sv.cookie = bogus_cookie;
     sv.cookie_len = sizeof(bogus_cookie);
 
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_session_validate(&sv, buf, sizeof(buf));
     TEST_ASSERT_GREATER_THAN(0, packed);
 
@@ -148,7 +148,7 @@ void test_secmod_session_validate_invalid(void)
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Read the response */
-    uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t recv_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     TEST_ASSERT_GREATER_THAN(0, n);
 

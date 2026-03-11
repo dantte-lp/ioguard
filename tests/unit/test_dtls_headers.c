@@ -45,18 +45,18 @@ void test_build_headers_buffer_too_small(void)
 
 void test_parse_accept_encoding_lzs(void)
 {
-    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, rw_dtls_parse_accept_encoding("lzs,deflate"));
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, iog_dtls_parse_accept_encoding("lzs,deflate"));
 }
 
 void test_parse_accept_encoding_lz4(void)
 {
-    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZ4, rw_dtls_parse_accept_encoding("lz4"));
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZ4, iog_dtls_parse_accept_encoding("lz4"));
 }
 
 void test_parse_accept_encoding_none(void)
 {
-    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, rw_dtls_parse_accept_encoding("deflate"));
-    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, rw_dtls_parse_accept_encoding(nullptr));
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, iog_dtls_parse_accept_encoding("deflate"));
+    TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, iog_dtls_parse_accept_encoding(nullptr));
 }
 
 void test_build_headers_no_encoding(void)

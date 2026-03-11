@@ -34,7 +34,7 @@ int iog_conn_timer_handle_dpd(iog_conn_timer_t *timer)
         return -EINVAL;
     }
 
-    rw_dpd_state_t state = rw_dpd_on_timeout(timer->dpd);
+    iog_dpd_state_t state = iog_dpd_on_timeout(timer->dpd);
 
     if (state == IOG_DPD_DEAD) {
         if (timer->on_dead != nullptr) {
@@ -46,7 +46,7 @@ int iog_conn_timer_handle_dpd(iog_conn_timer_t *timer)
 
     /* DPD state machine sets need_send_request on timeout.
      * Send directly via conn_data keepalive-style path — do NOT use
-     * iog_conn_data_send_dpd_req() which redundantly calls rw_dpd_on_timeout(). */
+     * iog_conn_data_send_dpd_req() which redundantly calls iog_dpd_on_timeout(). */
     if (timer->dpd->need_send_request) {
         uint8_t buf[IOG_CSTP_HEADER_SIZE];
         int encoded = rw_cstp_encode(buf, sizeof(buf), IOG_CSTP_DPD_REQ, nullptr, 0);
@@ -88,7 +88,7 @@ void iog_conn_timer_on_activity(iog_conn_timer_t *timer)
 
     /* Reset DPD state on activity — peer is alive */
     if (timer->dpd != nullptr && timer->dpd->state == IOG_DPD_PENDING) {
-        (void)rw_dpd_on_response(timer->dpd, timer->dpd->sequence);
+        (void)iog_dpd_on_response(timer->dpd, timer->dpd->sequence);
     }
 }
 

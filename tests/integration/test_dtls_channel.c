@@ -60,18 +60,18 @@ void test_channel_lifecycle(void)
 void test_compress_lzs_cstp_integration(void)
 {
     /* Negotiate LZS */
-    rw_compress_type_t ct = rw_compress_negotiate("lzs,deflate");
+    iog_compress_type_t ct = iog_compress_negotiate("lzs,deflate");
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, ct);
 
     /* Init compressor */
-    rw_compress_ctx_t comp;
-    int ret = rw_compress_init(&comp, ct);
+    iog_compress_ctx_t comp;
+    int ret = iog_compress_init(&comp, ct);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Compress payload */
     const uint8_t data[] = "AAAAAAAABBBBBBBBCCCCCCCC";
     uint8_t compressed[128];
-    int clen = rw_compress(&comp, data, sizeof(data) - 1, compressed, sizeof(compressed));
+    int clen = iog_compress(&comp, data, sizeof(data) - 1, compressed, sizeof(compressed));
     TEST_ASSERT_GREATER_THAN(0, clen);
 
     /* Wrap in CSTP COMPRESSED frame */
@@ -86,18 +86,18 @@ void test_compress_lzs_cstp_integration(void)
     TEST_ASSERT_EQUAL_UINT8(IOG_CSTP_COMPRESSED, pkt.type);
 
     /* Decompress with fresh context */
-    rw_compress_ctx_t decomp;
-    ret = rw_compress_init(&decomp, IOG_COMPRESS_LZS);
+    iog_compress_ctx_t decomp;
+    ret = iog_compress_init(&decomp, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     uint8_t decompressed[64];
     int dlen =
-        rw_decompress(&decomp, pkt.payload, pkt.payload_len, decompressed, sizeof(decompressed));
+        iog_decompress(&decomp, pkt.payload, pkt.payload_len, decompressed, sizeof(decompressed));
     TEST_ASSERT_EQUAL_INT((int)(sizeof(data) - 1), dlen);
     TEST_ASSERT_EQUAL_MEMORY(data, decompressed, sizeof(data) - 1);
 
-    rw_compress_destroy(&comp);
-    rw_compress_destroy(&decomp);
+    iog_compress_destroy(&comp);
+    iog_compress_destroy(&decomp);
 }
 
 /**
@@ -137,7 +137,7 @@ void test_dtls_headers_roundtrip(void)
     TEST_ASSERT_NOT_NULL(strstr(headers, "X-DTLS-Accept-Encoding: lzs"));
 
     /* Parse encoding back */
-    rw_compress_type_t ct = rw_dtls_parse_accept_encoding("lzs");
+    iog_compress_type_t ct = iog_dtls_parse_accept_encoding("lzs");
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, ct);
 }
 
@@ -162,8 +162,8 @@ void test_worker_compress_lifecycle(void)
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, conn->compress.type);
 
     /* Switch to LZS */
-    rw_compress_destroy(&conn->compress);
-    int ret = rw_compress_init(&conn->compress, IOG_COMPRESS_LZS);
+    iog_compress_destroy(&conn->compress);
+    int ret = iog_compress_init(&conn->compress, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, conn->compress.type);
 

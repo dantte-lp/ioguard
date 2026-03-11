@@ -18,7 +18,7 @@ static int handle_data_packet(iog_conn_data_t *data, const rw_cstp_packet_t *pkt
     uint8_t decomp_buf[IOG_CSTP_MAX_PAYLOAD];
     if (pkt->type == IOG_CSTP_COMPRESSED && data->compress != nullptr) {
         int dlen =
-            rw_decompress(data->compress, payload, payload_len, decomp_buf, sizeof(decomp_buf));
+            iog_decompress(data->compress, payload, payload_len, decomp_buf, sizeof(decomp_buf));
         if (dlen < 0) {
             return dlen;
         }
@@ -125,13 +125,13 @@ int iog_conn_data_process_tls(iog_conn_data_t *data)
             break;
         case IOG_CSTP_DPD_REQ:
             if (data->dpd != nullptr) {
-                (void)rw_dpd_on_request(data->dpd, 0);
+                (void)iog_dpd_on_request(data->dpd, 0);
             }
             rc = send_dpd_response(data);
             break;
         case IOG_CSTP_DPD_RESP:
             if (data->dpd != nullptr) {
-                (void)rw_dpd_on_response(data->dpd, 0);
+                (void)iog_dpd_on_response(data->dpd, 0);
             }
             break;
         case IOG_CSTP_KEEPALIVE:
@@ -173,7 +173,7 @@ int iog_conn_data_process_tun(iog_conn_data_t *data, const uint8_t *pkt, size_t 
     uint8_t comp_buf[IOG_CSTP_MAX_PAYLOAD];
 
     if (data->compress != nullptr && data->compress->type != IOG_COMPRESS_NONE) {
-        int clen = rw_compress(data->compress, pkt, pkt_len, comp_buf, sizeof(comp_buf));
+        int clen = iog_compress(data->compress, pkt, pkt_len, comp_buf, sizeof(comp_buf));
         if (clen > 0 && (size_t)clen < pkt_len) {
             /* Only use compressed version if it's actually smaller */
             payload = comp_buf;
@@ -204,7 +204,7 @@ int iog_conn_data_send_dpd_req(iog_conn_data_t *data)
         return -EINVAL;
     }
     if (data->dpd != nullptr) {
-        (void)rw_dpd_on_timeout(data->dpd);
+        (void)iog_dpd_on_timeout(data->dpd);
     }
     return send_cstp_packet(data, IOG_CSTP_DPD_REQ, nullptr, 0);
 }

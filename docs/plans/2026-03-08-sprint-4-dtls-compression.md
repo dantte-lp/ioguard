@@ -38,8 +38,8 @@ ctest --preset clang-debug
  * Backends: NONE (passthrough), LZ4, LZS.
  */
 
-#ifndef RINGWALL_NETWORK_COMPRESS_H
-#define RINGWALL_NETWORK_COMPRESS_H
+#ifndef IOGUARD_NETWORK_COMPRESS_H
+#define IOGUARD_NETWORK_COMPRESS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -51,36 +51,36 @@ typedef enum : uint8_t {
 	RW_COMPRESS_NONE,
 	RW_COMPRESS_LZ4,
 	RW_COMPRESS_LZS,
-} rw_compress_type_t;
+} iog_compress_type_t;
 
 typedef struct {
-	rw_compress_type_t type;
+	iog_compress_type_t type;
 	void *codec_ctx; /* codec-private state */
-} rw_compress_ctx_t;
+} iog_compress_ctx_t;
 
 /** Initialize compression context for given codec. */
-[[nodiscard]] int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type);
+[[nodiscard]] int iog_compress_init(iog_compress_ctx_t *ctx, iog_compress_type_t type);
 
 /** Compress data. Returns bytes written to out, or negative errno. */
-[[nodiscard]] int rw_compress(rw_compress_ctx_t *ctx,
+[[nodiscard]] int iog_compress(iog_compress_ctx_t *ctx,
                                const uint8_t *in, size_t in_len,
                                uint8_t *out, size_t out_size);
 
 /** Decompress data. Returns bytes written to out, or negative errno. */
-[[nodiscard]] int rw_decompress(rw_compress_ctx_t *ctx,
+[[nodiscard]] int iog_decompress(iog_compress_ctx_t *ctx,
                                  const uint8_t *in, size_t in_len,
                                  uint8_t *out, size_t out_size);
 
 /** Destroy compression context and free codec state. */
-void rw_compress_destroy(rw_compress_ctx_t *ctx);
+void iog_compress_destroy(iog_compress_ctx_t *ctx);
 
 /** Get codec name string. */
-[[nodiscard]] const char *rw_compress_type_name(rw_compress_type_t type);
+[[nodiscard]] const char *iog_compress_type_name(iog_compress_type_t type);
 
 /** Parse X-CSTP-Accept-Encoding header value. Returns best codec. */
-[[nodiscard]] rw_compress_type_t rw_compress_negotiate(const char *accept_encoding);
+[[nodiscard]] iog_compress_type_t iog_compress_negotiate(const char *accept_encoding);
 
-#endif /* RINGWALL_NETWORK_COMPRESS_H */
+#endif /* IOGUARD_NETWORK_COMPRESS_H */
 ```
 
 **Step 2: Write compress.c**
@@ -91,7 +91,7 @@ void rw_compress_destroy(rw_compress_ctx_t *ctx);
 #include <errno.h>
 #include <string.h>
 
-int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type)
+int iog_compress_init(iog_compress_ctx_t *ctx, iog_compress_type_t type)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -110,7 +110,7 @@ int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type)
 	return -EINVAL;
 }
 
-int rw_compress(rw_compress_ctx_t *ctx,
+int iog_compress(iog_compress_ctx_t *ctx,
                 const uint8_t *in, size_t in_len,
                 uint8_t *out, size_t out_size)
 {
@@ -129,7 +129,7 @@ int rw_compress(rw_compress_ctx_t *ctx,
 	return -ENOTSUP;
 }
 
-int rw_decompress(rw_compress_ctx_t *ctx,
+int iog_decompress(iog_compress_ctx_t *ctx,
                    const uint8_t *in, size_t in_len,
                    uint8_t *out, size_t out_size)
 {
@@ -146,7 +146,7 @@ int rw_decompress(rw_compress_ctx_t *ctx,
 	return -ENOTSUP;
 }
 
-void rw_compress_destroy(rw_compress_ctx_t *ctx)
+void iog_compress_destroy(iog_compress_ctx_t *ctx)
 {
 	if (!ctx)
 		return;
@@ -154,7 +154,7 @@ void rw_compress_destroy(rw_compress_ctx_t *ctx)
 	ctx->type = RW_COMPRESS_NONE;
 }
 
-const char *rw_compress_type_name(rw_compress_type_t type)
+const char *iog_compress_type_name(iog_compress_type_t type)
 {
 	switch (type) {
 	case RW_COMPRESS_NONE: return "none";
@@ -164,7 +164,7 @@ const char *rw_compress_type_name(rw_compress_type_t type)
 	return "unknown";
 }
 
-rw_compress_type_t rw_compress_negotiate(const char *accept_encoding)
+iog_compress_type_t iog_compress_negotiate(const char *accept_encoding)
 {
 	if (!accept_encoding)
 		return RW_COMPRESS_NONE;
@@ -189,92 +189,92 @@ void tearDown(void) {}
 
 void test_compress_init_none(void)
 {
-	rw_compress_ctx_t ctx;
-	int ret = rw_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_ctx_t ctx;
+	int ret = iog_compress_init(&ctx, RW_COMPRESS_NONE);
 	TEST_ASSERT_EQUAL_INT(0, ret);
 	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, ctx.type);
-	rw_compress_destroy(&ctx);
+	iog_compress_destroy(&ctx);
 }
 
 void test_compress_init_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(-EINVAL, rw_compress_init(nullptr, RW_COMPRESS_NONE));
+	TEST_ASSERT_EQUAL_INT(-EINVAL, iog_compress_init(nullptr, RW_COMPRESS_NONE));
 }
 
 void test_compress_none_passthrough(void)
 {
-	rw_compress_ctx_t ctx;
-	rw_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_ctx_t ctx;
+	iog_compress_init(&ctx, RW_COMPRESS_NONE);
 
 	const uint8_t data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
 	uint8_t out[64];
 
-	int ret = rw_compress(&ctx, data, sizeof(data), out, sizeof(out));
+	int ret = iog_compress(&ctx, data, sizeof(data), out, sizeof(out));
 	TEST_ASSERT_EQUAL_INT(4, ret);
 	TEST_ASSERT_EQUAL_MEMORY(data, out, sizeof(data));
 
-	rw_compress_destroy(&ctx);
+	iog_compress_destroy(&ctx);
 }
 
 void test_decompress_none_passthrough(void)
 {
-	rw_compress_ctx_t ctx;
-	rw_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_ctx_t ctx;
+	iog_compress_init(&ctx, RW_COMPRESS_NONE);
 
 	const uint8_t data[] = { 0xCA, 0xFE };
 	uint8_t out[64];
 
-	int ret = rw_decompress(&ctx, data, sizeof(data), out, sizeof(out));
+	int ret = iog_decompress(&ctx, data, sizeof(data), out, sizeof(out));
 	TEST_ASSERT_EQUAL_INT(2, ret);
 	TEST_ASSERT_EQUAL_MEMORY(data, out, sizeof(data));
 
-	rw_compress_destroy(&ctx);
+	iog_compress_destroy(&ctx);
 }
 
 void test_compress_output_too_small(void)
 {
-	rw_compress_ctx_t ctx;
-	rw_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_ctx_t ctx;
+	iog_compress_init(&ctx, RW_COMPRESS_NONE);
 
 	const uint8_t data[] = { 0x01, 0x02, 0x03, 0x04 };
 	uint8_t out[2]; /* too small */
 
-	int ret = rw_compress(&ctx, data, sizeof(data), out, sizeof(out));
+	int ret = iog_compress(&ctx, data, sizeof(data), out, sizeof(out));
 	TEST_ASSERT_EQUAL_INT(-ENOSPC, ret);
 
-	rw_compress_destroy(&ctx);
+	iog_compress_destroy(&ctx);
 }
 
 void test_compress_input_too_large(void)
 {
-	rw_compress_ctx_t ctx;
-	rw_compress_init(&ctx, RW_COMPRESS_NONE);
+	iog_compress_ctx_t ctx;
+	iog_compress_init(&ctx, RW_COMPRESS_NONE);
 
 	uint8_t out[64];
-	int ret = rw_compress(&ctx, out, RW_COMPRESS_MAX_INPUT + 1, out, sizeof(out));
+	int ret = iog_compress(&ctx, out, RW_COMPRESS_MAX_INPUT + 1, out, sizeof(out));
 	TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
-	rw_compress_destroy(&ctx);
+	iog_compress_destroy(&ctx);
 }
 
 void test_compress_type_name(void)
 {
-	TEST_ASSERT_EQUAL_STRING("none", rw_compress_type_name(RW_COMPRESS_NONE));
-	TEST_ASSERT_EQUAL_STRING("lz4", rw_compress_type_name(RW_COMPRESS_LZ4));
-	TEST_ASSERT_EQUAL_STRING("lzs", rw_compress_type_name(RW_COMPRESS_LZS));
+	TEST_ASSERT_EQUAL_STRING("none", iog_compress_type_name(RW_COMPRESS_NONE));
+	TEST_ASSERT_EQUAL_STRING("lz4", iog_compress_type_name(RW_COMPRESS_LZ4));
+	TEST_ASSERT_EQUAL_STRING("lzs", iog_compress_type_name(RW_COMPRESS_LZS));
 }
 
 void test_compress_negotiate(void)
 {
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZS, rw_compress_negotiate("lzs,deflate"));
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZ4, rw_compress_negotiate("lz4"));
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, rw_compress_negotiate("deflate"));
-	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, rw_compress_negotiate(nullptr));
+	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZS, iog_compress_negotiate("lzs,deflate"));
+	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_LZ4, iog_compress_negotiate("lz4"));
+	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, iog_compress_negotiate("deflate"));
+	TEST_ASSERT_EQUAL_UINT8(RW_COMPRESS_NONE, iog_compress_negotiate(nullptr));
 }
 
 void test_compress_destroy_null(void)
 {
-	rw_compress_destroy(nullptr); /* should not crash */
+	iog_compress_destroy(nullptr); /* should not crash */
 }
 
 int main(void)
@@ -335,38 +335,38 @@ git commit -m "feat: compression abstraction layer with NONE passthrough (9 test
  * 2048-byte sliding window, bit-oriented output.
  */
 
-#ifndef RINGWALL_NETWORK_COMPRESS_LZS_H
-#define RINGWALL_NETWORK_COMPRESS_LZS_H
+#ifndef IOGUARD_NETWORK_COMPRESS_LZS_H
+#define IOGUARD_NETWORK_COMPRESS_LZS_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-constexpr size_t RW_LZS_WINDOW_SIZE = 2048;
-constexpr size_t RW_LZS_MIN_MATCH = 2;
-constexpr size_t RW_LZS_MAX_MATCH = 255 + 2; /* length encoding limit */
+constexpr size_t IOG_LZS_WINDOW_SIZE = 2048;
+constexpr size_t IOG_LZS_MIN_MATCH = 2;
+constexpr size_t IOG_LZS_MAX_MATCH = 255 + 2; /* length encoding limit */
 
 typedef struct {
-	uint8_t window[RW_LZS_WINDOW_SIZE];
+	uint8_t window[IOG_LZS_WINDOW_SIZE];
 	size_t window_pos;
-} rw_lzs_ctx_t;
+} iog_lzs_ctx_t;
 
 /** Initialize LZS context. */
-void rw_lzs_init(rw_lzs_ctx_t *ctx);
+void iog_lzs_init(iog_lzs_ctx_t *ctx);
 
 /** Reset LZS sliding window. */
-void rw_lzs_reset(rw_lzs_ctx_t *ctx);
+void iog_lzs_reset(iog_lzs_ctx_t *ctx);
 
 /** Compress data using LZS. Returns bytes written or negative errno. */
-[[nodiscard]] int rw_lzs_compress(rw_lzs_ctx_t *ctx,
+[[nodiscard]] int iog_lzs_compress(iog_lzs_ctx_t *ctx,
                                    const uint8_t *in, size_t in_len,
                                    uint8_t *out, size_t out_size);
 
 /** Decompress LZS data. Returns bytes written or negative errno. */
-[[nodiscard]] int rw_lzs_decompress(rw_lzs_ctx_t *ctx,
+[[nodiscard]] int iog_lzs_decompress(iog_lzs_ctx_t *ctx,
                                      const uint8_t *in, size_t in_len,
                                      uint8_t *out, size_t out_size);
 
-#endif /* RINGWALL_NETWORK_COMPRESS_LZS_H */
+#endif /* IOGUARD_NETWORK_COMPRESS_LZS_H */
 ```
 
 **Step 2: Write compress_lzs.c**
@@ -471,48 +471,48 @@ static int br_read_bits(bit_reader_t *br, int nbits)
 	return (int)val;
 }
 
-void rw_lzs_init(rw_lzs_ctx_t *ctx)
+void iog_lzs_init(iog_lzs_ctx_t *ctx)
 {
 	memset(ctx, 0, sizeof(*ctx));
 }
 
-void rw_lzs_reset(rw_lzs_ctx_t *ctx)
+void iog_lzs_reset(iog_lzs_ctx_t *ctx)
 {
 	memset(ctx->window, 0, sizeof(ctx->window));
 	ctx->window_pos = 0;
 }
 
-static void window_add(rw_lzs_ctx_t *ctx, uint8_t byte)
+static void window_add(iog_lzs_ctx_t *ctx, uint8_t byte)
 {
-	ctx->window[ctx->window_pos % RW_LZS_WINDOW_SIZE] = byte;
+	ctx->window[ctx->window_pos % IOG_LZS_WINDOW_SIZE] = byte;
 	ctx->window_pos++;
 }
 
 /* Find longest match in sliding window */
-static int find_match(const rw_lzs_ctx_t *ctx, const uint8_t *in,
+static int find_match(const iog_lzs_ctx_t *ctx, const uint8_t *in,
                       size_t in_len, size_t *match_offset, size_t *match_len)
 {
 	size_t best_len = 0;
 	size_t best_off = 0;
-	size_t win_used = ctx->window_pos < RW_LZS_WINDOW_SIZE
-	                  ? ctx->window_pos : RW_LZS_WINDOW_SIZE;
+	size_t win_used = ctx->window_pos < IOG_LZS_WINDOW_SIZE
+	                  ? ctx->window_pos : IOG_LZS_WINDOW_SIZE;
 
 	for (size_t off = 1; off <= win_used; off++) {
-		size_t wi = (ctx->window_pos - off) % RW_LZS_WINDOW_SIZE;
+		size_t wi = (ctx->window_pos - off) % IOG_LZS_WINDOW_SIZE;
 		size_t len = 0;
-		while (len < in_len && len < RW_LZS_MAX_MATCH) {
-			size_t ci = (wi + len) % RW_LZS_WINDOW_SIZE;
+		while (len < in_len && len < IOG_LZS_MAX_MATCH) {
+			size_t ci = (wi + len) % IOG_LZS_WINDOW_SIZE;
 			if (ctx->window[ci] != in[len])
 				break;
 			len++;
 		}
-		if (len >= RW_LZS_MIN_MATCH && len > best_len) {
+		if (len >= IOG_LZS_MIN_MATCH && len > best_len) {
 			best_len = len;
 			best_off = off;
 		}
 	}
 
-	if (best_len >= RW_LZS_MIN_MATCH) {
+	if (best_len >= IOG_LZS_MIN_MATCH) {
 		*match_offset = best_off;
 		*match_len = best_len;
 		return 1;
@@ -543,7 +543,7 @@ static int encode_length(bit_writer_t *bw, size_t length)
 	}
 }
 
-int rw_lzs_compress(rw_lzs_ctx_t *ctx,
+int iog_lzs_compress(iog_lzs_ctx_t *ctx,
                      const uint8_t *in, size_t in_len,
                      uint8_t *out, size_t out_size)
 {
@@ -594,7 +594,7 @@ int rw_lzs_compress(rw_lzs_ctx_t *ctx,
 	return (int)bw_bytes_written(&bw);
 }
 
-int rw_lzs_decompress(rw_lzs_ctx_t *ctx,
+int iog_lzs_decompress(iog_lzs_ctx_t *ctx,
                        const uint8_t *in, size_t in_len,
                        uint8_t *out, size_t out_size)
 {
@@ -657,7 +657,7 @@ int rw_lzs_decompress(rw_lzs_ctx_t *ctx,
 
 			/* Copy from window */
 			for (size_t i = 0; i < length; i++) {
-				size_t wi = (ctx->window_pos - (size_t)offset) % RW_LZS_WINDOW_SIZE;
+				size_t wi = (ctx->window_pos - (size_t)offset) % IOG_LZS_WINDOW_SIZE;
 				if (out_pos >= out_size)
 					return -ENOSPC;
 				uint8_t byte = ctx->window[wi];
@@ -679,9 +679,9 @@ int rw_lzs_decompress(rw_lzs_ctx_t *ctx,
 #include <errno.h>
 #include <string.h>
 
-static rw_lzs_ctx_t ctx;
+static iog_lzs_ctx_t ctx;
 
-void setUp(void) { rw_lzs_init(&ctx); }
+void setUp(void) { iog_lzs_init(&ctx); }
 void tearDown(void) {}
 
 void test_lzs_init(void)
@@ -692,7 +692,7 @@ void test_lzs_init(void)
 void test_lzs_compress_empty(void)
 {
 	uint8_t out[16];
-	int ret = rw_lzs_compress(&ctx, (const uint8_t *)"", 0, out, sizeof(out));
+	int ret = iog_lzs_compress(&ctx, (const uint8_t *)"", 0, out, sizeof(out));
 	TEST_ASSERT_GREATER_THAN(0, ret); /* end marker only */
 }
 
@@ -700,7 +700,7 @@ void test_lzs_compress_short(void)
 {
 	const uint8_t data[] = "Hello";
 	uint8_t compressed[64];
-	int clen = rw_lzs_compress(&ctx, data, 5, compressed, sizeof(compressed));
+	int clen = iog_lzs_compress(&ctx, data, 5, compressed, sizeof(compressed));
 	TEST_ASSERT_GREATER_THAN(0, clen);
 }
 
@@ -710,14 +710,14 @@ void test_lzs_roundtrip_short(void)
 	uint8_t compressed[128];
 	uint8_t decompressed[128];
 
-	rw_lzs_ctx_t enc_ctx, dec_ctx;
-	rw_lzs_init(&enc_ctx);
-	rw_lzs_init(&dec_ctx);
+	iog_lzs_ctx_t enc_ctx, dec_ctx;
+	iog_lzs_init(&enc_ctx);
+	iog_lzs_init(&dec_ctx);
 
-	int clen = rw_lzs_compress(&enc_ctx, data, 13, compressed, sizeof(compressed));
+	int clen = iog_lzs_compress(&enc_ctx, data, 13, compressed, sizeof(compressed));
 	TEST_ASSERT_GREATER_THAN(0, clen);
 
-	int dlen = rw_lzs_decompress(&dec_ctx, compressed, (size_t)clen,
+	int dlen = iog_lzs_decompress(&dec_ctx, compressed, (size_t)clen,
 	                              decompressed, sizeof(decompressed));
 	TEST_ASSERT_EQUAL_INT(13, dlen);
 	TEST_ASSERT_EQUAL_MEMORY(data, decompressed, 13);
@@ -731,16 +731,16 @@ void test_lzs_roundtrip_repeated(void)
 	uint8_t compressed[512];
 	uint8_t decompressed[256];
 
-	rw_lzs_ctx_t enc_ctx, dec_ctx;
-	rw_lzs_init(&enc_ctx);
-	rw_lzs_init(&dec_ctx);
+	iog_lzs_ctx_t enc_ctx, dec_ctx;
+	iog_lzs_init(&enc_ctx);
+	iog_lzs_init(&dec_ctx);
 
-	int clen = rw_lzs_compress(&enc_ctx, data, sizeof(data),
+	int clen = iog_lzs_compress(&enc_ctx, data, sizeof(data),
 	                            compressed, sizeof(compressed));
 	TEST_ASSERT_GREATER_THAN(0, clen);
 	TEST_ASSERT_LESS_THAN((int)sizeof(data), clen); /* should compress */
 
-	int dlen = rw_lzs_decompress(&dec_ctx, compressed, (size_t)clen,
+	int dlen = iog_lzs_decompress(&dec_ctx, compressed, (size_t)clen,
 	                              decompressed, sizeof(decompressed));
 	TEST_ASSERT_EQUAL_INT((int)sizeof(data), dlen);
 	TEST_ASSERT_EQUAL_MEMORY(data, decompressed, sizeof(data));
@@ -755,15 +755,15 @@ void test_lzs_roundtrip_binary(void)
 	uint8_t compressed[256];
 	uint8_t decompressed[64];
 
-	rw_lzs_ctx_t enc_ctx, dec_ctx;
-	rw_lzs_init(&enc_ctx);
-	rw_lzs_init(&dec_ctx);
+	iog_lzs_ctx_t enc_ctx, dec_ctx;
+	iog_lzs_init(&enc_ctx);
+	iog_lzs_init(&dec_ctx);
 
-	int clen = rw_lzs_compress(&enc_ctx, data, sizeof(data),
+	int clen = iog_lzs_compress(&enc_ctx, data, sizeof(data),
 	                            compressed, sizeof(compressed));
 	TEST_ASSERT_GREATER_THAN(0, clen);
 
-	int dlen = rw_lzs_decompress(&dec_ctx, compressed, (size_t)clen,
+	int dlen = iog_lzs_decompress(&dec_ctx, compressed, (size_t)clen,
 	                              decompressed, sizeof(decompressed));
 	TEST_ASSERT_EQUAL_INT((int)sizeof(data), dlen);
 	TEST_ASSERT_EQUAL_MEMORY(data, decompressed, sizeof(data));
@@ -772,27 +772,27 @@ void test_lzs_roundtrip_binary(void)
 void test_lzs_compress_null(void)
 {
 	uint8_t out[16];
-	TEST_ASSERT_EQUAL_INT(-EINVAL, rw_lzs_compress(nullptr, out, 1, out, 16));
+	TEST_ASSERT_EQUAL_INT(-EINVAL, iog_lzs_compress(nullptr, out, 1, out, 16));
 }
 
 void test_lzs_decompress_null(void)
 {
 	uint8_t out[16];
-	TEST_ASSERT_EQUAL_INT(-EINVAL, rw_lzs_decompress(nullptr, out, 1, out, 16));
+	TEST_ASSERT_EQUAL_INT(-EINVAL, iog_lzs_decompress(nullptr, out, 1, out, 16));
 }
 
 void test_lzs_reset(void)
 {
 	window_add is internal, so just test that reset clears state:
-	rw_lzs_ctx_t c;
-	rw_lzs_init(&c);
+	iog_lzs_ctx_t c;
+	iog_lzs_init(&c);
 	/* Compress something to change window_pos */
 	const uint8_t data[] = "test";
 	uint8_t out[64];
-	rw_lzs_compress(&c, data, 4, out, sizeof(out));
+	iog_lzs_compress(&c, data, 4, out, sizeof(out));
 	TEST_ASSERT_NOT_EQUAL(0, c.window_pos);
 
-	rw_lzs_reset(&c);
+	iog_lzs_reset(&c);
 	TEST_ASSERT_EQUAL_size_t(0, c.window_pos);
 }
 
@@ -816,9 +816,9 @@ NOTE: `test_lzs_reset` has a comment typo — the implementer should fix "window
 
 **Step 4: Modify compress.c to register LZS backend**
 
-Update `rw_compress_init()` case `RW_COMPRESS_LZS` to allocate and init `rw_lzs_ctx_t`.
-Update `rw_compress()` and `rw_decompress()` to call `rw_lzs_compress()`/`rw_lzs_decompress()`.
-Update `rw_compress_destroy()` to free LZS context.
+Update `iog_compress_init()` case `RW_COMPRESS_LZS` to allocate and init `iog_lzs_ctx_t`.
+Update `iog_compress()` and `iog_decompress()` to call `iog_lzs_compress()`/`iog_lzs_decompress()`.
+Update `iog_compress_destroy()` to free LZS context.
 
 **Step 5: CMakeLists.txt**
 
@@ -997,7 +997,7 @@ typedef struct {
 	bool dtls_active;
 	uint32_t dtls_fail_count;
 	uint32_t dtls_max_fails;
-	rw_compress_type_t compress_type;
+	iog_compress_type_t compress_type;
 } iog_channel_ctx_t;
 
 void iog_channel_init(iog_channel_ctx_t *ctx);
@@ -1032,7 +1032,7 @@ git commit -m "feat: channel state machine for CSTP/DTLS switching (10 tests)"
                                          const char *cipher_suite,
                                          const char *accept_encoding);
 
-[[nodiscard]] rw_compress_type_t rw_dtls_parse_accept_encoding(const char *header);
+[[nodiscard]] iog_compress_type_t iog_dtls_parse_accept_encoding(const char *header);
 ```
 
 **Tests (8):** build full header string, parse lzs, parse lz4, parse deflate (→ NONE), null inputs, buffer too small.

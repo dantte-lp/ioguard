@@ -31,8 +31,8 @@ typedef struct {
     void *tls_ctx;
 
     int tun_fd;
-    rw_dpd_ctx_t *dpd;
-    rw_compress_ctx_t *compress;
+    iog_dpd_ctx_t *dpd;
+    iog_compress_ctx_t *compress;
 
     /* Receive buffer (accumulates partial CSTP frames from TLS) */
     uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
@@ -53,8 +53,8 @@ typedef struct {
     iog_conn_data_write_fn tls_write;
     void *tls_ctx;
     int tun_fd;
-    rw_dpd_ctx_t *dpd;
-    rw_compress_ctx_t *compress;
+    iog_dpd_ctx_t *dpd;
+    iog_compress_ctx_t *compress;
 } iog_conn_data_config_t;
 
 /**

@@ -39,8 +39,8 @@ static ssize_t mock_tls_write(void *ctx, const void *buf, size_t len)
 /* Per-test state */
 static int tls_sv[2]; /* sv[0] = server (conn_data), sv[1] = client (test) */
 static int tun_sv[2]; /* sv[0] = server writes, sv[1] = test reads */
-static rw_dpd_ctx_t dpd;
-static rw_compress_ctx_t compress_ctx;
+static iog_dpd_ctx_t dpd;
+static iog_compress_ctx_t compress_ctx;
 static iog_conn_data_t conn_data;
 static iog_worker_t *worker;
 
@@ -71,8 +71,8 @@ void setUp(void)
 {
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, tls_sv));
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, tun_sv));
-    rw_dpd_init(&dpd, 30, 3);
-    TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, IOG_COMPRESS_NONE));
+    iog_dpd_init(&dpd, 30, 3);
+    TEST_ASSERT_EQUAL_INT(0, iog_compress_init(&compress_ctx, IOG_COMPRESS_NONE));
 
     iog_conn_data_config_t data_cfg = {
         .tls_read = mock_tls_read,
@@ -97,7 +97,7 @@ void tearDown(void)
 {
     iog_worker_destroy(worker);
     worker = nullptr;
-    rw_compress_destroy(&compress_ctx);
+    iog_compress_destroy(&compress_ctx);
     close(tls_sv[0]);
     close(tls_sv[1]);
     close(tun_sv[0]);
@@ -218,15 +218,15 @@ void test_vpn_flow_multiple_clients(void)
     /* Simulate 3 independent client data paths */
     int cli_tls[3][2];
     int cli_tun[3][2];
-    rw_dpd_ctx_t cli_dpd[3];
-    rw_compress_ctx_t cli_comp[3];
+    iog_dpd_ctx_t cli_dpd[3];
+    iog_compress_ctx_t cli_comp[3];
     iog_conn_data_t cli_data[3];
 
     for (int i = 0; i < 3; i++) {
         TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, cli_tls[i]));
         TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, cli_tun[i]));
-        rw_dpd_init(&cli_dpd[i], 30, 3);
-        TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&cli_comp[i], IOG_COMPRESS_NONE));
+        iog_dpd_init(&cli_dpd[i], 30, 3);
+        TEST_ASSERT_EQUAL_INT(0, iog_compress_init(&cli_comp[i], IOG_COMPRESS_NONE));
 
         iog_conn_data_config_t cfg = {
             .tls_read = mock_tls_read,
@@ -264,7 +264,7 @@ void test_vpn_flow_multiple_clients(void)
 
     /* Cleanup */
     for (int i = 0; i < 3; i++) {
-        rw_compress_destroy(&cli_comp[i]);
+        iog_compress_destroy(&cli_comp[i]);
         close(cli_tls[i][0]);
         close(cli_tls[i][1]);
         close(cli_tun[i][0]);

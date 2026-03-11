@@ -582,20 +582,20 @@ Note: Actual nftables operations require CAP_NET_ADMIN. Tests that need root use
 #include <stdint.h>
 #include <netinet/in.h>
 
-constexpr size_t RW_FW_CHAIN_NAME_MAX = 64;
+constexpr size_t IOG_FW_CHAIN_NAME_MAX = 64;
 constexpr char RW_FW_TABLE_NAME[] = "ioguard";
 
 typedef struct {
-    char     chain_name[RW_FW_CHAIN_NAME_MAX];
+    char     chain_name[IOG_FW_CHAIN_NAME_MAX];
     int      af;                    // AF_INET or AF_INET6
     uint32_t assigned_ipv4;         // network byte order
     struct in6_addr assigned_ipv6;
     char     username[256];
-} rw_fw_session_t;
+} iog_fw_session_t;
 
-[[nodiscard]] int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size);
-[[nodiscard]] int rw_fw_session_create(const rw_fw_session_t *session);
-[[nodiscard]] int rw_fw_session_destroy(const rw_fw_session_t *session);
+[[nodiscard]] int iog_fw_chain_name(const iog_fw_session_t *session, char *out, size_t out_size);
+[[nodiscard]] int iog_fw_session_create(const iog_fw_session_t *session);
+[[nodiscard]] int iog_fw_session_destroy(const iog_fw_session_t *session);
 
 #endif // RINGWALL_SECURITY_FIREWALL_H
 ```

@@ -30,7 +30,7 @@
  * Build the chain name into @p out.
  * Format: rw_<username>_<hex-ip>
  */
-int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size)
+int iog_fw_chain_name(const iog_fw_session_t *session, char *out, size_t out_size)
 {
     if (session == nullptr || out == nullptr || out_size == 0) {
         return -EINVAL;
@@ -67,7 +67,7 @@ int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size)
  * Equivalent to:  ip saddr <assigned_ipv4> accept
  *            or:  ip6 saddr <assigned_ipv6> accept
  */
-static int rule_add_src_match(struct nftnl_rule *rule, const rw_fw_session_t *session)
+static int rule_add_src_match(struct nftnl_rule *rule, const iog_fw_session_t *session)
 {
     /*
      * Expression 1: payload — load source address from network header.
@@ -131,7 +131,7 @@ static int rule_add_src_match(struct nftnl_rule *rule, const rw_fw_session_t *se
  * Build a nftnl_rule struct for source IP accept.
  * Caller must free with nftnl_rule_free().
  */
-static struct nftnl_rule *build_accept_rule(const rw_fw_session_t *session, const char *chain_name)
+static struct nftnl_rule *build_accept_rule(const iog_fw_session_t *session, const char *chain_name)
 {
     uint32_t family = (session->af == AF_INET) ? NFPROTO_IPV4 : NFPROTO_IPV6;
 
@@ -157,7 +157,7 @@ static struct nftnl_rule *build_accept_rule(const rw_fw_session_t *session, cons
  * Build a nftnl_chain struct for the per-user chain.
  * Caller must free with nftnl_chain_free().
  */
-static struct nftnl_chain *build_chain(const rw_fw_session_t *session, const char *chain_name)
+static struct nftnl_chain *build_chain(const iog_fw_session_t *session, const char *chain_name)
 {
     uint32_t family = (session->af == AF_INET) ? NFPROTO_IPV4 : NFPROTO_IPV6;
 
@@ -182,14 +182,14 @@ static uint32_t seq_next(void)
 
 /* ---- Public batch builders ---- */
 
-int rw_fw_build_create_batch(const rw_fw_session_t *session, void **batch_buf, size_t *batch_len)
+int iog_fw_build_create_batch(const iog_fw_session_t *session, void **batch_buf, size_t *batch_len)
 {
     if (session == nullptr || batch_buf == nullptr || batch_len == nullptr) {
         return -EINVAL;
     }
 
     char chain_name[IOG_FW_CHAIN_NAME_MAX];
-    int ret = rw_fw_chain_name(session, chain_name, sizeof(chain_name));
+    int ret = iog_fw_chain_name(session, chain_name, sizeof(chain_name));
     if (ret < 0) {
         return ret;
     }
@@ -254,14 +254,14 @@ int rw_fw_build_create_batch(const rw_fw_session_t *session, void **batch_buf, s
     return 0;
 }
 
-int rw_fw_build_destroy_batch(const rw_fw_session_t *session, void **batch_buf, size_t *batch_len)
+int iog_fw_build_destroy_batch(const iog_fw_session_t *session, void **batch_buf, size_t *batch_len)
 {
     if (session == nullptr || batch_buf == nullptr || batch_len == nullptr) {
         return -EINVAL;
     }
 
     char chain_name[IOG_FW_CHAIN_NAME_MAX];
-    int ret = rw_fw_chain_name(session, chain_name, sizeof(chain_name));
+    int ret = iog_fw_chain_name(session, chain_name, sizeof(chain_name));
     if (ret < 0) {
         return ret;
     }
@@ -356,7 +356,7 @@ static int send_batch(const void *buf, size_t len)
 
 /* ---- Public API ---- */
 
-int rw_fw_session_create(const rw_fw_session_t *session)
+int iog_fw_session_create(const iog_fw_session_t *session)
 {
     if (geteuid() != 0) {
         return -EPERM;
@@ -365,7 +365,7 @@ int rw_fw_session_create(const rw_fw_session_t *session)
     void *buf = nullptr;
     size_t len = 0;
 
-    int ret = rw_fw_build_create_batch(session, &buf, &len);
+    int ret = iog_fw_build_create_batch(session, &buf, &len);
     if (ret < 0) {
         return ret;
     }
@@ -375,7 +375,7 @@ int rw_fw_session_create(const rw_fw_session_t *session)
     return ret;
 }
 
-int rw_fw_session_destroy(const rw_fw_session_t *session)
+int iog_fw_session_destroy(const iog_fw_session_t *session)
 {
     if (geteuid() != 0) {
         return -EPERM;
@@ -384,7 +384,7 @@ int rw_fw_session_destroy(const rw_fw_session_t *session)
     void *buf = nullptr;
     size_t len = 0;
 
-    int ret = rw_fw_build_destroy_batch(session, &buf, &len);
+    int ret = iog_fw_build_destroy_batch(session, &buf, &len);
     if (ret < 0) {
         return ret;
     }

@@ -67,7 +67,7 @@ static int secmod_persist_session(iog_secmod_ctx_t *ctx, const iog_session_t *se
 /* Build and send an auth response over IPC. */
 static int secmod_send_auth_response(int fd, const iog_ipc_auth_response_t *resp)
 {
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_response(resp, buf, sizeof(buf));
 
     if (packed < 0) {
@@ -452,7 +452,7 @@ int iog_secmod_run(iog_secmod_ctx_t *ctx)
         }
 
         if (ret > 0 && (pfd.revents & POLLIN)) {
-            uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+            uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
             ssize_t n = iog_ipc_recv(ctx->ipc_fd, buf, sizeof(buf));
 
             if (n > 0) {

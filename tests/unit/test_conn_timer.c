@@ -36,8 +36,8 @@ static ssize_t mock_tls_write(void *ctx, const void *buf, size_t len)
     return n;
 }
 
-static rw_dpd_ctx_t dpd;
-static rw_compress_ctx_t compress_ctx;
+static iog_dpd_ctx_t dpd;
+static iog_compress_ctx_t compress_ctx;
 static iog_conn_data_t conn_data;
 
 /* Dead callback tracking */
@@ -55,8 +55,8 @@ void setUp(void)
 {
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, tls_sv));
     TEST_ASSERT_EQUAL_INT(0, socketpair(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0, tun_sv));
-    rw_dpd_init(&dpd, 30, 3);
-    TEST_ASSERT_EQUAL_INT(0, rw_compress_init(&compress_ctx, IOG_COMPRESS_NONE));
+    iog_dpd_init(&dpd, 30, 3);
+    TEST_ASSERT_EQUAL_INT(0, iog_compress_init(&compress_ctx, IOG_COMPRESS_NONE));
 
     iog_conn_data_config_t data_cfg = {
         .tls_read = mock_tls_read,
@@ -74,7 +74,7 @@ void setUp(void)
 
 void tearDown(void)
 {
-    rw_compress_destroy(&compress_ctx);
+    iog_compress_destroy(&compress_ctx);
     close(tls_sv[0]);
     close(tls_sv[1]);
     close(tun_sv[0]);

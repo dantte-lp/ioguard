@@ -12,7 +12,7 @@ typedef struct {
 } iog_ipc_channel_t;
 
 /* Maximum IPC message size (must fit in provided buffers) */
-constexpr size_t RW_IPC_MAX_MSG_SIZE = 4096;
+constexpr size_t IOG_IPC_MAX_MSG_SIZE = 4096;
 
 /* Create a SOCK_SEQPACKET socketpair for IPC */
 [[nodiscard]] int iog_ipc_create_pair(iog_ipc_channel_t *ch);

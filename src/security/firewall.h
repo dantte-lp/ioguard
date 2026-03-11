@@ -24,7 +24,7 @@ typedef struct {
     uint32_t assigned_ipv4; /**< network byte order */
     struct in6_addr assigned_ipv6;
     char username[256];
-} rw_fw_session_t;
+} iog_fw_session_t;
 
 /**
  * @brief Format a chain name for the given session.
@@ -33,9 +33,9 @@ typedef struct {
  * @param out_size Size of @p out buffer.
  * @return 0 on success, negative errno on failure.
  *
- * Format: "rw_<username>_<iphex>" truncated to IOG_FW_CHAIN_NAME_MAX-1.
+ * Format: "iog_<username>_<iphex>" truncated to IOG_FW_CHAIN_NAME_MAX-1.
  */
-[[nodiscard]] int rw_fw_chain_name(const rw_fw_session_t *session, char *out, size_t out_size);
+[[nodiscard]] int iog_fw_chain_name(const iog_fw_session_t *session, char *out, size_t out_size);
 
 /**
  * @brief Build a netlink batch to create the per-user chain and rule.
@@ -44,7 +44,7 @@ typedef struct {
  * @param batch_len Receives the length of the batch in bytes.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_fw_build_create_batch(const rw_fw_session_t *session, void **batch_buf,
+[[nodiscard]] int iog_fw_build_create_batch(const iog_fw_session_t *session, void **batch_buf,
                                            size_t *batch_len);
 
 /**
@@ -54,7 +54,7 @@ typedef struct {
  * @param batch_len Receives the length of the batch in bytes.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int rw_fw_build_destroy_batch(const rw_fw_session_t *session, void **batch_buf,
+[[nodiscard]] int iog_fw_build_destroy_batch(const iog_fw_session_t *session, void **batch_buf,
                                             size_t *batch_len);
 
 /**
@@ -62,13 +62,13 @@ typedef struct {
  * @param session Session with username and assigned IP.
  * @return 0 on success, negative errno on failure (-EPERM if not root).
  */
-[[nodiscard]] int rw_fw_session_create(const rw_fw_session_t *session);
+[[nodiscard]] int iog_fw_session_create(const iog_fw_session_t *session);
 
 /**
  * @brief Destroy the per-user nftables chain (flush rules first).
  * @param session Session with username and assigned IP.
  * @return 0 on success, negative errno on failure (-EPERM if not root).
  */
-[[nodiscard]] int rw_fw_session_destroy(const rw_fw_session_t *session);
+[[nodiscard]] int iog_fw_session_destroy(const iog_fw_session_t *session);
 
 #endif /* IOGUARD_SECURITY_FIREWALL_H */

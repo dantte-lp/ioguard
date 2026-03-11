@@ -23,7 +23,7 @@ typedef void (*rw_conn_dead_cb)(uint64_t conn_id, void *user_data);
  * are public so tests can invoke them without io_uring.
  */
 typedef struct {
-    rw_dpd_ctx_t *dpd;
+    iog_dpd_ctx_t *dpd;
     iog_conn_data_t *data;
     uint64_t conn_id;
     uint32_t dpd_interval_ms;
@@ -39,7 +39,7 @@ typedef struct {
  * @brief Configuration for timer initialization.
  */
 typedef struct {
-    rw_dpd_ctx_t *dpd;
+    iog_dpd_ctx_t *dpd;
     iog_conn_data_t *data;
     uint64_t conn_id;
     uint32_t dpd_interval_s;

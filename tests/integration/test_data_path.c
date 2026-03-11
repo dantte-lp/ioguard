@@ -172,11 +172,11 @@ void test_data_path_socketpair_roundtrip(void)
 void test_dpd_probe_response_roundtrip(void)
 {
     /* 1. Init DPD, trigger timeout -> PENDING */
-    rw_dpd_ctx_t dpd;
-    rw_dpd_init(&dpd, 30, 3);
+    iog_dpd_ctx_t dpd;
+    iog_dpd_init(&dpd, 30, 3);
     TEST_ASSERT_EQUAL_UINT8(IOG_DPD_IDLE, dpd.state);
 
-    rw_dpd_state_t state = rw_dpd_on_timeout(&dpd);
+    iog_dpd_state_t state = iog_dpd_on_timeout(&dpd);
     TEST_ASSERT_EQUAL_UINT8(IOG_DPD_PENDING, state);
     TEST_ASSERT_TRUE(dpd.need_send_request);
 
@@ -195,7 +195,7 @@ void test_dpd_probe_response_roundtrip(void)
     TEST_ASSERT_EQUAL_UINT32(0, pkt.payload_len);
 
     /* 5. DPD on_response -> state back to IDLE */
-    state = rw_dpd_on_response(&dpd, dpd.sequence);
+    state = iog_dpd_on_response(&dpd, dpd.sequence);
     TEST_ASSERT_EQUAL_UINT8(IOG_DPD_IDLE, state);
 
     /* 6. CSTP-encode DPD_RESP */

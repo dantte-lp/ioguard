@@ -21,6 +21,6 @@
  * Parse X-CSTP-Accept-Encoding header value.
  * Returns best compression type or IOG_COMPRESS_NONE.
  */
-[[nodiscard]] rw_compress_type_t rw_dtls_parse_accept_encoding(const char *header);
+[[nodiscard]] iog_compress_type_t iog_dtls_parse_accept_encoding(const char *header);
 
 #endif /* RINGWALL_NETWORK_DTLS_HEADERS_H */

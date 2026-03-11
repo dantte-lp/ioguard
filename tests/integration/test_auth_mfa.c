@@ -109,7 +109,7 @@ static int setup_totp_user(iog_sqlite_ctx_t *sqlite, iog_vault_t *vault, const c
  */
 static int do_auth_roundtrip(const iog_ipc_auth_request_t *req, iog_ipc_auth_response_t *resp)
 {
-    uint8_t buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t packed = iog_ipc_pack_auth_request(req, buf, sizeof(buf));
     if (packed <= 0) {
         return -EINVAL;
@@ -121,7 +121,7 @@ static int do_auth_roundtrip(const iog_ipc_auth_request_t *req, iog_ipc_auth_res
     }
 
     /* Read response from child_fd */
-    uint8_t recv_buf[RW_IPC_MAX_MSG_SIZE];
+    uint8_t recv_buf[IOG_IPC_MAX_MSG_SIZE];
     ssize_t n = iog_ipc_recv(ch.child_fd, recv_buf, sizeof(recv_buf));
     if (n <= 0) {
         return -EIO;

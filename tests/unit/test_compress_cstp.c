@@ -30,13 +30,13 @@ void test_cstp_encode_compressed_type(void)
 void test_compress_none_cstp_roundtrip(void)
 {
     /* Compress with NONE, wrap in CSTP COMPRESSED, decode, decompress */
-    rw_compress_ctx_t comp;
-    (void)rw_compress_init(&comp, IOG_COMPRESS_NONE);
+    iog_compress_ctx_t comp;
+    (void)iog_compress_init(&comp, IOG_COMPRESS_NONE);
 
     const uint8_t payload[] = "Hello, VPN!";
     uint8_t compressed[64];
 
-    int clen = rw_compress(&comp, payload, sizeof(payload) - 1, compressed, sizeof(compressed));
+    int clen = iog_compress(&comp, payload, sizeof(payload) - 1, compressed, sizeof(compressed));
     TEST_ASSERT_GREATER_THAN(0, clen);
 
     /* Wrap compressed data in CSTP COMPRESSED frame */
@@ -53,23 +53,23 @@ void test_compress_none_cstp_roundtrip(void)
     /* Decompress */
     uint8_t decompressed[64];
     int dlen =
-        rw_decompress(&comp, pkt.payload, pkt.payload_len, decompressed, sizeof(decompressed));
+        iog_decompress(&comp, pkt.payload, pkt.payload_len, decompressed, sizeof(decompressed));
     TEST_ASSERT_EQUAL_INT((int)(sizeof(payload) - 1), dlen);
     TEST_ASSERT_EQUAL_MEMORY(payload, decompressed, sizeof(payload) - 1);
 
-    rw_compress_destroy(&comp);
+    iog_compress_destroy(&comp);
 }
 
 void test_compress_lzs_cstp_roundtrip(void)
 {
-    rw_compress_ctx_t comp;
-    int ret = rw_compress_init(&comp, IOG_COMPRESS_LZS);
+    iog_compress_ctx_t comp;
+    int ret = iog_compress_init(&comp, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     const uint8_t payload[] = "AAAAAAAAAAAAAAAA"; /* repeated for compression */
     uint8_t compressed[128];
 
-    int clen = rw_compress(&comp, payload, sizeof(payload) - 1, compressed, sizeof(compressed));
+    int clen = iog_compress(&comp, payload, sizeof(payload) - 1, compressed, sizeof(compressed));
     TEST_ASSERT_GREATER_THAN(0, clen);
 
     /* Wrap in CSTP frame */
@@ -78,8 +78,8 @@ void test_compress_lzs_cstp_roundtrip(void)
     TEST_ASSERT_GREATER_THAN(0, flen);
 
     /* Decode CSTP + decompress with fresh context */
-    rw_compress_ctx_t decomp;
-    ret = rw_compress_init(&decomp, IOG_COMPRESS_LZS);
+    iog_compress_ctx_t decomp;
+    ret = iog_compress_init(&decomp, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     rw_cstp_packet_t pkt;
@@ -87,12 +87,12 @@ void test_compress_lzs_cstp_roundtrip(void)
 
     uint8_t decompressed[64];
     int dlen =
-        rw_decompress(&decomp, pkt.payload, pkt.payload_len, decompressed, sizeof(decompressed));
+        iog_decompress(&decomp, pkt.payload, pkt.payload_len, decompressed, sizeof(decompressed));
     TEST_ASSERT_EQUAL_INT((int)(sizeof(payload) - 1), dlen);
     TEST_ASSERT_EQUAL_MEMORY(payload, decompressed, sizeof(payload) - 1);
 
-    rw_compress_destroy(&comp);
-    rw_compress_destroy(&decomp);
+    iog_compress_destroy(&comp);
+    iog_compress_destroy(&decomp);
 }
 
 void test_worker_connection_has_compress(void)
@@ -149,8 +149,8 @@ void test_compress_type_in_connection(void)
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_NONE, conn->compress.type);
 
     /* Can reinit to LZS */
-    rw_compress_destroy(&conn->compress);
-    int ret = rw_compress_init(&conn->compress, IOG_COMPRESS_LZS);
+    iog_compress_destroy(&conn->compress);
+    int ret = iog_compress_init(&conn->compress, IOG_COMPRESS_LZS);
     TEST_ASSERT_EQUAL_INT(0, ret);
     TEST_ASSERT_EQUAL_UINT8(IOG_COMPRESS_LZS, conn->compress.type);
 

@@ -760,8 +760,8 @@ void test_data_path_multiple_packets_batch(void);    /* 3 packets in one TLS rea
 typedef struct {
     rw_tls_conn_t *tls;
     int tun_fd;
-    rw_dpd_ctx_t *dpd;
-    rw_compress_ctx_t *compress;
+    iog_dpd_ctx_t *dpd;
+    iog_compress_ctx_t *compress;
     iog_channel_ctx_t channel;
 
     /* Receive buffer (accumulates partial CSTP frames from TLS) */
@@ -776,7 +776,7 @@ typedef struct {
  * @brief Initialize data path for a connection.
  */
 void iog_conn_data_init(iog_conn_data_t *data, rw_tls_conn_t *tls, int tun_fd,
-                        rw_dpd_ctx_t *dpd, rw_compress_ctx_t *compress);
+                        iog_dpd_ctx_t *dpd, iog_compress_ctx_t *compress);
 
 /**
  * @brief Process data received from TLS.
@@ -912,7 +912,7 @@ typedef void (*rw_conn_dead_cb)(uint64_t conn_id, void *user_data);
 
 typedef struct {
     iog_io_ctx_t *io;
-    rw_dpd_ctx_t *dpd;
+    iog_dpd_ctx_t *dpd;
     iog_conn_data_t *data;
     uint64_t conn_id;
     uint32_t keepalive_interval_s;
@@ -932,7 +932,7 @@ void iog_conn_timer_on_activity(iog_conn_timer_t *timer);
 **Step 3: Implement conn_timer.c**
 
 - `iog_conn_timer_start()`: arm DPD timeout via `iog_io_add_timeout_cb()`, arm keepalive timeout
-- DPD timeout callback: call `rw_dpd_on_timeout()`, if DEAD → call `on_dead`, else send DPD request, re-arm
+- DPD timeout callback: call `iog_dpd_on_timeout()`, if DEAD → call `on_dead`, else send DPD request, re-arm
 - Keepalive callback: `iog_conn_data_send_keepalive()`, re-arm
 - `on_activity()`: reset idle timer, update DPD last_recv
 
@@ -1013,7 +1013,7 @@ void test_hooks_landlock_paths_from_config(void);  /* config paths → landlock 
 
 - `rw_security_apply_process()`: if `config->security.seccomp` → `rw_sandbox_apply()`, if `config->security.landlock` → `rw_landlock_apply()`
 - `rw_security_check_connection()`: delegate to `iog_wolfsentry_check_connection()`
-- `rw_security_session_create/destroy()`: build `rw_fw_session_t`, delegate to `rw_fw_session_create/destroy()`
+- `rw_security_session_create/destroy()`: build `iog_fw_session_t`, delegate to `iog_fw_session_create/destroy()`
 
 **Step 4: Build, test, commit**
 

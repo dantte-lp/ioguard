@@ -6,8 +6,8 @@
  * Backends: NONE (passthrough), LZ4, LZS.
  */
 
-#ifndef RINGWALL_NETWORK_COMPRESS_H
-#define RINGWALL_NETWORK_COMPRESS_H
+#ifndef IOGUARD_NETWORK_COMPRESS_H
+#define IOGUARD_NETWORK_COMPRESS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -19,25 +19,25 @@ typedef enum : uint8_t {
     IOG_COMPRESS_NONE,
     IOG_COMPRESS_LZ4,
     IOG_COMPRESS_LZS,
-} rw_compress_type_t;
+} iog_compress_type_t;
 
 typedef struct {
-    rw_compress_type_t type;
+    iog_compress_type_t type;
     void *codec_ctx;
-} rw_compress_ctx_t;
+} iog_compress_ctx_t;
 
-[[nodiscard]] int rw_compress_init(rw_compress_ctx_t *ctx, rw_compress_type_t type);
+[[nodiscard]] int iog_compress_init(iog_compress_ctx_t *ctx, iog_compress_type_t type);
 
-[[nodiscard]] int rw_compress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len,
+[[nodiscard]] int iog_compress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len,
                               uint8_t *out, size_t out_size);
 
-[[nodiscard]] int rw_decompress(rw_compress_ctx_t *ctx, const uint8_t *in, size_t in_len,
+[[nodiscard]] int iog_decompress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len,
                                 uint8_t *out, size_t out_size);
 
-void rw_compress_destroy(rw_compress_ctx_t *ctx);
+void iog_compress_destroy(iog_compress_ctx_t *ctx);
 
-[[nodiscard]] const char *rw_compress_type_name(rw_compress_type_t type);
+[[nodiscard]] const char *iog_compress_type_name(iog_compress_type_t type);
 
-[[nodiscard]] rw_compress_type_t rw_compress_negotiate(const char *accept_encoding);
+[[nodiscard]] iog_compress_type_t iog_compress_negotiate(const char *accept_encoding);
 
-#endif /* RINGWALL_NETWORK_COMPRESS_H */
+#endif /* IOGUARD_NETWORK_COMPRESS_H */

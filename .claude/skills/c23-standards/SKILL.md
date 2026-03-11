@@ -203,7 +203,7 @@ int rw_session_init(rw_session_t **out) {
     int rc = rw_cookie_generate(&s->cookie);
     if (rc < 0) goto cleanup;
 
-    rc = rw_dpd_init(&s->dpd);
+    rc = iog_dpd_init(&s->dpd);
     if (rc < 0) goto cleanup;
 
     *out = s;
