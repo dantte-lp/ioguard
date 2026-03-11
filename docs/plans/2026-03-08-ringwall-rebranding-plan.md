@@ -60,13 +60,13 @@ find src/ -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i \
     -e 's/rw_ipc/rw_ipc/g' \
     -e 's/rw_mdbx/rw_mdbx/g' \
     -e 's/rw_worker/rw_worker/g' \
-    -e 's/rw_session/rw_session/g' \
-    -e 's/rw_config/rw_config/g' \
+    -e 's/iog_session/iog_session/g' \
+    -e 's/iog_config/iog_config/g' \
     -e 's/rw_http/rw_http/g' \
     -e 's/rw_xml/rw_xml/g' \
     -e 's/rw_pam/rw_pam/g' \
     -e 's/rw_secmod/rw_secmod/g' \
-    -e 's/rw_memory/rw_memory/g' \
+    -e 's/iog_memory/iog_memory/g' \
     -e 's/rw_log/rw_log/g' \
     -e 's/rw_lzs/rw_lzs/g' \
     -e 's/rw_lz4/rw_lz4/g' \
@@ -138,13 +138,13 @@ find tests/ -type f -name "*.c" -exec sed -i \
     -e 's/rw_io/rw_io/g' \
     -e 's/rw_ipc/rw_ipc/g' \
     -e 's/rw_worker/rw_worker/g' \
-    -e 's/rw_session/rw_session/g' \
-    -e 's/rw_config/rw_config/g' \
+    -e 's/iog_session/iog_session/g' \
+    -e 's/iog_config/iog_config/g' \
     -e 's/rw_http/rw_http/g' \
     -e 's/rw_xml/rw_xml/g' \
     -e 's/rw_pam/rw_pam/g' \
     -e 's/rw_secmod/rw_secmod/g' \
-    -e 's/rw_memory/rw_memory/g' \
+    -e 's/iog_memory/iog_memory/g' \
     -e 's/rw_log/rw_log/g' \
     -e 's/rw_lzs/rw_lzs/g' \
     -e 's/rw_lz4/rw_lz4/g' \
@@ -179,13 +179,13 @@ sed -i \
     -e 's/ringwall/ringwall/g' \
     -e 's/rw_add_test/rw_add_test/g' \
     -e 's/rw_io/rw_io/g' \
-    -e 's/rw_memory/rw_memory/g' \
-    -e 's/rw_config/rw_config/g' \
+    -e 's/iog_memory/iog_memory/g' \
+    -e 's/iog_config/iog_config/g' \
     -e 's/rw_ipc/rw_ipc/g' \
     -e 's/rw_xml_auth/rw_xml_auth/g' \
     -e 's/rw_http/rw_http/g' \
     -e 's/rw_core/rw_core/g' \
-    -e 's/rw_session/rw_session/g' \
+    -e 's/iog_session/iog_session/g' \
     -e 's/rw_crypto/rw_crypto/g' \
     -e 's/rw_pam/rw_pam/g' \
     -e 's/rw_secmod/rw_secmod/g' \

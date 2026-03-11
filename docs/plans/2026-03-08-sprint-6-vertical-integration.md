@@ -293,9 +293,9 @@ int main(int argc, char *argv[])
     }
 
     /* Load configuration */
-    rw_config_t config;
-    rw_config_set_defaults(&config);
-    rc = rw_config_load(config_path, &config);
+    iog_config_t config;
+    iog_config_set_defaults(&config);
+    rc = iog_config_load(config_path, &config);
     if (rc < 0) {
         fprintf(stderr, "Failed to load config: %s\n", strerror(-rc));
         return EXIT_FAILURE;
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
         iog_secmod_init(&secmod, authmod_sv[1], &config);
         rc = iog_secmod_run(&secmod);
         iog_secmod_destroy(&secmod);
-        rw_config_free(&config);
+        iog_config_free(&config);
         _exit(rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
     }
     close(authmod_sv[1]);
@@ -381,7 +381,7 @@ cleanup_worker_sv:
     close(worker_sv[0]);
 cleanup_authmod_sv:
 cleanup_config:
-    rw_config_free(&config);
+    iog_config_free(&config);
     return rc < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 ```
@@ -457,14 +457,14 @@ typedef struct {
     iog_io_ctx_t *io;
     int accept_fd;             /* unix socket: main passes client fds here */
     int ipc_fd;                /* IPC to auth-mod */
-    const rw_config_t *config;
+    const iog_config_t *config;
     bool running;
 } iog_worker_loop_t;
 
 typedef struct {
     int accept_fd;
     int ipc_fd;
-    const rw_config_t *config;
+    const iog_config_t *config;
     const iog_worker_config_t *worker_cfg;
 } iog_worker_loop_config_t;
 
@@ -562,7 +562,7 @@ git commit -m "feat: worker io_uring event loop with fd-pass connection accept (
 - Create: `tests/unit/test_secmod_storage.c`
 - Modify: `CMakeLists.txt`
 
-**Why:** Auth-mod currently uses `rw_session_store_t` (in-memory, max 1024). Replace with `iog_mdbx_ctx_t` (persistent, scalable) and add `iog_sqlite_ctx_t` for audit logging. This connects S2 (auth) with S5 (storage).
+**Why:** Auth-mod currently uses `iog_session_store_t` (in-memory, max 1024). Replace with `iog_mdbx_ctx_t` (persistent, scalable) and add `iog_sqlite_ctx_t` for audit logging. This connects S2 (auth) with S5 (storage).
 
 **Step 1: Write failing tests**
 
@@ -587,16 +587,16 @@ Add storage fields to context:
 typedef struct {
     int ipc_fd;
     rw_pam_config_t pam_cfg;
-    iog_mdbx_ctx_t mdbx;            /* replaces rw_session_store_t */
+    iog_mdbx_ctx_t mdbx;            /* replaces iog_session_store_t */
     iog_sqlite_ctx_t sqlite;         /* audit logging + user management */
-    const rw_config_t *config;
+    const iog_config_t *config;
     bool running;
 } iog_secmod_ctx_t;
 ```
 
 **Step 3: Update secmod.c**
 
-- `iog_secmod_init()`: call `iog_mdbx_init()` + `iog_sqlite_init()`, remove `rw_session_store_create()`
+- `iog_secmod_init()`: call `iog_mdbx_init()` + `iog_sqlite_init()`, remove `iog_session_store_create()`
 - Auth success handler: `iog_mdbx_session_create()` instead of in-memory store, then `iog_sqlite_audit_insert()`
 - Session validate: `iog_mdbx_session_lookup()` instead of in-memory lookup
 - Disconnect: `iog_mdbx_session_delete()` + audit entry
@@ -984,7 +984,7 @@ void test_hooks_landlock_paths_from_config(void);  /* config paths → landlock 
  * Called immediately after fork(), before any I/O.
  */
 [[nodiscard]] int rw_security_apply_process(rw_sandbox_profile_t profile,
-                                             const rw_config_t *config);
+                                             const iog_config_t *config);
 
 /**
  * @brief Check incoming connection before TLS handshake.
@@ -1312,7 +1312,7 @@ typedef struct {
     uint32_t dns_count;
     char default_domain[RW_CONFIG_MAX_STR];
     uint32_t mtu;
-} rw_config_network_t;
+} iog_config_network_t;
 ```
 
 **Step 5: Add to CMakeLists.txt**

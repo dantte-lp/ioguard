@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CORE_SESSION_H
-#define RINGWALL_CORE_SESSION_H
+#ifndef IOGUARD_CORE_SESSION_H
+#define IOGUARD_CORE_SESSION_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -38,4 +38,4 @@ uint32_t iog_session_cleanup_expired(iog_session_store_t *store);
 
 uint32_t iog_session_count(const iog_session_store_t *store);
 
-#endif /* RINGWALL_CORE_SESSION_H */
+#endif /* IOGUARD_CORE_SESSION_H */

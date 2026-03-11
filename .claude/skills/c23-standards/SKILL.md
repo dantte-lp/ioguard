@@ -39,7 +39,7 @@ typedef enum [[nodiscard]] rw_result {
 } rw_result_t;
 
 [[nodiscard]]
-rw_result_t rw_session_create(rw_session_t **out);
+rw_result_t iog_session_create(iog_session_t **out);
 ```
 
 ### nullptr Instead of NULL
@@ -47,7 +47,7 @@ rw_result_t rw_session_create(rw_session_t **out);
 ```c
 // CORRECT
 if (ptr == nullptr) { ... }
-rw_session_t *sess = nullptr;
+iog_session_t *sess = nullptr;
 
 // WRONG — do not use NULL in new code
 if (ptr == NULL) { ... }
@@ -115,14 +115,14 @@ void rw_swap(typeof(int) *a, typeof(int) *b) {
 ### Structure Validation with _Static_assert
 
 ```c
-typedef struct rw_session_cookie {
+typedef struct iog_session_cookie {
     uint8_t  hmac[32];
     uint64_t timestamp;
     uint32_t client_id;
     uint8_t  nonce[16];
-} rw_session_cookie_t;
+} iog_session_cookie_t;
 
-_Static_assert(sizeof(rw_session_cookie_t) == 60,
+_Static_assert(sizeof(iog_session_cookie_t) == 60,
                "Cookie structure size changed — breaks protocol");
 ```
 
@@ -196,8 +196,8 @@ constexpr uint64_t RW_SESSION_TTL_NS = 3'600'000'000'000ULL;  // 1 hour
 
 ```c
 [[nodiscard]]
-int rw_session_init(rw_session_t **out) {
-    rw_session_t *s = mi_calloc(1, sizeof(*s));
+int iog_session_init(iog_session_t **out) {
+    iog_session_t *s = mi_calloc(1, sizeof(*s));
     if (s == nullptr) return -ENOMEM;
 
     int rc = rw_cookie_generate(&s->cookie);
@@ -228,7 +228,7 @@ cleanup:
 
 | Element | Convention | Example |
 |---------|-----------|---------|
-| Public function | `rw_module_action` | `rw_session_create()` |
+| Public function | `rw_module_action` | `iog_session_create()` |
 | Internal function | `module_action` | `session_validate()` |
 | Type | `rw_name_t` | `rw_connection_t` |
 | Enum value | `RW_PREFIX_NAME` | `RW_PKT_DATA` |

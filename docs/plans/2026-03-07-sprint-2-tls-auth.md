@@ -377,8 +377,8 @@ Reference: `src/crypto/session_cache.h` (existing TLS session cache is different
 **API design** (`src/core/session.h`):
 
 ```c
-#ifndef RINGWALL_CORE_SESSION_H
-#define RINGWALL_CORE_SESSION_H
+#ifndef IOGUARD_CORE_SESSION_H
+#define IOGUARD_CORE_SESSION_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -398,31 +398,31 @@ typedef struct {
     time_t last_activity;
     uint32_t ttl_seconds;
     bool active;
-} rw_session_t;
+} iog_session_t;
 
-typedef struct rw_session_store rw_session_store_t;
+typedef struct iog_session_store iog_session_store_t;
 
-[[nodiscard]] rw_session_store_t *rw_session_store_create(uint32_t max_sessions);
-void rw_session_store_destroy(rw_session_store_t *store);
+[[nodiscard]] iog_session_store_t *iog_session_store_create(uint32_t max_sessions);
+void iog_session_store_destroy(iog_session_store_t *store);
 
-[[nodiscard]] int rw_session_create(rw_session_store_t *store,
+[[nodiscard]] int iog_session_create(iog_session_store_t *store,
                                      const char *username,
                                      const char *group,
                                      uint32_t ttl_seconds,
-                                     rw_session_t **out);
+                                     iog_session_t **out);
 
-[[nodiscard]] int rw_session_validate(rw_session_store_t *store,
+[[nodiscard]] int iog_session_validate(iog_session_store_t *store,
                                        const uint8_t *cookie, size_t cookie_len,
-                                       rw_session_t **out);
+                                       iog_session_t **out);
 
-int rw_session_delete(rw_session_store_t *store,
+int iog_session_delete(iog_session_store_t *store,
                        const uint8_t *cookie, size_t cookie_len);
 
-uint32_t rw_session_cleanup_expired(rw_session_store_t *store);
+uint32_t iog_session_cleanup_expired(iog_session_store_t *store);
 
-uint32_t rw_session_count(const rw_session_store_t *store);
+uint32_t iog_session_count(const iog_session_store_t *store);
 
-#endif /* RINGWALL_CORE_SESSION_H */
+#endif /* IOGUARD_CORE_SESSION_H */
 ```
 
 **Step 1: Write failing tests** (`tests/unit/test_session.c`)
@@ -440,7 +440,7 @@ Tests (Unity):
 
 **Step 2: Implement** (`src/core/session.c`)
 
-- Session store: array of `rw_session_t` (fixed size, `RW_SESSION_MAX_SESSIONS`)
+- Session store: array of `iog_session_t` (fixed size, `RW_SESSION_MAX_SESSIONS`)
 - Cookie generation: `wc_RNG_GenerateBlock()` from wolfCrypt (`#include <wolfssl/wolfcrypt/random.h>`)
 - Cookie validation: `wolfSSL_ConstantCompare()` or implement constant-time memcmp
 - Zeroing: `explicit_bzero()` on cookie + password fields in delete
@@ -599,13 +599,13 @@ For Sprint 2, sec-mod runs a simple poll-based event loop (not io_uring — it d
 typedef struct {
     int ipc_fd;                    /* IPC socket (SOCK_SEQPACKET) */
     rw_pam_config_t pam_cfg;
-    rw_session_store_t *sessions;
-    const rw_config_t *config;
+    iog_session_store_t *sessions;
+    const iog_config_t *config;
     bool running;
 } iog_secmod_ctx_t;
 
 [[nodiscard]] int iog_secmod_init(iog_secmod_ctx_t *ctx, int ipc_fd,
-                                  const rw_config_t *config);
+                                  const iog_config_t *config);
 
 [[nodiscard]] int iog_secmod_run(iog_secmod_ctx_t *ctx);
 
@@ -614,7 +614,7 @@ void iog_secmod_stop(iog_secmod_ctx_t *ctx);
 void iog_secmod_destroy(iog_secmod_ctx_t *ctx);
 
 /* Entry point for child process (called after fork/pidfd_spawn) */
-[[noreturn]] void iog_secmod_main(int ipc_fd, const rw_config_t *config);
+[[noreturn]] void iog_secmod_main(int ipc_fd, const iog_config_t *config);
 
 #endif /* RINGWALL_CORE_SECMOD_H */
 ```
@@ -640,12 +640,12 @@ int iog_secmod_run(iog_secmod_ctx_t *ctx) {
         /* poll(ipc_fd, POLLIN, 1000ms) */
         /* if readable: recv IPC message */
         /* switch (msg.type):
-         *   AUTH_REQUEST with cookie → rw_session_validate()
-         *   AUTH_REQUEST without cookie → rw_pam_authenticate() → rw_session_create()
+         *   AUTH_REQUEST with cookie → iog_session_validate()
+         *   AUTH_REQUEST without cookie → rw_pam_authenticate() → iog_session_create()
          *   SHUTDOWN → ctx->running = false
          */
         /* send AUTH_RESPONSE back */
-        /* periodic: rw_session_cleanup_expired() */
+        /* periodic: iog_session_cleanup_expired() */
     }
 }
 ```
@@ -654,7 +654,7 @@ Uses existing IPC transport (`rw_ipc_send`, `rw_ipc_recv`) and message pack/unpa
 
 **Step 3: Wire into CMake, build, test**
 
-Link: `rw_ipc`, `rw_config`, session module, PAM module.
+Link: `rw_ipc`, `iog_config`, session module, PAM module.
 
 **Step 4: Commit**
 

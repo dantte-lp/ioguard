@@ -323,7 +323,7 @@ int main(void)
 
 `test_<module>_<action>_<expected>` — e.g.:
 - `test_rw_mem_init_returns_zero`
-- `test_rw_session_validate_invalid_returns_enoent`
+- `test_iog_session_validate_invalid_returns_enoent`
 - `test_rw_io_init_zero_depth_returns_null`
 
 ### Assertions (use typed variants)
@@ -373,10 +373,10 @@ Every test cleans up its own resources. No shared state between tests unless via
 
 ```c
 /* WRONG: unchecked return */
-rw_session_create(store, user, group, 300, &session);
+iog_session_create(store, user, group, 300, &session);
 
 /* CORRECT: [[nodiscard]] forces check */
-int ret = rw_session_create(store, user, group, 300, &session);
+int ret = iog_session_create(store, user, group, 300, &session);
 if (ret < 0) { return ret; }
 
 /* WRONG: sizeof(type) */

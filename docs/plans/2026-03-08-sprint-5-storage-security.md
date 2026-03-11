@@ -122,7 +122,7 @@ typedef struct {
     uint32_t source_ip;
     uint16_t source_port;
     bool     deny_roaming;
-} rw_session_record_t;
+} iog_session_record_t;
 
 typedef struct {
     MDBX_env *env;
@@ -132,13 +132,13 @@ typedef struct {
 [[nodiscard]] int iog_mdbx_init(iog_mdbx_ctx_t *ctx, const char *path);
 void iog_mdbx_close(iog_mdbx_ctx_t *ctx);
 
-[[nodiscard]] int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx, const rw_session_record_t *session);
+[[nodiscard]] int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx, const iog_session_record_t *session);
 [[nodiscard]] int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN],
-                                          rw_session_record_t *out);
+                                          iog_session_record_t *out);
 [[nodiscard]] int iog_mdbx_session_delete(iog_mdbx_ctx_t *ctx, const uint8_t session_id[RW_SESSION_ID_LEN]);
 [[nodiscard]] int iog_mdbx_session_count(iog_mdbx_ctx_t *ctx, uint32_t *count);
 
-typedef int (*iog_mdbx_session_iter_fn)(const rw_session_record_t *session, void *userdata);
+typedef int (*iog_mdbx_session_iter_fn)(const iog_session_record_t *session, void *userdata);
 [[nodiscard]] int iog_mdbx_session_iterate(iog_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn, void *userdata);
 
 #endif // IOGUARD_STORAGE_MDBX_H
@@ -664,7 +664,7 @@ if(BUILD_FUZZ)
 
     rw_add_fuzz(fuzz_cstp tests/fuzz/fuzz_cstp.c rw_cstp)
     rw_add_fuzz(fuzz_http tests/fuzz/fuzz_http.c rw_http)
-    rw_add_fuzz(fuzz_toml tests/fuzz/fuzz_toml.c rw_config)
+    rw_add_fuzz(fuzz_toml tests/fuzz/fuzz_toml.c iog_config)
     rw_add_fuzz(fuzz_ipc tests/fuzz/fuzz_ipc.c rw_ipc)
     if(TARGET iog_mdbx)
         rw_add_fuzz(fuzz_session_key tests/fuzz/fuzz_session_key.c iog_mdbx)

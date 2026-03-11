@@ -122,24 +122,24 @@ add_library(iog_io STATIC src/io/uring.c)
 target_link_libraries(iog_io PUBLIC ${LIBURING_LIBRARIES})
 target_include_directories(iog_io PUBLIC ${CMAKE_SOURCE_DIR}/src ${LIBURING_INCLUDE_DIRS})
 
-add_library(rw_memory STATIC src/utils/memory.c)
-target_include_directories(rw_memory PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_memory STATIC src/utils/memory.c)
+target_include_directories(iog_memory PUBLIC ${CMAKE_SOURCE_DIR}/src)
 if(MIMALLOC_FOUND)
-    target_link_libraries(rw_memory PUBLIC ${MIMALLOC_LIBRARY})
-    target_include_directories(rw_memory PUBLIC ${MIMALLOC_INCLUDE_DIR})
-    target_compile_definitions(rw_memory PUBLIC USE_MIMALLOC)
+    target_link_libraries(iog_memory PUBLIC ${MIMALLOC_LIBRARY})
+    target_include_directories(iog_memory PUBLIC ${MIMALLOC_INCLUDE_DIR})
+    target_compile_definitions(iog_memory PUBLIC USE_MIMALLOC)
 endif()
 
-add_library(rw_config STATIC src/config/config.c)
-target_include_directories(rw_config PUBLIC ${CMAKE_SOURCE_DIR}/src)
+add_library(iog_config STATIC src/config/config.c)
+target_include_directories(iog_config PUBLIC ${CMAKE_SOURCE_DIR}/src)
 if(TOML_FOUND)
-    target_link_libraries(rw_config PUBLIC ${TOML_LIBRARY})
-    target_include_directories(rw_config PUBLIC ${TOML_INCLUDE_DIR})
-    target_compile_definitions(rw_config PUBLIC USE_TOML)
+    target_link_libraries(iog_config PUBLIC ${TOML_LIBRARY})
+    target_include_directories(iog_config PUBLIC ${TOML_INCLUDE_DIR})
+    target_compile_definitions(iog_config PUBLIC USE_TOML)
 endif()
 
 add_library(rw_ipc STATIC src/ipc/transport.c src/ipc/messages.c)
-target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} rw_memory)
+target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} iog_memory)
 target_include_directories(rw_ipc PUBLIC ${CMAKE_SOURCE_DIR}/src ${PROTOBUF_C_INCLUDE_DIRS})
 ```
 
@@ -154,8 +154,8 @@ if(BUILD_TESTING AND UNITY_INCLUDE_DIR AND UNITY_SRC_DIR)
     endmacro()
 
     rw_add_test(test_io_uring tests/unit/test_io_uring.c iog_io)
-    rw_add_test(test_memory tests/unit/test_memory.c rw_memory)
-    rw_add_test(test_config_toml tests/unit/test_config_toml.c rw_config)
+    rw_add_test(test_memory tests/unit/test_memory.c iog_memory)
+    rw_add_test(test_config_toml tests/unit/test_config_toml.c iog_config)
     rw_add_test(test_ipc_transport tests/unit/test_ipc_transport.c rw_ipc iog_io)
 endif()
 ```
@@ -1237,7 +1237,7 @@ target_include_directories(rw_ipc PUBLIC
     ${PROTOBUF_C_INCLUDE_DIRS}
     ${PROTO_GEN_DIR}
 )
-target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} rw_memory)
+target_link_libraries(rw_ipc PUBLIC ${PROTOBUF_C_LIBRARIES} iog_memory)
 ```
 
 **Step 3: Write the failing test**
@@ -1657,23 +1657,23 @@ void tearDown(void) {}
 
 void test_config_load_valid_file(void)
 {
-    rw_config_t cfg;
-    int ret = rw_config_load(TEST_CONFIG, &cfg);
+    iog_config_t cfg;
+    int ret = iog_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
-    rw_config_free(&cfg);
+    iog_config_free(&cfg);
 }
 
 void test_config_load_nonexistent_file(void)
 {
-    rw_config_t cfg;
-    int ret = rw_config_load("/nonexistent.toml", &cfg);
+    iog_config_t cfg;
+    int ret = iog_config_load("/nonexistent.toml", &cfg);
     TEST_ASSERT_NOT_EQUAL(0, ret);
 }
 
 void test_config_server_values(void)
 {
-    rw_config_t cfg;
-    int ret = rw_config_load(TEST_CONFIG, &cfg);
+    iog_config_t cfg;
+    int ret = iog_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     TEST_ASSERT_EQUAL_STRING("0.0.0.0", cfg.server.listen_address);
@@ -1682,44 +1682,44 @@ void test_config_server_values(void)
     TEST_ASSERT_EQUAL_UINT32(1024, cfg.server.max_clients);
     TEST_ASSERT_EQUAL_UINT32(4, cfg.server.worker_count);
 
-    rw_config_free(&cfg);
+    iog_config_free(&cfg);
 }
 
 void test_config_auth_values(void)
 {
-    rw_config_t cfg;
-    int ret = rw_config_load(TEST_CONFIG, &cfg);
+    iog_config_t cfg;
+    int ret = iog_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     TEST_ASSERT_EQUAL_STRING("pam", cfg.auth.method);
     TEST_ASSERT_EQUAL_UINT32(300, cfg.auth.cookie_timeout);
 
-    rw_config_free(&cfg);
+    iog_config_free(&cfg);
 }
 
 void test_config_network_values(void)
 {
-    rw_config_t cfg;
-    int ret = rw_config_load(TEST_CONFIG, &cfg);
+    iog_config_t cfg;
+    int ret = iog_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     TEST_ASSERT_EQUAL_STRING("10.10.0.0/16", cfg.network.ipv4_pool);
     TEST_ASSERT_EQUAL_UINT32(1400, cfg.network.mtu);
     TEST_ASSERT_EQUAL_STRING("corp.example.com", cfg.network.default_domain);
 
-    rw_config_free(&cfg);
+    iog_config_free(&cfg);
 }
 
 void test_config_tls_values(void)
 {
-    rw_config_t cfg;
-    int ret = rw_config_load(TEST_CONFIG, &cfg);
+    iog_config_t cfg;
+    int ret = iog_config_load(TEST_CONFIG, &cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     TEST_ASSERT_EQUAL_STRING("/etc/ioguard/server.pem", cfg.tls.cert_file);
     TEST_ASSERT_EQUAL_STRING("/etc/ioguard/server.key", cfg.tls.key_file);
 
-    rw_config_free(&cfg);
+    iog_config_free(&cfg);
 }
 
 void test_config_defaults_when_missing(void)
@@ -1728,14 +1728,14 @@ void test_config_defaults_when_missing(void)
     const char *minimal = "tests/fixtures/ringwall_minimal.toml";
     /* This file has only [server] listen-port = 8443 */
 
-    rw_config_t cfg;
-    rw_config_set_defaults(&cfg);
+    iog_config_t cfg;
+    iog_config_set_defaults(&cfg);
 
     TEST_ASSERT_EQUAL_UINT16(443, cfg.server.listen_port); /* default */
     TEST_ASSERT_EQUAL_UINT32(0, cfg.server.worker_count);  /* 0 = auto-detect */
     TEST_ASSERT_EQUAL_UINT32(1400, cfg.network.mtu);       /* default */
 
-    rw_config_free(&cfg);
+    iog_config_free(&cfg);
 }
 
 int main(void)
@@ -1756,8 +1756,8 @@ int main(void)
 
 `src/config/config.h`:
 ```c
-#ifndef RINGWALL_CONFIG_CONFIG_H
-#define RINGWALL_CONFIG_CONFIG_H
+#ifndef IOGUARD_CONFIG_CONFIG_H
+#define IOGUARD_CONFIG_CONFIG_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -1771,13 +1771,13 @@ typedef struct {
     uint16_t dtls_port;
     uint32_t max_clients;
     uint32_t worker_count; /* 0 = auto-detect (nproc) */
-} rw_config_server_t;
+} iog_config_server_t;
 
 typedef struct {
     char method[64];
     uint32_t cookie_timeout;
     uint32_t cookie_rekey;
-} rw_config_auth_t;
+} iog_config_auth_t;
 
 typedef struct {
     char ipv4_pool[RW_CONFIG_MAX_STR];
@@ -1785,39 +1785,39 @@ typedef struct {
     uint32_t dns_count;
     char default_domain[RW_CONFIG_MAX_STR];
     uint32_t mtu;
-} rw_config_network_t;
+} iog_config_network_t;
 
 typedef struct {
     char cert_file[RW_CONFIG_MAX_STR];
     char key_file[RW_CONFIG_MAX_STR];
     char min_version[16];
     char ciphers[512];
-} rw_config_tls_t;
+} iog_config_tls_t;
 
 typedef struct {
     bool seccomp;
     bool landlock;
     char wolfsentry_config[RW_CONFIG_MAX_STR];
-} rw_config_security_t;
+} iog_config_security_t;
 
 typedef struct {
-    rw_config_server_t server;
-    rw_config_auth_t auth;
-    rw_config_network_t network;
-    rw_config_tls_t tls;
-    rw_config_security_t security;
-} rw_config_t;
+    iog_config_server_t server;
+    iog_config_auth_t auth;
+    iog_config_network_t network;
+    iog_config_tls_t tls;
+    iog_config_security_t security;
+} iog_config_t;
 
 /* Set all fields to default values */
-void rw_config_set_defaults(rw_config_t *cfg);
+void iog_config_set_defaults(iog_config_t *cfg);
 
 /* Load configuration from TOML file. Applies defaults first. */
-[[nodiscard]] int rw_config_load(const char *path, rw_config_t *cfg);
+[[nodiscard]] int iog_config_load(const char *path, iog_config_t *cfg);
 
 /* Free any dynamically allocated config resources */
-void rw_config_free(rw_config_t *cfg);
+void iog_config_free(iog_config_t *cfg);
 
-#endif /* RINGWALL_CONFIG_CONFIG_H */
+#endif /* IOGUARD_CONFIG_CONFIG_H */
 ```
 
 `src/config/config.c` — parse TOML using tomlc99:
@@ -1844,7 +1844,7 @@ static void safe_copy(char *dst, const char *src, size_t dst_size)
     dst[len] = '\0';
 }
 
-void rw_config_set_defaults(rw_config_t *cfg)
+void iog_config_set_defaults(iog_config_t *cfg)
 {
     memset(cfg, 0, sizeof(*cfg));
     safe_copy(cfg->server.listen_address, "0.0.0.0",
@@ -1864,7 +1864,7 @@ void rw_config_set_defaults(rw_config_t *cfg)
 
 #ifdef USE_TOML
 
-static void parse_server(toml_table_t *tbl, rw_config_server_t *srv)
+static void parse_server(toml_table_t *tbl, iog_config_server_t *srv)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "listen-address");
@@ -1882,7 +1882,7 @@ static void parse_server(toml_table_t *tbl, rw_config_server_t *srv)
     if (d.ok) { srv->worker_count = (uint32_t)d.u.i; }
 }
 
-static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
+static void parse_auth(toml_table_t *tbl, iog_config_auth_t *auth)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "method");
@@ -1896,7 +1896,7 @@ static void parse_auth(toml_table_t *tbl, rw_config_auth_t *auth)
     if (d.ok) { auth->cookie_rekey = (uint32_t)d.u.i; }
 }
 
-static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
+static void parse_network(toml_table_t *tbl, iog_config_network_t *net)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "ipv4-pool");
@@ -1927,7 +1927,7 @@ static void parse_network(toml_table_t *tbl, rw_config_network_t *net)
     }
 }
 
-static void parse_tls(toml_table_t *tbl, rw_config_tls_t *tls)
+static void parse_tls(toml_table_t *tbl, iog_config_tls_t *tls)
 {
     toml_datum_t d;
     d = toml_string_in(tbl, "cert-file");
@@ -1952,7 +1952,7 @@ static void parse_tls(toml_table_t *tbl, rw_config_tls_t *tls)
     }
 }
 
-static void parse_security(toml_table_t *tbl, rw_config_security_t *sec)
+static void parse_security(toml_table_t *tbl, iog_config_security_t *sec)
 {
     toml_datum_t d;
     d = toml_bool_in(tbl, "seccomp");
@@ -1967,9 +1967,9 @@ static void parse_security(toml_table_t *tbl, rw_config_security_t *sec)
     }
 }
 
-int rw_config_load(const char *path, rw_config_t *cfg)
+int iog_config_load(const char *path, iog_config_t *cfg)
 {
-    rw_config_set_defaults(cfg);
+    iog_config_set_defaults(cfg);
 
     FILE *fp = fopen(path, "r");
     if (fp == nullptr) {
@@ -2001,16 +2001,16 @@ int rw_config_load(const char *path, rw_config_t *cfg)
 
 #else /* no TOML support */
 
-int rw_config_load(const char *path, rw_config_t *cfg)
+int iog_config_load(const char *path, iog_config_t *cfg)
 {
     (void)path;
-    rw_config_set_defaults(cfg);
+    iog_config_set_defaults(cfg);
     return -1; /* TOML not compiled in */
 }
 
 #endif
 
-void rw_config_free(rw_config_t *cfg)
+void iog_config_free(iog_config_t *cfg)
 {
     /* All strings are inline (fixed-size arrays), nothing to free.
      * This function exists for future extensibility. */

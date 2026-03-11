@@ -62,7 +62,7 @@ static int hsr_callback(const MDBX_env *env, const MDBX_txn *txn,
 ```c
 int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx,
                             const uint8_t session_id[RW_SESSION_ID_LEN],
-                            rw_session_record_t *out)
+                            iog_session_record_t *out)
 {
     MDBX_txn *txn = nullptr;
     int rc = mdbx_txn_begin(ctx->env, nullptr, MDBX_TXN_RDONLY, &txn);
@@ -86,7 +86,7 @@ int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx,
 
 ```c
 int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx,
-                             const rw_session_record_t *session)
+                             const iog_session_record_t *session)
 {
     MDBX_txn *txn = nullptr;
     int rc = mdbx_txn_begin(ctx->env, nullptr, 0, &txn);
@@ -111,7 +111,7 @@ int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx,
 ### Key Design
 
 - **Key**: 32-byte `session_id` (raw bytes, NOT hex string)
-- **Value**: `rw_session_record_t` struct stored as flat bytes
+- **Value**: `iog_session_record_t` struct stored as flat bytes
 - **Sub-database**: named `"sessions"`, opened with `MDBX_CREATE` in init
 
 ### Error Mapping
@@ -211,7 +211,7 @@ static void safe_copy(char *dst, size_t dst_sz, const char *src)
   (`SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION` must be 0).
 - **NEVER** use `MDBX_WRITEMAP` in production — risk of corrupting the
   database on process crash.
-- **NEVER** pass `sizeof(rw_session_record_t)` — always use `sizeof(*ptr)`.
+- **NEVER** pass `sizeof(iog_session_record_t)` — always use `sizeof(*ptr)`.
 
 ## Testing Patterns
 
@@ -228,11 +228,11 @@ void test_mdbx_session_create_and_lookup(void)
 
     TEST_ASSERT_EQUAL_INT(0, iog_mdbx_init(&ctx, path));
 
-    rw_session_record_t session = {0};
+    iog_session_record_t session = {0};
     memset(session.session_id, 0xAA, RW_SESSION_ID_LEN);
     TEST_ASSERT_EQUAL_INT(0, iog_mdbx_session_create(&ctx, &session));
 
-    rw_session_record_t out = {0};
+    iog_session_record_t out = {0};
     TEST_ASSERT_EQUAL_INT(0, iog_mdbx_session_lookup(&ctx, session.session_id, &out));
     TEST_ASSERT_EQUAL_MEMORY(session.session_id, out.session_id, RW_SESSION_ID_LEN);
 

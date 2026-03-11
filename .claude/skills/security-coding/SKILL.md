@@ -32,7 +32,7 @@ ALL sensitive data MUST be zeroed before freeing:
 ```c
 #include <wolfssl/wolfcrypt/misc.h>
 
-void rw_free_session(rw_session_t *sess) {
+void rw_free_session(iog_session_t *sess) {
     if (sess == nullptr) return;
     ForceZero(sess->master_secret, sizeof(sess->master_secret));
     ForceZero(sess->cookie, sizeof(sess->cookie));
@@ -95,8 +95,8 @@ static int rw_safe_add(size_t a, size_t b, size_t *result) {
 
 static void rw_drop_privileges(void) {
     // Set UID/GID to unprivileged user
-    setgid(rw_config.gid);
-    setuid(rw_config.uid);
+    setgid(iog_config.gid);
+    setuid(iog_config.uid);
 
     // Drop all capabilities except needed ones
     cap_t caps = cap_init();

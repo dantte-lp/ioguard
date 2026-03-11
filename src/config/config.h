@@ -1,5 +1,5 @@
-#ifndef RINGWALL_CONFIG_CONFIG_H
-#define RINGWALL_CONFIG_CONFIG_H
+#ifndef IOGUARD_CONFIG_CONFIG_H
+#define IOGUARD_CONFIG_CONFIG_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -71,4 +71,4 @@ void iog_config_set_defaults(iog_config_t *cfg);
 
 void iog_config_free(iog_config_t *cfg);
 
-#endif /* RINGWALL_CONFIG_CONFIG_H */
+#endif /* IOGUARD_CONFIG_CONFIG_H */

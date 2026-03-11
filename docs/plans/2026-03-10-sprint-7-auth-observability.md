@@ -1018,7 +1018,7 @@ Key implementation details:
 | `rw_bytes_rx_total` | counter | Total bytes received |
 | `rw_bytes_tx_total` | counter | Total bytes transmitted |
 | `rw_active_sessions` | gauge | Currently active VPN sessions |
-| `rw_memory_bytes` | gauge | Process memory usage |
+| `iog_memory_bytes` | gauge | Process memory usage |
 | `rw_fd_count` | gauge | Open file descriptors |
 | `iog_ipam_pool_utilization` | gauge | IPAM pool utilization (0.0-1.0) |
 | `rw_tls_handshake_seconds` | histogram | TLS handshake duration |
