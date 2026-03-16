@@ -1,4 +1,5 @@
 #include "network/compress_lzs.h"
+#include "network/cstp.h"
 
 #include <errno.h>
 #include <string.h>
@@ -179,7 +180,7 @@ static int encode_length(bit_writer_t *bw, size_t length)
 }
 
 int iog_lzs_compress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
-                    size_t out_size)
+                     size_t out_size)
 {
     if (!ctx || !in || !out) {
         return -EINVAL;
@@ -252,7 +253,7 @@ int iog_lzs_compress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8
 }
 
 int iog_lzs_decompress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
-                      size_t out_size)
+                       size_t out_size)
 {
     if (!ctx || !in || !out) {
         return -EINVAL;
@@ -317,6 +318,10 @@ int iog_lzs_decompress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uin
                         if (chunk < 15) {
                             break;
                         }
+                    }
+                    /* Reject absurd lengths to prevent CPU exhaustion */
+                    if (length > IOG_CSTP_MAX_PAYLOAD) {
+                        return -EINVAL;
                     }
                 }
             }

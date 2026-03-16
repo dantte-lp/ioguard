@@ -31,7 +31,8 @@ void test_pam_authenticate_invalid_user(void)
     int ret = iog_pam_init(&cfg, "other");
     TEST_ASSERT_EQUAL_INT(0, ret);
 
-    iog_auth_result_t result = iog_pam_authenticate(&cfg, "iog_test_nonexistent_user_12345", "wrong");
+    iog_auth_result_t result =
+        iog_pam_authenticate(&cfg, "iog_test_nonexistent_user_12345", "wrong");
     /* The "other" service typically denies all; expect failure or error */
     TEST_ASSERT_TRUE(result == IOG_AUTH_FAILURE || result == IOG_AUTH_ERROR);
 }

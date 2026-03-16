@@ -3,9 +3,46 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 /* Initial capacity for the active completions tracking array */
 constexpr uint32_t IOG_IO_ACTIVE_INIT_CAP = 16;
+
+/* Drain timeout for iog_io_destroy: max iterations waiting for CQEs */
+constexpr uint32_t IOG_IO_DRAIN_MAX_ITERS = 64;
+constexpr uint32_t IOG_IO_DRAIN_TIMEOUT_MS = 50;
+
+/* --- Send serialization helpers --- */
+
+static inline bool io_send_set_test(const iog_io_send_set_t *set, int fd)
+{
+    if (fd < 0 || (uint32_t)fd >= IOG_IO_SEND_TRACK_MAX) {
+        return false;
+    }
+    return (set->bits[fd / 64] & (1ULL << (fd % 64))) != 0;
+}
+
+static inline void io_send_set_mark(iog_io_send_set_t *set, int fd)
+{
+    if (fd >= 0 && (uint32_t)fd < IOG_IO_SEND_TRACK_MAX) {
+        set->bits[fd / 64] |= (1ULL << (fd % 64));
+    }
+}
+
+static inline void io_send_set_clear(iog_io_send_set_t *set, int fd)
+{
+    if (fd >= 0 && (uint32_t)fd < IOG_IO_SEND_TRACK_MAX) {
+        set->bits[fd / 64] &= ~(1ULL << (fd % 64));
+    }
+}
+
+/* Wrapper completion for send ops: tracks fd for serialization */
+typedef struct {
+    iog_io_completion_t base;
+    iog_io_ctx_t *ctx;
+    int fd;
+    bool is_send;
+} iog_io_send_completion_t;
 
 /* Track a completion in the active array (for cancel-by-user_data) */
 static int io_active_add(iog_io_ctx_t *ctx, iog_io_completion_t *comp)
@@ -45,6 +82,15 @@ static iog_io_completion_t *io_active_find(iog_io_ctx_t *ctx, void *user_data)
         }
     }
     return nullptr;
+}
+
+/* Internal callback: clears send-inflight bit then invokes real callback */
+static void send_complete_wrapper(int res, void *user_data)
+{
+    iog_io_send_completion_t *sc = user_data;
+    io_send_set_clear(&sc->ctx->send_inflight, sc->fd);
+    sc->base.cb(res, sc->base.user_data);
+    free(sc);
 }
 
 /* Internal callback: sets int pointer to 1 */
@@ -90,6 +136,58 @@ void iog_io_destroy(iog_io_ctx_t *ctx)
     if (ctx == nullptr) {
         return;
     }
+
+    /* Step 1: Cancel all active operations */
+    for (uint32_t i = 0; i < ctx->active_count; i++) {
+        struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
+        if (sqe == nullptr) {
+            break;
+        }
+        io_uring_prep_cancel(sqe, ctx->active[i], 0);
+        io_uring_sqe_set_data(sqe, nullptr);
+    }
+
+    /* Step 2: Submit cancellations */
+    io_uring_submit(&ctx->ring);
+
+    /* Step 3: Drain all remaining CQEs until no active ops or timeout */
+    for (uint32_t iter = 0; iter < IOG_IO_DRAIN_MAX_ITERS && ctx->active_count > 0; iter++) {
+        struct io_uring_cqe *cqe;
+        struct __kernel_timespec ts = {
+            .tv_sec = 0,
+            .tv_nsec = IOG_IO_DRAIN_TIMEOUT_MS * 1000000L,
+        };
+        int ret = io_uring_submit_and_wait_timeout(&ctx->ring, &cqe, 1, &ts, nullptr);
+        if (ret < 0 && ret != -ETIME && ret != -EAGAIN) {
+            break;
+        }
+
+        unsigned head;
+        unsigned count = 0;
+        io_uring_for_each_cqe(&ctx->ring, head, cqe)
+        {
+            iog_io_completion_t *comp = io_uring_cqe_get_data(cqe);
+            if (comp != nullptr) {
+                io_active_remove(ctx, comp);
+                /* During destroy drain, do NOT invoke callbacks — the
+                 * owning subsystem (worker, etc.) may already be torn down.
+                 * Just free the completion tracker. */
+                free(comp);
+            }
+            count++;
+        }
+        io_uring_cq_advance(&ctx->ring, count);
+
+        if (count == 0) {
+            break;
+        }
+    }
+
+    /* Step 4: Free any remaining active completions that never got CQEs */
+    for (uint32_t i = 0; i < ctx->active_count; i++) {
+        free(ctx->active[i]);
+    }
+
     io_uring_queue_exit(&ctx->ring);
     free(ctx->active);
     free(ctx);
@@ -195,18 +293,38 @@ int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *comp
 
 int iog_io_prep_send(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, int *completed)
 {
+    /* Send serialization: reject if fd already has in-flight send */
+    if (io_send_set_test(&ctx->send_inflight, fd)) {
+        return -EBUSY;
+    }
+
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
-    if (comp == nullptr) {
+    iog_io_send_completion_t *sc = calloc(1, sizeof(*sc));
+    if (sc == nullptr) {
         return -ENOMEM;
     }
-    comp->cb = nop_complete_cb;
-    comp->user_data = completed;
+    sc->base.cb = nop_complete_cb;
+    sc->base.user_data = completed;
+    sc->ctx = ctx;
+    sc->fd = fd;
+    sc->is_send = true;
     *completed = 0;
+
+    io_send_set_mark(&ctx->send_inflight, fd);
+
+    /* The CQE handler sees this as iog_io_completion_t* and calls send_complete_wrapper */
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    if (comp == nullptr) {
+        io_send_set_clear(&ctx->send_inflight, fd);
+        free(sc);
+        return -ENOMEM;
+    }
+    comp->cb = send_complete_wrapper;
+    comp->user_data = sc;
 
     io_uring_prep_send(sqe, fd, buf, len, 0);
     io_uring_sqe_set_data(sqe, comp);
@@ -284,7 +402,7 @@ int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 /* --- Callback-based operations --- */
 
 int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                       void *user_data)
+                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -310,25 +428,45 @@ int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
 }
 
 int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, iog_io_cb cb,
-                       void *user_data)
+                        void *user_data)
 {
+    /* Send serialization: reject if fd already has in-flight send */
+    if (io_send_set_test(&ctx->send_inflight, fd)) {
+        return -EBUSY;
+    }
+
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
-    if (comp == nullptr) {
+    iog_io_send_completion_t *sc = calloc(1, sizeof(*sc));
+    if (sc == nullptr) {
         return -ENOMEM;
     }
-    comp->cb = cb;
-    comp->user_data = user_data;
+    sc->base.cb = cb;
+    sc->base.user_data = user_data;
+    sc->ctx = ctx;
+    sc->fd = fd;
+    sc->is_send = true;
+
+    /* Wrap in a completion that clears the send bit on CQE */
+    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    if (comp == nullptr) {
+        free(sc);
+        return -ENOMEM;
+    }
+    comp->cb = send_complete_wrapper;
+    comp->user_data = sc;
 
     int ret = io_active_add(ctx, comp);
     if (ret < 0) {
+        free(sc);
         free(comp);
         return ret;
     }
+
+    io_send_set_mark(&ctx->send_inflight, fd);
 
     io_uring_prep_send(sqe, fd, buf, len, 0);
     io_uring_sqe_set_data(sqe, comp);
@@ -336,7 +474,7 @@ int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, 
 }
 
 int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                       void *user_data)
+                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -362,7 +500,7 @@ int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
 }
 
 int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, iog_io_cb cb,
-                        void *user_data)
+                         void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -388,7 +526,7 @@ int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
 }
 
 int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd, struct sockaddr *addr, socklen_t *addrlen,
-                         iog_io_cb cb, void *user_data)
+                          iog_io_cb cb, void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -462,4 +600,102 @@ int iog_io_cancel(iog_io_ctx_t *ctx, void *user_data)
     io_uring_prep_cancel(sqe, comp, 0);
     io_uring_sqe_set_data(sqe, nullptr);
     return 0;
+}
+
+/* --- io_uring ring restrictions --- */
+
+/* Common worker opcodes allowed for data-plane operations */
+static const uint8_t worker_ops[] = {
+    IORING_OP_RECV,    IORING_OP_SEND,           IORING_OP_READ, IORING_OP_WRITE,
+    IORING_OP_TIMEOUT, IORING_OP_TIMEOUT_REMOVE, IORING_OP_NOP,  IORING_OP_ASYNC_CANCEL,
+};
+
+/* Additional opcodes for auth-mod (storage file access) */
+static const uint8_t authmod_extra_ops[] = {
+    IORING_OP_OPENAT,
+    IORING_OP_CLOSE,
+    IORING_OP_FSYNC,
+};
+
+/* Build restriction array and apply to ring.
+ * Ring MUST have been created with IORING_SETUP_R_DISABLED. */
+static int io_apply_restrictions(struct io_uring *ring, const uint8_t *ops, size_t nops,
+                                 const uint8_t *extra_ops, size_t nextra)
+{
+    /* +1 for IORING_RESTRICTION_REGISTER_OP (ENABLE_RINGS) */
+    size_t total = nops + nextra + 1;
+    struct io_uring_restriction *res = calloc(total, sizeof(*res));
+    if (res == nullptr) {
+        return -ENOMEM;
+    }
+
+    size_t idx = 0;
+
+    /* Allow each SQE opcode */
+    for (size_t i = 0; i < nops; i++) {
+        res[idx].opcode = IORING_RESTRICTION_SQE_OP;
+        res[idx].sqe_op = ops[i];
+        idx++;
+    }
+    for (size_t i = 0; i < nextra; i++) {
+        res[idx].opcode = IORING_RESTRICTION_SQE_OP;
+        res[idx].sqe_op = extra_ops[i];
+        idx++;
+    }
+
+    /* Allow IORING_REGISTER_ENABLE_RINGS so we can enable the ring after */
+    res[idx].opcode = IORING_RESTRICTION_REGISTER_OP;
+    res[idx].register_op = IORING_REGISTER_ENABLE_RINGS;
+    idx++;
+
+    int ret = io_uring_register_restrictions(ring, res, (unsigned int)idx);
+    free(res);
+
+    if (ret < 0) {
+        return ret;
+    }
+
+    /* Enable the ring now that restrictions are in place */
+    ret = io_uring_enable_rings(ring);
+    return ret;
+}
+
+int iog_io_restrict_worker(iog_io_ctx_t *ctx)
+{
+    if (ctx == nullptr) {
+        return -EINVAL;
+    }
+    return io_apply_restrictions(&ctx->ring, worker_ops, sizeof(worker_ops) / sizeof(worker_ops[0]),
+                                 nullptr, 0);
+}
+
+int iog_io_restrict_authmod(iog_io_ctx_t *ctx)
+{
+    if (ctx == nullptr) {
+        return -EINVAL;
+    }
+    return io_apply_restrictions(&ctx->ring, worker_ops, sizeof(worker_ops) / sizeof(worker_ops[0]),
+                                 authmod_extra_ops,
+                                 sizeof(authmod_extra_ops) / sizeof(authmod_extra_ops[0]));
+}
+
+bool iog_io_restrictions_supported(void)
+{
+    /* Probe by creating a disabled ring and attempting to register restrictions */
+    struct io_uring probe_ring;
+    int ret = io_uring_queue_init(1, &probe_ring, IORING_SETUP_R_DISABLED);
+    if (ret < 0) {
+        return false;
+    }
+
+    /* Try registering a single NOP restriction */
+    struct io_uring_restriction res = {
+        .opcode = IORING_RESTRICTION_SQE_OP,
+        .sqe_op = IORING_OP_NOP,
+    };
+
+    ret = io_uring_register_restrictions(&probe_ring, &res, 1);
+    io_uring_queue_exit(&probe_ring);
+
+    return (ret == 0);
 }

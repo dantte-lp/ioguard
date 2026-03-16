@@ -1,4 +1,5 @@
 #include "core/worker_loop.h"
+#include "core/conn_data.h"
 #include "ipc/fdpass.h"
 
 #include <errno.h>
@@ -31,7 +32,7 @@ static int arm_connection_recv(iog_worker_loop_t *loop, uint64_t conn_id)
     ctx->conn_id = conn_id;
 
     int ret = iog_io_prep_recv_cb(loop->io, conn->tls_fd, conn->recv_buf, sizeof(conn->recv_buf),
-                                 on_tls_recv, ctx);
+                                  on_tls_recv, ctx);
     if (ret < 0) {
         free(ctx);
         return ret;
@@ -63,12 +64,25 @@ static void on_tls_recv(int res, void *user_data)
     /* Store received data length */
     conn->recv_len = (size_t)res;
 
-    /* TODO Task 6: pass through wolfSSL_read for TLS decryption */
-    /* TODO Task 7: forward plaintext to TUN via CSTP framing */
+    /* Feed received ciphertext into TLS decrypt -> CSTP decode -> TUN */
+    if (conn->data != nullptr) {
+        iog_conn_data_t *cd = (iog_conn_data_t *)conn->data;
+        int rc = iog_conn_data_process_tls(cd);
+        if (rc < 0 && rc != -EAGAIN) {
+            /* Fatal error or disconnect — tear down connection */
+            close(conn->tls_fd);
+            if (conn->tun_fd >= 0) {
+                close(conn->tun_fd);
+            }
+            (void)iog_worker_remove_connection(ctx->loop->worker, ctx->conn_id);
+            free(ctx);
+            return;
+        }
+    }
 
     /* Re-arm recv for next data */
     int ret = iog_io_prep_recv_cb(ctx->loop->io, conn->tls_fd, conn->recv_buf,
-                                 sizeof(conn->recv_buf), on_tls_recv, ctx);
+                                  sizeof(conn->recv_buf), on_tls_recv, ctx);
     if (ret < 0) {
         free(ctx);
     }

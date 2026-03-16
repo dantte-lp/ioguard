@@ -17,7 +17,7 @@ constexpr size_t IOG_FDPASS_MAX_FDS = 4;
  * @return 0 on success, negative errno on error.
  */
 [[nodiscard]] int iog_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data,
-                                 size_t data_len);
+                                  size_t data_len);
 
 /**
  * @brief Receive file descriptor(s) from a unix socket.
@@ -31,6 +31,6 @@ constexpr size_t IOG_FDPASS_MAX_FDS = 4;
  * @return 0 on success, negative errno on error.
  */
 [[nodiscard]] int iog_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out,
-                                 void *data, size_t *data_len);
+                                  void *data, size_t *data_len);
 
 #endif /* IOGUARD_IPC_FDPASS_H */

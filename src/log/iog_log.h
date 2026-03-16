@@ -42,8 +42,8 @@ void iog_log_destroy(iog_logger_t *logger);
  * @param msg        Log message text.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level,
-                               const char *component, const char *msg);
+[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level, const char *component,
+                                const char *msg);
 
 /**
  * @brief Write a log message with RFC 5424 structured data.
@@ -57,10 +57,8 @@ void iog_log_destroy(iog_logger_t *logger);
  * @return 0 on success, negative errno on failure.
  */
 [[nodiscard]] int iog_log_write_sd(iog_logger_t *logger, iog_log_level_t level,
-                                  const char *component, const char *msg,
-                                  const char *sd_id,
-                                  const char *sd_params[][2],
-                                  size_t param_count);
+                                   const char *component, const char *msg, const char *sd_id,
+                                   const char *sd_params[][2], size_t param_count);
 
 /**
  * @brief Flush buffered log data for io_uring WRITEV.
@@ -69,8 +67,7 @@ void iog_log_destroy(iog_logger_t *logger);
  * @param out_size  Size of the destination buffer.
  * @return Number of bytes written to out, or negative errno on failure.
  */
-[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out,
-                                   size_t out_size);
+[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out, size_t out_size);
 
 /**
  * @brief Set the minimum severity level. Messages below this are dropped.

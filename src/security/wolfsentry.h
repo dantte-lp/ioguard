@@ -46,7 +46,7 @@ void iog_wolfsentry_close(iog_wolfsentry_ctx_t *ctx);
  * @return 0 on success, negative errno on failure.
  */
 [[nodiscard]] int iog_wolfsentry_load_json(iog_wolfsentry_ctx_t *ctx, const char *json,
-                                          size_t json_len);
+                                           size_t json_len);
 
 /**
  * @brief Check whether a connection should be accepted or rejected.
@@ -60,10 +60,10 @@ void iog_wolfsentry_close(iog_wolfsentry_ctx_t *ctx);
  * @return IOG_WS_ACCEPT, IOG_WS_REJECT, or IOG_WS_ERROR.
  */
 [[nodiscard]] iog_ws_result_t iog_wolfsentry_check_connection(iog_wolfsentry_ctx_t *ctx, int af,
-                                                            const void *remote_addr,
-                                                            uint16_t remote_port,
-                                                            const void *local_addr,
-                                                            uint16_t local_port, int protocol);
+                                                              const void *remote_addr,
+                                                              uint16_t remote_port,
+                                                              const void *local_addr,
+                                                              uint16_t local_port, int protocol);
 
 /**
  * @brief Ban an IP address by inserting a penalty-boxed route.

@@ -29,7 +29,7 @@
  * 2. Enable runtime backend selection (GnuTLS vs wolfSSL)
  * 3. Maintain 100% Cisco Secure Client 5.x+ compatibility
  * 4. Provide modern C23 safety features (nodiscard, cleanup, etc.)
- * 5. Support all ocserv features (PSK, session caching, OCSP, etc.)
+ * 5. Support all ioguard features (PSK, session caching, OCSP, etc.)
  *
  * Design Principles:
  * - Opaque types for backend independence

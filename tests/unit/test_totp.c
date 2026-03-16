@@ -204,6 +204,52 @@ void test_totp_build_uri_buffer_too_small(void)
     TEST_ASSERT_LESS_THAN_INT(0, (int)ret);
 }
 
+/* Constant-time validation: full window traversal even on early match */
+void test_totp_validate_constant_time_full_window(void)
+{
+    uint8_t secret[] = "12345678901234567890";
+    uint32_t code = 0;
+    int ret = iog_totp_generate(secret, sizeof(secret) - 1, 1, &code);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+
+    /* Validate with large window — must succeed and iterate full window */
+    ret = iog_totp_validate(secret, sizeof(secret) - 1, code, 30, 10);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+}
+
+void test_totp_validate_wrong_code_full_window(void)
+{
+    uint8_t secret[] = "12345678901234567890";
+
+    /* Wrong code — must fail after checking entire window */
+    int ret = iog_totp_validate(secret, sizeof(secret) - 1, 999999, 30, 5);
+    TEST_ASSERT_EQUAL_INT(-EACCES, ret);
+}
+
+/* --- Percent-encoding tests (HIGH-9 fix) --- */
+
+void test_totp_uri_encodes_special_chars(void)
+{
+    uint8_t secret[] = "12345678901234567890";
+    char uri[512];
+    ssize_t ret = iog_totp_build_uri(secret, sizeof(secret) - 1, "My Company: Inc.",
+                                     "user@example.com", uri, sizeof(uri));
+    TEST_ASSERT_GREATER_THAN(0, ret);
+    TEST_ASSERT_NOT_NULL(strstr(uri, "My%20Company%3A%20Inc."));
+    TEST_ASSERT_NOT_NULL(strstr(uri, "user%40example.com"));
+}
+
+void test_totp_uri_clean_input_unmodified(void)
+{
+    uint8_t secret[] = "12345678901234567890";
+    char uri[512];
+    ssize_t ret =
+        iog_totp_build_uri(secret, sizeof(secret) - 1, "ioguard", "alice", uri, sizeof(uri));
+    TEST_ASSERT_GREATER_THAN(0, ret);
+    TEST_ASSERT_NOT_NULL(strstr(uri, "issuer=ioguard"));
+    TEST_ASSERT_NOT_NULL(strstr(uri, "alice"));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -228,5 +274,10 @@ int main(void)
     RUN_TEST(test_totp_generate_secret_produces_bytes);
     RUN_TEST(test_totp_generate_secret_roundtrip);
     RUN_TEST(test_totp_build_uri_buffer_too_small);
+    RUN_TEST(test_totp_validate_constant_time_full_window);
+    RUN_TEST(test_totp_validate_wrong_code_full_window);
+    /* Percent-encoding (HIGH-9 fix) */
+    RUN_TEST(test_totp_uri_encodes_special_chars);
+    RUN_TEST(test_totp_uri_clean_input_unmodified);
     return UNITY_END();
 }

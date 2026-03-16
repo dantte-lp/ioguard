@@ -372,14 +372,14 @@ TEST(parse_multiple_modifiers)
     ASSERT_TRUE(config.force_session_hash);
 }
 
-TEST(parse_real_world_ocserv_string)
+TEST(parse_real_world_ioguard_string)
 {
-    const char *ocserv_default = "NORMAL:%SERVER_PRECEDENCE:%COMPAT:-VERS-SSL3.0:-VERS-TLS1.0";
+    const char *ioguard_default = "NORMAL:%SERVER_PRECEDENCE:%COMPAT:-VERS-SSL3.0:-VERS-TLS1.0";
     token_list_t tokens = {0};
     priority_config_t config = {0};
     priority_config_init(&config);
 
-    (void)priority_tokenize(ocserv_default, &tokens);
+    (void)priority_tokenize(ioguard_default, &tokens);
     const int result = priority_parse(&tokens, &config);
 
     ASSERT_EQ(result, PRIORITY_E_SUCCESS);
@@ -644,7 +644,7 @@ int main(void)
     RUN_TEST(parse_version_removal_tls10);
     RUN_TEST(parse_version_removal_ssl3);
     RUN_TEST(parse_multiple_modifiers);
-    RUN_TEST(parse_real_world_ocserv_string);
+    RUN_TEST(parse_real_world_ioguard_string);
     RUN_TEST(parse_performance_keyword);
     RUN_TEST(parse_secure256_keyword);
     RUN_TEST(parse_pfs_keyword);

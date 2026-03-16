@@ -15,7 +15,7 @@
  * Returns bytes written or negative errno.
  */
 [[nodiscard]] int iog_dtls_build_headers(char *buf, size_t buf_size, const char *master_secret_hex,
-                                        const char *cipher_suite, const char *accept_encoding);
+                                         const char *cipher_suite, const char *accept_encoding);
 
 /**
  * Parse X-CSTP-Accept-Encoding header value.

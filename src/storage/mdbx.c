@@ -65,11 +65,11 @@ int iog_mdbx_init(iog_mdbx_ctx_t *ctx, const char *path)
     }
 
     rc = mdbx_env_set_geometry(ctx->env, (intptr_t)IOG_MDBX_SIZE_LOWER, /* lower */
-                               -1,                                     /* now = default */
+                               -1,                                      /* now = default */
                                (intptr_t)IOG_MDBX_SIZE_UPPER,           /* upper */
                                (intptr_t)IOG_MDBX_GROWTH_STEP,          /* growth */
                                (intptr_t)IOG_MDBX_SHRINK_THRESHOLD,     /* shrink */
-                               -1);                                    /* pagesize = default */
+                               -1);                                     /* pagesize = default */
     if (rc != MDBX_SUCCESS) {
         goto err_close;
     }
@@ -157,7 +157,7 @@ int iog_mdbx_session_create(iog_mdbx_ctx_t *ctx, const iog_session_record_t *ses
 }
 
 int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx, const uint8_t session_id[IOG_SESSION_ID_LEN],
-                           iog_session_record_t *out)
+                            iog_session_record_t *out)
 {
     if (ctx == nullptr || ctx->env == nullptr || session_id == nullptr || out == nullptr) {
         return -EINVAL;

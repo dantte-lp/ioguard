@@ -70,9 +70,9 @@ void test_vault_different_iv_each_encrypt(void)
     size_t len2 = 0;
 
     TEST_ASSERT_EQUAL_INT(0, iog_vault_encrypt(vault, plain, sizeof(plain), blob1, sizeof(blob1),
-                                              &len1));
+                                               &len1));
     TEST_ASSERT_EQUAL_INT(0, iog_vault_encrypt(vault, plain, sizeof(plain), blob2, sizeof(blob2),
-                                              &len2));
+                                               &len2));
 
     /* IVs must differ (first 12 bytes) — use byte comparison to avoid
      * memcmp which is banned on security-related buffers by project rules */
@@ -102,7 +102,7 @@ void test_vault_wrong_key_fails(void)
     uint8_t blob[sizeof(plain) + IOG_VAULT_OVERHEAD];
     size_t blob_len = 0;
     TEST_ASSERT_EQUAL_INT(0, iog_vault_encrypt(vault, plain, sizeof(plain), blob, sizeof(blob),
-                                              &blob_len));
+                                               &blob_len));
 
     /* Create vault with different key */
     uint8_t bad_key[IOG_VAULT_KEY_SIZE] = {0xFF};
@@ -128,8 +128,9 @@ void test_vault_buffer_too_small(void)
 
 void test_vault_null_params(void)
 {
-    uint8_t buf[64];
+    uint8_t buf[64] = {0};
     size_t len = 0;
+    // cppcheck-suppress uninitvar
     TEST_ASSERT_LESS_THAN_INT(0, iog_vault_encrypt(nullptr, buf, 4, buf, 64, &len));
     TEST_ASSERT_LESS_THAN_INT(0, iog_vault_decrypt(nullptr, buf, 32, buf, 32, &len));
 }

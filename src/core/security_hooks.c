@@ -44,7 +44,7 @@ int iog_security_apply_process(bool is_worker, const iog_config_t *config)
 }
 
 int iog_security_build_fw_session(iog_fw_session_t *session, const char *username, int af,
-                                 uint32_t ip)
+                                  uint32_t ip)
 {
     if (session == nullptr || username == nullptr) {
         return -EINVAL;

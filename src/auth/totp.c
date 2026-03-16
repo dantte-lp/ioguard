@@ -82,7 +82,7 @@ ssize_t iog_base32_decode(const char *encoded, uint8_t *out, size_t out_size)
 }
 
 int iog_totp_generate(const uint8_t *secret, size_t secret_len, uint64_t time_step,
-                     uint32_t *code_out)
+                      uint32_t *code_out)
 {
     if (secret == nullptr || secret_len == 0 || code_out == nullptr) {
         return -EINVAL;
@@ -117,6 +117,7 @@ int iog_totp_generate(const uint8_t *secret, size_t secret_len, uint64_t time_st
     }
 
     wc_HmacFree(&hmac);
+    explicit_bzero(&hmac, sizeof(hmac));
 
     /* Dynamic truncation (RFC 4226 §5.4) */
     int offset = hash[19] & 0x0F;
@@ -131,6 +132,7 @@ int iog_totp_generate(const uint8_t *secret, size_t secret_len, uint64_t time_st
 
 hmac_err:
     wc_HmacFree(&hmac);
+    explicit_bzero(&hmac, sizeof(hmac));
     explicit_bzero(hash, sizeof(hash));
     explicit_bzero(msg, sizeof(msg));
     return -EIO;
@@ -140,7 +142,7 @@ hmac_err:
 }
 
 int iog_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code, uint64_t time_now,
-                     uint32_t window)
+                      uint32_t window)
 {
     if (secret == nullptr || secret_len == 0) {
         return -EINVAL;
@@ -148,32 +150,30 @@ int iog_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code, u
 
     uint64_t current_counter = time_now / IOG_TOTP_TIME_STEP;
 
+    /* Constant-time: iterate full window without early return to prevent
+     * timing side-channel that leaks which time-step matched. */
+    volatile int found = 0;
+
     for (uint32_t i = 0; i <= window; i++) {
         uint32_t candidate = 0;
         int ret;
 
-        /* Check current counter (or forward drift for i>0) */
         ret = iog_totp_generate(secret, secret_len, current_counter + i, &candidate);
         if (ret != 0) {
             return ret;
         }
-        if (candidate == code) {
-            return 0;
-        }
+        found |= (candidate == code);
 
-        /* Check backward drift (i>0 only, guard underflow) */
         if (i > 0 && current_counter >= i) {
             ret = iog_totp_generate(secret, secret_len, current_counter - i, &candidate);
             if (ret != 0) {
                 return ret;
             }
-            if (candidate == code) {
-                return 0;
-            }
+            found |= (candidate == code);
         }
     }
 
-    return -EACCES;
+    return found ? 0 : -EACCES;
 }
 
 /**
@@ -242,12 +242,62 @@ int iog_totp_generate_secret(uint8_t *secret, size_t secret_len)
 #endif
 }
 
+/**
+ * RFC 3986 percent-encoding: unreserved chars (A-Za-z0-9 - _ . ~) pass through,
+ * everything else becomes %XX.
+ */
+static ssize_t percent_encode(const char *input, char *out, size_t out_size)
+{
+    if (input == nullptr || out == nullptr || out_size == 0) {
+        return -EINVAL;
+    }
+
+    static const char HEX[] = "0123456789ABCDEF";
+    size_t pos = 0;
+
+    for (const char *p = input; *p != '\0'; p++) {
+        unsigned char c = (unsigned char)*p;
+        bool unreserved = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                          (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.' || c == '~';
+
+        if (unreserved) {
+            if (pos + 1 >= out_size) {
+                return -ENOSPC;
+            }
+            out[pos++] = (char)c;
+        } else {
+            if (pos + 3 >= out_size) {
+                return -ENOSPC;
+            }
+            out[pos++] = '%';
+            out[pos++] = HEX[c >> 4];
+            out[pos++] = HEX[c & 0x0F];
+        }
+    }
+
+    out[pos] = '\0';
+    return (ssize_t)pos;
+}
+
 ssize_t iog_totp_build_uri(const uint8_t *secret, size_t secret_len, const char *issuer,
-                          const char *account, char *uri_out, size_t uri_size)
+                           const char *account, char *uri_out, size_t uri_size)
 {
     if (secret == nullptr || secret_len == 0 || issuer == nullptr || account == nullptr ||
         uri_out == nullptr || uri_size == 0) {
         return -EINVAL;
+    }
+
+    /* Percent-encode issuer and account per RFC 3986 */
+    char enc_issuer[256];
+    ssize_t ei_len = percent_encode(issuer, enc_issuer, sizeof(enc_issuer));
+    if (ei_len < 0) {
+        return ei_len;
+    }
+
+    char enc_account[256];
+    ssize_t ea_len = percent_encode(account, enc_account, sizeof(enc_account));
+    if (ea_len < 0) {
+        return ea_len;
     }
 
     /* Base32-encode the secret */
@@ -259,8 +309,8 @@ ssize_t iog_totp_build_uri(const uint8_t *secret, size_t secret_len, const char 
     }
 
     int written = snprintf(uri_out, uri_size,
-                           "otpauth://totp/%s:%s?secret=%s&issuer=%s&digits=6&period=30", issuer,
-                           account, b32, issuer);
+                           "otpauth://totp/%s:%s?secret=%s&issuer=%s&digits=6&period=30",
+                           enc_issuer, enc_account, b32, enc_issuer);
 
     explicit_bzero(b32, sizeof(b32));
 

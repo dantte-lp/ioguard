@@ -200,7 +200,7 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx)
         sqlite3_close(ctx->db);
     }
 
-    memset(ctx, 0, sizeof(*ctx));
+    explicit_bzero(ctx, sizeof(*ctx));
 }
 
 int iog_sqlite_user_create(iog_sqlite_ctx_t *ctx, const iog_user_record_t *user)
@@ -314,7 +314,7 @@ int iog_sqlite_audit_insert(iog_sqlite_ctx_t *ctx, const iog_audit_entry_t *entr
 }
 
 int iog_sqlite_audit_query_by_username(iog_sqlite_ctx_t *ctx, const char *username,
-                                      iog_audit_entry_t *out, size_t max_entries, size_t *count)
+                                       iog_audit_entry_t *out, size_t max_entries, size_t *count)
 {
     if (ctx == nullptr || username == nullptr || out == nullptr || count == nullptr) {
         return -EINVAL;
@@ -376,7 +376,7 @@ int iog_sqlite_ban_check(iog_sqlite_ctx_t *ctx, const char *ip, bool *is_banned)
 }
 
 int iog_sqlite_ban_add(iog_sqlite_ctx_t *ctx, const char *ip, const char *reason,
-                      int duration_minutes)
+                       int duration_minutes)
 {
     if (ctx == nullptr || ip == nullptr || reason == nullptr) {
         return -EINVAL;
@@ -399,8 +399,8 @@ int iog_sqlite_ban_add(iog_sqlite_ctx_t *ctx, const char *ip, const char *reason
 }
 
 int iog_sqlite_user_totp_set(iog_sqlite_ctx_t *ctx, const char *username,
-                            const uint8_t *encrypted_secret, size_t secret_len,
-                            const char *encrypted_recovery)
+                             const uint8_t *encrypted_secret, size_t secret_len,
+                             const char *encrypted_recovery)
 {
     if (ctx == nullptr || username == nullptr || encrypted_secret == nullptr || secret_len == 0 ||
         secret_len > INT_MAX) {

@@ -28,7 +28,8 @@ typedef struct {
  * @param timeout_s  Drain timeout in seconds (0 = use default).
  * @return 0 on success, -EINVAL on bad params.
  */
-[[nodiscard]] int iog_shutdown_init(iog_shutdown_ctx_t *ctx, iog_worker_t *worker, uint32_t timeout_s);
+[[nodiscard]] int iog_shutdown_init(iog_shutdown_ctx_t *ctx, iog_worker_t *worker,
+                                    uint32_t timeout_s);
 
 /**
  * @brief Encode a CSTP DISCONNECT frame into a buffer.

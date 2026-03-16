@@ -26,13 +26,13 @@ typedef struct iog_session_store iog_session_store_t; /* opaque */
 void iog_session_store_destroy(iog_session_store_t *store);
 
 [[nodiscard]] int iog_session_create(iog_session_store_t *store, const char *username,
-                                    const char *group, uint32_t ttl_seconds, iog_session_t **out);
+                                     const char *group, uint32_t ttl_seconds, iog_session_t **out);
 
 [[nodiscard]] int iog_session_validate(iog_session_store_t *store, const uint8_t *cookie,
-                                      size_t cookie_len, iog_session_t **out);
+                                       size_t cookie_len, iog_session_t **out);
 
 [[nodiscard]] int iog_session_delete(iog_session_store_t *store, const uint8_t *cookie,
-                                    size_t cookie_len);
+                                     size_t cookie_len);
 
 uint32_t iog_session_cleanup_expired(iog_session_store_t *store);
 

@@ -79,7 +79,7 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
  * @return 0 on success, -ENOENT if not found, negative errno on error.
  */
 [[nodiscard]] int iog_sqlite_user_lookup(iog_sqlite_ctx_t *ctx, const char *username,
-                                        iog_user_record_t *out);
+                                         iog_user_record_t *out);
 
 /**
  * @brief Insert an audit log entry.
@@ -99,8 +99,8 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
  * @return 0 on success, negative errno on error.
  */
 [[nodiscard]] int iog_sqlite_audit_query_by_username(iog_sqlite_ctx_t *ctx, const char *username,
-                                                    iog_audit_entry_t *out, size_t max_entries,
-                                                    size_t *count);
+                                                     iog_audit_entry_t *out, size_t max_entries,
+                                                     size_t *count);
 
 /**
  * @brief Check whether an IP address is currently banned.
@@ -120,7 +120,7 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
  * @return 0 on success, negative errno on error.
  */
 [[nodiscard]] int iog_sqlite_ban_add(iog_sqlite_ctx_t *ctx, const char *ip, const char *reason,
-                                    int duration_minutes);
+                                     int duration_minutes);
 
 /**
  * @brief Enable TOTP for a user with encrypted secret and recovery codes.
@@ -132,8 +132,8 @@ void iog_sqlite_close(iog_sqlite_ctx_t *ctx);
  * @return 0 on success, -ENOENT if user not found, negative errno on error.
  */
 [[nodiscard]] int iog_sqlite_user_totp_set(iog_sqlite_ctx_t *ctx, const char *username,
-                                          const uint8_t *encrypted_secret, size_t secret_len,
-                                          const char *encrypted_recovery);
+                                           const uint8_t *encrypted_secret, size_t secret_len,
+                                           const char *encrypted_recovery);
 
 /**
  * @brief Disable TOTP for a user, clearing secret and recovery codes.

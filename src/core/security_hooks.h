@@ -47,7 +47,7 @@
  * @return 0 on success, -EINVAL on bad params.
  */
 [[nodiscard]] int iog_security_build_fw_session(iog_fw_session_t *session, const char *username,
-                                               int af, uint32_t ip);
+                                                int af, uint32_t ip);
 
 /**
  * @brief Create per-session firewall rules after auth success.

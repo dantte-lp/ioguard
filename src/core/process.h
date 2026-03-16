@@ -10,7 +10,8 @@ typedef struct {
     int pidfd;
 } iog_process_t;
 
-[[nodiscard]] int iog_process_spawn(iog_process_t *proc, const char *path, const char *const argv[]);
+[[nodiscard]] int iog_process_spawn(iog_process_t *proc, const char *path,
+                                    const char *const argv[]);
 
 [[nodiscard]] int iog_process_wait(iog_process_t *proc, int *exit_status, uint32_t timeout_ms);
 

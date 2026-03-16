@@ -119,9 +119,9 @@ int iog_wolfsentry_load_json(iog_wolfsentry_ctx_t *ctx, const char *json, size_t
 }
 
 iog_ws_result_t iog_wolfsentry_check_connection(iog_wolfsentry_ctx_t *ctx, int af,
-                                              const void *remote_addr, uint16_t remote_port,
-                                              const void *local_addr, uint16_t local_port,
-                                              int protocol)
+                                                const void *remote_addr, uint16_t remote_port,
+                                                const void *local_addr, uint16_t local_port,
+                                                int protocol)
 {
     if (ctx == nullptr || ctx->ws_ctx == nullptr) {
         return IOG_WS_ERROR;

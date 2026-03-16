@@ -25,7 +25,7 @@ typedef struct {
 
 /** Hex decode string to binary. Returns bytes written or negative errno. */
 [[nodiscard]] int iog_dtls_hex_decode(const char *hex, size_t hex_len, uint8_t *out,
-                                     size_t out_size);
+                                      size_t out_size);
 
 /** Zero out master secret. */
 void iog_dtls_master_secret_clear(iog_dtls_master_secret_t *ms);

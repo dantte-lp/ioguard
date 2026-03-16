@@ -21,6 +21,15 @@ typedef struct {
     void *user_data;
 } iog_io_completion_t;
 
+/* Maximum number of fds tracked for send serialization.
+ * Fds beyond this limit are not tracked (no -EBUSY enforcement). */
+constexpr uint32_t IOG_IO_SEND_TRACK_MAX = 256;
+
+/* Per-fd send serialization: bitset tracking in-flight sends */
+typedef struct {
+    uint64_t bits[IOG_IO_SEND_TRACK_MAX / 64];
+} iog_io_send_set_t;
+
 struct iog_io_ctx {
     struct io_uring ring;
     bool running;
@@ -29,6 +38,8 @@ struct iog_io_ctx {
     iog_io_completion_t **active;
     uint32_t active_count;
     uint32_t active_cap;
+    /* Per-fd send serialization bitset */
+    iog_io_send_set_t send_inflight;
 };
 
 /* Create io_uring context. Returns nullptr on failure.
@@ -61,40 +72,58 @@ void iog_io_stop(iog_io_ctx_t *ctx);
 [[nodiscard]] int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired);
 
 /* Submit a recv operation on a socket */
-[[nodiscard]] int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed);
+[[nodiscard]] int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                   int *completed);
 
 /* Submit a send operation on a socket */
 [[nodiscard]] int iog_io_prep_send(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                  int *completed);
+                                   int *completed);
 
 /* Submit a read operation on a file descriptor (TUN, signalfd, etc.) */
-[[nodiscard]] int iog_io_prep_read(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed);
+[[nodiscard]] int iog_io_prep_read(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                   int *completed);
 
 /* Submit a write operation on a file descriptor */
 [[nodiscard]] int iog_io_prep_write(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                   int *completed);
+                                    int *completed);
 
 /* Callback-based operations — for production event loops.
  * cb is invoked with CQE result (bytes or negative errno) and user_data. */
 
-[[nodiscard]] int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                                     void *user_data);
-
-[[nodiscard]] int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                     iog_io_cb cb, void *user_data);
-
-[[nodiscard]] int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                                     void *user_data);
-
-[[nodiscard]] int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+[[nodiscard]] int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
                                       iog_io_cb cb, void *user_data);
 
+[[nodiscard]] int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                      iog_io_cb cb, void *user_data);
+
+[[nodiscard]] int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                      iog_io_cb cb, void *user_data);
+
+[[nodiscard]] int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                       iog_io_cb cb, void *user_data);
+
 [[nodiscard]] int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd, struct sockaddr *addr,
-                                       socklen_t *addrlen, iog_io_cb cb, void *user_data);
+                                        socklen_t *addrlen, iog_io_cb cb, void *user_data);
 
 [[nodiscard]] int iog_io_add_timeout_cb(iog_io_ctx_t *ctx, uint64_t timeout_ms, iog_io_cb cb,
-                                       void *user_data);
+                                        void *user_data);
 
 [[nodiscard]] int iog_io_cancel(iog_io_ctx_t *ctx, void *user_data);
+
+/* --- io_uring ring restrictions (IORING_REGISTER_RESTRICTIONS) ---
+ * Restrict SQE opcodes to a minimal allowlist per process role.
+ * Ring must be created with IORING_SETUP_R_DISABLED flag. */
+
+/* Restrict to worker opcodes: RECV, SEND, READ, WRITE, TIMEOUT,
+ * TIMEOUT_REMOVE, NOP, ASYNC_CANCEL.
+ * Returns 0 on success, -ENOSYS if kernel lacks support, -EINVAL on bad args */
+[[nodiscard]] int iog_io_restrict_worker(iog_io_ctx_t *ctx);
+
+/* Restrict to auth-mod opcodes: worker set + OPENAT, CLOSE, FSYNC.
+ * Returns 0 on success, -ENOSYS if kernel lacks support, -EINVAL on bad args */
+[[nodiscard]] int iog_io_restrict_authmod(iog_io_ctx_t *ctx);
+
+/* Probe whether IORING_REGISTER_RESTRICTIONS is supported by the running kernel */
+bool iog_io_restrictions_supported(void);
 
 #endif /* IOGUARD_IO_URING_H */

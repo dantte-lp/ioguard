@@ -280,11 +280,13 @@ int main(int argc, char **argv)
                 print_usage(argv[0]);
                 return 1;
             }
-            port = atoi(argv[i]);
-            if (port <= 0 || port > 65535) {
-                fprintf(stderr, "Error: Invalid port number\n");
+            char *endptr;
+            long val = strtol(argv[i], &endptr, 10);
+            if (*endptr != '\0' || val <= 0 || val > 65535) {
+                fprintf(stderr, "Invalid port: %s\n", argv[i]);
                 return 1;
             }
+            port = (int)val;
         } else if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--cert") == 0) {
             if (++i >= argc) {
                 fprintf(stderr, "Error: --cert requires an argument\n");

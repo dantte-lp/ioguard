@@ -61,7 +61,7 @@ void iog_vault_destroy(iog_vault_t *vault);
  * @return 0 on success, negative errno on error.
  */
 [[nodiscard]] int iog_vault_encrypt(iog_vault_t *vault, const uint8_t *plaintext, size_t plain_len,
-                                   uint8_t *out, size_t out_size, size_t *out_len);
+                                    uint8_t *out, size_t out_size, size_t *out_len);
 
 /**
  * @brief Decrypt a field value.
@@ -78,6 +78,6 @@ void iog_vault_destroy(iog_vault_t *vault);
  * @return 0 on success, -EACCES on authentication failure, negative errno on error.
  */
 [[nodiscard]] int iog_vault_decrypt(iog_vault_t *vault, const uint8_t *cipherblob, size_t blob_len,
-                                   uint8_t *out, size_t out_size, size_t *out_len);
+                                    uint8_t *out, size_t out_size, size_t *out_len);
 
 #endif /* IOGUARD_STORAGE_VAULT_H */

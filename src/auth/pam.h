@@ -19,7 +19,7 @@ typedef struct {
 
 [[nodiscard]] int iog_pam_init(iog_pam_config_t *cfg, const char *service);
 
-[[nodiscard]] iog_auth_result_t iog_pam_authenticate(const iog_pam_config_t *cfg, const char *username,
-                                                   const char *password);
+[[nodiscard]] iog_auth_result_t iog_pam_authenticate(const iog_pam_config_t *cfg,
+                                                     const char *username, const char *password);
 
 #endif /* IOGUARD_AUTH_PAM_H */

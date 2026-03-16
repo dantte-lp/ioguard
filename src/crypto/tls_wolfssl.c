@@ -18,6 +18,7 @@
 
 #include "tls_wolfssl.h"
 #include <errno.h>
+#include <limits.h>
 #include <stdckdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,7 +113,7 @@ int tls_wolfssl_map_error(int wolf_error)
  * Translate GnuTLS priority string to wolfSSL cipher list
  *
  * This function implements a critical compatibility layer between GnuTLS
- * priority strings (used by ocserv) and wolfSSL cipher lists.
+ * priority strings (used by ioguard) and wolfSSL cipher lists.
  *
  * Supported GnuTLS Keywords:
  * - NORMAL: Standard security settings
@@ -359,7 +360,7 @@ void tls_context_free(tls_context_t *ctx)
     free(ctx->wolfssl_cipher_list);
 
     // Zero sensitive data
-    memset(ctx, 0, sizeof(*ctx));
+    explicit_bzero(ctx, sizeof(*ctx));
 
     free(ctx);
 }
@@ -786,8 +787,7 @@ static int tls_install_dummy_certificate(tls_context_t *ctx)
     }
 
     /* Try relative path first (works when running from source directory) */
-    if (try_load_cert_pair(ctx->wolf_ctx,
-                           "tests/certs/server-cert.pem",
+    if (try_load_cert_pair(ctx->wolf_ctx, "tests/certs/server-cert.pem",
                            "tests/certs/server-key.pem")) {
         ctx->has_certificate = true;
         return TLS_E_SUCCESS;
@@ -796,8 +796,7 @@ static int tls_install_dummy_certificate(tls_context_t *ctx)
     /* Try absolute path via CMAKE_SOURCE_DIR (works when ctest runs from
      * the build directory). Defined via target_compile_definitions. */
 #ifdef CMAKE_SOURCE_DIR
-    if (try_load_cert_pair(ctx->wolf_ctx,
-                           CMAKE_SOURCE_DIR "/tests/certs/server-cert.pem",
+    if (try_load_cert_pair(ctx->wolf_ctx, CMAKE_SOURCE_DIR "/tests/certs/server-cert.pem",
                            CMAKE_SOURCE_DIR "/tests/certs/server-key.pem")) {
         ctx->has_certificate = true;
         return TLS_E_SUCCESS;
@@ -871,7 +870,7 @@ void tls_session_free(tls_session_t *session)
     }
 
     // Zero sensitive data
-    memset(session, 0, sizeof(*session));
+    explicit_bzero(session, sizeof(*session));
 
     free(session);
 }
@@ -1141,6 +1140,11 @@ ssize_t tls_send(tls_session_t *session, const void *data, size_t len)
         return TLS_E_INVALID_REQUEST;
     }
 
+    /* Guard against size_t-to-int truncation (wolfSSL uses int for length) */
+    if (len > (size_t)INT_MAX) {
+        return TLS_E_INVALID_PARAMETER;
+    }
+
     int ret = wolfSSL_write(session->wolf_ssl, data, (int)len);
 
     if (ret > 0) {
@@ -1161,6 +1165,11 @@ ssize_t tls_recv(tls_session_t *session, void *data, size_t len)
 
     if (!session->handshake_complete) {
         return TLS_E_INVALID_REQUEST;
+    }
+
+    /* Guard against size_t-to-int truncation (wolfSSL uses int for length) */
+    if (len > (size_t)INT_MAX) {
+        return TLS_E_INVALID_PARAMETER;
     }
 
     int ret = wolfSSL_read(session->wolf_ssl, data, (int)len);

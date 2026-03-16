@@ -10,8 +10,7 @@ static int mock_init(const void *config)
     return 0;
 }
 
-static iog_auth_status_t mock_authenticate(const iog_auth_request_t *req,
-                                           iog_auth_response_t *resp)
+static iog_auth_status_t mock_authenticate(const iog_auth_request_t *req, iog_auth_response_t *resp)
 {
     (void)req;
     resp->status = IOG_AUTH_STATUS_SUCCESS;

@@ -94,6 +94,39 @@ void test_cert_auth_backend_name_is_cert(void)
     TEST_ASSERT_EQUAL_STRING("cert", backend->name);
 }
 
+void test_cert_auth_config_default_eku_false(void)
+{
+    iog_cert_auth_config_t cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    snprintf(cfg.ca_cert_path, sizeof(cfg.ca_cert_path), "/etc/pki/ca.pem");
+
+    /* require_eku must default to false after zero-init */
+    TEST_ASSERT_FALSE(cfg.require_eku);
+
+    int ret = iog_cert_auth_init(&cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+}
+
+void test_cert_auth_config_template_oid_empty(void)
+{
+    iog_cert_auth_config_t cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    snprintf(cfg.ca_cert_path, sizeof(cfg.ca_cert_path), "/etc/pki/ca.pem");
+
+    /* template_oid must default to empty string after zero-init */
+    TEST_ASSERT_EQUAL_STRING("", cfg.template_oid);
+
+    int ret = iog_cert_auth_init(&cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+}
+
+void test_cert_auth_backend_has_authenticate(void)
+{
+    const iog_auth_backend_t *backend = iog_cert_auth_backend();
+    TEST_ASSERT_NOT_NULL(backend);
+    TEST_ASSERT_NOT_NULL(backend->authenticate);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -103,5 +136,8 @@ int main(void)
     RUN_TEST(test_cert_auth_extract_cn_from_subject);
     RUN_TEST(test_cert_auth_username_field_default_is_cn);
     RUN_TEST(test_cert_auth_backend_name_is_cert);
+    RUN_TEST(test_cert_auth_config_default_eku_false);
+    RUN_TEST(test_cert_auth_config_template_oid_empty);
+    RUN_TEST(test_cert_auth_backend_has_authenticate);
     return UNITY_END();
 }

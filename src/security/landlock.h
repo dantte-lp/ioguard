@@ -36,6 +36,6 @@ typedef enum : uint8_t {
  * with EACCES.  This is irreversible for the calling process.
  */
 [[nodiscard]] int iog_landlock_apply(iog_landlock_profile_t profile, const char *mdbx_path,
-                                    const char *sqlite_path);
+                                     const char *sqlite_path);
 
 #endif /* IOGUARD_SECURITY_LANDLOCK_H */

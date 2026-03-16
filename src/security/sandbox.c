@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <seccomp.h>
 #include <stddef.h>
+#include <sys/mman.h>
 
 /* Syscall table for each profile tier.
  * Each higher tier is a strict superset of the previous one. */
@@ -18,10 +19,8 @@ static const int worker_syscalls[] = {
     SCMP_SYS(write),
     SCMP_SYS(readv),
     SCMP_SYS(writev),
-    SCMP_SYS(mmap),
     SCMP_SYS(munmap),
     SCMP_SYS(madvise),
-    SCMP_SYS(mprotect),
     SCMP_SYS(brk),
     SCMP_SYS(close),
     SCMP_SYS(futex),
@@ -107,6 +106,21 @@ static int build_filter(iog_sandbox_profile_t profile, scmp_filter_ctx *out_ctx,
         goto fail;
     }
     total += ARRAY_LEN(worker_syscalls);
+
+    /* Allow mmap/mprotect only when prot does NOT contain PROT_EXEC */
+    rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mmap), 1,
+                          SCMP_A2(SCMP_CMP_MASKED_EQ, PROT_EXEC, 0));
+    if (rc < 0) {
+        goto fail;
+    }
+    total++;
+
+    rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mprotect), 1,
+                          SCMP_A2(SCMP_CMP_MASKED_EQ, PROT_EXEC, 0));
+    if (rc < 0) {
+        goto fail;
+    }
+    total++;
 
     if (profile >= IOG_SANDBOX_AUTHMOD) {
         rc = add_syscalls(ctx, authmod_extra_syscalls, ARRAY_LEN(authmod_extra_syscalls));

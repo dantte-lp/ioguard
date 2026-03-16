@@ -76,7 +76,8 @@ bool iog_landlock_supported(void)
     return abi >= 1;
 }
 
-int iog_landlock_apply(iog_landlock_profile_t profile, const char *mdbx_path, const char *sqlite_path)
+int iog_landlock_apply(iog_landlock_profile_t profile, const char *mdbx_path,
+                       const char *sqlite_path)
 {
     if (mdbx_path == nullptr) {
         return -EINVAL;

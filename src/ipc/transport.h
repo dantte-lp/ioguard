@@ -11,8 +11,9 @@ typedef struct {
     int child_fd;  /* used by child process (worker/sec-mod) */
 } iog_ipc_channel_t;
 
-/* Maximum IPC message size (must fit in provided buffers) */
-constexpr size_t IOG_IPC_MAX_MSG_SIZE = 4096;
+/* Maximum IPC message size (must fit in provided buffers).
+ * SOCK_SEQPACKET guarantees atomic delivery up to SO_SNDBUF. */
+constexpr size_t IOG_IPC_MAX_MSG_SIZE = 65536;
 
 /* Create a SOCK_SEQPACKET socketpair for IPC */
 [[nodiscard]] int iog_ipc_create_pair(iog_ipc_channel_t *ch);

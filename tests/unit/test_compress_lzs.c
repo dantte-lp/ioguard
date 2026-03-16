@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unity/unity.h>
 #include "network/compress_lzs.h"
+#include "network/cstp.h"
 
 static iog_lzs_ctx_t ctx;
 
@@ -123,6 +124,45 @@ void test_lzs_reset(void)
     TEST_ASSERT_EQUAL_size_t(0, c.window_pos);
 }
 
+void test_lzs_decompress_rejects_extreme_length(void)
+{
+    /*
+     * Craft a malicious bitstream that triggers the extended length loop
+     * with many 0xF (15) chunks, producing a decoded length far exceeding
+     * IOG_CSTP_MAX_PAYLOAD. The fix must reject this with -EINVAL or the
+     * output must stay within IOG_CSTP_MAX_PAYLOAD bytes.
+     *
+     * Bitstream layout:
+     *   [0] literal 'A' (0-bit flag + 8-bit 0x41) = 9 bits
+     *   [1] match flag (1-bit) + offset=1 (11 bits: 00000000001)
+     *       + len_bits=3 (2 bits: 11) + ext=3 (2 bits: 11)
+     *       + repeated 0xF 4-bit chunks (many) + terminating 0x0 chunk
+     *
+     * 0xFF bytes provide a long run of 1-bits which naturally encode
+     * the literal 'A', the match flag, offset bits, length prefix bits,
+     * and many extended 0xF chunks. We append a few zero bytes at the
+     * end to terminate the chunk loop and provide an end marker.
+     */
+    uint8_t crafted[256];
+    memset(crafted, 0xFF, sizeof(crafted));
+    /* Zero out the tail so the chunk loop eventually reads < 15 and exits,
+     * and the end marker (offset=0) terminates decompression. */
+    memset(crafted + 200, 0x00, 56);
+
+    uint8_t out[32768];
+    iog_lzs_ctx_t dec_ctx;
+    iog_lzs_init(&dec_ctx);
+
+    int ret = iog_lzs_decompress(&dec_ctx, crafted, sizeof(crafted), out, sizeof(out));
+
+    /* Either an error or output bounded by IOG_CSTP_MAX_PAYLOAD */
+    if (ret >= 0) {
+        TEST_ASSERT_LESS_OR_EQUAL(IOG_CSTP_MAX_PAYLOAD, (size_t)ret);
+    } else {
+        TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -135,5 +175,6 @@ int main(void)
     RUN_TEST(test_lzs_compress_null);
     RUN_TEST(test_lzs_decompress_null);
     RUN_TEST(test_lzs_reset);
+    RUN_TEST(test_lzs_decompress_rejects_extreme_length);
     return UNITY_END();
 }

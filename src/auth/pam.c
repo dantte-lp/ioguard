@@ -66,7 +66,7 @@ int iog_pam_init(iog_pam_config_t *cfg, const char *service)
 }
 
 iog_auth_result_t iog_pam_authenticate(const iog_pam_config_t *cfg, const char *username,
-                                     const char *password)
+                                       const char *password)
 {
     if (cfg == nullptr || username == nullptr || password == nullptr) {
         return IOG_AUTH_ERROR;

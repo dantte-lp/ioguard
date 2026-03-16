@@ -341,7 +341,7 @@ int iog_xml_parse_auth_request(const char *xml, size_t len, iog_xml_auth_request
 }
 
 int iog_xml_build_auth_response(const iog_xml_auth_response_t *resp, char *buf, size_t buf_size,
-                               size_t *out_len)
+                                size_t *out_len)
 {
     if (resp == nullptr || buf == nullptr || buf_size == 0 || out_len == nullptr) {
         return -EINVAL;

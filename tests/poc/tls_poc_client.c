@@ -279,7 +279,13 @@ int main(int argc, char **argv)
                 print_usage(argv[0]);
                 return 1;
             }
-            port = atoi(argv[i]);
+            char *endptr;
+            long val = strtol(argv[i], &endptr, 10);
+            if (*endptr != '\0' || val <= 0 || val > 65535) {
+                fprintf(stderr, "Invalid port: %s\n", argv[i]);
+                return 1;
+            }
+            port = (int)val;
         } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--iterations") == 0) {
             if (++i >= argc) {
                 fprintf(stderr, "Error: --iterations requires an argument\n");
@@ -293,7 +299,13 @@ int main(int argc, char **argv)
                 print_usage(argv[0]);
                 return 1;
             }
-            single_size = atoi(argv[i]);
+            char *endptr_s;
+            long val_s = strtol(argv[i], &endptr_s, 10);
+            if (*endptr_s != '\0' || val_s <= 0) {
+                fprintf(stderr, "Invalid size: %s\n", argv[i]);
+                return 1;
+            }
+            single_size = (ssize_t)val_s;
         } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
             verbose = true;
         } else if (strcmp(argv[i], "-j") == 0 || strcmp(argv[i], "--json") == 0) {

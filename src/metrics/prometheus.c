@@ -24,12 +24,14 @@ struct iog_prom_registry {
 
 int iog_prom_registry_create(iog_prom_registry_t **out)
 {
-    if (out == nullptr)
+    if (out == nullptr) {
         return -EINVAL;
+    }
 
     iog_prom_registry_t *reg = calloc(1, sizeof(*reg));
-    if (reg == nullptr)
+    if (reg == nullptr) {
         return -ENOMEM;
+    }
 
     *out = reg;
     return 0;
@@ -42,10 +44,12 @@ void iog_prom_registry_destroy(iog_prom_registry_t *reg)
 
 int iog_prom_register_counter(iog_prom_registry_t *reg, iog_prom_counter_t *counter)
 {
-    if (reg == nullptr || counter == nullptr)
+    if (reg == nullptr || counter == nullptr) {
         return -EINVAL;
-    if (reg->counter_count >= IOG_PROM_MAX_METRICS)
+    }
+    if (reg->counter_count >= IOG_PROM_MAX_METRICS) {
         return -ENOSPC;
+    }
 
     reg->counters[reg->counter_count++] = counter;
     return 0;
@@ -53,10 +57,12 @@ int iog_prom_register_counter(iog_prom_registry_t *reg, iog_prom_counter_t *coun
 
 int iog_prom_register_gauge(iog_prom_registry_t *reg, iog_prom_gauge_t *gauge)
 {
-    if (reg == nullptr || gauge == nullptr)
+    if (reg == nullptr || gauge == nullptr) {
         return -EINVAL;
-    if (reg->gauge_count >= IOG_PROM_MAX_METRICS)
+    }
+    if (reg->gauge_count >= IOG_PROM_MAX_METRICS) {
         return -ENOSPC;
+    }
 
     reg->gauges[reg->gauge_count++] = gauge;
     return 0;
@@ -64,10 +70,12 @@ int iog_prom_register_gauge(iog_prom_registry_t *reg, iog_prom_gauge_t *gauge)
 
 int iog_prom_register_histogram(iog_prom_registry_t *reg, iog_prom_histogram_t *hist)
 {
-    if (reg == nullptr || hist == nullptr)
+    if (reg == nullptr || hist == nullptr) {
         return -EINVAL;
-    if (reg->histogram_count >= IOG_PROM_MAX_METRICS)
+    }
+    if (reg->histogram_count >= IOG_PROM_MAX_METRICS) {
         return -ENOSPC;
+    }
 
     reg->histograms[reg->histogram_count++] = hist;
     return 0;
@@ -75,43 +83,49 @@ int iog_prom_register_histogram(iog_prom_registry_t *reg, iog_prom_histogram_t *
 
 void iog_prom_counter_inc(iog_prom_counter_t *counter)
 {
-    if (counter == nullptr)
+    if (counter == nullptr) {
         return;
+    }
     atomic_fetch_add(&counter->value, 1);
 }
 
 void iog_prom_counter_add(iog_prom_counter_t *counter, uint64_t n)
 {
-    if (counter == nullptr)
+    if (counter == nullptr) {
         return;
+    }
     atomic_fetch_add(&counter->value, n);
 }
 
 void iog_prom_gauge_set(iog_prom_gauge_t *gauge, int64_t val)
 {
-    if (gauge == nullptr)
+    if (gauge == nullptr) {
         return;
+    }
     atomic_store(&gauge->value, val);
 }
 
 void iog_prom_gauge_inc(iog_prom_gauge_t *gauge)
 {
-    if (gauge == nullptr)
+    if (gauge == nullptr) {
         return;
+    }
     atomic_fetch_add(&gauge->value, 1);
 }
 
 void iog_prom_gauge_dec(iog_prom_gauge_t *gauge)
 {
-    if (gauge == nullptr)
+    if (gauge == nullptr) {
         return;
+    }
     atomic_fetch_sub(&gauge->value, 1);
 }
 
 void iog_prom_histogram_observe(iog_prom_histogram_t *hist, double value)
 {
-    if (hist == nullptr)
+    if (hist == nullptr) {
         return;
+    }
 
     /* Find the first bucket whose boundary >= value and increment it.
      * Also always increment the +Inf bucket (last slot). */
@@ -154,8 +168,9 @@ static int prom_append(char *buf, size_t buf_size, size_t *offset, const char *f
     int written = vsnprintf(dest, remaining, fmt, ap);
     va_end(ap);
 
-    if (written < 0)
+    if (written < 0) {
         return written;
+    }
 
     *offset += (size_t)written;
     return written;
@@ -163,8 +178,9 @@ static int prom_append(char *buf, size_t buf_size, size_t *offset, const char *f
 
 ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_size)
 {
-    if (reg == nullptr || buf == nullptr || buf_size == 0)
+    if (reg == nullptr || buf == nullptr || buf_size == 0) {
         return -EINVAL;
+    }
 
     size_t offset = 0;
 
@@ -173,8 +189,9 @@ ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_si
         const iog_prom_counter_t *c = reg->counters[i];
         uint64_t val = atomic_load(&c->value);
 
-        if (c->help != nullptr)
+        if (c->help != nullptr) {
             prom_append(buf, buf_size, &offset, "# HELP %s %s\n", c->name, c->help);
+        }
         prom_append(buf, buf_size, &offset, "# TYPE %s counter\n", c->name);
         prom_append(buf, buf_size, &offset, "%s %" PRIu64 "\n\n", c->name, val);
     }
@@ -184,8 +201,9 @@ ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_si
         const iog_prom_gauge_t *g = reg->gauges[i];
         int64_t val = atomic_load(&g->value);
 
-        if (g->help != nullptr)
+        if (g->help != nullptr) {
             prom_append(buf, buf_size, &offset, "# HELP %s %s\n", g->name, g->help);
+        }
         prom_append(buf, buf_size, &offset, "# TYPE %s gauge\n", g->name);
         prom_append(buf, buf_size, &offset, "%s %" PRId64 "\n\n", g->name, val);
     }
@@ -194,26 +212,26 @@ ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_si
     for (size_t i = 0; i < reg->histogram_count; i++) {
         const iog_prom_histogram_t *h = reg->histograms[i];
 
-        if (h->help != nullptr)
+        if (h->help != nullptr) {
             prom_append(buf, buf_size, &offset, "# HELP %s %s\n", h->name, h->help);
+        }
         prom_append(buf, buf_size, &offset, "# TYPE %s histogram\n", h->name);
 
         /* Cumulative bucket counts for Prometheus exposition */
         uint64_t cumulative = 0;
         for (size_t b = 0; b < IOG_PROM_HISTOGRAM_BUCKETS; b++) {
             uint64_t cnt = atomic_load(&h->bucket_counts[b]);
-            if (h->boundaries[b] == 0.0 && b > 0)
+            if (h->boundaries[b] == 0.0 && b > 0) {
                 break; /* unused bucket slot */
+            }
             cumulative += cnt;
-            prom_append(buf, buf_size, &offset,
-                        "%s_bucket{le=\"%.3g\"} %" PRIu64 "\n",
-                        h->name, h->boundaries[b], cumulative);
+            prom_append(buf, buf_size, &offset, "%s_bucket{le=\"%.3g\"} %" PRIu64 "\n", h->name,
+                        h->boundaries[b], cumulative);
         }
 
         /* +Inf bucket */
         uint64_t total = atomic_load(&h->count);
-        prom_append(buf, buf_size, &offset,
-                    "%s_bucket{le=\"+Inf\"} %" PRIu64 "\n", h->name, total);
+        prom_append(buf, buf_size, &offset, "%s_bucket{le=\"+Inf\"} %" PRIu64 "\n", h->name, total);
 
         /* Sum and count */
         uint64_t sum_us = atomic_load(&h->sum_us);
@@ -222,8 +240,9 @@ ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_si
         prom_append(buf, buf_size, &offset, "%s_count %" PRIu64 "\n\n", h->name, total);
     }
 
-    if (offset >= buf_size)
+    if (offset >= buf_size) {
         return -ENOSPC;
+    }
 
     return (ssize_t)offset;
 }

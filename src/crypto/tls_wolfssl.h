@@ -194,7 +194,7 @@ void tls_wolfssl_deinit(void);
  * Translate GnuTLS priority string to wolfSSL cipher list
  *
  * This is a critical compatibility function that parses GnuTLS priority
- * strings (used by ocserv) and generates equivalent wolfSSL cipher lists.
+ * strings (used by ioguard) and generates equivalent wolfSSL cipher lists.
  *
  * GnuTLS Priority String Format:
  * - Keywords: NORMAL, PERFORMANCE, SECURE128, SECURE192, SECURE256

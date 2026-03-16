@@ -1,6 +1,7 @@
 #include "ipc/fdpass.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -58,7 +59,7 @@ int iog_fdpass_send(int sock_fd, const int *fds, size_t nfds, const void *data, 
 }
 
 int iog_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out, void *data,
-                   size_t *data_len)
+                    size_t *data_len)
 {
     if (sock_fd < 0) {
         return -EBADF;
@@ -123,6 +124,11 @@ int iog_fdpass_recv(int sock_fd, int *fds_out, size_t max_fds, size_t *nfds_out,
             }
             memcpy(fds_out, CMSG_DATA(cmsg), nfds * sizeof(int));
             *nfds_out = nfds;
+
+            /* Set CLOEXEC on all received fds to prevent leak on fork+exec */
+            for (size_t j = 0; j < nfds; j++) {
+                (void)fcntl(fds_out[j], F_SETFD, FD_CLOEXEC);
+            }
             break;
         }
     }

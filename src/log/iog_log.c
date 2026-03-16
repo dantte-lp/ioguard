@@ -10,7 +10,7 @@
 #include <time.h>
 
 #ifdef USE_STUMPLESS
-#include <stumpless.h>
+#    include <stumpless.h>
 #endif
 
 struct iog_logger {
@@ -20,8 +20,8 @@ struct iog_logger {
     char *buffer;
     size_t buffer_size;
     iog_log_level_t min_level;
-    size_t write_pos;  /* tracks write position (both paths) */
-    size_t read_pos;   /* tracks read position (stumpless path) */
+    size_t write_pos; /* tracks write position (both paths) */
+    size_t read_pos;  /* tracks read position (stumpless path) */
 };
 
 constexpr size_t IOG_LOG_MIN_BUFFER = 512;
@@ -71,8 +71,7 @@ static enum stumpless_severity level_to_stumpless(iog_log_level_t level)
     logger->buffer_size = buffer_size;
     logger->min_level = IOG_LOG_DEBUG;
 
-    logger->target =
-        stumpless_open_buffer_target("ioguard", logger->buffer, buffer_size);
+    logger->target = stumpless_open_buffer_target("ioguard", logger->buffer, buffer_size);
     if (logger->target == nullptr) {
         free(logger->buffer);
         free(logger);
@@ -95,8 +94,8 @@ void iog_log_destroy(iog_logger_t *logger)
     free(logger);
 }
 
-[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level,
-                               const char *component, const char *msg)
+[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level, const char *component,
+                                const char *msg)
 {
     if (logger == nullptr || component == nullptr || msg == nullptr) {
         return -EINVAL;
@@ -106,8 +105,7 @@ void iog_log_destroy(iog_logger_t *logger)
     }
 
     struct stumpless_entry *entry = stumpless_new_entry(
-        STUMPLESS_FACILITY_DAEMON, level_to_stumpless(level), component,
-        "-", msg);
+        STUMPLESS_FACILITY_DAEMON, level_to_stumpless(level), component, "-", msg);
     if (entry == nullptr) {
         return -ENOMEM;
     }
@@ -130,13 +128,10 @@ void iog_log_destroy(iog_logger_t *logger)
 }
 
 [[nodiscard]] int iog_log_write_sd(iog_logger_t *logger, iog_log_level_t level,
-                                  const char *component, const char *msg,
-                                  const char *sd_id,
-                                  const char *sd_params[][2],
-                                  size_t param_count)
+                                   const char *component, const char *msg, const char *sd_id,
+                                   const char *sd_params[][2], size_t param_count)
 {
-    if (logger == nullptr || component == nullptr || msg == nullptr ||
-        sd_id == nullptr) {
+    if (logger == nullptr || component == nullptr || msg == nullptr || sd_id == nullptr) {
         return -EINVAL;
     }
     if (level > logger->min_level) {
@@ -144,8 +139,7 @@ void iog_log_destroy(iog_logger_t *logger)
     }
 
     struct stumpless_entry *entry = stumpless_new_entry(
-        STUMPLESS_FACILITY_DAEMON, level_to_stumpless(level), component,
-        "-", msg);
+        STUMPLESS_FACILITY_DAEMON, level_to_stumpless(level), component, "-", msg);
     if (entry == nullptr) {
         return -ENOMEM;
     }
@@ -157,8 +151,7 @@ void iog_log_destroy(iog_logger_t *logger)
     }
 
     for (size_t i = 0; i < param_count; i++) {
-        struct stumpless_param *param =
-            stumpless_new_param(sd_params[i][0], sd_params[i][1]);
+        struct stumpless_param *param = stumpless_new_param(sd_params[i][0], sd_params[i][1]);
         if (param == nullptr) {
             stumpless_destroy_entry_and_contents(entry);
             return -ENOMEM;
@@ -182,8 +175,7 @@ void iog_log_destroy(iog_logger_t *logger)
     return (ret >= 0) ? 0 : -EIO;
 }
 
-[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out,
-                                   size_t out_size)
+[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out, size_t out_size)
 {
     if (logger == nullptr || out == nullptr || out_size == 0) {
         return -EINVAL;
@@ -261,9 +253,8 @@ void iog_log_destroy(iog_logger_t *logger)
     free(logger);
 }
 
-static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
-                           const char *component, const char *msg,
-                           const char *sd_extra)
+static int fallback_append(iog_logger_t *logger, iog_log_level_t level, const char *component,
+                           const char *msg, const char *sd_extra)
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -281,13 +272,11 @@ static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
 
     int written;
     if (sd_extra != nullptr) {
-        written = snprintf(logger->buffer + logger->write_pos, remaining,
-                           "%sZ %s [%s] %s %s\n", timestamp,
-                           level_name(level), component, msg, sd_extra);
+        written = snprintf(logger->buffer + logger->write_pos, remaining, "%sZ %s [%s] %s %s\n",
+                           timestamp, level_name(level), component, msg, sd_extra);
     } else {
-        written = snprintf(logger->buffer + logger->write_pos, remaining,
-                           "%sZ %s [%s] %s\n", timestamp, level_name(level),
-                           component, msg);
+        written = snprintf(logger->buffer + logger->write_pos, remaining, "%sZ %s [%s] %s\n",
+                           timestamp, level_name(level), component, msg);
     }
 
     if (written < 0) {
@@ -302,18 +291,17 @@ static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
 
     /* Also emit to stderr for immediate visibility */
     if (sd_extra != nullptr) {
-        fprintf(stderr, "%sZ %s [%s] %s %s\n", timestamp, level_name(level),
-                component, msg, sd_extra);
+        fprintf(stderr, "%sZ %s [%s] %s %s\n", timestamp, level_name(level), component, msg,
+                sd_extra);
     } else {
-        fprintf(stderr, "%sZ %s [%s] %s\n", timestamp, level_name(level),
-                component, msg);
+        fprintf(stderr, "%sZ %s [%s] %s\n", timestamp, level_name(level), component, msg);
     }
 
     return 0;
 }
 
-[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level,
-                               const char *component, const char *msg)
+[[nodiscard]] int iog_log_write(iog_logger_t *logger, iog_log_level_t level, const char *component,
+                                const char *msg)
 {
     if (logger == nullptr || component == nullptr || msg == nullptr) {
         return -EINVAL;
@@ -326,13 +314,10 @@ static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
 }
 
 [[nodiscard]] int iog_log_write_sd(iog_logger_t *logger, iog_log_level_t level,
-                                  const char *component, const char *msg,
-                                  const char *sd_id,
-                                  const char *sd_params[][2],
-                                  size_t param_count)
+                                   const char *component, const char *msg, const char *sd_id,
+                                   const char *sd_params[][2], size_t param_count)
 {
-    if (logger == nullptr || component == nullptr || msg == nullptr ||
-        sd_id == nullptr) {
+    if (logger == nullptr || component == nullptr || msg == nullptr || sd_id == nullptr) {
         return -EINVAL;
     }
     if (level > logger->min_level) {
@@ -347,8 +332,8 @@ static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
     }
 
     for (size_t i = 0; i < param_count; i++) {
-        int n = snprintf(sd_buf + pos, sizeof(sd_buf) - (size_t)pos,
-                         " %s=\"%s\"", sd_params[i][0], sd_params[i][1]);
+        int n = snprintf(sd_buf + pos, sizeof(sd_buf) - (size_t)pos, " %s=\"%s\"", sd_params[i][0],
+                         sd_params[i][1]);
         if (n < 0) {
             return -EIO;
         }
@@ -365,8 +350,7 @@ static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
     return fallback_append(logger, level, component, msg, sd_buf);
 }
 
-[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out,
-                                   size_t out_size)
+[[nodiscard]] ssize_t iog_log_flush(iog_logger_t *logger, char *out, size_t out_size)
 {
     if (logger == nullptr || out == nullptr || out_size == 0) {
         return -EINVAL;
@@ -383,8 +367,7 @@ static int fallback_append(iog_logger_t *logger, iog_log_level_t level,
 
     /* Shift remaining data (if partial read) */
     if (to_copy < logger->write_pos) {
-        memmove(logger->buffer, logger->buffer + to_copy,
-                logger->write_pos - to_copy);
+        memmove(logger->buffer, logger->buffer + to_copy, logger->write_pos - to_copy);
         logger->write_pos -= to_copy;
     } else {
         logger->write_pos = 0;
