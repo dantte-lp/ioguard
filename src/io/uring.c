@@ -169,8 +169,9 @@ void iog_io_destroy(iog_io_ctx_t *ctx)
             iog_io_completion_t *comp = io_uring_cqe_get_data(cqe);
             if (comp != nullptr) {
                 io_active_remove(ctx, comp);
-                /* Invoke callback with cancel result so resources are freed */
-                comp->cb(cqe->res, comp->user_data);
+                /* During destroy drain, do NOT invoke callbacks — the
+                 * owning subsystem (worker, etc.) may already be torn down.
+                 * Just free the completion tracker. */
                 free(comp);
             }
             count++;
