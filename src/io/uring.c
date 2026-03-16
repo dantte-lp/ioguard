@@ -446,6 +446,7 @@ int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 
     io_uring_prep_timeout(sqe, &td->ts, 0, 0);
     io_uring_sqe_set_data(sqe, &td->comp);
+    // cppcheck-suppress memleak  ; td freed in CQE handler (iog_io_run_once)
     return 0;
 }
 
@@ -631,6 +632,7 @@ int iog_io_add_timeout_cb(iog_io_ctx_t *ctx, uint64_t timeout_ms, iog_io_cb cb, 
 
     io_uring_prep_timeout(sqe, &td->ts, 0, 0);
     io_uring_sqe_set_data(sqe, &td->comp);
+    // cppcheck-suppress memleak  ; td freed in CQE handler via io_active tracking
     return 0;
 }
 
