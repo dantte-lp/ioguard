@@ -128,8 +128,9 @@ void test_vault_buffer_too_small(void)
 
 void test_vault_null_params(void)
 {
-    uint8_t buf[64];
+    uint8_t buf[64] = {0};
     size_t len = 0;
+    // cppcheck-suppress uninitvar
     TEST_ASSERT_LESS_THAN_INT(0, iog_vault_encrypt(nullptr, buf, 4, buf, 64, &len));
     TEST_ASSERT_LESS_THAN_INT(0, iog_vault_decrypt(nullptr, buf, 32, buf, 32, &len));
 }
