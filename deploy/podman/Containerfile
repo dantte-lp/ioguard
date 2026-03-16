@@ -7,6 +7,12 @@ LABEL description="Development environment for ioguard with wolfSSL and modern C
 ARG CMAKE_VERSION=4.2.3
 ARG CLANG_VERSION=22.1.0
 # GCC 15 via gcc-toolset-15 (no version ARG needed — from OL10 repos)
+ARG GDB_VERSION=17.1
+ARG VALGRIND_VERSION=3.26.0
+ARG UFTRACE_VERSION=0.19
+ARG FTRACER_COMMIT=d24de224088c3f98333166a51d2c95815ba49829
+ARG CCACHE_VERSION=4.11.3
+ARG LCOV_VERSION=2.3
 ARG SQLITE_VERSION=3520000
 ARG SQLITE_YEAR=2026
 ARG DOXYGEN_VERSION=1.16.1
@@ -41,9 +47,16 @@ RUN dnf install -y \
     pkgconfig \
     git \
     vim \
-    gdb \
-    valgrind \
     strace \
+    expat-devel \
+    readline-devel \
+    gmp-devel \
+    mpfr-devel \
+    elfutils-devel \
+    ncurses-devel \
+    python3-devel \
+    zlib-devel \
+    openssl-devel \
     wget \
     curl \
     tar \
@@ -128,13 +141,8 @@ RUN dnf install -y \
     rubygems \
     && dnf clean all
 
-# Install ninja, flawfinder, ccache from PyPI / repos
-RUN pip3 install ninja flawfinder
-
-RUN dnf install -y \
-    ccache \
-    lcov \
-    && dnf clean all
+# Install ninja, flawfinder, gcovr from PyPI
+RUN pip3 install ninja flawfinder gcovr
 
 # Install Ruby gems for Ceedling
 RUN gem install --no-document \
@@ -152,6 +160,28 @@ RUN cd /tmp && \
     make -j$(nproc) && \
     make install && \
     cd /tmp && rm -rf cmake-*
+
+# Build and install ccache from source (requires CMake, not in OL10 repos)
+RUN cd /tmp && \
+    wget https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}.tar.gz && \
+    tar xzf ccache-${CCACHE_VERSION}.tar.gz && \
+    cd ccache-${CCACHE_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DREDIS_STORAGE_BACKEND=OFF && \
+    make -j$(nproc) && \
+    make install && \
+    cd /tmp && rm -rf ccache-*
+
+# Build and install lcov from source (Perl-based, no cmake needed)
+RUN cd /tmp && \
+    wget https://github.com/linux-test-project/lcov/releases/download/v${LCOV_VERSION}/lcov-${LCOV_VERSION}.tar.gz && \
+    tar xzf lcov-${LCOV_VERSION}.tar.gz && \
+    cd lcov-${LCOV_VERSION} && \
+    make install PREFIX=/usr/local && \
+    cd /tmp && rm -rf lcov-*
 
 # Build and install cppcheck from source
 RUN cd /tmp && \
@@ -292,15 +322,15 @@ RUN cd /tmp && \
     cd /tmp && rm -rf llhttp-*
 
 # Build and install iohttpparser from source (pull-based, zero-copy, SIMD HTTP parser)
-ARG IOHTTPPARSER_VERSION=0.1.0
 RUN cd /tmp && \
-    git clone --depth 1 https://github.com/nicksherron/iohttpparser.git && \
+    git clone --depth 1 https://github.com/ioplane/iohttpparser.git && \
     cd iohttpparser && \
     mkdir build && cd build && \
-    cmake .. \
+    CC=clang cmake .. \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DBUILD_TESTING=OFF && \
+        -DBUILD_TESTING=OFF \
+        -DIHTP_BUILD_COMPARE=OFF && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
@@ -476,6 +506,72 @@ RUN cd /tmp && \
     cd /tmp && rm -rf mold
 
 # ═══════════════════════════════════════════════════════
+# Profilers and Debuggers (from source for C23/io_uring)
+# ═══════════════════════════════════════════════════════
+
+# GDB 17.1 from source (C23 DWARF5, better io_uring awareness)
+RUN cd /tmp && \
+    wget https://sourceware.org/pub/gdb/releases/gdb-${GDB_VERSION}.tar.xz && \
+    tar xJf gdb-${GDB_VERSION}.tar.xz && \
+    cd gdb-${GDB_VERSION} && \
+    mkdir build && cd build && \
+    ../configure \
+        --prefix=/usr/local \
+        --disable-binutils \
+        --disable-gas \
+        --disable-gdbserver \
+        --disable-gold \
+        --disable-gprof \
+        --disable-gprofng \
+        --disable-ld \
+        --disable-sim \
+        --disable-source-highlight \
+        --disable-werror \
+        --enable-tui \
+        --with-expat \
+        --with-python=/usr/bin/python3 \
+        --with-system-readline \
+        --with-system-zlib && \
+    make -j$(nproc) MAKEINFO=true && \
+    make install MAKEINFO=true && \
+    cd /tmp && rm -rf gdb-*
+
+# Valgrind 3.26.0 from source (io_uring-aware memcheck)
+RUN cd /tmp && \
+    wget https://sourceware.org/pub/valgrind/valgrind-${VALGRIND_VERSION}.tar.bz2 && \
+    tar xjf valgrind-${VALGRIND_VERSION}.tar.bz2 && \
+    cd valgrind-${VALGRIND_VERSION} && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    cd /tmp && rm -rf valgrind-*
+
+# uftrace 0.19 from source (function-level tracing for event loop profiling)
+RUN cd /tmp && \
+    wget https://github.com/namhyung/uftrace/archive/refs/tags/v${UFTRACE_VERSION}.tar.gz && \
+    tar xzf v${UFTRACE_VERSION}.tar.gz && \
+    cd uftrace-${UFTRACE_VERSION} && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    cd /tmp && rm -rf uftrace-* v${UFTRACE_VERSION}.tar.gz
+
+# ftracer (lightweight -pg -mfentry tracing + GDB integration)
+RUN cd /tmp && \
+    git clone https://github.com/andikleen/ftracer.git && \
+    cd ftracer && \
+    git checkout ${FTRACER_COMMIT} && \
+    make -j$(nproc) ftracer.o && \
+    install -d /usr/local/lib/ftracer /usr/local/libexec/ftracer /usr/local/include && \
+    install -m 644 ftracer.o /usr/local/lib/ftracer/ftracer.o && \
+    install -m 644 ftracer.h /usr/local/include/ftracer.h && \
+    install -m 755 ftracer-gdb.py /usr/local/libexec/ftracer/ftracer-gdb.py && \
+    install -m 755 fresolve /usr/local/bin/fresolve && \
+    install -m 755 frun /usr/local/bin/frun && \
+    install -m 755 strip-log /usr/local/libexec/ftracer/strip-log && \
+    cd /tmp && rm -rf ftracer
+
+# ═══════════════════════════════════════════════════════
 # Storage (Sprint 5)
 # ═══════════════════════════════════════════════════════
 
@@ -504,7 +600,7 @@ RUN cd /tmp && \
 
 # Build libmdbx from source (stable branch)
 RUN cd /tmp && \
-    git clone --depth 50 --branch stable https://gitflic.ru/project/erthink/libmdbx.git && \
+    git clone --depth 50 --branch stable https://sourcecraft.dev/dqdkfa/libmdbx.git && \
     cd libmdbx && \
     mkdir build && cd build && \
     cmake .. \
@@ -527,9 +623,9 @@ RUN pip3 install codechecker && \
     ln -sf /usr/local/bin/CodeChecker /usr/local/bin/codechecker 2>/dev/null || true && \
     CodeChecker version
 
-# Install PVS-Studio (free for open-source, b4all license)
+# Install PVS-Studio (optional — Russian server may be unreachable)
 RUN cd /tmp && \
-    curl -fsSL -o pvs-studio.tgz \
+    (curl -fsSL --connect-timeout 30 -o pvs-studio.tgz \
         https://files.pvs-studio.ru/pvs-studio-7.41.103683.741-x86_64.tgz && \
     tar xzf pvs-studio.tgz && \
     cd pvs-studio-* && \
@@ -538,10 +634,30 @@ RUN cd /tmp && \
     mkdir -p /usr/local/share/pvs-studio && \
     cp -a share/* /usr/local/share/ 2>/dev/null || true && \
     cd /tmp && rm -rf pvs-studio* && \
-    pvs-studio --version
+    pvs-studio --version && \
+    pvs-studio-analyzer credentials "PVS-Studio Free" "SRUG-709S-2Q5H-EE03") \
+    || echo "WARNING: PVS-Studio installation failed (network?) — skipping"
 
-# Activate PVS-Studio b4all license (free for open-source)
-RUN pvs-studio-analyzer credentials "PVS-Studio Free" "SRUG-709S-2Q5H-EE03"
+# ═══════════════════════════════════════════════════════
+# Performance & Dynamic Analysis (io_uring focus)
+# ═══════════════════════════════════════════════════════
+
+# System profilers: perf (CPU/io_uring), bpftrace (kernel tracing), ltrace (library calls)
+RUN dnf install -y \
+    perf \
+    ltrace \
+    && dnf clean all
+
+# tshark (https://tshark.dev) for DTLS/TLS packet inspection, tcpdump for raw capture
+RUN dnf install -y \
+    wireshark-cli \
+    tcpdump \
+    && dnf clean all
+
+# FlameGraph tools for perf → flame graph visualization
+RUN git clone --depth 1 https://github.com/brendangregg/FlameGraph.git /opt/flamegraph && \
+    ln -sf /opt/flamegraph/stackcollapse-perf.pl /usr/local/bin/ && \
+    ln -sf /opt/flamegraph/flamegraph.pl /usr/local/bin/
 
 # ═══════════════════════════════════════════════════════
 # Build Acceleration
