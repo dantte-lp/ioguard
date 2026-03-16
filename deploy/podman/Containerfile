@@ -600,7 +600,7 @@ RUN cd /tmp && \
 
 # Build libmdbx from source (stable branch)
 RUN cd /tmp && \
-    git clone --depth 50 --branch stable https://sourcecraft.dev/dqdkfa/libmdbx.git && \
+    git clone --depth 50 --branch master https://github.com/erthink/libmdbx.git && \
     cd libmdbx && \
     mkdir build && cd build && \
     cmake .. \
