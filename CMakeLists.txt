@@ -482,7 +482,7 @@ if(STUMPLESS_FOUND)
 endif()
 
 # --- Sprint 7: Prometheus metrics ---
-add_library(iog_metrics STATIC src/metrics/prometheus.c)
+add_library(iog_metrics STATIC src/metrics/prometheus.c src/metrics/iog_metrics.c)
 target_include_directories(iog_metrics PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 # --- sec-mod authentication process ---

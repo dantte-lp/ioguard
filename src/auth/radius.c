@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include "auth/auth_backend.h"
 
@@ -61,6 +62,83 @@ int iog_radius_config_validate(const iog_radius_config_t *cfg)
 }
 
 /* ---------------------------------------------------------------------------
+ * Cisco VSA group extraction (public helper)
+ * --------------------------------------------------------------------------- */
+
+/**
+ * Cisco VSA wire format (RFC 2865 section 5.26):
+ *   [4 bytes vendor-id] [1 byte type] [1 byte length] [value...]
+ *   Minimum: 4 (vendor) + 1 (type) + 1 (length) + 1 (value) = 7 bytes
+ */
+constexpr size_t CISCO_VSA_HEADER_LEN = 6;
+
+ssize_t iog_radius_extract_cisco_group(const uint8_t *vsa_data, size_t vsa_len, char *out,
+                                       size_t out_sz)
+{
+    if (vsa_data == nullptr || out == nullptr || out_sz == 0) {
+        return -EINVAL;
+    }
+
+    /* Need at least vendor-id(4) + type(1) + length(1) + 1 byte value */
+    if (vsa_len < CISCO_VSA_HEADER_LEN + 1) {
+        return -EINVAL;
+    }
+
+    /* Extract vendor ID (network byte order, big-endian) */
+    uint32_t vendor_id = ((uint32_t)vsa_data[0] << 24) | ((uint32_t)vsa_data[1] << 16) |
+                         ((uint32_t)vsa_data[2] << 8) | (uint32_t)vsa_data[3];
+
+    if (vendor_id != IOG_RADIUS_VENDOR_CISCO) {
+        return -EINVAL;
+    }
+
+    uint8_t attr_type = vsa_data[4];
+    if (attr_type != IOG_RADIUS_CISCO_AVPAIR_TYPE) {
+        return -EINVAL;
+    }
+
+    uint8_t attr_len = vsa_data[5];
+    /* attr_len includes type(1) + length(1) + value bytes */
+    if (attr_len < 3 || (size_t)attr_len > vsa_len - 4) {
+        return -EINVAL;
+    }
+
+    size_t value_len = (size_t)attr_len - 2;
+    const char *value = (const char *)&vsa_data[CISCO_VSA_HEADER_LEN];
+
+    /* Check for "group=" prefix (case-sensitive, Cisco convention) */
+    const char prefix[] = "group=";
+    constexpr size_t prefix_len = sizeof(prefix) - 1;
+
+    const char *group_str = value;
+    size_t group_len = value_len;
+
+    if (value_len > prefix_len && memcmp(value, prefix, prefix_len) == 0) {
+        group_str = value + prefix_len;
+        group_len = value_len - prefix_len;
+    }
+
+    /* Strip trailing NUL if present in the RADIUS value */
+    if (group_len > 0 && group_str[group_len - 1] == '\0') {
+        group_len--;
+    }
+
+    if (group_len == 0) {
+        return -EINVAL;
+    }
+
+    /* Need room for group name + NUL terminator */
+    if (group_len + 1 > out_sz) {
+        return -ENOSPC;
+    }
+
+    memcpy(out, group_str, group_len);
+    out[group_len] = '\0';
+
+    return (ssize_t)group_len;
+}
+
+/* ---------------------------------------------------------------------------
  * radcli AVP helpers (internal, used by radius_authenticate)
  * --------------------------------------------------------------------------- */
 
@@ -103,7 +181,8 @@ cleanup:
 }
 
 /**
- * Parse Access-Accept response to extract Framed-IP-Address.
+ * Parse Access-Accept response to extract Framed-IP-Address and Cisco VSA
+ * group attributes.
  */
 static int parse_accept(VALUE_PAIR *received, iog_auth_response_t *resp)
 {
@@ -118,6 +197,31 @@ static int parse_accept(VALUE_PAIR *received, iog_auth_response_t *resp)
     VALUE_PAIR *vp = rc_avpair_get(received, PW_FRAMED_IP_ADDRESS, 0);
     if (vp != nullptr) {
         memcpy(&resp->framed_ip, vp->strvalue, sizeof(resp->framed_ip));
+    }
+
+    /* Extract Cisco VSA group attributes (vendor 9, cisco-avpair) */
+    resp->groups[0] = '\0';
+    size_t groups_off = 0;
+
+    VALUE_PAIR *vsa = rc_avpair_get(received, PW_VENDOR_SPECIFIC, 0);
+    while (vsa != nullptr) {
+        char group_buf[128];
+        ssize_t glen = iog_radius_extract_cisco_group((const uint8_t *)vsa->strvalue, vsa->lvalue,
+                                                      group_buf, sizeof(group_buf));
+
+        if (glen > 0) {
+            size_t needed = (groups_off > 0) ? (size_t)glen + 1 : (size_t)glen;
+            if (groups_off + needed < sizeof(resp->groups)) {
+                if (groups_off > 0) {
+                    resp->groups[groups_off++] = ',';
+                }
+                memcpy(&resp->groups[groups_off], group_buf, (size_t)glen);
+                groups_off += (size_t)glen;
+                resp->groups[groups_off] = '\0';
+            }
+        }
+
+        vsa = rc_avpair_get(vsa->next, PW_VENDOR_SPECIFIC, 0);
     }
 
     return 0;

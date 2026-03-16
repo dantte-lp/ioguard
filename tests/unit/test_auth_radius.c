@@ -147,6 +147,132 @@ void test_radius_backend_name_is_radius(void)
     TEST_ASSERT_EQUAL_STRING("radius", backend->name);
 }
 
+/* -----------------------------------------------------------------------
+ * Test: extract_cisco_group with valid "group=VPN-Users" VSA
+ * ----------------------------------------------------------------------- */
+void test_radius_extract_cisco_group_valid(void)
+{
+    /* Cisco VSA: vendor 9, type 1, value "group=VPN-Users" */
+    const char *value = "group=VPN-Users";
+    size_t value_len = strlen(value);
+    uint8_t attr_len = (uint8_t)(value_len + 2); /* type + length + value */
+
+    /* Build raw VSA: 4 bytes vendor + 1 type + 1 length + value */
+    uint8_t vsa[64];
+    vsa[0] = 0x00; /* vendor ID 9 in big-endian */
+    vsa[1] = 0x00;
+    vsa[2] = 0x00;
+    vsa[3] = 0x09;
+    vsa[4] = 0x01; /* type = cisco-avpair */
+    vsa[5] = attr_len;
+    memcpy(&vsa[6], value, value_len);
+
+    char out[64];
+    ssize_t ret = iog_radius_extract_cisco_group(vsa, 6 + value_len, out, sizeof(out));
+
+    TEST_ASSERT_EQUAL_INT(9, ret); /* strlen("VPN-Users") */
+    TEST_ASSERT_EQUAL_STRING("VPN-Users", out);
+}
+
+/* -----------------------------------------------------------------------
+ * Test: extract_cisco_group with bare group name (no "group=" prefix)
+ * ----------------------------------------------------------------------- */
+void test_radius_extract_cisco_group_bare_name(void)
+{
+    const char *value = "Admins";
+    size_t value_len = strlen(value);
+    uint8_t attr_len = (uint8_t)(value_len + 2);
+
+    uint8_t vsa[64];
+    vsa[0] = 0x00;
+    vsa[1] = 0x00;
+    vsa[2] = 0x00;
+    vsa[3] = 0x09;
+    vsa[4] = 0x01;
+    vsa[5] = attr_len;
+    memcpy(&vsa[6], value, value_len);
+
+    char out[64];
+    ssize_t ret = iog_radius_extract_cisco_group(vsa, 6 + value_len, out, sizeof(out));
+
+    TEST_ASSERT_EQUAL_INT(6, ret);
+    TEST_ASSERT_EQUAL_STRING("Admins", out);
+}
+
+/* -----------------------------------------------------------------------
+ * Test: extract_cisco_group with null params returns -EINVAL
+ * ----------------------------------------------------------------------- */
+void test_radius_extract_cisco_group_null_returns_einval(void)
+{
+    uint8_t vsa[16] = {0};
+    char out[32];
+
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_radius_extract_cisco_group(nullptr, 10, out, sizeof(out)));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_radius_extract_cisco_group(vsa, 10, nullptr, sizeof(out)));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, iog_radius_extract_cisco_group(vsa, 10, out, 0));
+}
+
+/* -----------------------------------------------------------------------
+ * Test: extract_cisco_group with buffer too small returns -ENOSPC
+ * ----------------------------------------------------------------------- */
+void test_radius_extract_cisco_group_buffer_too_small(void)
+{
+    const char *value = "group=VPN-Users";
+    size_t value_len = strlen(value);
+    uint8_t attr_len = (uint8_t)(value_len + 2);
+
+    uint8_t vsa[64];
+    vsa[0] = 0x00;
+    vsa[1] = 0x00;
+    vsa[2] = 0x00;
+    vsa[3] = 0x09;
+    vsa[4] = 0x01;
+    vsa[5] = attr_len;
+    memcpy(&vsa[6], value, value_len);
+
+    /* Buffer too small for "VPN-Users" (9 chars + NUL = 10 needed) */
+    char out[5];
+    ssize_t ret = iog_radius_extract_cisco_group(vsa, 6 + value_len, out, sizeof(out));
+
+    TEST_ASSERT_EQUAL_INT(-ENOSPC, ret);
+}
+
+/* -----------------------------------------------------------------------
+ * Test: extract_cisco_group rejects wrong vendor ID
+ * ----------------------------------------------------------------------- */
+void test_radius_extract_cisco_group_wrong_vendor(void)
+{
+    const char *value = "group=Test";
+    size_t value_len = strlen(value);
+    uint8_t attr_len = (uint8_t)(value_len + 2);
+
+    uint8_t vsa[64];
+    vsa[0] = 0x00;
+    vsa[1] = 0x00;
+    vsa[2] = 0x00;
+    vsa[3] = 0x0A; /* vendor 10, not Cisco */
+    vsa[4] = 0x01;
+    vsa[5] = attr_len;
+    memcpy(&vsa[6], value, value_len);
+
+    char out[64];
+    ssize_t ret = iog_radius_extract_cisco_group(vsa, 6 + value_len, out, sizeof(out));
+
+    TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
+}
+
+/* -----------------------------------------------------------------------
+ * Test: extract_cisco_group rejects truncated VSA data
+ * ----------------------------------------------------------------------- */
+void test_radius_extract_cisco_group_truncated(void)
+{
+    uint8_t vsa[4] = {0x00, 0x00, 0x00, 0x09};
+    char out[64];
+
+    ssize_t ret = iog_radius_extract_cisco_group(vsa, sizeof(vsa), out, sizeof(out));
+    TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -160,5 +286,11 @@ int main(void)
     RUN_TEST(test_radius_config_validate_missing_secret);
     RUN_TEST(test_radius_config_validate_valid);
     RUN_TEST(test_radius_backend_name_is_radius);
+    RUN_TEST(test_radius_extract_cisco_group_valid);
+    RUN_TEST(test_radius_extract_cisco_group_bare_name);
+    RUN_TEST(test_radius_extract_cisco_group_null_returns_einval);
+    RUN_TEST(test_radius_extract_cisco_group_buffer_too_small);
+    RUN_TEST(test_radius_extract_cisco_group_wrong_vendor);
+    RUN_TEST(test_radius_extract_cisco_group_truncated);
     return UNITY_END();
 }

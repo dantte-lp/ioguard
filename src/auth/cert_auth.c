@@ -46,6 +46,94 @@ static void apply_defaults(iog_cert_auth_config_t *cfg)
     }
 }
 
+#ifdef USE_WOLFSSL
+
+/** OID for id-kp-clientAuth (1.3.6.1.5.5.7.3.2). */
+static constexpr char IOG_EKU_CLIENT_AUTH_OID[] = "1.3.6.1.5.5.7.3.2";
+
+/**
+ * Well-known OID for MS AD Certificate Template Name: 1.3.6.1.4.1.311.20.2
+ * The actual OID to match is stored in g_cert_cfg.template_oid.
+ */
+
+/**
+ * Check that the certificate contains the id-kp-clientAuth EKU.
+ * Only enforced when g_cert_cfg.require_eku is true.
+ */
+static int check_eku_client_auth(WOLFSSL_X509 *cert)
+{
+    if (!g_cert_cfg.require_eku) {
+        return 0;
+    }
+
+    WOLFSSL_STACK *eku = wolfSSL_X509_get_ext_d2i(cert, NID_ext_key_usage, nullptr, nullptr);
+    if (eku == nullptr) {
+        return -EACCES;
+    }
+
+    int count = wolfSSL_sk_num(eku);
+    int ret = -EACCES;
+
+    for (int i = 0; i < count; i++) {
+        WOLFSSL_ASN1_OBJECT *obj = wolfSSL_sk_value(eku, i);
+        if (obj == nullptr) {
+            continue;
+        }
+
+        /* Get the OID text representation */
+        char oid_buf[128];
+        int oid_len = wolfSSL_OBJ_obj2txt(oid_buf, (int)sizeof(oid_buf), obj, 1);
+        if (oid_len > 0 && strcmp(oid_buf, IOG_EKU_CLIENT_AUTH_OID) == 0) {
+            ret = 0;
+            break;
+        }
+    }
+
+    wolfSSL_sk_ASN1_OBJECT_free(eku);
+    return ret;
+}
+
+/**
+ * Check that the certificate contains the required MS AD template OID.
+ * Only enforced when g_cert_cfg.template_oid is non-empty.
+ */
+static int check_template_oid(WOLFSSL_X509 *cert)
+{
+    if (g_cert_cfg.template_oid[0] == '\0') {
+        return 0;
+    }
+
+    /*
+     * Walk all X.509v3 extensions looking for the configured template OID.
+     * MS AD uses OID 1.3.6.1.4.1.311.20.2 for certificate template name.
+     */
+    int ext_count = wolfSSL_X509_get_ext_count(cert);
+    if (ext_count <= 0) {
+        return -EACCES;
+    }
+
+    for (int i = 0; i < ext_count; i++) {
+        WOLFSSL_X509_EXTENSION *ext = wolfSSL_X509_get_ext(cert, i);
+        if (ext == nullptr) {
+            continue;
+        }
+
+        WOLFSSL_ASN1_OBJECT *obj = wolfSSL_X509_EXTENSION_get_object(ext);
+        if (obj == nullptr) {
+            continue;
+        }
+
+        char oid_buf[IOG_CERT_TEMPLATE_OID_MAX];
+        int oid_len = wolfSSL_OBJ_obj2txt(oid_buf, (int)sizeof(oid_buf), obj, 1);
+        if (oid_len > 0 && strcmp(oid_buf, g_cert_cfg.template_oid) == 0) {
+            return 0;
+        }
+    }
+
+    return -EACCES;
+}
+#endif /* USE_WOLFSSL */
+
 /**
  * Authenticate using the client certificate from the request.
  */
@@ -73,6 +161,30 @@ static iog_auth_status_t cert_authenticate(const iog_auth_request_t *req, iog_au
         resp->status = IOG_AUTH_STATUS_FAILURE;
         return IOG_AUTH_STATUS_FAILURE;
     }
+
+#ifdef USE_WOLFSSL
+    /* Validate EKU and template OID if configured */
+    if (g_cert_cfg.require_eku || g_cert_cfg.template_oid[0] != '\0') {
+        const unsigned char *p = req->client_cert;
+        WOLFSSL_X509 *x509 = wolfSSL_d2i_X509(nullptr, &p, (int)req->client_cert_len);
+        if (x509 == nullptr) {
+            resp->status = IOG_AUTH_STATUS_FAILURE;
+            return IOG_AUTH_STATUS_FAILURE;
+        }
+
+        ret = check_eku_client_auth(x509);
+        if (ret == 0) {
+            ret = check_template_oid(x509);
+        }
+
+        wolfSSL_X509_free(x509);
+
+        if (ret != 0) {
+            resp->status = IOG_AUTH_STATUS_FAILURE;
+            return IOG_AUTH_STATUS_FAILURE;
+        }
+    }
+#endif
 
     /* Authentication succeeded — username was extracted and cert was parsed */
     resp->status = IOG_AUTH_STATUS_SUCCESS;

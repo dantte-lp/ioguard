@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 struct iog_auth_backend;
 
@@ -80,5 +81,26 @@ const struct iog_auth_backend *iog_radius_backend(void);
  * @return 0 on success, -EINVAL if validation fails.
  */
 [[nodiscard]] int iog_radius_config_validate(const iog_radius_config_t *cfg);
+
+/** Cisco vendor ID for Vendor-Specific Attributes. */
+constexpr uint32_t IOG_RADIUS_VENDOR_CISCO = 9;
+
+/** Cisco AVPair attribute type within VSA. */
+constexpr uint8_t IOG_RADIUS_CISCO_AVPAIR_TYPE = 1;
+
+/**
+ * Extract Cisco group attribute from RADIUS VSA.
+ *
+ * Parses raw VSA data for Cisco vendor ID 9, type 1 (cisco-avpair).
+ * Handles both "group=NAME" and bare "NAME" value formats.
+ *
+ * @param vsa_data  Raw VSA data bytes.
+ * @param vsa_len   Length of VSA data.
+ * @param out       Output buffer for group name.
+ * @param out_sz    Size of output buffer.
+ * @return Length of group name, or -EINVAL/-ENOSPC on error.
+ */
+[[nodiscard]] ssize_t iog_radius_extract_cisco_group(const uint8_t *vsa_data, size_t vsa_len,
+                                                     char *out, size_t out_sz);
 
 #endif /* IOGUARD_AUTH_RADIUS_H */
