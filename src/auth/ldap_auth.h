@@ -67,7 +67,7 @@ void iog_ldap_destroy(void);
  *
  * @return Pointer to the static LDAP backend descriptor.
  */
-const iog_auth_backend_t *iog_ldap_backend(void);
+[[nodiscard]] const iog_auth_backend_t *iog_ldap_backend(void);
 
 /**
  * Escape a string for safe use in LDAP filter expressions per RFC 4515.

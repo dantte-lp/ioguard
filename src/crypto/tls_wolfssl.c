@@ -113,7 +113,7 @@ int tls_wolfssl_map_error(int wolf_error)
  * Translate GnuTLS priority string to wolfSSL cipher list
  *
  * This function implements a critical compatibility layer between GnuTLS
- * priority strings (used by ocserv) and wolfSSL cipher lists.
+ * priority strings (used by ioguard) and wolfSSL cipher lists.
  *
  * Supported GnuTLS Keywords:
  * - NORMAL: Standard security settings

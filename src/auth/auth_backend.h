@@ -61,7 +61,7 @@ typedef struct iog_auth_backend {
  * @param name  Backend name to search for.
  * @return Pointer to the backend, or nullptr if not found.
  */
-const iog_auth_backend_t *iog_auth_backend_find(const char *name);
+[[nodiscard]] const iog_auth_backend_t *iog_auth_backend_find(const char *name);
 
 /**
  * List all registered backends.
@@ -69,7 +69,7 @@ const iog_auth_backend_t *iog_auth_backend_find(const char *name);
  * @param count  Output: number of registered backends.
  * @return Pointer to the internal array of backend pointers.
  */
-const iog_auth_backend_t *const *iog_auth_backend_list(int *count);
+[[nodiscard]] const iog_auth_backend_t *const *iog_auth_backend_list(int *count);
 
 /**
  * Destroy all registered backends and clear the registry.

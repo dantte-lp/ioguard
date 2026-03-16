@@ -24,7 +24,7 @@
  *
  * This module parses GnuTLS priority strings and translates them to wolfSSL
  * cipher configuration. This enables backward compatibility with existing
- * ocserv configurations while using the wolfSSL backend.
+ * ioguard configurations while using the wolfSSL backend.
  *
  * Architecture:
  * 1. Tokenizer: Splits priority string into tokens

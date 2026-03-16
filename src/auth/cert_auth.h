@@ -54,7 +54,7 @@ void iog_cert_auth_destroy(void);
  *
  * @return Pointer to the static backend descriptor.
  */
-const iog_auth_backend_t *iog_cert_auth_backend(void);
+[[nodiscard]] const iog_auth_backend_t *iog_cert_auth_backend(void);
 
 /**
  * Extract a username from a DER-encoded X.509 certificate.

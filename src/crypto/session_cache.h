@@ -139,7 +139,7 @@ void session_cache_get_stats(session_cache_t *cache, size_t *count, size_t *capa
  *       It performs LRU eviction if cache is full.
  *       Expired sessions are automatically removed.
  */
-int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry);
+[[nodiscard]] int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry);
 
 /**
  * Retrieve session from cache (TLS callback)
@@ -154,8 +154,8 @@ int session_cache_store(void *userdata, const tls_session_cache_entry_t *entry);
  *       Expired sessions are automatically removed and return -1.
  *       On successful retrieval, entry is moved to front of LRU list.
  */
-int session_cache_retrieve(void *userdata, const uint8_t *session_id, size_t session_id_size,
-                           tls_session_cache_entry_t *entry);
+[[nodiscard]] int session_cache_retrieve(void *userdata, const uint8_t *session_id,
+                                         size_t session_id_size, tls_session_cache_entry_t *entry);
 
 /**
  * Remove session from cache (TLS callback)
@@ -167,7 +167,8 @@ int session_cache_retrieve(void *userdata, const uint8_t *session_id, size_t ses
  *
  * Note: This function is called by TLS backend when session should be invalidated.
  */
-int session_cache_remove(void *userdata, const uint8_t *session_id, size_t session_id_size);
+[[nodiscard]] int session_cache_remove(void *userdata, const uint8_t *session_id,
+                                       size_t session_id_size);
 
 /* ============================================================================
  * Utility Functions
@@ -182,7 +183,7 @@ int session_cache_remove(void *userdata, const uint8_t *session_id, size_t sessi
  * Note: This function is optional - expiration happens automatically on access.
  *       Can be called periodically for proactive cleanup.
  */
-size_t session_cache_cleanup_expired(session_cache_t *cache);
+[[nodiscard]] size_t session_cache_cleanup_expired(session_cache_t *cache);
 
 /**
  * Check if cache is full
