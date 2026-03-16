@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <ifaddrs.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -214,6 +215,38 @@ static bool addr_in_pool_v6(const iog_ipam_pool_t *pool, const struct in6_addr *
 }
 
 /* ============================================================================
+ * Word-level bitmap scan
+ * ============================================================================ */
+
+/**
+ * Scan bitmap by 64-bit words to find the first free bit.
+ * Returns the bit offset, or -1 if no free bit exists.
+ * Updates pool->next_free hint on success.
+ */
+static int32_t bitmap_find_free(iog_ipam_pool_t *pool)
+{
+    const uint64_t *words = (const uint64_t *)pool->bitmap;
+    size_t nwords = (pool->total_hosts + 63) / 64;
+    size_t start_word = pool->next_free / 64;
+
+    for (size_t w = 0; w < nwords; w++) {
+        size_t idx = (start_word + w) % nwords;
+        if (words[idx] != UINT64_MAX) {
+            uint32_t bit = (uint32_t)__builtin_ctzll(~words[idx]);
+            uint32_t offset = (uint32_t)(idx * 64 + bit);
+            if (offset < pool->total_hosts) {
+                bitmap_set(pool->bitmap, offset);
+                pool->next_free = offset + 1;
+                pool->used_count++;
+                return (int32_t)offset;
+            }
+        }
+    }
+
+    return -1;
+}
+
+/* ============================================================================
  * Public API
  * ============================================================================ */
 
@@ -264,17 +297,20 @@ int iog_ipam_add_pool(iog_ipam_t *ipam, const char *cidr)
         return -EINVAL; /* no usable hosts (e.g., /32, /31) */
     }
 
-    size_t bitmap_size = (hosts + 7) / 8;
-    uint8_t *bitmap = calloc(1, bitmap_size);
+    /* Round up to 8-byte alignment for safe uint64_t word-level scan */
+    size_t bitmap_size = ((hosts + 63) / 64) * 8;
+    uint8_t *bitmap = aligned_alloc(8, bitmap_size);
     if (bitmap == nullptr) {
         return -ENOMEM;
     }
+    memset(bitmap, 0, bitmap_size);
 
     iog_ipam_pool_t *pool = &ipam->pools[ipam->pool_count];
     pool->af = af;
     pool->prefix_len = prefix_len;
     pool->total_hosts = hosts;
     pool->used_count = 0;
+    pool->next_free = 0;
     pool->bitmap = bitmap;
 
     if (af == AF_INET) {
@@ -345,13 +381,10 @@ int iog_ipam_alloc_ipv4(iog_ipam_t *ipam, struct in_addr *out)
             continue;
         }
 
-        for (uint32_t idx = 0; idx < pool->total_hosts; idx++) {
-            if (!bitmap_get(pool->bitmap, idx)) {
-                bitmap_set(pool->bitmap, idx);
-                pool->used_count++;
-                *out = host_addr_v4(&pool->network.v4, idx);
-                return 0;
-            }
+        int32_t offset = bitmap_find_free(pool);
+        if (offset >= 0) {
+            *out = host_addr_v4(&pool->network.v4, (uint32_t)offset);
+            return 0;
         }
     }
 
@@ -370,13 +403,10 @@ int iog_ipam_alloc_ipv6(iog_ipam_t *ipam, struct in6_addr *out)
             continue;
         }
 
-        for (uint32_t idx = 0; idx < pool->total_hosts; idx++) {
-            if (!bitmap_get(pool->bitmap, idx)) {
-                bitmap_set(pool->bitmap, idx);
-                pool->used_count++;
-                *out = host_addr_v6(&pool->network.v6, idx);
-                return 0;
-            }
+        int32_t offset = bitmap_find_free(pool);
+        if (offset >= 0) {
+            *out = host_addr_v6(&pool->network.v6, (uint32_t)offset);
+            return 0;
         }
     }
 
@@ -400,6 +430,9 @@ int iog_ipam_free_ipv4(iog_ipam_t *ipam, const struct in_addr *addr)
             if (bitmap_get(pool->bitmap, idx)) {
                 bitmap_clear(pool->bitmap, idx);
                 pool->used_count--;
+                if (idx < pool->next_free) {
+                    pool->next_free = idx;
+                }
                 return 0;
             }
         }
@@ -425,6 +458,9 @@ int iog_ipam_free_ipv6(iog_ipam_t *ipam, const struct in6_addr *addr)
             if (bitmap_get(pool->bitmap, idx)) {
                 bitmap_clear(pool->bitmap, idx);
                 pool->used_count--;
+                if (idx < pool->next_free) {
+                    pool->next_free = idx;
+                }
                 return 0;
             }
         }

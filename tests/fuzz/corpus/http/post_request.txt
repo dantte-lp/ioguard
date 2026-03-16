@@ -1,0 +1,7 @@
+POST /auth HTTP/1.1
+Host: vpn.example.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 29
+X-Aggregate-Auth: 1
+
+username=admin&password=secret

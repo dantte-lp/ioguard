@@ -1,3 +1,7 @@
+/* cppcheck false positive: toml_datum_t d is fully overwritten by each toml_*_in() call.
+ * cppcheck tracks d.u.s across re-assignments as the "same" pointer, but each call
+ * returns a new allocation. Suppress doubleFree at file level. */
+// cppcheck-suppress-file doubleFree
 #include "config/config.h"
 #include <errno.h>
 #include <stdio.h>

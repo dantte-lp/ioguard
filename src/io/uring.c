@@ -36,6 +36,34 @@ static inline void io_send_set_clear(iog_io_send_set_t *set, int fd)
     }
 }
 
+/* --- Slab allocator for iog_io_completion_t objects --- */
+
+/* Allocate a completion from the pre-allocated slab pool.
+ * Returns nullptr when pool is exhausted (caller must handle fallback). */
+static iog_io_completion_t *slab_alloc(iog_io_ctx_t *ctx)
+{
+    if (ctx->slab_free_top == 0) {
+        return nullptr;
+    }
+    uint32_t idx = ctx->slab_free_stack[--ctx->slab_free_top];
+    iog_io_completion_t *comp = &ctx->slab[idx];
+    memset(comp, 0, sizeof(*comp));
+    return comp;
+}
+
+/* Return a completion to the slab pool.
+ * If comp does not belong to the slab (e.g. oversized send/timeout structs),
+ * falls back to free(). */
+static void slab_free(iog_io_ctx_t *ctx, iog_io_completion_t *comp)
+{
+    if (comp >= ctx->slab && comp < ctx->slab + ctx->slab_size) {
+        uint32_t idx = (uint32_t)(comp - ctx->slab);
+        ctx->slab_free_stack[ctx->slab_free_top++] = idx;
+    } else {
+        free(comp);
+    }
+}
+
 /* Wrapper completion for send ops: tracks fd for serialization */
 typedef struct {
     iog_io_completion_t base;
@@ -126,6 +154,26 @@ iog_io_ctx_t *iog_io_init(uint32_t queue_depth, uint32_t flags)
         return nullptr;
     }
 
+    /* Pre-allocate slab pool for completion objects */
+    ctx->slab = calloc(queue_depth, sizeof(*ctx->slab));
+    if (ctx->slab == nullptr) {
+        io_uring_queue_exit(&ctx->ring);
+        free(ctx);
+        return nullptr;
+    }
+    ctx->slab_free_stack = malloc(queue_depth * sizeof(*ctx->slab_free_stack));
+    if (ctx->slab_free_stack == nullptr) {
+        io_uring_queue_exit(&ctx->ring);
+        free(ctx->slab);
+        free(ctx);
+        return nullptr;
+    }
+    ctx->slab_size = queue_depth;
+    ctx->slab_free_top = queue_depth;
+    for (uint32_t i = 0; i < queue_depth; i++) {
+        ctx->slab_free_stack[i] = i;
+    }
+
     ctx->queue_depth = queue_depth;
     ctx->running = false;
     return ctx;
@@ -171,8 +219,8 @@ void iog_io_destroy(iog_io_ctx_t *ctx)
                 io_active_remove(ctx, comp);
                 /* During destroy drain, do NOT invoke callbacks — the
                  * owning subsystem (worker, etc.) may already be torn down.
-                 * Just free the completion tracker. */
-                free(comp);
+                 * Just return the completion to the slab (or free if oversized). */
+                slab_free(ctx, comp);
             }
             count++;
         }
@@ -185,11 +233,13 @@ void iog_io_destroy(iog_io_ctx_t *ctx)
 
     /* Step 4: Free any remaining active completions that never got CQEs */
     for (uint32_t i = 0; i < ctx->active_count; i++) {
-        free(ctx->active[i]);
+        slab_free(ctx, ctx->active[i]);
     }
 
     io_uring_queue_exit(&ctx->ring);
     free(ctx->active);
+    free(ctx->slab);
+    free(ctx->slab_free_stack);
     free(ctx);
 }
 
@@ -225,7 +275,7 @@ int iog_io_run_once(iog_io_ctx_t *ctx, uint32_t timeout_ms)
         if (comp != nullptr) {
             io_active_remove(ctx, comp);
             comp->cb(cqe->res, comp->user_data);
-            free(comp);
+            slab_free(ctx, comp);
         }
         processed++;
     }
@@ -258,7 +308,7 @@ int iog_io_submit_nop(iog_io_ctx_t *ctx, int *completed)
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -278,7 +328,7 @@ int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *comp
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -317,7 +367,7 @@ int iog_io_prep_send(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, int
     io_send_set_mark(&ctx->send_inflight, fd);
 
     /* The CQE handler sees this as iog_io_completion_t* and calls send_complete_wrapper */
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         io_send_set_clear(&ctx->send_inflight, fd);
         free(sc);
@@ -338,7 +388,7 @@ int iog_io_prep_read(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *comp
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -358,7 +408,7 @@ int iog_io_prep_write(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, in
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -396,6 +446,7 @@ int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 
     io_uring_prep_timeout(sqe, &td->ts, 0, 0);
     io_uring_sqe_set_data(sqe, &td->comp);
+    // cppcheck-suppress memleak  ; td freed in CQE handler (iog_io_run_once)
     return 0;
 }
 
@@ -409,7 +460,7 @@ int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -418,7 +469,7 @@ int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
 
     int ret = io_active_add(ctx, comp);
     if (ret < 0) {
-        free(comp);
+        slab_free(ctx, comp);
         return ret;
     }
 
@@ -451,7 +502,7 @@ int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, 
     sc->is_send = true;
 
     /* Wrap in a completion that clears the send bit on CQE */
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         free(sc);
         return -ENOMEM;
@@ -462,7 +513,7 @@ int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, 
     int ret = io_active_add(ctx, comp);
     if (ret < 0) {
         free(sc);
-        free(comp);
+        slab_free(ctx, comp);
         return ret;
     }
 
@@ -481,7 +532,7 @@ int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -490,7 +541,7 @@ int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
 
     int ret = io_active_add(ctx, comp);
     if (ret < 0) {
-        free(comp);
+        slab_free(ctx, comp);
         return ret;
     }
 
@@ -507,7 +558,7 @@ int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -516,7 +567,7 @@ int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
 
     int ret = io_active_add(ctx, comp);
     if (ret < 0) {
-        free(comp);
+        slab_free(ctx, comp);
         return ret;
     }
 
@@ -533,7 +584,7 @@ int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd, struct sockaddr *addr, sock
         return -EAGAIN;
     }
 
-    iog_io_completion_t *comp = calloc(1, sizeof(*comp));
+    iog_io_completion_t *comp = slab_alloc(ctx);
     if (comp == nullptr) {
         return -ENOMEM;
     }
@@ -542,7 +593,7 @@ int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd, struct sockaddr *addr, sock
 
     int ret = io_active_add(ctx, comp);
     if (ret < 0) {
-        free(comp);
+        slab_free(ctx, comp);
         return ret;
     }
 
@@ -581,6 +632,7 @@ int iog_io_add_timeout_cb(iog_io_ctx_t *ctx, uint64_t timeout_ms, iog_io_cb cb, 
 
     io_uring_prep_timeout(sqe, &td->ts, 0, 0);
     io_uring_sqe_set_data(sqe, &td->comp);
+    // cppcheck-suppress memleak  ; td freed in CQE handler via io_active tracking
     return 0;
 }
 

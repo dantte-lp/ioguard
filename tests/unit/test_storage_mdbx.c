@@ -166,7 +166,7 @@ void test_mdbx_session_iterate(void)
 void test_mdbx_stale_reader_callback(void)
 {
     /* Verify that the HSR callback was registered. */
-    MDBX_hsr_func *hsr = mdbx_env_get_hsr(ctx.env);
+    MDBX_hsr_func hsr = mdbx_env_get_hsr(ctx.env);
     TEST_ASSERT_NOT_NULL(hsr);
 }
 

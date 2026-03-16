@@ -163,6 +163,33 @@ void test_lzs_decompress_rejects_extreme_length(void)
     }
 }
 
+void test_lzs_compress_hash_chain_repetitive(void)
+{
+    /* Highly repetitive data should compress well with hash chains */
+    uint8_t input[4096];
+    memset(input, 'A', 2048);
+    memset(input + 2048, 'B', 2048);
+
+    iog_lzs_ctx_t hctx;
+    iog_lzs_init(&hctx);
+
+    uint8_t compressed[4096];
+    int clen = iog_lzs_compress(&hctx, input, sizeof(input), compressed, sizeof(compressed));
+    TEST_ASSERT_GREATER_THAN(0, clen);
+    /* Repetitive data should compress significantly */
+    TEST_ASSERT_LESS_THAN((int)(sizeof(input) / 2), clen);
+
+    /* Verify roundtrip */
+    iog_lzs_ctx_t dec_ctx;
+    iog_lzs_init(&dec_ctx);
+
+    uint8_t decompressed[4096];
+    int dlen =
+        iog_lzs_decompress(&dec_ctx, compressed, (size_t)clen, decompressed, sizeof(decompressed));
+    TEST_ASSERT_EQUAL_INT((int)sizeof(input), dlen);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(input, decompressed, sizeof(input));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -176,5 +203,6 @@ int main(void)
     RUN_TEST(test_lzs_decompress_null);
     RUN_TEST(test_lzs_reset);
     RUN_TEST(test_lzs_decompress_rejects_extreme_length);
+    RUN_TEST(test_lzs_compress_hash_chain_repetitive);
     return UNITY_END();
 }

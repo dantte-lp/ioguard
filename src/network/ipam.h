@@ -24,7 +24,8 @@ typedef struct {
     uint32_t prefix_len;
     uint32_t total_hosts; /* usable host count (excluding network/broadcast for v4) */
     uint32_t used_count;
-    uint8_t *bitmap; /* 1 bit per host address */
+    uint32_t next_free; /* hint: next offset to try during allocation */
+    uint8_t *bitmap;    /* 1 bit per host address, 8-byte aligned for word scan */
 } iog_ipam_pool_t;
 
 /**

@@ -40,6 +40,11 @@ struct iog_io_ctx {
     uint32_t active_cap;
     /* Per-fd send serialization bitset */
     iog_io_send_set_t send_inflight;
+    /* Slab allocator for iog_io_completion_t objects (eliminates hot-path heap alloc) */
+    iog_io_completion_t *slab; /* pre-allocated array of completions */
+    uint32_t slab_size;        /* total slots (= queue_depth) */
+    uint32_t *slab_free_stack; /* stack of free slot indices */
+    uint32_t slab_free_top;    /* top of free stack (next free index) */
 };
 
 /* Create io_uring context. Returns nullptr on failure.

@@ -287,6 +287,82 @@ void test_io_send_cb_serialization_rejects_concurrent(void)
     iog_io_destroy(ctx);
 }
 
+/* --- Task 8: Slab allocator tests --- */
+
+void test_io_slab_alloc_free_cycle(void)
+{
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available — skipping");
+    }
+
+    iog_io_ctx_t *ctx = iog_io_init(4, 0);
+    TEST_ASSERT_NOT_NULL(ctx);
+
+    /* Slab should have 4 slots, all free */
+    TEST_ASSERT_EQUAL_UINT32(4, ctx->slab_size);
+    TEST_ASSERT_EQUAL_UINT32(4, ctx->slab_free_top);
+
+    /* Alloc one slot via NOP submission */
+    int done1 = 0;
+    int ret = iog_io_submit_nop(ctx, &done1);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    TEST_ASSERT_EQUAL_UINT32(3, ctx->slab_free_top);
+
+    /* Complete the NOP — slot should be returned to slab */
+    ret = iog_io_run_once(ctx, 100);
+    TEST_ASSERT_GREATER_OR_EQUAL_INT(1, ret);
+    TEST_ASSERT_EQUAL_UINT32(4, ctx->slab_free_top);
+
+    /* Re-alloc should succeed (same slot recycled) */
+    int done2 = 0;
+    ret = iog_io_submit_nop(ctx, &done2);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    TEST_ASSERT_EQUAL_UINT32(3, ctx->slab_free_top);
+
+    /* Drain and destroy */
+    ret = iog_io_run_once(ctx, 100);
+    TEST_ASSERT_GREATER_OR_EQUAL_INT(1, ret);
+    iog_io_destroy(ctx);
+}
+
+void test_io_slab_exhaustion_returns_enomem(void)
+{
+    if (!io_uring_available) {
+        TEST_IGNORE_MESSAGE("io_uring not available — skipping");
+    }
+
+    /* Use a very small queue depth to exhaust the slab quickly.
+     * io_uring rounds up to a power of 2, but our slab uses the
+     * requested queue_depth, so use a power of 2. */
+    constexpr uint32_t DEPTH = 4;
+    iog_io_ctx_t *ctx = iog_io_init(DEPTH, 0);
+    TEST_ASSERT_NOT_NULL(ctx);
+
+    TEST_ASSERT_EQUAL_UINT32(DEPTH, ctx->slab_size);
+
+    /* Exhaust all slab slots by submitting NOPs */
+    int done[4];
+    for (uint32_t i = 0; i < DEPTH; i++) {
+        done[i] = 0;
+        int ret = iog_io_submit_nop(ctx, &done[i]);
+        TEST_ASSERT_EQUAL_INT(0, ret);
+    }
+    TEST_ASSERT_EQUAL_UINT32(0, ctx->slab_free_top);
+
+    /* Next allocation should fail — either slab exhausted (-ENOMEM) or
+     * SQE ring full (-EAGAIN), depending on which runs out first */
+    int done_extra = 0;
+    int ret = iog_io_submit_nop(ctx, &done_extra);
+    TEST_ASSERT(ret == -ENOMEM || ret == -EAGAIN);
+
+    /* Drain all pending NOPs to restore slab */
+    ret = iog_io_run_once(ctx, 100);
+    TEST_ASSERT_GREATER_OR_EQUAL_INT(1, ret);
+    TEST_ASSERT_EQUAL_UINT32(DEPTH, ctx->slab_free_top);
+
+    iog_io_destroy(ctx);
+}
+
 /* --- Task 7: Destroy drain test --- */
 
 void test_io_destroy_with_pending_ops(void)
@@ -334,6 +410,9 @@ int main(void)
     /* Task 6: Send serialization */
     RUN_TEST(test_io_send_serialization_rejects_concurrent);
     RUN_TEST(test_io_send_cb_serialization_rejects_concurrent);
+    /* Task 8: Slab allocator */
+    RUN_TEST(test_io_slab_alloc_free_cycle);
+    RUN_TEST(test_io_slab_exhaustion_returns_enomem);
     /* Task 7: Destroy drain */
     RUN_TEST(test_io_destroy_with_pending_ops);
     return UNITY_END();

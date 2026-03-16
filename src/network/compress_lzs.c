@@ -104,12 +104,16 @@ static int br_read_bits(bit_reader_t *br, int nbits)
 void iog_lzs_init(iog_lzs_ctx_t *ctx)
 {
     memset(ctx, 0, sizeof(*ctx));
+    memset(ctx->hash_head, 0xFF, sizeof(ctx->hash_head));
+    memset(ctx->hash_chain, 0xFF, sizeof(ctx->hash_chain));
 }
 
 void iog_lzs_reset(iog_lzs_ctx_t *ctx)
 {
     memset(ctx->window, 0, sizeof(ctx->window));
     ctx->window_pos = 0;
+    memset(ctx->hash_head, 0xFF, sizeof(ctx->hash_head));
+    memset(ctx->hash_chain, 0xFF, sizeof(ctx->hash_chain));
 }
 
 static void window_add(iog_lzs_ctx_t *ctx, uint8_t byte)
@@ -118,28 +122,69 @@ static void window_add(iog_lzs_ctx_t *ctx, uint8_t byte)
     ctx->window_pos++;
 }
 
-/* Find longest match in sliding window */
-static int find_match(const iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len,
-                      size_t *match_offset, size_t *match_len)
+static inline uint32_t lzs_hash(uint8_t b0, uint8_t b1)
 {
+    return (((uint32_t)b0 << 4) ^ (uint32_t)b1) & (IOG_LZS_HASH_SIZE - 1);
+}
+
+/* Insert current window position into the hash chain */
+static void hash_insert(iog_lzs_ctx_t *ctx, uint16_t win_idx, uint32_t h)
+{
+    ctx->hash_chain[win_idx] = ctx->hash_head[h];
+    ctx->hash_head[h] = win_idx;
+}
+
+/* Find longest match using hash-chain lookup */
+static int find_match(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, size_t *match_offset,
+                      size_t *match_len)
+{
+    if (in_len < IOG_LZS_MIN_MATCH) {
+        return 0;
+    }
+
+    size_t win_used = ctx->window_pos < IOG_LZS_WINDOW_SIZE ? ctx->window_pos : IOG_LZS_WINDOW_SIZE;
+    if (win_used == 0) {
+        return 0;
+    }
+
+    uint32_t h = lzs_hash(in[0], in[1]);
+    uint16_t pos = ctx->hash_head[h];
     size_t best_len = 0;
     size_t best_off = 0;
-    size_t win_used = ctx->window_pos < IOG_LZS_WINDOW_SIZE ? ctx->window_pos : IOG_LZS_WINDOW_SIZE;
+    uint32_t steps = 0;
 
-    for (size_t off = 1; off <= win_used; off++) {
-        size_t wi = (ctx->window_pos - off) % IOG_LZS_WINDOW_SIZE;
-        size_t len = 0;
-        while (len < in_len && len < IOG_LZS_MAX_MATCH) {
-            size_t ci = (wi + len) % IOG_LZS_WINDOW_SIZE;
-            if (ctx->window[ci] != in[len]) {
-                break;
+    while (pos != IOG_LZS_HASH_NIL && steps < IOG_LZS_MAX_CHAIN) {
+        /* Convert absolute window index to offset from current window_pos */
+        size_t cur_win = ctx->window_pos % IOG_LZS_WINDOW_SIZE;
+        size_t off;
+        if (cur_win > pos) {
+            off = cur_win - pos;
+        } else {
+            off = cur_win + IOG_LZS_WINDOW_SIZE - pos;
+        }
+
+        /* Offset must be within valid window range and encodable in 11 bits */
+        if (off >= 1 && off <= win_used && off < IOG_LZS_WINDOW_SIZE) {
+            size_t wi = pos;
+            size_t len = 0;
+            while (len < in_len && len < IOG_LZS_MAX_MATCH) {
+                size_t ci = (wi + len) % IOG_LZS_WINDOW_SIZE;
+                if (ctx->window[ci] != in[len]) {
+                    break;
+                }
+                len++;
             }
-            len++;
+            if (len >= IOG_LZS_MIN_MATCH && len > best_len) {
+                best_len = len;
+                best_off = off;
+                if (best_len == IOG_LZS_MAX_MATCH) {
+                    break; /* can't do better */
+                }
+            }
         }
-        if (len >= IOG_LZS_MIN_MATCH && len > best_len) {
-            best_len = len;
-            best_off = off;
-        }
+
+        pos = ctx->hash_chain[pos];
+        steps++;
     }
 
     if (best_len >= IOG_LZS_MIN_MATCH) {
@@ -221,6 +266,12 @@ int iog_lzs_compress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8
                 return ret;
             }
             for (size_t i = 0; i < match_len; i++) {
+                /* Insert hash for 2-byte pair starting at this position */
+                if (pos + i + 1 < in_len) {
+                    uint16_t wi = (uint16_t)(ctx->window_pos % IOG_LZS_WINDOW_SIZE);
+                    uint32_t h = lzs_hash(in[pos + i], in[pos + i + 1]);
+                    hash_insert(ctx, wi, h);
+                }
                 window_add(ctx, in[pos + i]);
             }
             pos += match_len;
@@ -233,6 +284,12 @@ int iog_lzs_compress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8
             ret = bw_write_bits(&bw, in[pos], 8);
             if (ret < 0) {
                 return ret;
+            }
+            /* Insert hash for 2-byte pair starting at this position */
+            if (pos + 1 < in_len) {
+                uint16_t wi = (uint16_t)(ctx->window_pos % IOG_LZS_WINDOW_SIZE);
+                uint32_t h = lzs_hash(in[pos], in[pos + 1]);
+                hash_insert(ctx, wi, h);
             }
             window_add(ctx, in[pos]);
             pos++;

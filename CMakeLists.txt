@@ -973,6 +973,26 @@ if(BUILD_FUZZ)
 endif()
 
 # ============================================================================
+# Benchmark targets (S8)
+# ============================================================================
+
+if(BUILD_TESTING)
+    add_executable(bench_cstp tests/bench/bench_cstp.c)
+    target_include_directories(bench_cstp PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests/bench)
+    target_link_libraries(bench_cstp PRIVATE iog_cstp)
+    target_compile_definitions(bench_cstp PRIVATE _GNU_SOURCE)
+
+    if(WOLFSSL_FOUND)
+        add_executable(bench_session tests/bench/bench_session.c)
+        target_include_directories(bench_session PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests/bench)
+        target_link_libraries(bench_session PRIVATE iog_session iog_crypto)
+        target_compile_definitions(bench_session PRIVATE _GNU_SOURCE USE_WOLFSSL)
+        target_include_directories(bench_session PRIVATE ${WOLFSSL_INCLUDE_DIRS})
+        target_link_directories(bench_session PRIVATE ${WOLFSSL_LIBRARY_DIRS})
+    endif()
+endif()
+
+# ============================================================================
 # Doxygen documentation
 # ============================================================================
 

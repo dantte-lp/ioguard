@@ -90,7 +90,7 @@ int iog_conn_data_process_tls(iog_conn_data_t *data)
         return -EINVAL;
     }
 
-    /* Read from TLS into recv_buf */
+    /* Read from TLS into recv_buf after existing data */
     size_t space = sizeof(data->recv_buf) - data->recv_len;
     if (space == 0) {
         return -ENOSPC;
@@ -105,10 +105,12 @@ int iog_conn_data_process_tls(iog_conn_data_t *data)
     }
     data->recv_len += (size_t)n;
 
-    /* Decode CSTP packets (may be multiple in buffer) */
-    while (data->recv_len >= IOG_CSTP_HEADER_SIZE) {
+    /* Decode CSTP packets using read cursor to avoid memmove per packet */
+    size_t readable = data->recv_len - data->recv_off;
+
+    while (readable >= IOG_CSTP_HEADER_SIZE) {
         iog_cstp_packet_t pkt;
-        int consumed = iog_cstp_decode(data->recv_buf, data->recv_len, &pkt);
+        int consumed = iog_cstp_decode(data->recv_buf + data->recv_off, readable, &pkt);
         if (consumed == -EAGAIN) {
             break; /* incomplete frame, need more data */
         }
@@ -146,12 +148,19 @@ int iog_conn_data_process_tls(iog_conn_data_t *data)
             return rc;
         }
 
-        /* Shift buffer */
-        size_t remaining = data->recv_len - (size_t)consumed;
+        /* Advance read cursor instead of memmove */
+        data->recv_off += (size_t)consumed;
+        readable -= (size_t)consumed;
+    }
+
+    /* Compact buffer only when cursor passes halfway point */
+    if (data->recv_off > 0 && data->recv_off > data->recv_len / 2) {
+        size_t remaining = data->recv_len - data->recv_off;
         if (remaining > 0) {
-            memmove(data->recv_buf, data->recv_buf + consumed, remaining);
+            memmove(data->recv_buf, data->recv_buf + data->recv_off, remaining);
         }
         data->recv_len = remaining;
+        data->recv_off = 0;
     }
 
     return 0;

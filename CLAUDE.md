@@ -29,12 +29,19 @@ cmake --build --preset clang-debug --target cppcheck  # static analysis
 
 ## Compiler Strategy (dual-compiler)
 
-- **Clang 22.1.0**: Primary dev (MSan, LibFuzzer, clang-tidy, fast builds with mold)
-- **GCC 15.1.1**: Validation & release (gcc-toolset-15, LTO, -fanalyzer, unique warnings)
+**Full reference: `.claude/skills/dual-compiler-strategy/SKILL.md`**
+
+- **Clang 22.1.0**: Primary dev (MSan, LibFuzzer, clang-tidy, ThinLTO, fast builds with mold)
+- **GCC 15.1.1**: Validation & release (gcc-toolset-15, full LTO, -fanalyzer, `declare simd`, unique warnings)
 - **System GCC 14.3.1**: Used by some library builds in container
 - **Debug linker**: mold (instant linking)
 - **Release linker**: GNU ld (GCC LTO) or lld (Clang ThinLTO)
-- Always use `-std=c23` explicitly for both compilers
+- Always use `-std=c23` explicitly — GCC defaults to gnu23, Clang to gnu17
+- **NEVER use `-ffast-math`** in crypto/security code (can create timing side-channels)
+- Use `restrict` on non-overlapping pointer params in hot functions (biggest vectorization win)
+- Use `#pragma omp simd` for portable vectorization hints (NOT `declare simd` — Clang ignores it)
+- Use `target_clones("arch=x86-64-v3","arch=x86-64-v2","default")` for runtime dispatch
+- GCC and Clang FMV/LTO objects are **binary-incompatible** — never mix in one binary
 
 ## Key Directories
 
@@ -321,3 +328,5 @@ See `.claude/skills/` for detailed guidance on:
 - `ocprotocol/` — OpenConnect protocol, Cisco compatibility, cookies, traffic classification, graceful shutdown
 - `wolfsentry-idps/` — IDPS firewall, rate limiting, connection tracking, nftables
 - `rfc-reference/` — RFC index by category: TLS/DTLS, auth, PKI, crypto, DNS, transport, NAT (41+ RFCs in `docs/rfc/`)
+- `simd-optimization/` — SIMD optimization: x86 SSE4.2/AVX2 + ARM64 NEON/SVE2, SIMDe, runtime dispatch, autovectorization
+- `dual-compiler-strategy/` — Clang 22 vs GCC 15: C23 differences, vectorization, FMV, sanitizers, production flags
