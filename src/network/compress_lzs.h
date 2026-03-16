@@ -16,9 +16,16 @@ constexpr size_t IOG_LZS_WINDOW_SIZE = 2048;
 constexpr size_t IOG_LZS_MIN_MATCH = 2;
 constexpr size_t IOG_LZS_MAX_MATCH = 255 + 2; /* length encoding limit */
 
+constexpr uint32_t IOG_LZS_HASH_BITS = 12;
+constexpr uint32_t IOG_LZS_HASH_SIZE = 1u << 12; /* 4096 buckets */
+constexpr uint32_t IOG_LZS_MAX_CHAIN = 16;       /* max chain steps per lookup */
+constexpr uint16_t IOG_LZS_HASH_NIL = 0xFFFF;    /* sentinel: no entry */
+
 typedef struct {
     uint8_t window[IOG_LZS_WINDOW_SIZE];
     size_t window_pos;
+    uint16_t hash_head[IOG_LZS_HASH_SIZE];    /* head of chain per hash bucket */
+    uint16_t hash_chain[IOG_LZS_WINDOW_SIZE]; /* prev pointer for chain */
 } iog_lzs_ctx_t;
 
 /** Initialize LZS context. */

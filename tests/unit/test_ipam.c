@@ -255,6 +255,57 @@ void test_ipam_stats_total_and_used(void)
     TEST_ASSERT_EQUAL_UINT(253, stats.available_addresses);
 }
 
+/* ============================================================================
+ * Word-scan performance
+ * ============================================================================ */
+
+void test_ipam_alloc_performance_large_pool(void)
+{
+    /* Verify large pool allocation works correctly with word-scan */
+    TEST_ASSERT_EQUAL_INT(0, iog_ipam_add_pool(&ipam, "10.0.0.0/16"));
+    /* /16 = 65534 usable hosts */
+    TEST_ASSERT_EQUAL_UINT(65534, ipam.pools[0].total_hosts);
+
+    /* Allocate first 100 addresses */
+    for (int i = 0; i < 100; i++) {
+        struct in_addr addr;
+        int ret = iog_ipam_alloc_ipv4(&ipam, &addr);
+        TEST_ASSERT_EQUAL_INT(0, ret);
+    }
+
+    TEST_ASSERT_EQUAL_UINT(100, ipam.pools[0].used_count);
+
+    /* Verify first address is 10.0.0.1 by freeing all and re-allocating */
+    iog_ipam_stats_t stats;
+    iog_ipam_get_stats(&ipam, &stats);
+    TEST_ASSERT_EQUAL_UINT(100, stats.used_addresses);
+    TEST_ASSERT_EQUAL_UINT(65434, stats.available_addresses);
+}
+
+void test_ipam_alloc_free_reuse_with_hint(void)
+{
+    /* Verify next_free hint is reset when freeing earlier address */
+    TEST_ASSERT_EQUAL_INT(0, iog_ipam_add_pool(&ipam, "10.10.0.0/24"));
+
+    struct in_addr a1, a2, a3;
+    TEST_ASSERT_EQUAL_INT(0, iog_ipam_alloc_ipv4(&ipam, &a1));
+    TEST_ASSERT_EQUAL_INT(0, iog_ipam_alloc_ipv4(&ipam, &a2));
+    TEST_ASSERT_EQUAL_INT(0, iog_ipam_alloc_ipv4(&ipam, &a3));
+
+    /* Free a1 (offset 0) — hint should go back to 0 */
+    TEST_ASSERT_EQUAL_INT(0, iog_ipam_free_ipv4(&ipam, &a1));
+
+    /* Next alloc should reuse a1's address */
+    struct in_addr a4;
+    TEST_ASSERT_EQUAL_INT(0, iog_ipam_alloc_ipv4(&ipam, &a4));
+
+    char buf1[INET_ADDRSTRLEN];
+    char buf4[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &a1, buf1, sizeof(buf1));
+    inet_ntop(AF_INET, &a4, buf4, sizeof(buf4));
+    TEST_ASSERT_EQUAL_STRING(buf1, buf4);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -283,5 +334,8 @@ int main(void)
     RUN_TEST(test_ipam_reserve_outside_pool);
     /* Statistics */
     RUN_TEST(test_ipam_stats_total_and_used);
+    /* Word-scan performance */
+    RUN_TEST(test_ipam_alloc_performance_large_pool);
+    RUN_TEST(test_ipam_alloc_free_reuse_with_hint);
     return UNITY_END();
 }

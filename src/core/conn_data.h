@@ -36,7 +36,8 @@ typedef struct {
 
     /* Receive buffer (accumulates partial CSTP frames from TLS) */
     uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
-    size_t recv_len;
+    size_t recv_len; /* total valid bytes in recv_buf */
+    size_t recv_off; /* read cursor into recv_buf */
 
     /* Send buffer (CSTP-encoded frame for TLS write) */
     uint8_t send_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
