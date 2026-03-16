@@ -143,9 +143,16 @@ int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len)
 
         /* Extract Content-Length from parsed headers (semantics layer is internal) */
         uint64_t clen = 0;
+        bool clen_seen = false;
         for (size_t i = 0; i < req.num_headers; i++) {
             if (req.headers[i].name_len == 14 &&
                 strncasecmp(req.headers[i].name, "Content-Length", 14) == 0) {
+                /* Reject duplicate Content-Length headers (request smuggling) */
+                if (clen_seen) {
+                    return -EPROTO;
+                }
+                clen_seen = true;
+
                 char tmp[32];
                 size_t vlen = req.headers[i].value_len;
                 if (vlen >= sizeof(tmp)) {
@@ -154,11 +161,15 @@ int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len)
                 memcpy(tmp, req.headers[i].value, vlen);
                 tmp[vlen] = '\0';
                 char *end = nullptr;
+                errno = 0;
                 unsigned long val = strtoul(tmp, &end, 10);
-                if (end != tmp) {
-                    clen = val;
+                if (end == tmp || errno == ERANGE) {
+                    return -EPROTO;
                 }
-                break;
+                if (val > IOG_HTTP_MAX_BODY) {
+                    return -EPROTO;
+                }
+                clen = val;
             }
         }
 

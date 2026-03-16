@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <string.h>
 #include <unity/unity.h>
 #include "network/http.h"
@@ -110,7 +111,7 @@ void test_http_format_response(void)
 
 void test_http_max_body_limit(void)
 {
-    /* Build a request with body larger than IOG_HTTP_MAX_BODY */
+    /* Content-Length exceeding IOG_HTTP_MAX_BODY must be rejected */
     char req[IOG_HTTP_MAX_BODY + 4096];
     size_t oversized_body_len = IOG_HTTP_MAX_BODY + 1024;
     int hdr_len = snprintf(req, sizeof(req),
@@ -128,10 +129,7 @@ void test_http_max_body_limit(void)
     memset(req + hdr_len, 'A', fill);
 
     int ret = iog_http_parse(&parser, req, (size_t)hdr_len + fill);
-    TEST_ASSERT_EQUAL_INT(0, ret);
-
-    /* Body should be truncated to IOG_HTTP_MAX_BODY */
-    TEST_ASSERT_EQUAL_size_t(IOG_HTTP_MAX_BODY, parser.request.body_len);
+    TEST_ASSERT_EQUAL_INT(-EPROTO, ret);
 }
 
 void test_http_incremental_parse(void)
@@ -185,6 +183,28 @@ void test_http_invalid_request(void)
     TEST_ASSERT_LESS_THAN(0, ret);
 }
 
+void test_http_rejects_huge_content_length(void)
+{
+    const char *req = "POST /data HTTP/1.1\r\n"
+                      "Content-Length: 99999999999999999999\r\n"
+                      "\r\n";
+
+    int ret = iog_http_parse(&parser, req, strlen(req));
+    TEST_ASSERT_EQUAL_INT(-EPROTO, ret);
+}
+
+void test_http_rejects_duplicate_content_length(void)
+{
+    const char *req = "POST /data HTTP/1.1\r\n"
+                      "Content-Length: 5\r\n"
+                      "Content-Length: 10\r\n"
+                      "\r\n"
+                      "hello";
+
+    int ret = iog_http_parse(&parser, req, strlen(req));
+    TEST_ASSERT_EQUAL_INT(-EPROTO, ret);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -195,5 +215,8 @@ int main(void)
     RUN_TEST(test_http_max_body_limit);
     RUN_TEST(test_http_incremental_parse);
     RUN_TEST(test_http_invalid_request);
+    /* Content-Length hardening (M8 fix) */
+    RUN_TEST(test_http_rejects_huge_content_length);
+    RUN_TEST(test_http_rejects_duplicate_content_length);
     return UNITY_END();
 }

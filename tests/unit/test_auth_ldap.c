@@ -86,8 +86,9 @@ void test_ldap_config_validates_uri_scheme(void)
     int ret = iog_ldap_init(&cfg);
     TEST_ASSERT_EQUAL_INT(-EINVAL, ret);
 
-    /* ldap:// must be accepted */
+    /* ldap:// with StartTLS must be accepted */
     snprintf(cfg.uri, sizeof(cfg.uri), "ldap://ldap.example.com:389");
+    cfg.use_starttls = true;
     ret = iog_ldap_init(&cfg);
     TEST_ASSERT_EQUAL_INT(0, ret);
     iog_ldap_destroy();
@@ -171,6 +172,27 @@ void test_ldap_build_filter_escapes_user(void)
     TEST_ASSERT_NOT_NULL(strstr(out, "evil\\2a"));
 }
 
+void test_ldap_init_rejects_plaintext_without_starttls(void)
+{
+    iog_ldap_config_t cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    snprintf(cfg.uri, sizeof(cfg.uri), "ldap://server.example.com");
+    cfg.use_starttls = false;
+    int ret = iog_ldap_init(&cfg);
+    TEST_ASSERT_EQUAL_INT(-EPROTO, ret);
+}
+
+void test_ldap_init_allows_ldaps_without_starttls(void)
+{
+    iog_ldap_config_t cfg;
+    memset(&cfg, 0, sizeof(cfg));
+    snprintf(cfg.uri, sizeof(cfg.uri), "ldaps://server.example.com");
+    cfg.use_starttls = false;
+    int ret = iog_ldap_init(&cfg);
+    TEST_ASSERT_EQUAL_INT(0, ret);
+    iog_ldap_destroy();
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -190,5 +212,8 @@ int main(void)
     RUN_TEST(test_ldap_escape_buffer_too_small);
     RUN_TEST(test_ldap_build_dn_escapes_user);
     RUN_TEST(test_ldap_build_filter_escapes_user);
+    /* StartTLS enforcement (HIGH-7 fix) */
+    RUN_TEST(test_ldap_init_rejects_plaintext_without_starttls);
+    RUN_TEST(test_ldap_init_allows_ldaps_without_starttls);
     return UNITY_END();
 }

@@ -139,6 +139,17 @@ void test_sandbox_worker_allows_read(void)
                                   "child read from /dev/null should succeed");
 }
 
+void test_sandbox_worker_prot_exec_filtered(void)
+{
+    /* mmap and mprotect are now arg-filtered (deny PROT_EXEC),
+     * so the total count must still include them. */
+    int count = 0;
+    int rc = iog_sandbox_build(IOG_SANDBOX_WORKER, &count);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    /* 24 plain syscalls + 2 arg-filtered (mmap, mprotect) = 26 */
+    TEST_ASSERT_EQUAL_INT(26, count);
+}
+
 /* ---- Runner ---- */
 
 int main(void)
@@ -151,6 +162,8 @@ int main(void)
     RUN_TEST(test_sandbox_filter_syscall_count);
     RUN_TEST(test_sandbox_worker_blocks_execve);
     RUN_TEST(test_sandbox_worker_allows_read);
+    /* PROT_EXEC filtering (HIGH-1/2 fix) */
+    RUN_TEST(test_sandbox_worker_prot_exec_filtered);
 
     return UNITY_END();
 }

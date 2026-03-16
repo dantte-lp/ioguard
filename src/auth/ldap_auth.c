@@ -136,6 +136,11 @@ int iog_ldap_init(const iog_ldap_config_t *config)
         return -EINVAL;
     }
 
+    /* Reject plaintext LDAP without StartTLS — insecure channel */
+    if (strncmp(config->uri, "ldap://", 7) == 0 && !config->use_starttls) {
+        return -EPROTO;
+    }
+
     memcpy(&g_ldap_cfg, config, sizeof(g_ldap_cfg));
 
     /* Apply defaults for optional fields */

@@ -18,6 +18,7 @@
 
 #include "tls_wolfssl.h"
 #include <errno.h>
+#include <limits.h>
 #include <stdckdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1139,6 +1140,11 @@ ssize_t tls_send(tls_session_t *session, const void *data, size_t len)
         return TLS_E_INVALID_REQUEST;
     }
 
+    /* Guard against size_t-to-int truncation (wolfSSL uses int for length) */
+    if (len > (size_t)INT_MAX) {
+        return TLS_E_INVALID_PARAMETER;
+    }
+
     int ret = wolfSSL_write(session->wolf_ssl, data, (int)len);
 
     if (ret > 0) {
@@ -1159,6 +1165,11 @@ ssize_t tls_recv(tls_session_t *session, void *data, size_t len)
 
     if (!session->handshake_complete) {
         return TLS_E_INVALID_REQUEST;
+    }
+
+    /* Guard against size_t-to-int truncation (wolfSSL uses int for length) */
+    if (len > (size_t)INT_MAX) {
+        return TLS_E_INVALID_PARAMETER;
     }
 
     int ret = wolfSSL_read(session->wolf_ssl, data, (int)len);
