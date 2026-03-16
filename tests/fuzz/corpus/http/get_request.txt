@@ -1,0 +1,6 @@
+GET / HTTP/1.1
+Host: vpn.example.com
+User-Agent: OpenConnect-VPN
+Accept: */*
+X-Aggregate-Auth: 1
+

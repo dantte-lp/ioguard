@@ -1,0 +1,18 @@
+[server]
+address = "0.0.0.0"
+port = 443
+max_clients = 128
+
+[auth]
+method = "pam"
+timeout = 30
+
+[network]
+mtu = 1406
+dpd_interval = 30
+idle_timeout = 300
+
+[tls]
+cert = "/etc/ioguard/server.crt"
+key = "/etc/ioguard/server.key"
+min_version = "1.3"

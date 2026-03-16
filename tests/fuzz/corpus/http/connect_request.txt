@@ -1,0 +1,7 @@
+CONNECT /CSCOSSLC/tunnel HTTP/1.1
+Host: vpn.example.com
+User-Agent: AnyConnect
+X-CSTP-Version: 1
+X-CSTP-Hostname: client01
+X-CSTP-Accept-Encoding: lz4
+
