@@ -291,7 +291,7 @@ static void entry_free(cache_entry_t *entry)
 {
     if (entry != nullptr) {
         // Zero sensitive session data
-        memset(&entry->session, 0, sizeof(tls_session_cache_entry_t));
+        explicit_bzero(&entry->session, sizeof(tls_session_cache_entry_t));
         free(entry);
     }
 }

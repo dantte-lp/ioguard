@@ -44,6 +44,7 @@ typedef struct {
     bool active;
     uint8_t recv_buf[IOG_CSTP_HEADER_SIZE + IOG_CSTP_MAX_PAYLOAD];
     size_t recv_len;
+    void *data; /**< iog_conn_data_t* — CSTP data path context (opaque) */
 } iog_connection_t;
 
 typedef struct iog_worker iog_worker_t;

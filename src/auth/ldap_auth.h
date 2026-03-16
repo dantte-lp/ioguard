@@ -70,19 +70,32 @@ void iog_ldap_destroy(void);
 const iog_auth_backend_t *iog_ldap_backend(void);
 
 /**
+ * Escape a string for safe use in LDAP filter expressions per RFC 4515.
+ *
+ * Escapes characters: * ( ) \ NUL as \2a \28 \29 \5c \00.
+ *
+ * @param input   Raw input string (e.g., username).
+ * @param out     Output buffer for escaped string.
+ * @param out_sz  Size of the output buffer.
+ * @return Number of bytes written (excluding NUL) on success,
+ *         -EINVAL if any argument is null, -ENOSPC if buffer too small.
+ */
+[[nodiscard]] ssize_t iog_ldap_escape_filter_value(const char *input, char *out, size_t out_sz);
+
+/**
  * Build a bind DN from the template and username.
  *
- * Replaces the first %%s in the template with the given username.
+ * The username is escaped per RFC 4515 before substitution.
  *
  * @param tmpl    Bind DN template containing %%s placeholder.
- * @param user    Username to substitute.
+ * @param user    Username to substitute (will be escaped).
  * @param out     Output buffer for the constructed DN.
  * @param out_sz  Size of the output buffer.
  * @return Number of bytes written (excluding NUL) on success,
  *         -EINVAL if any argument is null, -ENOSPC if buffer too small.
  */
-[[nodiscard]] ssize_t iog_ldap_build_bind_dn(const char *tmpl, const char *user,
-                                             char *out, size_t out_sz);
+[[nodiscard]] ssize_t iog_ldap_build_bind_dn(const char *tmpl, const char *user, char *out,
+                                             size_t out_sz);
 
 /**
  * Build an LDAP group membership search filter.
@@ -96,8 +109,7 @@ const iog_auth_backend_t *iog_ldap_backend(void);
  * @return Number of bytes written (excluding NUL) on success,
  *         -EINVAL if any argument is null, -ENOSPC if buffer too small.
  */
-[[nodiscard]] ssize_t iog_ldap_build_group_filter(const char *attr,
-                                                  const char *user_dn,
-                                                  char *out, size_t out_sz);
+[[nodiscard]] ssize_t iog_ldap_build_group_filter(const char *attr, const char *user_dn, char *out,
+                                                  size_t out_sz);
 
 #endif /* IOGUARD_AUTH_LDAP_H */

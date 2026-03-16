@@ -8,8 +8,7 @@
 #    include <wolfssl/options.h>
 #    include <wolfssl/wolfcrypt/random.h>
 #else
-#    include <fcntl.h>
-#    include <unistd.h>
+#    include <sys/random.h>
 #endif
 
 struct iog_session_store {
@@ -34,16 +33,20 @@ static int constant_time_compare(const uint8_t *a, const uint8_t *b, size_t len)
 #ifndef USE_WOLFSSL
 static int fill_random(uint8_t *buf, size_t len)
 {
-    int fd = open("/dev/urandom", O_RDONLY);
-
-    if (fd < 0) {
-        return -errno;
+    /* Use getrandom(2) instead of /dev/urandom to avoid fd management
+     * and short-read issues. Available since Linux 3.17 / glibc 2.25. */
+    size_t done = 0;
+    while (done < len) {
+        ssize_t n = getrandom(buf + done, len - done, 0);
+        if (n < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return -errno;
+        }
+        done += (size_t)n;
     }
-
-    ssize_t n = read(fd, buf, len);
-
-    close(fd);
-    return (n == (ssize_t)len) ? 0 : -EIO;
+    return 0;
 }
 #endif
 
@@ -114,7 +117,7 @@ void iog_session_store_destroy(iog_session_store_t *store)
 }
 
 int iog_session_create(iog_session_store_t *store, const char *username, const char *group,
-                      uint32_t ttl_seconds, iog_session_t **out)
+                       uint32_t ttl_seconds, iog_session_t **out)
 {
     if (store == nullptr || username == nullptr || out == nullptr) {
         return -EINVAL;
@@ -174,7 +177,7 @@ int iog_session_create(iog_session_store_t *store, const char *username, const c
 }
 
 int iog_session_validate(iog_session_store_t *store, const uint8_t *cookie, size_t cookie_len,
-                        iog_session_t **out)
+                         iog_session_t **out)
 {
     if (store == nullptr || cookie == nullptr || out == nullptr) {
         return -EINVAL;
@@ -189,7 +192,8 @@ int iog_session_validate(iog_session_store_t *store, const uint8_t *cookie, size
             continue;
         }
 
-        if (constant_time_compare(store->sessions[i].cookie, cookie, IOG_SESSION_COOKIE_SIZE) == 0) {
+        if (constant_time_compare(store->sessions[i].cookie, cookie, IOG_SESSION_COOKIE_SIZE) ==
+            0) {
             /* Check expiry */
             time_t now = time(nullptr);
 
@@ -225,7 +229,8 @@ int iog_session_delete(iog_session_store_t *store, const uint8_t *cookie, size_t
             continue;
         }
 
-        if (constant_time_compare(store->sessions[i].cookie, cookie, IOG_SESSION_COOKIE_SIZE) == 0) {
+        if (constant_time_compare(store->sessions[i].cookie, cookie, IOG_SESSION_COOKIE_SIZE) ==
+            0) {
             explicit_bzero(store->sessions[i].cookie, IOG_SESSION_COOKIE_SIZE);
             explicit_bzero(&store->sessions[i], sizeof(store->sessions[i]));
             store->count--;

@@ -40,7 +40,7 @@ constexpr size_t IOG_TOTP_SECRET_B32_MAX = 64;
  * @return 0 on success, negative errno on failure.
  */
 [[nodiscard]] int iog_totp_generate(const uint8_t *secret, size_t secret_len, uint64_t time_step,
-                                   uint32_t *code_out);
+                                    uint32_t *code_out);
 
 /**
  * Validate a TOTP code against the current time with a tolerance window.
@@ -53,7 +53,7 @@ constexpr size_t IOG_TOTP_SECRET_B32_MAX = 64;
  * @return 0 on success (code valid), negative errno on failure or mismatch.
  */
 [[nodiscard]] int iog_totp_validate(const uint8_t *secret, size_t secret_len, uint32_t code,
-                                   uint64_t time_now, uint32_t window);
+                                    uint64_t time_now, uint32_t window);
 
 /**
  * Generate a random TOTP secret.
@@ -76,7 +76,7 @@ constexpr size_t IOG_TOTP_SECRET_B32_MAX = 64;
  * @return Number of bytes written (excluding NUL) on success, negative errno on failure.
  */
 [[nodiscard]] ssize_t iog_totp_build_uri(const uint8_t *secret, size_t secret_len,
-                                        const char *issuer, const char *account, char *uri_out,
-                                        size_t uri_size);
+                                         const char *issuer, const char *account, char *uri_out,
+                                         size_t uri_size);
 
 #endif /* IOGUARD_AUTH_TOTP_H */

@@ -92,7 +92,7 @@ const char *iog_http_get_header(const iog_http_request_t *req, const char *name)
  * @return Number of bytes written on success, negative errno on failure.
  */
 [[nodiscard]] int iog_http_format_response(char *buf, size_t buf_size, int status_code,
-                                          const iog_http_header_t *headers, uint32_t header_count,
-                                          const char *body, size_t body_len);
+                                           const iog_http_header_t *headers, uint32_t header_count,
+                                           const char *body, size_t body_len);
 
 #endif /* IOGUARD_NETWORK_HTTP_H */

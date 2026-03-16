@@ -302,8 +302,7 @@ int priority_tokenize(const char *priority, token_list_t *tokens)
         // Note: '-' is NOT a delimiter inside tokens (e.g., VERS-TLS1.3, AES-128-GCM)
         // The '-' operator is only recognized at operator position (after ':' or at start)
         const char *token_start = p;
-        while (*p != '\0' && *p != '+' && *p != '!' && *p != ':' &&
-               !isspace((unsigned char)*p)) {
+        while (*p != '\0' && *p != '+' && *p != '!' && *p != ':' && !isspace((unsigned char)*p)) {
             p++;
         }
 

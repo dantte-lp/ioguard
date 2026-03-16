@@ -127,7 +127,7 @@ void iog_vault_destroy(iog_vault_t *vault)
 }
 
 int iog_vault_encrypt(iog_vault_t *vault, const uint8_t *plaintext, size_t plain_len, uint8_t *out,
-                     size_t out_size, size_t *out_len)
+                      size_t out_size, size_t *out_len)
 {
     if (vault == nullptr || plaintext == nullptr || out == nullptr || out_len == nullptr) {
         return -EINVAL;
@@ -168,6 +168,7 @@ int iog_vault_encrypt(iog_vault_t *vault, const uint8_t *plaintext, size_t plain
 
 encrypt_cleanup:
     wc_AesFree(&aes);
+    explicit_bzero(&aes, sizeof(aes));
 
     if (ret != 0) {
         return -EIO;
@@ -181,7 +182,7 @@ encrypt_cleanup:
 }
 
 int iog_vault_decrypt(iog_vault_t *vault, const uint8_t *cipherblob, size_t blob_len, uint8_t *out,
-                     size_t out_size, size_t *out_len)
+                      size_t out_size, size_t *out_len)
 {
     if (vault == nullptr || cipherblob == nullptr || out == nullptr || out_len == nullptr) {
         return -EINVAL;
@@ -217,6 +218,7 @@ int iog_vault_decrypt(iog_vault_t *vault, const uint8_t *cipherblob, size_t blob
 
 decrypt_cleanup:
     wc_AesFree(&aes);
+    explicit_bzero(&aes, sizeof(aes));
 
     if (ret != 0) {
         explicit_bzero(out, plain_len); /* never expose partial plaintext */

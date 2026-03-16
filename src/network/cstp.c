@@ -4,7 +4,7 @@
 #include <string.h>
 
 int iog_cstp_encode(uint8_t *buf, size_t buf_size, iog_cstp_type_t type, const uint8_t *payload,
-                   size_t payload_len)
+                    size_t payload_len)
 {
     if (payload_len > IOG_CSTP_MAX_PAYLOAD) {
         return -EINVAL;

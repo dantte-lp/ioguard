@@ -55,7 +55,7 @@ typedef struct {
  * @return 0 on success, negative errno on failure
  */
 [[nodiscard]] int iog_xml_parse_auth_request(const char *xml, size_t len,
-                                            iog_xml_auth_request_t *out);
+                                             iog_xml_auth_request_t *out);
 
 /**
  * @brief Build an AggAuth XML response to send to client.
@@ -66,7 +66,7 @@ typedef struct {
  * @return 0 on success, negative errno on failure
  */
 [[nodiscard]] int iog_xml_build_auth_response(const iog_xml_auth_response_t *resp, char *buf,
-                                             size_t buf_size, size_t *out_len);
+                                              size_t buf_size, size_t *out_len);
 
 /**
  * @brief Securely zero sensitive fields in an auth request.

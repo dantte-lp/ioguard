@@ -72,11 +72,15 @@ void iog_ipc_free_auth_request(iog_ipc_auth_request_t *req)
         explicit_bzero((void *)req->otp, strlen(req->otp));
         free((void *)req->otp);
     }
+    if (req->cookie != nullptr && req->cookie_len > 0) {
+        explicit_bzero((void *)req->cookie, req->cookie_len);
+    }
     free((void *)req->cookie);
-    memset(req, 0, sizeof(*req));
+    explicit_bzero(req, sizeof(*req));
 }
 
-ssize_t iog_ipc_pack_auth_response(const iog_ipc_auth_response_t *resp, uint8_t *buf, size_t buf_size)
+ssize_t iog_ipc_pack_auth_response(const iog_ipc_auth_response_t *resp, uint8_t *buf,
+                                   size_t buf_size)
 {
     IogIpc__AuthResponse pb = IOG_IPC__AUTH_RESPONSE__INIT;
     IogIpc__IpcHeader hdr = IOG_IPC__IPC_HEADER__INIT;
@@ -159,7 +163,7 @@ void iog_ipc_free_auth_response(iog_ipc_auth_response_t *resp)
 }
 
 ssize_t iog_ipc_pack_session_validate(const iog_ipc_session_validate_t *req, uint8_t *buf,
-                                     size_t buf_size)
+                                      size_t buf_size)
 {
     IogIpc__SessionValidate pb = IOG_IPC__SESSION_VALIDATE__INIT;
     IogIpc__IpcHeader hdr = IOG_IPC__IPC_HEADER__INIT;
@@ -178,7 +182,8 @@ ssize_t iog_ipc_pack_session_validate(const iog_ipc_session_validate_t *req, uin
     return (ssize_t)iog_ipc__session_validate__pack(&pb, buf);
 }
 
-int iog_ipc_unpack_session_validate(const uint8_t *data, size_t len, iog_ipc_session_validate_t *out)
+int iog_ipc_unpack_session_validate(const uint8_t *data, size_t len,
+                                    iog_ipc_session_validate_t *out)
 {
     IogIpc__SessionValidate *pb = iog_ipc__session_validate__unpack(nullptr, len, data);
     if (pb == nullptr) {
@@ -199,12 +204,15 @@ int iog_ipc_unpack_session_validate(const uint8_t *data, size_t len, iog_ipc_ses
 
 void iog_ipc_free_session_validate(iog_ipc_session_validate_t *req)
 {
+    if (req->cookie != nullptr && req->cookie_len > 0) {
+        explicit_bzero((void *)req->cookie, req->cookie_len);
+    }
     free((void *)req->cookie);
-    memset(req, 0, sizeof(*req));
+    explicit_bzero(req, sizeof(*req));
 }
 
 ssize_t iog_ipc_pack_worker_status(const iog_ipc_worker_status_t *status, uint8_t *buf,
-                                  size_t buf_size)
+                                   size_t buf_size)
 {
     IogIpc__WorkerStatus pb = IOG_IPC__WORKER_STATUS__INIT;
     IogIpc__IpcHeader hdr = IOG_IPC__IPC_HEADER__INIT;

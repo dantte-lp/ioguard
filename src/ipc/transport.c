@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include "ipc/transport.h"
+
 #include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -31,9 +33,20 @@ void iog_ipc_close(iog_ipc_channel_t *ch)
 
 int iog_ipc_send(int fd, const uint8_t *data, size_t len)
 {
+    if (data == nullptr || len == 0) {
+        return -EINVAL;
+    }
+    if (len > IOG_IPC_MAX_MSG_SIZE) {
+        return -EMSGSIZE;
+    }
+
     ssize_t n = send(fd, data, len, MSG_NOSIGNAL);
     if (n < 0) {
         return -errno;
+    }
+    /* SOCK_SEQPACKET sends atomically, but verify completeness */
+    if ((size_t)n != len) {
+        return -EIO;
     }
     return 0;
 }
@@ -108,7 +121,11 @@ int iog_ipc_recv_fd(int socket_fd)
         return -EPROTO;
     }
 
-    int fd;
-    memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
-    return fd;
+    int received_fd;
+    memcpy(&received_fd, CMSG_DATA(cmsg), sizeof(int));
+
+    /* Prevent fd leak to child processes on fork+exec */
+    (void)fcntl(received_fd, F_SETFD, FD_CLOEXEC);
+
+    return received_fd;
 }

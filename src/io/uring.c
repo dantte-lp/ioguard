@@ -284,7 +284,7 @@ int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired)
 /* --- Callback-based operations --- */
 
 int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                       void *user_data)
+                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -310,7 +310,7 @@ int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
 }
 
 int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, iog_io_cb cb,
-                       void *user_data)
+                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -336,7 +336,7 @@ int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, 
 }
 
 int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                       void *user_data)
+                        void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -362,7 +362,7 @@ int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io
 }
 
 int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len, iog_io_cb cb,
-                        void *user_data)
+                         void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {
@@ -388,7 +388,7 @@ int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
 }
 
 int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd, struct sockaddr *addr, socklen_t *addrlen,
-                         iog_io_cb cb, void *user_data)
+                          iog_io_cb cb, void *user_data)
 {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&ctx->ring);
     if (sqe == nullptr) {

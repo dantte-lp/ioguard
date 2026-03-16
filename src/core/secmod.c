@@ -82,7 +82,7 @@ static int secmod_create_session_response(iog_secmod_ctx_t *ctx, iog_ipc_auth_re
 {
     iog_session_t *session = nullptr;
     int ret = iog_session_create(ctx->sessions, req->username, req->group,
-                                ctx->config->auth.cookie_timeout, &session);
+                                 ctx->config->auth.cookie_timeout, &session);
     if (ret == 0 && session != nullptr) {
         resp->success = true;
         resp->session_cookie = session->cookie;
@@ -139,7 +139,7 @@ static int secmod_handle_totp(iog_secmod_ctx_t *ctx, iog_ipc_auth_request_t *req
     size_t dec_len = 0;
 
     ret = iog_vault_decrypt(ctx->vault, user.totp_secret, user.totp_secret_len, decrypted,
-                           sizeof(decrypted), &dec_len);
+                            sizeof(decrypted), &dec_len);
     explicit_bzero(&user, sizeof(user));
 
     if (ret < 0) {

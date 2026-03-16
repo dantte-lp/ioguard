@@ -179,7 +179,7 @@ void test_sqlite_user_totp_set_and_lookup(void)
 
     uint8_t secret[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
     TEST_ASSERT_EQUAL_INT(0, iog_sqlite_user_totp_set(&ctx, "totp_user", secret, sizeof(secret),
-                                                     "[\"ABCD1234\"]"));
+                                                      "[\"ABCD1234\"]"));
 
     iog_user_record_t out = {0};
     TEST_ASSERT_EQUAL_INT(0, iog_sqlite_user_lookup(&ctx, "totp_user", &out));
@@ -197,7 +197,7 @@ void test_sqlite_user_totp_clear(void)
 
     uint8_t secret[] = {0xAA, 0xBB};
     TEST_ASSERT_EQUAL_INT(0, iog_sqlite_user_totp_set(&ctx, "clear_user", secret, sizeof(secret),
-                                                     "[]"));
+                                                      "[]"));
 
     TEST_ASSERT_EQUAL_INT(0, iog_sqlite_user_totp_clear(&ctx, "clear_user"));
 

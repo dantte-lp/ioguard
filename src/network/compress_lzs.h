@@ -28,11 +28,11 @@ void iog_lzs_init(iog_lzs_ctx_t *ctx);
 void iog_lzs_reset(iog_lzs_ctx_t *ctx);
 
 /** Compress data using LZS. Returns bytes written or negative errno. */
-[[nodiscard]] int iog_lzs_compress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
-                                  size_t out_size);
+[[nodiscard]] int iog_lzs_compress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len,
+                                   uint8_t *out, size_t out_size);
 
 /** Decompress LZS data. Returns bytes written or negative errno. */
 [[nodiscard]] int iog_lzs_decompress(iog_lzs_ctx_t *ctx, const uint8_t *in, size_t in_len,
-                                    uint8_t *out, size_t out_size);
+                                     uint8_t *out, size_t out_size);
 
 #endif /* IOGUARD_NETWORK_COMPRESS_LZS_H */

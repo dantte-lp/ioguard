@@ -33,7 +33,8 @@ typedef struct {
  * @param cfg   Configuration specifying accept_fd, ipc_fd, worker config.
  * @return 0 on success, negative errno on failure.
  */
-[[nodiscard]] int iog_worker_loop_init(iog_worker_loop_t *loop, const iog_worker_loop_config_t *cfg);
+[[nodiscard]] int iog_worker_loop_init(iog_worker_loop_t *loop,
+                                       const iog_worker_loop_config_t *cfg);
 
 /**
  * @brief Run worker event loop (blocking). Returns on iog_worker_loop_stop().

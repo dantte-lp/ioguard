@@ -61,39 +61,41 @@ void iog_io_stop(iog_io_ctx_t *ctx);
 [[nodiscard]] int iog_io_add_timeout(iog_io_ctx_t *ctx, uint64_t timeout_ms, int *fired);
 
 /* Submit a recv operation on a socket */
-[[nodiscard]] int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed);
+[[nodiscard]] int iog_io_prep_recv(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                   int *completed);
 
 /* Submit a send operation on a socket */
 [[nodiscard]] int iog_io_prep_send(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                  int *completed);
+                                   int *completed);
 
 /* Submit a read operation on a file descriptor (TUN, signalfd, etc.) */
-[[nodiscard]] int iog_io_prep_read(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, int *completed);
+[[nodiscard]] int iog_io_prep_read(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                   int *completed);
 
 /* Submit a write operation on a file descriptor */
 [[nodiscard]] int iog_io_prep_write(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                   int *completed);
+                                    int *completed);
 
 /* Callback-based operations — for production event loops.
  * cb is invoked with CQE result (bytes or negative errno) and user_data. */
 
-[[nodiscard]] int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                                     void *user_data);
-
-[[nodiscard]] int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
-                                     iog_io_cb cb, void *user_data);
-
-[[nodiscard]] int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len, iog_io_cb cb,
-                                     void *user_data);
-
-[[nodiscard]] int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+[[nodiscard]] int iog_io_prep_recv_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
                                       iog_io_cb cb, void *user_data);
 
+[[nodiscard]] int iog_io_prep_send_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                      iog_io_cb cb, void *user_data);
+
+[[nodiscard]] int iog_io_prep_read_cb(iog_io_ctx_t *ctx, int fd, void *buf, size_t len,
+                                      iog_io_cb cb, void *user_data);
+
+[[nodiscard]] int iog_io_prep_write_cb(iog_io_ctx_t *ctx, int fd, const void *buf, size_t len,
+                                       iog_io_cb cb, void *user_data);
+
 [[nodiscard]] int iog_io_prep_accept_cb(iog_io_ctx_t *ctx, int fd, struct sockaddr *addr,
-                                       socklen_t *addrlen, iog_io_cb cb, void *user_data);
+                                        socklen_t *addrlen, iog_io_cb cb, void *user_data);
 
 [[nodiscard]] int iog_io_add_timeout_cb(iog_io_ctx_t *ctx, uint64_t timeout_ms, iog_io_cb cb,
-                                       void *user_data);
+                                        void *user_data);
 
 [[nodiscard]] int iog_io_cancel(iog_io_ctx_t *ctx, void *user_data);
 

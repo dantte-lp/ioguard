@@ -359,7 +359,7 @@ void tls_context_free(tls_context_t *ctx)
     free(ctx->wolfssl_cipher_list);
 
     // Zero sensitive data
-    memset(ctx, 0, sizeof(*ctx));
+    explicit_bzero(ctx, sizeof(*ctx));
 
     free(ctx);
 }
@@ -786,8 +786,7 @@ static int tls_install_dummy_certificate(tls_context_t *ctx)
     }
 
     /* Try relative path first (works when running from source directory) */
-    if (try_load_cert_pair(ctx->wolf_ctx,
-                           "tests/certs/server-cert.pem",
+    if (try_load_cert_pair(ctx->wolf_ctx, "tests/certs/server-cert.pem",
                            "tests/certs/server-key.pem")) {
         ctx->has_certificate = true;
         return TLS_E_SUCCESS;
@@ -796,8 +795,7 @@ static int tls_install_dummy_certificate(tls_context_t *ctx)
     /* Try absolute path via CMAKE_SOURCE_DIR (works when ctest runs from
      * the build directory). Defined via target_compile_definitions. */
 #ifdef CMAKE_SOURCE_DIR
-    if (try_load_cert_pair(ctx->wolf_ctx,
-                           CMAKE_SOURCE_DIR "/tests/certs/server-cert.pem",
+    if (try_load_cert_pair(ctx->wolf_ctx, CMAKE_SOURCE_DIR "/tests/certs/server-cert.pem",
                            CMAKE_SOURCE_DIR "/tests/certs/server-key.pem")) {
         ctx->has_certificate = true;
         return TLS_E_SUCCESS;
@@ -871,7 +869,7 @@ void tls_session_free(tls_session_t *session)
     }
 
     // Zero sensitive data
-    memset(session, 0, sizeof(*session));
+    explicit_bzero(session, sizeof(*session));
 
     free(session);
 }

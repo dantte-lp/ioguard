@@ -25,11 +25,11 @@ constexpr size_t IOG_CERT_USERNAME_MAX = 256;
 
 /** Certificate authentication configuration. */
 typedef struct {
-    char ca_cert_path[IOG_CERT_PATH_MAX];       /**< Trusted CA for client certs */
-    char crl_path[IOG_CERT_PATH_MAX];           /**< CRL file path (optional) */
-    bool require_eku;                           /**< Require EKU: Client Authentication */
-    char template_oid[IOG_CERT_TEMPLATE_OID_MAX]; /**< MS AD template OID (optional) */
-    char template_name[IOG_CERT_TEMPLATE_NAME_MAX]; /**< Required template name (optional) */
+    char ca_cert_path[IOG_CERT_PATH_MAX];             /**< Trusted CA for client certs */
+    char crl_path[IOG_CERT_PATH_MAX];                 /**< CRL file path (optional) */
+    bool require_eku;                                 /**< Require EKU: Client Authentication */
+    char template_oid[IOG_CERT_TEMPLATE_OID_MAX];     /**< MS AD template OID (optional) */
+    char template_name[IOG_CERT_TEMPLATE_NAME_MAX];   /**< Required template name (optional) */
     char username_field[IOG_CERT_USERNAME_FIELD_MAX]; /**< "CN", "SAN:email", "SAN:UPN" */
 } iog_cert_auth_config_t;
 
@@ -75,6 +75,6 @@ const iog_auth_backend_t *iog_cert_auth_backend(void);
  *         -ENOTSUP if wolfSSL is not compiled in.
  */
 [[nodiscard]] int iog_cert_extract_username(const uint8_t *der, size_t der_len, const char *field,
-                                           char *out, size_t out_size);
+                                            char *out, size_t out_size);
 
 #endif /* IOGUARD_AUTH_CERT_H */

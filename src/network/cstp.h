@@ -46,7 +46,7 @@ typedef struct {
  *         -EINVAL if payload too large.
  */
 [[nodiscard]] int iog_cstp_encode(uint8_t *buf, size_t buf_size, iog_cstp_type_t type,
-                                 const uint8_t *payload, size_t payload_len);
+                                  const uint8_t *payload, size_t payload_len);
 
 /**
  * @brief Decode a CSTP packet from buf (zero-copy).

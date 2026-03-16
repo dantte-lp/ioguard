@@ -94,7 +94,7 @@ static int setup_totp_user(iog_sqlite_ctx_t *sqlite, iog_vault_t *vault, const c
     uint8_t encrypted[IOG_TOTP_SECRET_SIZE + IOG_VAULT_OVERHEAD];
     size_t enc_len = 0;
     ret = iog_vault_encrypt(vault, test_totp_secret, IOG_TOTP_SECRET_SIZE, encrypted,
-                           sizeof(encrypted), &enc_len);
+                            sizeof(encrypted), &enc_len);
     if (ret < 0) {
         return ret;
     }

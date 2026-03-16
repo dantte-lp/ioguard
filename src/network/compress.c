@@ -34,7 +34,7 @@ int iog_compress_init(iog_compress_ctx_t *ctx, iog_compress_type_t type)
 }
 
 int iog_compress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
-                size_t out_size)
+                 size_t out_size)
 {
     if (!ctx || !in || !out) {
         return -EINVAL;
@@ -63,7 +63,7 @@ int iog_compress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint
 }
 
 int iog_decompress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len, uint8_t *out,
-                  size_t out_size)
+                   size_t out_size)
 {
     if (!ctx || !in || !out) {
         return -EINVAL;

@@ -5,7 +5,7 @@
 #include <string.h>
 
 int iog_dtls_build_headers(char *buf, size_t buf_size, const char *master_secret_hex,
-                          const char *cipher_suite, const char *accept_encoding)
+                           const char *cipher_suite, const char *accept_encoding)
 {
     if (!buf || !master_secret_hex || !cipher_suite) {
         return -EINVAL;

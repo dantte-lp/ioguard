@@ -45,7 +45,7 @@ typedef struct {
  * @return 0 on success, negative errno on failure.
  */
 [[nodiscard]] int iog_fw_build_create_batch(const iog_fw_session_t *session, void **batch_buf,
-                                           size_t *batch_len);
+                                            size_t *batch_len);
 
 /**
  * @brief Build a netlink batch to destroy the per-user chain.
@@ -55,7 +55,7 @@ typedef struct {
  * @return 0 on success, negative errno on failure.
  */
 [[nodiscard]] int iog_fw_build_destroy_batch(const iog_fw_session_t *session, void **batch_buf,
-                                            size_t *batch_len);
+                                             size_t *batch_len);
 
 /**
  * @brief Create a per-user nftables chain and accept rule.

@@ -82,7 +82,7 @@ void test_prom_histogram_observe(void)
     iog_prom_histogram_t hist = {
         .name = "iog_tls_handshake_seconds",
         .help = "TLS handshake duration",
-        .boundaries = { 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0 },
+        .boundaries = {0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0},
     };
     memset((void *)hist.bucket_counts, 0, sizeof(hist.bucket_counts));
     atomic_store(&hist.sum_us, 0);

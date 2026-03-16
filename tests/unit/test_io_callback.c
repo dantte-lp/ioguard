@@ -181,7 +181,7 @@ void test_io_prep_accept_cb(void)
     socklen_t client_len = sizeof(client_addr);
     test_cb_ctx_t cb_ctx = {0};
     int ret = iog_io_prep_accept_cb(ctx, lfd, (struct sockaddr *)&client_addr, &client_len, test_cb,
-                                   &cb_ctx);
+                                    &cb_ctx);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     /* Connect */

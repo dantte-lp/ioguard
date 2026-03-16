@@ -49,8 +49,7 @@ static void apply_defaults(iog_cert_auth_config_t *cfg)
 /**
  * Authenticate using the client certificate from the request.
  */
-static iog_auth_status_t cert_authenticate(const iog_auth_request_t *req,
-                                           iog_auth_response_t *resp)
+static iog_auth_status_t cert_authenticate(const iog_auth_request_t *req, iog_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
         return IOG_AUTH_STATUS_ERROR;
@@ -69,7 +68,7 @@ static iog_auth_status_t cert_authenticate(const iog_auth_request_t *req,
     /* Extract username from the certificate */
     char username[IOG_CERT_USERNAME_MAX];
     int ret = iog_cert_extract_username(req->client_cert, req->client_cert_len,
-                                       g_cert_cfg.username_field, username, sizeof(username));
+                                        g_cert_cfg.username_field, username, sizeof(username));
     if (ret != 0) {
         resp->status = IOG_AUTH_STATUS_FAILURE;
         return IOG_AUTH_STATUS_FAILURE;
@@ -134,7 +133,7 @@ const iog_auth_backend_t *iog_cert_auth_backend(void)
 }
 
 int iog_cert_extract_username(const uint8_t *der, size_t der_len, const char *field, char *out,
-                             size_t out_size)
+                              size_t out_size)
 {
     if (der == nullptr || field == nullptr || out == nullptr || out_size == 0) {
         return -EINVAL;
@@ -156,8 +155,7 @@ int iog_cert_extract_username(const uint8_t *der, size_t der_len, const char *fi
     if (strcmp(field, "CN") == 0) {
         WOLFSSL_X509_NAME *subj = wolfSSL_X509_get_subject_name(x509);
         if (subj != nullptr) {
-            int len = wolfSSL_X509_NAME_get_text_by_NID(subj, NID_commonName, out,
-                                                         (int)out_size);
+            int len = wolfSSL_X509_NAME_get_text_by_NID(subj, NID_commonName, out, (int)out_size);
             if (len > 0) {
                 ret = 0;
             } else if (len == 0) {

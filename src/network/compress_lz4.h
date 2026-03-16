@@ -16,6 +16,6 @@
 
 /** Decompress using LZ4. Returns bytes written or negative errno. */
 [[nodiscard]] int iog_lz4_decompress(const uint8_t *in, size_t in_len, uint8_t *out,
-                                    size_t out_size);
+                                     size_t out_size);
 
 #endif /* IOGUARD_NETWORK_COMPRESS_LZ4_H */

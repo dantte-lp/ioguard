@@ -53,15 +53,14 @@ static void copy_str(char *dst, size_t dst_size, const char *src, size_t src_len
  */
 static void extract_headers(iog_http_request_t *dst, const ihtp_request_t *src)
 {
-    uint32_t count = src->num_headers < IOG_HTTP_MAX_HEADERS
-                         ? (uint32_t)src->num_headers
-                         : IOG_HTTP_MAX_HEADERS;
+    uint32_t count = src->num_headers < IOG_HTTP_MAX_HEADERS ? (uint32_t)src->num_headers
+                                                             : IOG_HTTP_MAX_HEADERS;
 
     for (uint32_t i = 0; i < count; i++) {
-        copy_str(dst->headers[i].name, IOG_HTTP_MAX_HEADER_NAME,
-                 src->headers[i].name, src->headers[i].name_len);
-        copy_str(dst->headers[i].value, IOG_HTTP_MAX_HEADER_VALUE,
-                 src->headers[i].value, src->headers[i].value_len);
+        copy_str(dst->headers[i].name, IOG_HTTP_MAX_HEADER_NAME, src->headers[i].name,
+                 src->headers[i].name_len);
+        copy_str(dst->headers[i].value, IOG_HTTP_MAX_HEADER_VALUE, src->headers[i].value,
+                 src->headers[i].value_len);
     }
     dst->header_count = count;
 }
@@ -111,8 +110,7 @@ int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len)
         size_t consumed = 0;
         ihtp_policy_t policy = IHTP_POLICY_STRICT;
 
-        ihtp_status_t st =
-            ihtp_parse_request(p->buf, p->buf_len, &req, &policy, &consumed);
+        ihtp_status_t st = ihtp_parse_request(p->buf, p->buf_len, &req, &policy, &consumed);
 
         if (st == IHTP_INCOMPLETE) {
             return 0; /* need more data */
@@ -130,9 +128,8 @@ int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len)
 
         /* Copy URL (path) — NUL-terminate */
         copy_str(p->request.url, IOG_HTTP_MAX_URL, req.path, req.path_len);
-        p->request.url_len = req.path_len < IOG_HTTP_MAX_URL - 1
-                                 ? req.path_len
-                                 : IOG_HTTP_MAX_URL - 1;
+        p->request.url_len = req.path_len < IOG_HTTP_MAX_URL - 1 ? req.path_len
+                                                                 : IOG_HTTP_MAX_URL - 1;
 
         extract_headers(&p->request, &req);
 
@@ -177,9 +174,8 @@ int iog_http_parse(iog_http_parser_t *p, const char *data, size_t len)
 
     /* Phase 2: accumulate body bytes */
     size_t body_in_buf = p->buf_len - p->header_bytes;
-    size_t body_want = (uint64_t)IOG_HTTP_MAX_BODY < p->content_length
-                           ? IOG_HTTP_MAX_BODY
-                           : (size_t)p->content_length;
+    size_t body_want = (uint64_t)IOG_HTTP_MAX_BODY < p->content_length ? IOG_HTTP_MAX_BODY
+                                                                       : (size_t)p->content_length;
     size_t body_copy = body_in_buf < body_want ? body_in_buf : body_want;
 
     if (body_copy > 0) {
@@ -215,8 +211,8 @@ const char *iog_http_get_header(const iog_http_request_t *req, const char *name)
 }
 
 int iog_http_format_response(char *buf, size_t buf_size, int status_code,
-                            const iog_http_header_t *headers, uint32_t header_count,
-                            const char *body, size_t body_len)
+                             const iog_http_header_t *headers, uint32_t header_count,
+                             const char *body, size_t body_len)
 {
     if (buf == nullptr || buf_size == 0) {
         return -EINVAL;

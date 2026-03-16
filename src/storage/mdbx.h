@@ -73,8 +73,8 @@ void iog_mdbx_close(iog_mdbx_ctx_t *ctx);
  * @return 0 on success, -ENOENT if not found, other negative errno on error.
  */
 [[nodiscard]] int iog_mdbx_session_lookup(iog_mdbx_ctx_t *ctx,
-                                         const uint8_t session_id[IOG_SESSION_ID_LEN],
-                                         iog_session_record_t *out);
+                                          const uint8_t session_id[IOG_SESSION_ID_LEN],
+                                          iog_session_record_t *out);
 
 /**
  * @brief Delete a session by its 32-byte ID.
@@ -83,7 +83,7 @@ void iog_mdbx_close(iog_mdbx_ctx_t *ctx);
  * @return 0 on success, -ENOENT if not found, other negative errno on error.
  */
 [[nodiscard]] int iog_mdbx_session_delete(iog_mdbx_ctx_t *ctx,
-                                         const uint8_t session_id[IOG_SESSION_ID_LEN]);
+                                          const uint8_t session_id[IOG_SESSION_ID_LEN]);
 
 /**
  * @brief Count the number of session records in the store.
@@ -105,6 +105,6 @@ typedef int (*iog_mdbx_session_iter_fn)(const iog_session_record_t *session, voi
  *         or the non-zero value returned by fn if iteration was stopped.
  */
 [[nodiscard]] int iog_mdbx_session_iterate(iog_mdbx_ctx_t *ctx, iog_mdbx_session_iter_fn fn,
-                                          void *userdata);
+                                           void *userdata);
 
 #endif /* IOGUARD_STORAGE_MDBX_H */

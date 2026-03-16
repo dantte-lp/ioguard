@@ -624,10 +624,10 @@ if(BUILD_TESTING)
         add_library(iog_worker_loop STATIC src/core/worker_loop.c)
         target_include_directories(iog_worker_loop PUBLIC ${CMAKE_SOURCE_DIR}/src)
         target_compile_definitions(iog_worker_loop PUBLIC _GNU_SOURCE)
-        target_link_libraries(iog_worker_loop PUBLIC iog_worker iog_io iog_fdpass iog_cstp iog_dpd)
+        target_link_libraries(iog_worker_loop PUBLIC iog_worker iog_io iog_fdpass iog_cstp iog_dpd iog_conn_data iog_compress)
 
         iog_add_test(test_worker_loop tests/unit/test_worker_loop.c
-            iog_worker_loop iog_io iog_fdpass iog_cstp iog_dpd iog_worker)
+            iog_worker_loop iog_io iog_fdpass iog_cstp iog_dpd iog_worker iog_conn_data iog_compress)
 
         # Sprint 6 — Per-connection TLS handshake
         if(WOLFSSL_FOUND)

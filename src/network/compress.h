@@ -29,10 +29,10 @@ typedef struct {
 [[nodiscard]] int iog_compress_init(iog_compress_ctx_t *ctx, iog_compress_type_t type);
 
 [[nodiscard]] int iog_compress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len,
-                              uint8_t *out, size_t out_size);
+                               uint8_t *out, size_t out_size);
 
 [[nodiscard]] int iog_decompress(iog_compress_ctx_t *ctx, const uint8_t *in, size_t in_len,
-                                uint8_t *out, size_t out_size);
+                                 uint8_t *out, size_t out_size);
 
 void iog_compress_destroy(iog_compress_ctx_t *ctx);
 

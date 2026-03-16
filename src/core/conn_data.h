@@ -91,7 +91,7 @@ typedef struct {
  * @return Bytes sent via TLS, or negative errno.
  */
 [[nodiscard]] int iog_conn_data_process_tun(iog_conn_data_t *data, const uint8_t *pkt,
-                                           size_t pkt_len);
+                                            size_t pkt_len);
 
 /**
  * @brief Send a DPD request via TLS.

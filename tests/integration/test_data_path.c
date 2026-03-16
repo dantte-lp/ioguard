@@ -60,7 +60,7 @@ void test_cstp_multiple_packets_stream(void)
 
     /* Packet 1: DATA with 8-byte payload */
     int n = iog_cstp_encode(buf + offset, sizeof(buf) - offset, IOG_CSTP_DATA, data_payload,
-                           sizeof(data_payload));
+                            sizeof(data_payload));
     TEST_ASSERT_GREATER_THAN(0, n);
     offset += (size_t)n;
 

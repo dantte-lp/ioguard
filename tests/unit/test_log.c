@@ -49,8 +49,8 @@ void test_log_write_with_structured_data(void)
         {"src", "10.0.0.1"},
     };
 
-    ret = iog_log_write_sd(logger, IOG_LOG_NOTICE, "auth",
-                          "login successful", "auth@ioguard", params, 2);
+    ret = iog_log_write_sd(logger, IOG_LOG_NOTICE, "auth", "login successful", "auth@ioguard",
+                           params, 2);
     TEST_ASSERT_EQUAL_INT(0, ret);
 
     char buf[4096];

@@ -7,8 +7,8 @@
 #include <sys/time.h>
 
 #ifdef USE_LDAP
-#include <ldap.h>
-#include <lber.h>
+#    include <lber.h>
+#    include <ldap.h>
 #endif
 
 /** Module-level configuration (copied from caller during init). */
@@ -24,18 +24,70 @@ static bool validate_uri_scheme(const char *uri)
         return false;
     }
 
-    return (strncmp(uri, "ldap://", 7) == 0 ||
-            strncmp(uri, "ldaps://", 8) == 0);
+    return (strncmp(uri, "ldap://", 7) == 0 || strncmp(uri, "ldaps://", 8) == 0);
 }
 
-ssize_t iog_ldap_build_bind_dn(const char *tmpl, const char *user,
-                               char *out, size_t out_sz)
+ssize_t iog_ldap_escape_filter_value(const char *input, char *out, size_t out_sz)
+{
+    if (input == nullptr || out == nullptr || out_sz == 0) {
+        return -EINVAL;
+    }
+
+    size_t pos = 0;
+    for (const char *p = input; *p != '\0'; p++) {
+        const char *esc = nullptr;
+        switch ((unsigned char)*p) {
+        case '*':
+            esc = "\\2a";
+            break;
+        case '(':
+            esc = "\\28";
+            break;
+        case ')':
+            esc = "\\29";
+            break;
+        case '\\':
+            esc = "\\5c";
+            break;
+        case '\0':
+            esc = "\\00";
+            break;
+        default:
+            break;
+        }
+
+        if (esc != nullptr) {
+            size_t elen = 3;
+            if (pos + elen >= out_sz) {
+                return -ENOSPC;
+            }
+            memcpy(out + pos, esc, elen);
+            pos += elen;
+        } else {
+            if (pos + 1 >= out_sz) {
+                return -ENOSPC;
+            }
+            out[pos++] = *p;
+        }
+    }
+    out[pos] = '\0';
+    return (ssize_t)pos;
+}
+
+ssize_t iog_ldap_build_bind_dn(const char *tmpl, const char *user, char *out, size_t out_sz)
 {
     if (tmpl == nullptr || user == nullptr || out == nullptr || out_sz == 0) {
         return -EINVAL;
     }
 
-    int ret = snprintf(out, out_sz, tmpl, user);
+    /* Escape user input before interpolation to prevent LDAP injection */
+    char escaped[512];
+    ssize_t esc_len = iog_ldap_escape_filter_value(user, escaped, sizeof(escaped));
+    if (esc_len < 0) {
+        return esc_len;
+    }
+
+    int ret = snprintf(out, out_sz, tmpl, escaped);
     if (ret < 0) {
         return -EINVAL;
     }
@@ -46,14 +98,20 @@ ssize_t iog_ldap_build_bind_dn(const char *tmpl, const char *user,
     return ret;
 }
 
-ssize_t iog_ldap_build_group_filter(const char *attr, const char *user_dn,
-                                    char *out, size_t out_sz)
+ssize_t iog_ldap_build_group_filter(const char *attr, const char *user_dn, char *out, size_t out_sz)
 {
     if (attr == nullptr || user_dn == nullptr || out == nullptr || out_sz == 0) {
         return -EINVAL;
     }
 
-    int ret = snprintf(out, out_sz, "(%s=%s)", attr, user_dn);
+    /* Escape user DN to prevent LDAP filter injection */
+    char escaped[512];
+    ssize_t esc_len = iog_ldap_escape_filter_value(user_dn, escaped, sizeof(escaped));
+    if (esc_len < 0) {
+        return esc_len;
+    }
+
+    int ret = snprintf(out, out_sz, "(%s=%s)", attr, escaped);
     if (ret < 0) {
         return -EINVAL;
     }
@@ -82,8 +140,7 @@ int iog_ldap_init(const iog_ldap_config_t *config)
 
     /* Apply defaults for optional fields */
     if (g_ldap_cfg.group_attr[0] == '\0') {
-        snprintf(g_ldap_cfg.group_attr, sizeof(g_ldap_cfg.group_attr),
-                 "memberOf");
+        snprintf(g_ldap_cfg.group_attr, sizeof(g_ldap_cfg.group_attr), "memberOf");
     }
 
     if (g_ldap_cfg.timeout_ms == 0) {
@@ -110,8 +167,7 @@ void iog_ldap_destroy(void)
  * Flow: ldap_initialize → set LDAPv3 → optional StartTLS → bind → search
  *       groups → unbind.
  */
-static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
-                                           iog_auth_response_t *resp)
+static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req, iog_auth_response_t *resp)
 {
     if (req == nullptr || resp == nullptr) {
         return IOG_AUTH_STATUS_ERROR;
@@ -129,9 +185,8 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
 
     /* Build the bind DN from template + username */
     char bind_dn[IOG_LDAP_DN_BUF_MAX];
-    ssize_t dn_len = iog_ldap_build_bind_dn(g_ldap_cfg.bind_dn_template,
-                                             req->username,
-                                             bind_dn, sizeof(bind_dn));
+    ssize_t dn_len = iog_ldap_build_bind_dn(g_ldap_cfg.bind_dn_template, req->username, bind_dn,
+                                            sizeof(bind_dn));
     if (dn_len < 0) {
         return IOG_AUTH_STATUS_ERROR;
     }
@@ -155,8 +210,7 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
 
     /* Set CA certificate for TLS verification */
     if (g_ldap_cfg.ca_cert_path[0] != '\0') {
-        ldap_set_option(ld, LDAP_OPT_X_TLS_CACERTFILE,
-                        g_ldap_cfg.ca_cert_path);
+        ldap_set_option(ld, LDAP_OPT_X_TLS_CACERTFILE, g_ldap_cfg.ca_cert_path);
     }
 
     /* StartTLS if requested (for ldap:// URIs; ldaps:// uses implicit TLS) */
@@ -174,8 +228,7 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
         .bv_len = strlen(req->password),
     };
 
-    rc = ldap_sasl_bind_s(ld, bind_dn, LDAP_SASL_SIMPLE, &cred,
-                          nullptr, nullptr, nullptr);
+    rc = ldap_sasl_bind_s(ld, bind_dn, LDAP_SASL_SIMPLE, &cred, nullptr, nullptr, nullptr);
 
     /* Zero the credential struct (password pointer still owned by caller) */
     explicit_bzero(&cred, sizeof(cred));
@@ -195,17 +248,14 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
     /* Optionally search for group memberships */
     if (g_ldap_cfg.search_base[0] != '\0') {
         char filter[IOG_LDAP_FILTER_BUF_MAX];
-        ssize_t flen = iog_ldap_build_group_filter(g_ldap_cfg.group_attr,
-                                                   bind_dn,
-                                                   filter, sizeof(filter));
+        ssize_t flen =
+            iog_ldap_build_group_filter(g_ldap_cfg.group_attr, bind_dn, filter, sizeof(filter));
         if (flen > 0) {
             char *attrs[] = {"cn", nullptr};
             LDAPMessage *result = nullptr;
 
-            rc = ldap_search_ext_s(ld, g_ldap_cfg.search_base,
-                                   LDAP_SCOPE_SUBTREE, filter,
-                                   attrs, 0, nullptr, nullptr,
-                                   &tv, 100, &result);
+            rc = ldap_search_ext_s(ld, g_ldap_cfg.search_base, LDAP_SCOPE_SUBTREE, filter, attrs, 0,
+                                   nullptr, nullptr, &tv, 100, &result);
 
             if (rc == LDAP_SUCCESS && result != nullptr) {
                 /* Collect group CNs into comma-separated list */
@@ -213,12 +263,10 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
                 LDAPMessage *entry = ldap_first_entry(ld, result);
 
                 while (entry != nullptr) {
-                    struct berval **vals =
-                        ldap_get_values_len(ld, entry, "cn");
+                    struct berval **vals = ldap_get_values_len(ld, entry, "cn");
 
                     if (vals != nullptr && vals[0] != nullptr) {
-                        if (offset > 0 &&
-                            offset < sizeof(resp->groups) - 1) {
+                        if (offset > 0 && offset < sizeof(resp->groups) - 1) {
                             resp->groups[offset++] = ',';
                         }
                         size_t remain = sizeof(resp->groups) - offset;
@@ -226,8 +274,7 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
                         if (copy_len >= remain) {
                             copy_len = remain - 1;
                         }
-                        memcpy(resp->groups + offset,
-                               vals[0]->bv_val, copy_len);
+                        memcpy(resp->groups + offset, vals[0]->bv_val, copy_len);
                         offset += copy_len;
                     }
 
@@ -256,8 +303,7 @@ static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
 /**
  * Stub when LDAP support is not compiled in.
  */
-static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req,
-                                           iog_auth_response_t *resp)
+static iog_auth_status_t ldap_authenticate(const iog_auth_request_t *req, iog_auth_response_t *resp)
 {
     (void)req;
     if (resp != nullptr) {

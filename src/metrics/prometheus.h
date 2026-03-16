@@ -40,7 +40,7 @@ typedef struct {
     const char *help;
     double boundaries[IOG_PROM_HISTOGRAM_BUCKETS];
     _Atomic uint64_t bucket_counts[IOG_PROM_HISTOGRAM_BUCKETS + 1]; /* +1 for +Inf */
-    _Atomic uint64_t sum_us; /* sum in microseconds */
+    _Atomic uint64_t sum_us;                                        /* sum in microseconds */
     _Atomic uint64_t count;
 } iog_prom_histogram_t;
 
@@ -66,8 +66,7 @@ void iog_prom_registry_destroy(iog_prom_registry_t *reg);
  * @param counter Counter to register (caller retains ownership).
  * @return 0 on success, -EINVAL if arguments are nullptr, -ENOSPC if full.
  */
-[[nodiscard]] int iog_prom_register_counter(iog_prom_registry_t *reg,
-                                           iog_prom_counter_t *counter);
+[[nodiscard]] int iog_prom_register_counter(iog_prom_registry_t *reg, iog_prom_counter_t *counter);
 
 /**
  * @brief Register a gauge with the registry.
@@ -75,8 +74,7 @@ void iog_prom_registry_destroy(iog_prom_registry_t *reg);
  * @param gauge Gauge to register (caller retains ownership).
  * @return 0 on success, -EINVAL if arguments are nullptr, -ENOSPC if full.
  */
-[[nodiscard]] int iog_prom_register_gauge(iog_prom_registry_t *reg,
-                                         iog_prom_gauge_t *gauge);
+[[nodiscard]] int iog_prom_register_gauge(iog_prom_registry_t *reg, iog_prom_gauge_t *gauge);
 
 /**
  * @brief Register a histogram with the registry.
@@ -84,8 +82,7 @@ void iog_prom_registry_destroy(iog_prom_registry_t *reg);
  * @param hist Histogram to register (caller retains ownership).
  * @return 0 on success, -EINVAL if arguments are nullptr, -ENOSPC if full.
  */
-[[nodiscard]] int iog_prom_register_histogram(iog_prom_registry_t *reg,
-                                             iog_prom_histogram_t *hist);
+[[nodiscard]] int iog_prom_register_histogram(iog_prom_registry_t *reg, iog_prom_histogram_t *hist);
 
 /**
  * @brief Increment a counter by 1.
@@ -134,7 +131,6 @@ void iog_prom_histogram_observe(iog_prom_histogram_t *hist, double value);
  * @return Number of bytes written (excluding NUL) on success,
  *         -EINVAL if arguments are invalid, -ENOSPC if buffer is too small.
  */
-[[nodiscard]] ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf,
-                                     size_t buf_size);
+[[nodiscard]] ssize_t iog_prom_format(const iog_prom_registry_t *reg, char *buf, size_t buf_size);
 
 #endif /* IOGUARD_METRICS_PROMETHEUS_H */

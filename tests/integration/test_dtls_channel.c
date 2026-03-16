@@ -128,7 +128,7 @@ void test_dtls_headers_roundtrip(void)
 {
     char headers[512];
     int ret = iog_dtls_build_headers(headers, sizeof(headers), "aabbccdd11223344",
-                                    "DHE-RSA-AES256-SHA", "lzs");
+                                     "DHE-RSA-AES256-SHA", "lzs");
     TEST_ASSERT_GREATER_THAN(0, ret);
 
     /* Verify key headers present */
