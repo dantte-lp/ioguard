@@ -1,29 +1,34 @@
-FROM oraclelinux:10
+# ioguard development image
+# Thin layer on top of the shared ioplane-base image.
+#
+# Build base first:
+#   podman build -t ioplane-base:latest \
+#     -f /opt/projects/repositories/container-images/tools/ioplane-base/Containerfile .
+#
+# Build this image:
+#   podman build -t ioguard-dev:latest -f deploy/podman/Containerfile .
+
+FROM localhost/ioplane-base:latest
 
 LABEL maintainer="ioguard development team"
 LABEL description="Development environment for ioguard with wolfSSL and modern C libraries"
 
-# Build arguments for tool versions
-ARG CMAKE_VERSION=4.2.3
-ARG CLANG_VERSION=22.1.0
-# GCC 15 via gcc-toolset-15 (no version ARG needed — from OL10 repos)
-ARG GDB_VERSION=17.1
-ARG VALGRIND_VERSION=3.26.0
-ARG UFTRACE_VERSION=0.19
-ARG FTRACER_COMMIT=d24de224088c3f98333166a51d2c95815ba49829
-ARG CCACHE_VERSION=4.11.3
-ARG LCOV_VERSION=2.3
+# ═══════════════════════════════════════════════════════
+# Build arguments for project-specific library versions
+# ═══════════════════════════════════════════════════════
+
 ARG SQLITE_VERSION=3520000
 ARG SQLITE_YEAR=2026
-ARG DOXYGEN_VERSION=1.16.1
-ARG UNITY_VERSION=2.6.1
 ARG CMOCK_VERSION=2.6.0
 ARG CEEDLING_VERSION=1.0.1
 ARG WOLFSSL_VERSION=5.8.4
 ARG WOLFSENTRY_VERSION=1.6.2
 ARG LIBURING_VERSION=2.14
 ARG YYJSON_VERSION=0.12.0
-ARG LLHTTP_VERSION=9.3.1
+ARG NGHTTP2_VERSION=1.68.0
+ARG NGTCP2_VERSION=1.21.0
+ARG NGHTTP3_VERSION=1.15.0
+ARG WSLAY_VERSION=1.1.1
 ARG CARES_VERSION=1.34.6
 ARG MIMALLOC_VERSION=3.2.8
 ARG CJSON_VERSION=1.7.19
@@ -31,213 +36,42 @@ ARG LIBNFTNL_VERSION=1.3.1
 ARG PROTOBUF_C_VERSION=1.5.2
 ARG STUMPLESS_VERSION=2.2.0
 
-# Enable CodeReady Builder repo (for -devel packages not in baseos/appstream)
-RUN dnf install -y oraclelinux-developer-release-el10 && \
-    dnf config-manager --set-enabled ol10_codeready_builder && \
-    dnf clean all
-
-# Install base development tools (system gcc needed for libraries that build with default cc)
-RUN dnf install -y \
-    gcc \
-    gcc-c++ \
-    make \
-    autoconf \
-    automake \
-    libtool \
-    pkgconfig \
-    git \
-    vim \
-    strace \
-    expat-devel \
-    readline-devel \
-    gmp-devel \
-    mpfr-devel \
-    elfutils-devel \
-    ncurses-devel \
-    python3-devel \
-    zlib-devel \
-    openssl-devel \
-    wget \
-    curl \
-    tar \
-    xz \
-    bzip2 \
-    patch \
-    flex \
-    bison \
-    && dnf clean all
-
 # ═══════════════════════════════════════════════════════
-# Compilers (from source / pre-built)
+# System dependencies from OL10 repos
 # ═══════════════════════════════════════════════════════
 
-# Install Clang 22.1.0 from pre-built release binary (selective — only needed tools)
-# The LLVM tarball is ~6GB extracted; copy only what we need to keep the layer small.
-# clang/clang++ are symlinks to clang-N, lld to lld-N, etc. — copy real binaries + symlinks.
-RUN cd /tmp && \
-    curl -fsSL -o llvm.tar.xz \
-        https://github.com/llvm/llvm-project/releases/download/llvmorg-${CLANG_VERSION}/LLVM-${CLANG_VERSION}-Linux-X64.tar.xz && \
-    tar xJf llvm.tar.xz && \
-    LLVM_DIR=LLVM-${CLANG_VERSION}-Linux-X64 && \
-    CLANG_MAJOR=$(echo ${CLANG_VERSION} | cut -d. -f1) && \
-    for tool in clang clang++ clang-cl clang-cpp clang-${CLANG_MAJOR} \
-                clang-format clang-tidy clang-apply-replacements \
-                clang-rename clang-check \
-                lld ld.lld ld64.lld wasm-ld \
-                llvm-ar llvm-nm llvm-objdump llvm-ranlib llvm-strip \
-                llvm-symbolizer llvm-profdata llvm-cov llvm-objcopy \
-                llvm-readelf llvm-size llvm-strings llvm-addr2line \
-                scan-build scan-view; do \
-        [ -e "$LLVM_DIR/bin/$tool" ] && cp -a "$LLVM_DIR/bin/$tool" /usr/local/bin/; \
-    done && \
-    cp -a $LLVM_DIR/lib/clang /usr/local/lib/ && \
-    rm -rf /tmp/LLVM-* /tmp/llvm.tar.xz && \
-    ldconfig && \
-    clang --version
-
-# Install GCC 15 from gcc-toolset-15 (OL10 appstream, pre-built)
-# Provides GCC 15.1.1 at /opt/rh/gcc-toolset-15/root/usr/bin/gcc
 RUN dnf install -y \
-        gcc-toolset-15-gcc \
-        gcc-toolset-15-gcc-c++ \
-        gcc-toolset-15-libatomic-devel \
-        gcc-toolset-15-libasan-devel \
-        gcc-toolset-15-libubsan-devel \
-        gcc-toolset-15-libtsan-devel \
-        gcc-toolset-15-binutils \
-    && dnf clean all && \
-    ln -sf /opt/rh/gcc-toolset-15/root/usr/bin/gcc /usr/local/bin/gcc-15 && \
-    ln -sf /opt/rh/gcc-toolset-15/root/usr/bin/g++ /usr/local/bin/g++-15 && \
-    gcc-15 --version
-
-# Install system dependencies from OL10 repos (baseos + codeready_builder)
-RUN dnf install -y \
+    lz4-devel \
     pam-devel \
     libseccomp-devel \
-    readline-devel \
-    lz4-devel \
-    libnl3-devel \
-    krb5-devel \
-    gnutls-devel \
-    nettle-devel \
-    gmp-devel \
-    libtasn1-devel \
-    p11-kit-devel \
-    openssl-devel \
-    openldap-devel \
-    gettext-devel \
     libmnl-devel \
+    nftables-devel \
+    libnetfilter_queue-devel \
     protobuf-devel \
-    protobuf-compiler \
-    && dnf clean all
-
-# Install code quality and documentation tools
-RUN dnf install -y \
-    graphviz \
-    python3 \
-    python3-pip \
     ruby \
     ruby-devel \
-    rubygems \
+    rubygem-rake \
     && dnf clean all
 
-# Install ninja, flawfinder, gcovr from PyPI
-RUN pip3 install ninja flawfinder gcovr
+# ═══════════════════════════════════════════════════════
+# Ruby: CMock and Ceedling (test frameworks)
+# ═══════════════════════════════════════════════════════
 
-# Install Ruby gems for Ceedling
-RUN gem install --no-document \
-    rake \
-    thor \
-    constructor \
-    deep_merge
-
-# Build and install CMake from source
-RUN cd /tmp && \
-    wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz && \
-    tar xzf cmake-${CMAKE_VERSION}.tar.gz && \
-    cd cmake-${CMAKE_VERSION} && \
-    ./bootstrap --prefix=/usr/local --parallel=$(nproc) && \
-    make -j$(nproc) && \
-    make install && \
-    cd /tmp && rm -rf cmake-*
-
-# Build and install ccache from source (requires CMake, not in OL10 repos)
-RUN cd /tmp && \
-    wget https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}.tar.gz && \
-    tar xzf ccache-${CCACHE_VERSION}.tar.gz && \
-    cd ccache-${CCACHE_VERSION} && \
-    mkdir build && cd build && \
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DREDIS_STORAGE_BACKEND=OFF && \
-    make -j$(nproc) && \
-    make install && \
-    cd /tmp && rm -rf ccache-*
-
-# Build and install lcov from source (Perl-based, no cmake needed)
-RUN cd /tmp && \
-    wget https://github.com/linux-test-project/lcov/releases/download/v${LCOV_VERSION}/lcov-${LCOV_VERSION}.tar.gz && \
-    tar xzf lcov-${LCOV_VERSION}.tar.gz && \
-    cd lcov-${LCOV_VERSION} && \
-    make install PREFIX=/usr/local && \
-    cd /tmp && rm -rf lcov-*
-
-# Build and install cppcheck from source
-RUN cd /tmp && \
-    git clone --depth 1 --branch 2.20.0 https://github.com/danmar/cppcheck.git && \
-    cd cppcheck && \
-    mkdir build && cd build && \
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    make -j$(nproc) && \
-    make install && \
-    cd /tmp && rm -rf cppcheck
-
-# Build and install Doxygen from source
-RUN cd /tmp && \
-    wget https://github.com/doxygen/doxygen/archive/refs/tags/Release_${DOXYGEN_VERSION//./_}.tar.gz && \
-    tar xzf Release_${DOXYGEN_VERSION//./_}.tar.gz && \
-    cd doxygen-Release_${DOXYGEN_VERSION//./_} && \
-    mkdir build && cd build && \
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    make -j$(nproc) && \
-    make install && \
-    cd /tmp && rm -rf doxygen-* Release_*
-
-# Install Unity testing framework
-RUN cd /tmp && \
-    wget https://github.com/ThrowTheSwitch/Unity/archive/refs/tags/v${UNITY_VERSION}.tar.gz && \
-    tar xzf v${UNITY_VERSION}.tar.gz && \
-    cd Unity-${UNITY_VERSION} && \
-    mkdir -p /usr/local/include/unity && \
-    mkdir -p /usr/local/src/unity && \
-    cp src/unity.h src/unity_internals.h /usr/local/include/unity/ && \
-    cp src/unity.c /usr/local/src/unity/ && \
-    cp -r extras /usr/local/src/unity/ && \
-    cd /tmp && rm -rf Unity-* v${UNITY_VERSION}.tar.gz
-
-# Install CMock
-RUN cd /tmp && \
-    wget https://github.com/ThrowTheSwitch/CMock/archive/refs/tags/v${CMOCK_VERSION}.tar.gz && \
-    tar xzf v${CMOCK_VERSION}.tar.gz && \
-    cd CMock-${CMOCK_VERSION} && \
-    mkdir -p /usr/local/lib/cmock /usr/local/src/cmock && \
-    cp -r lib/* /usr/local/lib/cmock/ && \
-    cp -r src/* /usr/local/src/cmock/ && \
-    cd /tmp && rm -rf CMock-* v${CMOCK_VERSION}.tar.gz
-
-# Install Ceedling
-RUN gem install --no-document ceedling -v ${CEEDLING_VERSION}
+RUN gem install ceedling -v "${CEEDLING_VERSION}" && \
+    gem install thor deep_merge unicode-display_width && \
+    cd /tmp && \
+    wget "https://github.com/ThrowTheSwitch/CMock/archive/refs/tags/v${CMOCK_VERSION}.tar.gz" && \
+    tar xzf "v${CMOCK_VERSION}.tar.gz" && \
+    mkdir -p /usr/local/src/cmock && \
+    cp -a "CMock-${CMOCK_VERSION}/src"/* /usr/local/src/cmock/ && \
+    cp -a "CMock-${CMOCK_VERSION}/lib"/* /usr/local/lib/ruby/ 2>/dev/null || true && \
+    cd /tmp && rm -rf CMock-* "v${CMOCK_VERSION}.tar.gz"
 
 # ═══════════════════════════════════════════════════════
 # Core Crypto & Security
 # ═══════════════════════════════════════════════════════
 
-# Build and install wolfSSL from source (GPLv3)
+# wolfSSL with QUIC support
 # NOTE: --disable-sp-asm due to GCC 14 register syntax incompatibility
 RUN cd /tmp && \
     wget https://github.com/wolfSSL/wolfssl/archive/refs/tags/v${WOLFSSL_VERSION}-stable.tar.gz && \
@@ -278,7 +112,7 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf wolfssl-*
 
-# Build and install wolfSentry from source (GPLv2)
+# wolfSentry
 # NOTE: -Wno-error=inline for GCC 14 compatibility with v1.6.2
 RUN cd /tmp && \
     wget https://github.com/wolfSSL/wolfsentry/archive/refs/tags/v${WOLFSENTRY_VERSION}.tar.gz && \
@@ -295,7 +129,7 @@ RUN cd /tmp && \
 # Network & I/O
 # ═══════════════════════════════════════════════════════
 
-# Build and install liburing from source
+# liburing
 RUN cd /tmp && \
     wget https://github.com/axboe/liburing/archive/refs/tags/liburing-${LIBURING_VERSION}.tar.gz && \
     tar xzf liburing-${LIBURING_VERSION}.tar.gz && \
@@ -306,22 +140,7 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf liburing-*
 
-# Build and install llhttp from source
-RUN cd /tmp && \
-    wget https://github.com/nodejs/llhttp/archive/refs/tags/release/v${LLHTTP_VERSION}.tar.gz && \
-    tar xzf v${LLHTTP_VERSION}.tar.gz && \
-    cd llhttp-release-v${LLHTTP_VERSION} && \
-    mkdir build && cd build && \
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DBUILD_SHARED_LIBS=ON && \
-    make -j$(nproc) && \
-    make install && \
-    ldconfig && \
-    cd /tmp && rm -rf llhttp-*
-
-# Build and install iohttpparser from source (pull-based, zero-copy, SIMD HTTP parser)
+# iohttpparser (pull-based, zero-copy, SIMD HTTP parser — replaces llhttp)
 RUN cd /tmp && \
     git clone --depth 1 https://github.com/ioplane/iohttpparser.git && \
     cd iohttpparser && \
@@ -336,7 +155,99 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf iohttpparser
 
-# Build and install c-ares from source
+# yyjson (required by liboas)
+RUN cd /tmp && \
+    wget https://github.com/ibireme/yyjson/archive/refs/tags/${YYJSON_VERSION}.tar.gz && \
+    tar xzf ${YYJSON_VERSION}.tar.gz && \
+    cd yyjson-${YYJSON_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf yyjson-*
+
+# liboas (OpenAPI 3.2 schema library, requires yyjson)
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/ioplane/liboas.git && \
+    cd liboas && \
+    mkdir build && cd build && \
+    CC=clang cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_TESTING=OFF \
+        -DOAS_YAML=OFF && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf liboas
+
+# iojournal (structured logging library)
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/ioplane/iojournal.git && \
+    cd iojournal && \
+    mkdir build && cd build && \
+    CC=clang cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_TESTING=OFF && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    cd /tmp && rm -rf iojournal
+
+# iohttp HTTP/2+3 dependencies: nghttp2, ngtcp2, nghttp3, wslay, sfparse
+RUN dnf install -y brotli-devel && dnf clean all
+
+RUN cd /tmp && \
+    wget https://github.com/nghttp2/nghttp2/releases/download/v${NGHTTP2_VERSION}/nghttp2-${NGHTTP2_VERSION}.tar.gz && \
+    tar xzf nghttp2-${NGHTTP2_VERSION}.tar.gz && \
+    cd nghttp2-${NGHTTP2_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_LIB_ONLY=ON && \
+    make -j$(nproc) && make install && ldconfig && \
+    cd /tmp && rm -rf nghttp2-*
+
+RUN cd /tmp && \
+    wget https://github.com/ngtcp2/ngtcp2/releases/download/v${NGTCP2_VERSION}/ngtcp2-${NGTCP2_VERSION}.tar.gz && \
+    tar xzf ngtcp2-${NGTCP2_VERSION}.tar.gz && \
+    cd ngtcp2-${NGTCP2_VERSION} && \
+    mkdir build && cd build && \
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_WOLFSSL=ON && \
+    make -j$(nproc) && make install && ldconfig && \
+    cd /tmp && rm -rf ngtcp2-*
+
+RUN cd /tmp && \
+    wget https://github.com/ngtcp2/nghttp3/releases/download/v${NGHTTP3_VERSION}/nghttp3-${NGHTTP3_VERSION}.tar.gz && \
+    tar xzf nghttp3-${NGHTTP3_VERSION}.tar.gz && \
+    cd nghttp3-${NGHTTP3_VERSION} && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_LIB_ONLY=ON && \
+    make -j$(nproc) && make install && ldconfig && \
+    cd /tmp && rm -rf nghttp3-*
+
+RUN cd /tmp && \
+    wget https://github.com/tatsuhiro-t/wslay/releases/download/release-${WSLAY_VERSION}/wslay-${WSLAY_VERSION}.tar.gz && \
+    tar xzf wslay-${WSLAY_VERSION}.tar.gz && \
+    cd wslay-${WSLAY_VERSION} && \
+    ./configure --prefix=/usr/local && \
+    make -j$(nproc) && make install && ldconfig && \
+    cd /tmp && rm -rf wslay-*
+
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/ngtcp2/sfparse.git && \
+    cp sfparse/sfparse.h /usr/local/include/ && \
+    rm -rf /tmp/sfparse
+
+# iohttp (C23 embedded HTTP server — headers and sources available for integration)
+# NOTE: iohttp is an application, not an installable library; clone to /usr/local/src
+# for header access and source-level integration during ioguard development.
+RUN git clone --depth 1 https://github.com/ioplane/iohttp.git /usr/local/src/iohttp
+
+# c-ares
 RUN cd /tmp && \
     wget https://github.com/c-ares/c-ares/releases/download/v${CARES_VERSION}/c-ares-${CARES_VERSION}.tar.gz && \
     tar xzf c-ares-${CARES_VERSION}.tar.gz && \
@@ -350,8 +261,7 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf c-ares-*
 
-# Build and install libnftnl from source (OL10 has 1.2.8, missing array overrun fix)
-# Requires libmnl-devel from OL10 repos
+# libnftnl (OL10 has 1.2.8, missing array overrun fix)
 RUN cd /tmp && \
     wget https://www.netfilter.org/projects/libnftnl/files/libnftnl-${LIBNFTNL_VERSION}.tar.xz && \
     tar xJf libnftnl-${LIBNFTNL_VERSION}.tar.xz && \
@@ -366,21 +276,7 @@ RUN cd /tmp && \
 # Data & Configuration
 # ═══════════════════════════════════════════════════════
 
-# Build and install yyjson from source
-RUN cd /tmp && \
-    wget https://github.com/ibireme/yyjson/archive/refs/tags/${YYJSON_VERSION}.tar.gz && \
-    tar xzf ${YYJSON_VERSION}.tar.gz && \
-    cd yyjson-${YYJSON_VERSION} && \
-    mkdir build && cd build && \
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    make -j$(nproc) && \
-    make install && \
-    ldconfig && \
-    cd /tmp && rm -rf yyjson-*
-
-# Build and install cJSON from source
+# cJSON
 RUN cd /tmp && \
     git clone --depth 1 --branch v${CJSON_VERSION} https://github.com/DaveGamble/cJSON.git && \
     cd cJSON && \
@@ -395,7 +291,7 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf cJSON
 
-# Build and install protobuf-c from source
+# protobuf-c
 RUN cd /tmp && \
     wget https://github.com/protobuf-c/protobuf-c/releases/download/v${PROTOBUF_C_VERSION}/protobuf-c-${PROTOBUF_C_VERSION}.tar.gz && \
     tar xzf protobuf-c-${PROTOBUF_C_VERSION}.tar.gz && \
@@ -406,7 +302,7 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf protobuf-c-*
 
-# Build and install tomlc99 from source
+# tomlc99
 RUN cd /tmp && \
     git clone --depth 1 https://github.com/cktan/tomlc99.git && \
     cd tomlc99 && \
@@ -419,7 +315,7 @@ RUN cd /tmp && \
 # System & Memory
 # ═══════════════════════════════════════════════════════
 
-# Build and install mimalloc from source
+# mimalloc
 RUN cd /tmp && \
     git clone --depth 1 --branch v${MIMALLOC_VERSION} https://github.com/microsoft/mimalloc.git && \
     cd mimalloc && \
@@ -438,7 +334,7 @@ RUN cd /tmp && \
 # Authentication
 # ═══════════════════════════════════════════════════════
 
-# Build and install radcli from source
+# radcli
 RUN cd /tmp && \
     git clone --depth 1 https://github.com/radcli/radcli.git && \
     cd radcli && \
@@ -450,22 +346,23 @@ RUN cd /tmp && \
     ldconfig && \
     cd /tmp && rm -rf radcli
 
-# Build and install liboath (oath-toolkit) from source
+# liboath (oath-toolkit) — optional, Savannah mirror may be unreachable
 RUN cd /tmp && \
-    wget https://download.savannah.nongnu.org/releases/oath-toolkit/oath-toolkit-2.6.12.tar.gz && \
+    (wget --timeout=30 https://download.savannah.nongnu.org/releases/oath-toolkit/oath-toolkit-2.6.12.tar.gz && \
     tar xzf oath-toolkit-2.6.12.tar.gz && \
     cd oath-toolkit-2.6.12 && \
     ./configure --prefix=/usr/local && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
-    cd /tmp && rm -rf oath-toolkit-*
+    cd /tmp && rm -rf oath-toolkit-*) \
+    || echo "WARNING: oath-toolkit installation failed (network?) — skipping"
 
 # ═══════════════════════════════════════════════════════
 # Logging
 # ═══════════════════════════════════════════════════════
 
-# Build and install stumpless from source (RFC 5424 structured logging)
+# stumpless (RFC 5424 structured logging)
 RUN cd /tmp && \
     wget https://github.com/goatshriek/stumpless/archive/refs/tags/v${STUMPLESS_VERSION}.tar.gz && \
     tar xzf v${STUMPLESS_VERSION}.tar.gz && \
@@ -485,99 +382,18 @@ RUN cd /tmp && \
 # Misc
 # ═══════════════════════════════════════════════════════
 
-# Install linenoise (header-only)
+# linenoise (header-only)
 RUN cd /tmp && \
     git clone --depth 1 https://github.com/antirez/linenoise.git && \
     cp linenoise/linenoise.h /usr/local/include/ && \
     cp linenoise/linenoise.c /usr/local/src/ && \
     rm -rf /tmp/linenoise
 
-# Install mold linker for fast debug builds
-ARG MOLD_VERSION=2.40.4
-RUN cd /tmp && \
-    git clone --depth 1 --branch v${MOLD_VERSION} https://github.com/rui314/mold.git && \
-    cd mold && \
-    mkdir build && cd build && \
-    cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    make -j$(nproc) && \
-    make install && \
-    cd /tmp && rm -rf mold
-
 # ═══════════════════════════════════════════════════════
-# Profilers and Debuggers (from source for C23/io_uring)
+# Storage
 # ═══════════════════════════════════════════════════════
 
-# GDB 17.1 from source (C23 DWARF5, better io_uring awareness)
-RUN cd /tmp && \
-    wget https://sourceware.org/pub/gdb/releases/gdb-${GDB_VERSION}.tar.xz && \
-    tar xJf gdb-${GDB_VERSION}.tar.xz && \
-    cd gdb-${GDB_VERSION} && \
-    mkdir build && cd build && \
-    ../configure \
-        --prefix=/usr/local \
-        --disable-binutils \
-        --disable-gas \
-        --disable-gdbserver \
-        --disable-gold \
-        --disable-gprof \
-        --disable-gprofng \
-        --disable-ld \
-        --disable-sim \
-        --disable-source-highlight \
-        --disable-werror \
-        --enable-tui \
-        --with-expat \
-        --with-python=/usr/bin/python3 \
-        --with-system-readline \
-        --with-system-zlib && \
-    make -j$(nproc) MAKEINFO=true && \
-    make install MAKEINFO=true && \
-    cd /tmp && rm -rf gdb-*
-
-# Valgrind 3.26.0 from source (io_uring-aware memcheck)
-RUN cd /tmp && \
-    wget https://sourceware.org/pub/valgrind/valgrind-${VALGRIND_VERSION}.tar.bz2 && \
-    tar xjf valgrind-${VALGRIND_VERSION}.tar.bz2 && \
-    cd valgrind-${VALGRIND_VERSION} && \
-    ./configure --prefix=/usr/local && \
-    make -j$(nproc) && \
-    make install && \
-    cd /tmp && rm -rf valgrind-*
-
-# uftrace 0.19 from source (function-level tracing for event loop profiling)
-RUN cd /tmp && \
-    wget https://github.com/namhyung/uftrace/archive/refs/tags/v${UFTRACE_VERSION}.tar.gz && \
-    tar xzf v${UFTRACE_VERSION}.tar.gz && \
-    cd uftrace-${UFTRACE_VERSION} && \
-    ./configure --prefix=/usr/local && \
-    make -j$(nproc) && \
-    make install && \
-    cd /tmp && rm -rf uftrace-* v${UFTRACE_VERSION}.tar.gz
-
-# ftracer (lightweight -pg -mfentry tracing + GDB integration)
-RUN cd /tmp && \
-    git clone https://github.com/andikleen/ftracer.git && \
-    cd ftracer && \
-    git checkout ${FTRACER_COMMIT} && \
-    make -j$(nproc) ftracer.o && \
-    install -d /usr/local/lib/ftracer /usr/local/libexec/ftracer /usr/local/include && \
-    install -m 644 ftracer.o /usr/local/lib/ftracer/ftracer.o && \
-    install -m 644 ftracer.h /usr/local/include/ftracer.h && \
-    install -m 755 ftracer-gdb.py /usr/local/libexec/ftracer/ftracer-gdb.py && \
-    install -m 755 fresolve /usr/local/bin/fresolve && \
-    install -m 755 frun /usr/local/bin/frun && \
-    install -m 755 strip-log /usr/local/libexec/ftracer/strip-log && \
-    cd /tmp && rm -rf ftracer
-
-# ═══════════════════════════════════════════════════════
-# Storage (Sprint 5)
-# ═══════════════════════════════════════════════════════
-
-ARG LIBMDBX_VERSION=0.14.1
-
-# Build SQLite 3.52.0 from amalgamation (OL10 has 3.46.1 — missing WAL corruption fix)
+# SQLite 3.52.0 (OL10 has 3.46.1 — missing WAL corruption fix)
 RUN cd /tmp && \
     curl -fsSL -o sqlite.tar.gz \
         https://www.sqlite.org/${SQLITE_YEAR}/sqlite-autoconf-${SQLITE_VERSION}.tar.gz && \
@@ -595,10 +411,9 @@ RUN cd /tmp && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
-    cd /tmp && rm -rf sqlite-* && \
-    sqlite3 --version
+    cd /tmp && rm -rf sqlite-*
 
-# Build libmdbx from source (stable branch)
+# libmdbx
 RUN cd /tmp && \
     git clone --depth 50 --branch master https://github.com/erthink/libmdbx.git && \
     cd libmdbx && \
@@ -614,47 +429,22 @@ RUN cd /tmp && \
     cd /tmp && rm -rf libmdbx
 
 # ═══════════════════════════════════════════════════════
-# Static Analysis Tools
+# Performance & Dynamic Analysis
 # ═══════════════════════════════════════════════════════
 
-# Install CodeChecker (Ericsson/codechecker v6.27.3)
-# Wraps clang-tidy + cppcheck + clang-sa with result management
-RUN pip3 install codechecker && \
-    ln -sf /usr/local/bin/CodeChecker /usr/local/bin/codechecker 2>/dev/null || true && \
-    CodeChecker version
-
-# Install PVS-Studio (optional — Russian server may be unreachable)
-RUN cd /tmp && \
-    (curl -fsSL --connect-timeout 30 -o pvs-studio.tgz \
-        https://files.pvs-studio.ru/pvs-studio-7.41.103683.741-x86_64.tgz && \
-    tar xzf pvs-studio.tgz && \
-    cd pvs-studio-* && \
-    cp -a bin/* /usr/local/bin/ && \
-    cp -a etc/* /usr/local/etc/ 2>/dev/null || true && \
-    mkdir -p /usr/local/share/pvs-studio && \
-    cp -a share/* /usr/local/share/ 2>/dev/null || true && \
-    cd /tmp && rm -rf pvs-studio* && \
-    pvs-studio --version && \
-    pvs-studio-analyzer credentials "PVS-Studio Free" "SRUG-709S-2Q5H-EE03") \
-    || echo "WARNING: PVS-Studio installation failed (network?) — skipping"
-
-# ═══════════════════════════════════════════════════════
-# Performance & Dynamic Analysis (io_uring focus)
-# ═══════════════════════════════════════════════════════
-
-# System profilers: perf (CPU/io_uring), bpftrace (kernel tracing), ltrace (library calls)
+# System profilers
 RUN dnf install -y \
     perf \
     ltrace \
     && dnf clean all
 
-# tshark (https://tshark.dev) for DTLS/TLS packet inspection, tcpdump for raw capture
+# tshark + tcpdump
 RUN dnf install -y \
     wireshark-cli \
     tcpdump \
     && dnf clean all
 
-# FlameGraph tools for perf → flame graph visualization
+# FlameGraph tools
 RUN git clone --depth 1 https://github.com/brendangregg/FlameGraph.git /opt/flamegraph && \
     ln -sf /opt/flamegraph/stackcollapse-perf.pl /usr/local/bin/ && \
     ln -sf /opt/flamegraph/flamegraph.pl /usr/local/bin/
@@ -663,16 +453,11 @@ RUN git clone --depth 1 https://github.com/brendangregg/FlameGraph.git /opt/flam
 # Build Acceleration
 # ═══════════════════════════════════════════════════════
 
-# Configure ccache defaults (CMAKE_C_COMPILER_LAUNCHER=ccache)
 RUN mkdir -p /root/.config/ccache && \
     printf "max_size = 2G\ncompression = true\ncompression_level = 6\n" \
         > /root/.config/ccache/ccache.conf
 
-# Update ldconfig cache
 RUN ldconfig
 
-# NOTE: IWYU (include-what-you-use) not installed — latest supports clang_21,
-# our Clang is 22.1.0. Re-evaluate when IWYU releases clang_22 branch.
-# See: https://github.com/include-what-you-use/include-what-you-use/branches
-
+WORKDIR /workspace
 CMD ["/bin/bash"]
