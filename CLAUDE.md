@@ -27,6 +27,13 @@ cmake --build --preset clang-debug --target lint      # clang-tidy
 cmake --build --preset clang-debug --target cppcheck  # static analysis
 ```
 
+## Dev Container
+
+- Base image: `podman build -t ioplane-base:latest -f /opt/projects/repositories/container-images/tools/ioplane-base/Containerfile .`
+- All `io*` projects share `localhost/ioplane-base:latest` as the common toolchain layer.
+- Build: `podman build -t ioguard-dev:latest -f deploy/podman/Containerfile .`
+- Prefer doing development and quality checks inside the container.
+
 ## Compiler Strategy (dual-compiler)
 
 **Full reference: `.claude/skills/dual-compiler-strategy/SKILL.md`**
